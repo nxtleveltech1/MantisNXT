@@ -27,7 +27,8 @@ import {
   Settings,
   CreditCard,
   Receipt,
-  Banknote
+  Banknote,
+  Calendar
 } from 'lucide-react'
 import AdminLayout from '@/components/layout/AdminLayout'
 
@@ -270,7 +271,7 @@ export default function FinancialSettingsPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 <p className="text-sm text-yellow-800">
-                  You have unsaved changes. Click "Save Changes" to apply your configuration.
+                  You have unsaved changes. Click &quot;Save Changes&quot; to apply your configuration.
                 </p>
               </div>
             </CardContent>

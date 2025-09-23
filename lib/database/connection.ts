@@ -16,6 +16,9 @@ const dbConfig = {
 // Create connection pool
 export const pool = new Pool(dbConfig);
 
+// Make pool the default export for @/lib/database/connection imports
+export default pool;
+
 // Test database connection
 export async function testConnection(): Promise<boolean> {
   let client: PoolClient | null = null;

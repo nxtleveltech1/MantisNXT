@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { withAuth } from '@/lib/auth'
+import { pool } from '@/lib/database/connection'
 import { z } from 'zod'
 
 const supplierSchema = z.object({
@@ -117,7 +116,7 @@ export async function GET(request: NextRequest) {
     queryParams.push(limit, offset)
 
     // Execute query
-    const result = await db.query(query, queryParams)
+    const result = await pool.query(query, queryParams)
 
     // Get total count for pagination
     let countQuery = `
@@ -179,7 +178,7 @@ export async function GET(request: NextRequest) {
       countParamIndex++
     }
 
-    const countResult = await db.query(countQuery, countParams)
+    const countResult = await pool.query(countQuery, countParams)
     const total = parseInt(countResult.rows[0].total)
     const totalPages = Math.ceil(total / limit)
 
@@ -214,7 +213,7 @@ export async function POST(request: NextRequest) {
     const validatedData = supplierSchema.parse(body)
 
     // Check for duplicate supplier name
-    const existingSupplier = await db.query(
+    const existingSupplier = await pool.query(
       'SELECT id FROM suppliers WHERE name = $1',
       [validatedData.name]
     )
@@ -237,7 +236,7 @@ export async function POST(request: NextRequest) {
       ) RETURNING *
     `
 
-    const insertResult = await db.query(insertQuery, [
+    const insertResult = await pool.query(insertQuery, [
       validatedData.name,
       validatedData.email,
       validatedData.phone,

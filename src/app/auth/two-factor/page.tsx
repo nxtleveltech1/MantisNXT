@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { QrCode, Shield, Download, Copy, CheckCircle2, AlertCircle, Building2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -88,7 +89,7 @@ IMPORTANT: Store these codes in a safe place. Each code can only be used once.
 
 ${backupCodes.map((code, index) => `${index + 1}. ${code}`).join('\n')}
 
-Keep these codes secure and don't share them with anyone.`
+Keep these codes secure and don&apos;t share them with anyone.`
 
     const blob = new Blob([content], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
@@ -285,7 +286,7 @@ Keep these codes secure and don't share them with anyone.`
                 {qrCode && (
                   <div className="flex justify-center">
                     <div className="bg-white p-4 rounded-lg border">
-                      <img src={qrCode} alt="QR Code" className="w-48 h-48" />
+                      <Image src={qrCode} alt="QR Code" width={192} height={192} className="w-48 h-48" />
                     </div>
                   </div>
                 )}
@@ -308,7 +309,7 @@ Keep these codes secure and don't share them with anyone.`
                       </Button>
                     </div>
                     <p className="text-xs text-gray-600">
-                      Copy this key and manually enter it in your authenticator app if you can't scan the QR code
+                      Copy this key and manually enter it in your authenticator app if you can&apos;t scan the QR code
                     </p>
                   </div>
                 )}

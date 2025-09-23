@@ -64,7 +64,8 @@
       "Bash(npx next:*)",
       "Bash(rm:*)",
       "Bash(tasklist:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []

@@ -894,15 +894,15 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Critical Alerts</span>
-                      <span>< 1 hour</span>
+                      <span>&lt; 1 hour</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Warning Alerts</span>
-                      <span>< 4 hours</span>
+                      <span>&lt; 4 hours</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Info Alerts</span>
-                      <span>< 24 hours</span>
+                      <span>&lt; 24 hours</span>
                     </div>
                   </div>
                 </div>

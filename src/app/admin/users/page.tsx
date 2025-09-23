@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -33,13 +33,13 @@ export default function UsersPage() {
 
   useEffect(() => {
     loadUsers()
-  }, [])
+  }, [loadUsers])
 
   useEffect(() => {
     filterUsers()
-  }, [users, searchTerm, roleFilter, statusFilter])
+  }, [filterUsers])
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -57,9 +57,9 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
 
-  const filterUsers = () => {
+  const filterUsers = useCallback(() => {
     let filtered = users
 
     // Search filter
@@ -83,7 +83,7 @@ export default function UsersPage() {
     }
 
     setFilteredUsers(filtered)
-  }
+  }, [users, searchTerm, roleFilter, statusFilter])
 
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {

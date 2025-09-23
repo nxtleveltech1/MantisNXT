@@ -13,7 +13,7 @@ import {
 } from '@/lib/api/validation'
 
 // Enhanced mock database with more comprehensive data
-let mockInventoryData: EnhancedInventoryItem[] = [
+export let mockInventoryData: EnhancedInventoryItem[] = [
   {
     id: 'item_001',
     sku: 'DELL-XPS13-001',

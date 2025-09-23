@@ -5,6 +5,9 @@ import { Pool } from 'pg';
 import { advancedMLModels } from './advanced-ml-models';
 import { queryOptimization } from './query-optimizer';
 
+// Export the main predictive analytics service for easy import
+export { PredictiveAnalyticsEngine as PredictiveAnalyticsService };
+
 // Predictive Analytics Types
 export interface PredictiveModel {
   id: string;

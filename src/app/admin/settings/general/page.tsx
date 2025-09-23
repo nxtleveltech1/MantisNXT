@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -248,9 +249,11 @@ export default function GeneralSettingsPage() {
               <div className="flex items-center gap-3">
                 <div className="h-16 w-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
                   {settings.logoUrl ? (
-                    <img
+                    <Image
                       src={settings.logoUrl}
                       alt="Logo"
+                      width={48}
+                      height={48}
                       className="h-12 w-12 object-contain"
                     />
                   ) : (
@@ -279,9 +282,11 @@ export default function GeneralSettingsPage() {
               <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded border border-gray-300 flex items-center justify-center bg-gray-50">
                   {settings.favicon && (
-                    <img
+                    <Image
                       src={settings.favicon}
                       alt="Favicon"
+                      width={16}
+                      height={16}
                       className="h-4 w-4 object-contain"
                     />
                   )}

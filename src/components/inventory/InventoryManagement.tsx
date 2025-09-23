@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -99,7 +99,7 @@ export default function InventoryManagement() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [loadData])
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
@@ -109,7 +109,7 @@ export default function InventoryManagement() {
     return () => clearTimeout(debounceTimer)
   }, [searchTerm])
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       await Promise.all([
         fetchItems(),
@@ -123,7 +123,7 @@ export default function InventoryManagement() {
         message: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     }
-  }
+  }, [fetchItems, fetchProducts, fetchSuppliers, addNotification])
 
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {

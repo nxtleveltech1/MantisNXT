@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -71,7 +70,6 @@ import type { Supplier, SupplierFilters } from '@/lib/types/inventory'
 import { format } from 'date-fns'
 
 export default function SupplierManagement() {
-  const router = useRouter()
   const {
     suppliers,
     analytics,
@@ -93,6 +91,7 @@ export default function SupplierManagement() {
   const [searchTerm, setSearchTerm] = useState(filters.search || '')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedSuppliers, setSelectedSuppliers] = useState<Set<string>>(new Set())
+  const [showAddSupplier, setShowAddSupplier] = useState(false)
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
   const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null)
 
@@ -122,35 +121,6 @@ export default function SupplierManagement() {
       })
     }
   }
-n  const handleExportSuppliers = () => {
-    // Create CSV content
-    const headers = ["Name", "Contact Person", "Email", "Phone", "Status", "Rating"]
-    const csvContent = [headers.join(",")]
-    
-    suppliers.forEach(supplier => {
-      const row = [
-        supplier.name,
-        supplier.contactPerson,
-        supplier.email,
-        supplier.phone,
-        supplier.status,
-        supplier.rating?.toString() || "N/A"
-      ]
-      csvContent.push(row.join(","))
-    })
-    
-    // Download CSV
-    const blob = new Blob([csvContent.join("
-")], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-  }
 
   const handleDeleteSupplier = async (supplierId: string) => {
     if (!confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
@@ -172,35 +142,6 @@ n  const handleExportSuppliers = () => {
       })
     }
   }
-n  const handleExportSuppliers = () => {
-    // Create CSV content
-    const headers = ["Name", "Contact Person", "Email", "Phone", "Status", "Rating"]
-    const csvContent = [headers.join(",")]
-    
-    suppliers.forEach(supplier => {
-      const row = [
-        supplier.name,
-        supplier.contactPerson,
-        supplier.email,
-        supplier.phone,
-        supplier.status,
-        supplier.rating?.toString() || "N/A"
-      ]
-      csvContent.push(row.join(","))
-    })
-    
-    // Download CSV
-    const blob = new Blob([csvContent.join("
-")], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-  }
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -220,35 +161,6 @@ n  const handleExportSuppliers = () => {
         return 'secondary'
     }
   }
-n  const handleExportSuppliers = () => {
-    // Create CSV content
-    const headers = ["Name", "Contact Person", "Email", "Phone", "Status", "Rating"]
-    const csvContent = [headers.join(",")]
-    
-    suppliers.forEach(supplier => {
-      const row = [
-        supplier.name,
-        supplier.contactPerson,
-        supplier.email,
-        supplier.phone,
-        supplier.status,
-        supplier.rating?.toString() || "N/A"
-      ]
-      csvContent.push(row.join(","))
-    })
-    
-    // Download CSV
-    const blob = new Blob([csvContent.join("
-")], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-  }
 
   const getPerformanceTierColor = (tier: string) => {
     switch (tier) {
@@ -266,35 +178,6 @@ n  const handleExportSuppliers = () => {
         return 'text-gray-400'
     }
   }
-n  const handleExportSuppliers = () => {
-    // Create CSV content
-    const headers = ["Name", "Contact Person", "Email", "Phone", "Status", "Rating"]
-    const csvContent = [headers.join(",")]
-    
-    suppliers.forEach(supplier => {
-      const row = [
-        supplier.name,
-        supplier.contactPerson,
-        supplier.email,
-        supplier.phone,
-        supplier.status,
-        supplier.rating?.toString() || "N/A"
-      ]
-      csvContent.push(row.join(","))
-    })
-    
-    // Download CSV
-    const blob = new Blob([csvContent.join("
-")], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-  }
 
   const formatCurrency = (amount: number | null) => {
     if (amount === null) return 'N/A'
@@ -304,67 +187,9 @@ n  const handleExportSuppliers = () => {
       minimumFractionDigits: 0
     }).format(amount)
   }
-n  const handleExportSuppliers = () => {
-    // Create CSV content
-    const headers = ["Name", "Contact Person", "Email", "Phone", "Status", "Rating"]
-    const csvContent = [headers.join(",")]
-    
-    suppliers.forEach(supplier => {
-      const row = [
-        supplier.name,
-        supplier.contactPerson,
-        supplier.email,
-        supplier.phone,
-        supplier.status,
-        supplier.rating?.toString() || "N/A"
-      ]
-      csvContent.push(row.join(","))
-    })
-    
-    // Download CSV
-    const blob = new Blob([csvContent.join("
-")], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-  }
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM dd, yyyy')
-  }
-n  const handleExportSuppliers = () => {
-    // Create CSV content
-    const headers = ["Name", "Contact Person", "Email", "Phone", "Status", "Rating"]
-    const csvContent = [headers.join(",")]
-    
-    suppliers.forEach(supplier => {
-      const row = [
-        supplier.name,
-        supplier.contactPerson,
-        supplier.email,
-        supplier.phone,
-        supplier.status,
-        supplier.rating?.toString() || "N/A"
-      ]
-      csvContent.push(row.join(","))
-    })
-    
-    // Download CSV
-    const blob = new Blob([csvContent.join("
-")], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
   }
 
   const statuses = ['active', 'inactive', 'suspended', 'pending_approval', 'blocked', 'under_review']
@@ -388,7 +213,6 @@ n  const handleExportSuppliers = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExportSuppliers()}
               onClick={loadData}
               disabled={loading}
             >
@@ -398,7 +222,6 @@ n  const handleExportSuppliers = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExportSuppliers()}
             >
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -406,15 +229,13 @@ n  const handleExportSuppliers = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExportSuppliers()}
             >
               <Upload className="h-4 w-4 mr-2" />
               Import
             </Button>
             <Button
-              onClick={() => router.push("/suppliers/new")}
+              onClick={() => setShowAddSupplier(true)}
               size="sm"
-              onClick={() => handleExportSuppliers()}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Supplier
@@ -503,7 +324,6 @@ n  const handleExportSuppliers = () => {
               <Button
                 variant="outline"
                 size="sm"
-              onClick={() => handleExportSuppliers()}
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <SlidersHorizontal className="h-4 w-4 mr-2" />
@@ -518,7 +338,6 @@ n  const handleExportSuppliers = () => {
               </Button>
               {Object.keys(filters).some(key => filters[key as keyof SupplierFilters]) && (
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
-              onClick={() => handleExportSuppliers()}
                   <X className="h-4 w-4 mr-2" />
                   Clear
                 </Button>
@@ -680,7 +499,7 @@ n  const handleExportSuppliers = () => {
                 <p className="text-muted-foreground mb-4">
                   Get started by adding your first supplier.
                 </p>
-                <Button onClick={() => router.push("/suppliers/new")}>
+                <Button onClick={() => setShowAddSupplier(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Supplier
                 </Button>
@@ -819,7 +638,6 @@ n  const handleExportSuppliers = () => {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm">
-              onClick={() => handleExportSuppliers()}
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>

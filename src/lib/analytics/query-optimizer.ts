@@ -704,3 +704,7 @@ export const queryOptimization = {
   optimizer: (db: Pool) => new IntelligentQueryOptimizer(db),
   monitor: (db: Pool) => new DatabasePerformanceMonitor(db)
 };
+
+// Export individual classes for direct import
+export { QueryPerformanceAnalyzer as QueryOptimizer };
+// DatabasePerformanceMonitor is already exported in class declaration

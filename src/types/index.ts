@@ -1,6 +1,60 @@
 // Extended types for the complete procurement system
 export * from './supplier';
 
+// Additional types for analytics and performance tracking
+export interface SupplierPerformance {
+  id: string;
+  supplierId: string;
+  evaluationDate: Date;
+  overallRating: number; // 0-5 scale
+  metrics: {
+    onTimeDeliveryRate: number; // 0-100%
+    qualityAcceptanceRate: number; // 0-100%
+    responseTime: number; // hours
+    costCompetitiveness: number; // 0-5 scale
+    communicationRating: number; // 0-5 scale
+    innovationScore: number; // 0-5 scale
+  };
+  issues: Array<{
+    type: 'delivery' | 'quality' | 'communication' | 'cost';
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    description: string;
+    dateReported: Date;
+    status: 'open' | 'in_progress' | 'resolved';
+  }>;
+  improvements: Array<{
+    area: string;
+    description: string;
+    impact: number; // 0-5 scale
+    implementationDate?: Date;
+  }>;
+  evaluatedBy: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface StockMovement {
+  id: string;
+  itemId: string;
+  type: 'inbound' | 'outbound' | 'adjustment' | 'transfer';
+  quantity: number;
+  unitCost?: number;
+  totalCost?: number;
+  fromLocationId?: string;
+  toLocationId?: string;
+  referenceType?: 'purchase_order' | 'sales_order' | 'stock_adjustment' | 'transfer_order';
+  referenceId?: string;
+  lotId?: string;
+  serialNumber?: string;
+  reason?: string;
+  notes?: string;
+  performedBy: string;
+  approvedBy?: string;
+  timestamp: Date;
+  organizationId?: string;
+}
+
 // Inventory Types
 export interface InventoryItem {
   id: string;

@@ -695,3 +695,6 @@ export const advancedMLModels = {
   ensemblePredictor: () => new EnsemblePredictor(),
   neuralNetwork: (layers: number[]) => new NeuralNetwork(layers)
 };
+
+// Export individual classes for direct import
+export { AdvancedSupplierPredictor as AdvancedMLModels };
