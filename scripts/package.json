@@ -1,0 +1,23 @@
+{
+  "name": "mantisnxt-cache-tools",
+  "version": "1.0.0",
+  "description": "Cache monitoring and recovery tools for MantisNXT",
+  "scripts": {
+    "cache:monitor": "node cache-monitor.js --validate",
+    "cache:monitor:verbose": "node cache-monitor.js --validate --verbose",
+    "cache:cleanup": "node cache-monitor.js --cleanup",
+    "cache:export": "node cache-monitor.js --export",
+    "cache:health": "node cache-monitor.js --validate && echo 'Cache is healthy!'",
+    "cache:recover": "bash cache-recovery.sh",
+    "cache:recover:force": "bash cache-recovery.sh --force",
+    "cache:analyze": "bash cache-recovery.sh --analyze",
+    "cache:backup": "bash cache-recovery.sh --backup-only",
+    "cache:full-check": "node cache-monitor.js --validate --verbose && bash cache-recovery.sh --analyze"
+  },
+  "main": "cache-monitor.js",
+  "keywords": ["nextjs", "webpack", "cache", "monitoring", "recovery"],
+  "author": "MantisNXT Team",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

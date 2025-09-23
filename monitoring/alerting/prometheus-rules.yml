@@ -1,0 +1,197 @@
+groups:
+  - name: mantisnxt.application
+    rules:
+      # Application availability
+      - alert: ApplicationDown
+        expr: up{job="mantisnxt-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: application
+        annotations:
+          summary: "MantisNXT application is down"
+          description: "The MantisNXT application has been down for more than 1 minute."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: application
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second over the last 5 minutes."
+
+      # High response time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: application
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s over the last 5 minutes."
+
+  - name: mantisnxt.database
+    rules:
+      # Database down
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "The PostgreSQL database has been down for more than 1 minute."
+
+      # High database connections
+      - alert: HighDatabaseConnections
+        expr: postgres_stat_database_numbackends / postgres_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connection usage is {{ $value | humanizePercentage }} of maximum."
+
+      # Database disk usage
+      - alert: DatabaseDiskUsageHigh
+        expr: (postgres_stat_database_size_bytes / (1024^3)) > 10
+        for: 10m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Database disk usage is high"
+          description: "Database size is {{ $value }}GB."
+
+      # Long running queries
+      - alert: LongRunningQueries
+        expr: postgres_stat_activity_max_tx_duration > 300
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Long running database queries detected"
+          description: "Longest running query has been active for {{ $value }}s."
+
+  - name: mantisnxt.infrastructure
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}."
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "Disk space is running low"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }} for {{ $labels.device }}."
+
+      # Container restart
+      - alert: ContainerRestarted
+        expr: increase(container_start_time_seconds[10m]) > 0
+        for: 0m
+        labels:
+          severity: info
+          service: infrastructure
+        annotations:
+          summary: "Container has been restarted"
+          description: "Container {{ $labels.name }} has been restarted."
+
+  - name: mantisnxt.security
+    rules:
+      # Failed login attempts
+      - alert: HighFailedLoginAttempts
+        expr: rate(http_requests_total{endpoint="/api/auth/login",status="401"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "High number of failed login attempts"
+          description: "{{ $value }} failed login attempts per second over the last 5 minutes."
+
+      # Rate limit exceeded
+      - alert: RateLimitExceeded
+        expr: rate(nginx_http_requests_total{status="429"}[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "Rate limit exceeded"
+          description: "{{ $value }} requests per second are being rate limited."
+
+      # SSL certificate expiry
+      - alert: SSLCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 7 * 24 * 3600
+        for: 1h
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}."
+
+  - name: mantisnxt.business
+    rules:
+      # Low upload success rate
+      - alert: LowUploadSuccessRate
+        expr: rate(http_requests_total{endpoint="/api/upload",status="200"}[10m]) / rate(http_requests_total{endpoint="/api/upload"}[10m]) < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          service: application
+        annotations:
+          summary: "Low file upload success rate"
+          description: "Upload success rate is {{ $value | humanizePercentage }} over the last 10 minutes."
+
+      # No recent inventory updates
+      - alert: NoRecentInventoryUpdates
+        expr: time() - mantisnxt_last_inventory_update_timestamp > 3600
+        for: 10m
+        labels:
+          severity: info
+          service: application
+        annotations:
+          summary: "No recent inventory updates"
+          description: "No inventory updates have been processed in the last hour."
+
+      # High number of concurrent users
+      - alert: HighConcurrentUsers
+        expr: mantisnxt_active_sessions > 100
+        for: 5m
+        labels:
+          severity: info
+          service: application
+        annotations:
+          summary: "High number of concurrent users"
+          description: "{{ $value }} concurrent users are currently active."

@@ -1,0 +1,85 @@
+# Production-optimized multi-stage build for Next.js application
+FROM node:18-alpine AS base
+
+# Install security updates and required packages
+RUN apk update && apk upgrade && \
+    apk add --no-cache libc6-compat dumb-init curl && \
+    rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+WORKDIR /app
+
+# Install dependencies only when needed
+FROM base AS deps
+COPY package.json package-lock.json* ./
+RUN npm ci --only=production --ignore-scripts && \
+    npm cache clean --force
+
+# Security scanning for dependencies
+RUN npm audit --audit-level high
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Environment variables for build
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_APP_ENV=production
+
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build the application with security optimizations
+RUN npm run build && \
+    npm prune --production
+
+# Remove development dependencies and files
+RUN rm -rf .git .gitignore README.md docs tests __tests__ \
+    *.test.* *.spec.* coverage jest.config.* \
+    .eslintrc* .prettierrc* tsconfig.json
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/uploads /app/logs /app/.next && \
+    chown -R nextjs:nodejs /app
+
+# Copy built application with proper ownership
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Security hardening
+RUN rm -rf /usr/local/lib/node_modules/npm && \
+    find /app -type f -name "*.md" -delete && \
+    find /app -type f -name "*.map" -delete
+
+# Switch to non-root user
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Health check with proper timeout
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "server.js"]

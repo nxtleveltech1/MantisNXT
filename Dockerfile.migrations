@@ -1,0 +1,84 @@
+# Database Migration Container
+FROM postgres:15-alpine
+
+# Install curl for health checks and basic tools
+RUN apk add --no-cache curl bash
+
+# Create app directory
+WORKDIR /app
+
+# Copy migration scripts
+COPY migrations/ ./migrations/
+COPY scripts/ ./scripts/
+
+# Make scripts executable
+RUN chmod +x ./scripts/*.sh
+
+# Create migration user
+RUN adduser -D -s /bin/bash migration
+
+# Copy migration runner script
+COPY <<EOF /app/run-migrations.sh
+#!/bin/bash
+set -e
+
+echo "Starting migration process..."
+
+# Wait for database to be ready
+echo "Waiting for database connection..."
+until pg_isready -h postgres -p 5432 -U \${DB_USER:-mantisnxt}; do
+  echo "Database not ready, waiting..."
+  sleep 2
+done
+
+echo "Database is ready, starting migrations..."
+
+# Check migration mode
+case "\${MIGRATION_MODE:-up}" in
+  "up")
+    echo "Running forward migrations..."
+    for migration in /app/migrations/*.sql; do
+      if [[ -f "\$migration" ]]; then
+        echo "Applying \$(basename \$migration)..."
+        psql "\$DATABASE_URL" -f "\$migration" || {
+          echo "Failed to apply \$(basename \$migration)"
+          exit 1
+        }
+      fi
+    done
+    ;;
+  "down")
+    echo "Running rollback migrations..."
+    # Run migrations in reverse order for rollback
+    for migration in \$(ls -r /app/migrations/*.sql); do
+      if [[ -f "\$migration" ]]; then
+        echo "Rolling back \$(basename \$migration)..."
+        # Extract rollback commands if they exist
+        if grep -q "-- ROLLBACK" "\$migration"; then
+          sed -n '/-- ROLLBACK/,\$p' "\$migration" | sed '1d' | psql "\$DATABASE_URL" || {
+            echo "Failed to rollback \$(basename \$migration)"
+            exit 1
+          }
+        fi
+      fi
+    done
+    ;;
+  "reset")
+    echo "Resetting database..."
+    psql "\$DATABASE_URL" -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
+    echo "Database reset complete. Run with MIGRATION_MODE=up to restore."
+    ;;
+  *)
+    echo "Invalid MIGRATION_MODE: \${MIGRATION_MODE}. Use 'up', 'down', or 'reset'"
+    exit 1
+    ;;
+esac
+
+echo "Migration process completed successfully!"
+EOF
+
+RUN chmod +x /app/run-migrations.sh
+
+USER migration
+
+CMD ["/app/run-migrations.sh"]

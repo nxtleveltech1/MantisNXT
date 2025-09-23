@@ -1,0 +1,49 @@
+version: '3.8'
+
+# Staging environment overrides
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: mantisnxt_staging
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+
+  app:
+    environment:
+      NODE_ENV: staging
+      DATABASE_URL: postgresql://${DB_USER:-mantisnxt}:${DB_PASSWORD}@postgres:5432/mantisnxt_staging
+      NEXT_PUBLIC_APP_ENV: staging
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  nginx:
+    volumes:
+      - ./nginx/conf.d/staging.conf:/etc/nginx/conf.d/app.conf:ro
+
+  # Disable production-only services in staging
+  backup:
+    deploy:
+      replicas: 0
+
+  # Reduced monitoring in staging
+  prometheus:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+  grafana:
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+
+volumes:
+  postgres_staging_data:
+    driver: local

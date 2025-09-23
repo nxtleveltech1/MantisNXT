@@ -1,0 +1,22 @@
+{
+  "name": "mantisnxt-mcp-servers",
+  "version": "1.0.0",
+  "description": "MCP servers for MantisNXT project",
+  "private": true,
+  "dependencies": {
+    "@21st-dev/magic": "^0.1.0",
+    "@heilgar/shadcn-ui-mcp-server": "^1.0.6",
+    "@jpisnice/shadcn-ui-mcp-server": "^1.1.0",
+    "@modelcontextprotocol/sdk": "^1.18.0",
+    "@modelcontextprotocol/server-filesystem": "^2025.8.21",
+    "@modelcontextprotocol/server-memory": "^2025.8.4",
+    "@modelcontextprotocol/server-sequential-thinking": "^2025.7.1",
+    "@playwright/mcp": "^0.0.37",
+    "@starwind-ui/mcp": "^0.2.1",
+    "@upstash/context7-mcp": "^1.0.17",
+    "magic-mcp-client": "^1.0.0",
+    "puppeteer-mcp-server": "^0.7.2",
+    "shadcn-studio-cli": "^1.0.0",
+    "shadcn-ui-mcp-server": "^0.1.2"
+  }
+}

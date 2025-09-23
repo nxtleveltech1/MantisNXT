@@ -1,0 +1,157 @@
+{
+  "testResults": [
+    {
+      "testPath": "\\tests\\integration\\xlsx-processing.test.ts",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 158248960,
+        "heapTotal": 106893312,
+        "heapUsed": 78553208,
+        "external": 3848141,
+        "arrayBuffers": 85026
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "testPath": "\\tests\\integration\\database-operations.test.ts",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 158253056,
+        "heapTotal": 106893312,
+        "heapUsed": 79540248,
+        "external": 3852144,
+        "arrayBuffers": 89029
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "testPath": "\\tests\\api\\suppliers.test.ts",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 158879744,
+        "heapTotal": 107417600,
+        "heapUsed": 80340992,
+        "external": 3858139,
+        "arrayBuffers": 95024
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "testPath": "\\tests\\api\\upload.test.ts",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 159031296,
+        "heapTotal": 107417600,
+        "heapUsed": 80706736,
+        "external": 3864127,
+        "arrayBuffers": 101012
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "testPath": "\\tests\\api\\inventory.test.ts",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 158990336,
+        "heapTotal": 107417600,
+        "heapUsed": 81040152,
+        "external": 3878307,
+        "arrayBuffers": 115192
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "testPath": "\\tests\\components\\NextJsXlsxConverter.test.tsx",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 117403648,
+        "heapTotal": 64352256,
+        "heapUsed": 58930688,
+        "external": 3842270,
+        "arrayBuffers": 140971
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "testPath": "\\tests\\components\\inventory\\PricelistUploadWizard.test.tsx",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 120496128,
+        "heapTotal": 64352256,
+        "heapUsed": 59754576,
+        "external": 3842277,
+        "arrayBuffers": 140978
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "testPath": "\\tests\\components\\inventory\\InventoryTable.test.tsx",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 122048512,
+        "heapTotal": 64614400,
+        "heapUsed": 60767440,
+        "external": 3842284,
+        "arrayBuffers": 140985
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "performance": {
+    "slowTests": [],
+    "memoryUsage": [],
+    "totalDuration": 8075,
+    "coverage": null
+  },
+  "summary": {
+    "totalTests": null,
+    "passedTests": 0,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "avgTestDuration": 0,
+    "slowestTest": {
+      "testPath": "\\tests\\integration\\xlsx-processing.test.ts",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 158248960,
+        "heapTotal": 106893312,
+        "heapUsed": 78553208,
+        "external": 3848141,
+        "arrayBuffers": 85026
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    "fastestTest": {
+      "testPath": "\\tests\\integration\\xlsx-processing.test.ts",
+      "duration": 0,
+      "memoryUsage": {
+        "rss": 158248960,
+        "heapTotal": 106893312,
+        "heapUsed": 78553208,
+        "external": 3848141,
+        "arrayBuffers": 85026
+      },
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    }
+  }
+}

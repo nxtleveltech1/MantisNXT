@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Crawler Boardroom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Fira+Code:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.0.0/dist/flowbite.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --background: #0a1020;
+      --foreground: #f3f6fa;
+      --card: rgba(20,28,48,0.85);
+      --card-foreground: #e0e6f0;
+      --primary: #00ffe7;
+      --secondary: #ff00c8;
+      --finance: #00ff85;
+      --ops: #00baff;
+      --hr: #ff00c8;
+      --legal: #ffe600;
+      --growth: #ff7a00;
+      --tech: #a259ff;
+      --risk: #ff2d55;
+      --brand: #00ffe7;
+      --muted: #1a2233;
+      --accent: #fff;
+      --border: #222a3a;
+      --radius: 1rem;
+      --shadow: 0 2px 24px 4px var(--primary), 0 2px 8px 0 #000a;
+      --font-sans: 'Inter', 'Orbitron', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+      --spacing: 0.5rem;
+    }
+    html, body {
+      background: var(--background) !important;
+      color: var(--foreground) !important;
+      font-family: var(--font-sans) !important;
+      min-height: 100vh;
+    }
+    .glass {
+      background: var(--card);
+      backdrop-filter: blur(16px) saturate(180%);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1.5px solid var(--border);
+    }
+    .crawler-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--background);
+      background: var(--muted);
+      box-shadow: 0 0 0 0 var(--primary);
+      transition: box-shadow 0.3s, transform 0.3s;
+      cursor: pointer;
+      position: relative;
+      margin: 0.5rem;
+    }
+    .crawler-avatar.active {
+      animation: avatarPulse 1.2s infinite alternate cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 0 16px 4px var(--primary), 0 0 32px 8px var(--accent);
+      z-index: 2;
+    }
+    @keyframes avatarPulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 8px 2px var(--primary); }
+      100% { transform: scale(1.05); box-shadow: 0 0 24px 8px var(--primary); }
+    }
+    .crawler-avatar.finance { background: var(--finance); }
+    .crawler-avatar.ops { background: var(--ops); }
+    .crawler-avatar.hr { background: var(--hr); }
+    .crawler-avatar.legal { background: var(--legal); color: #222; }
+    .crawler-avatar.growth { background: var(--growth); }
+    .crawler-avatar.tech { background: var(--tech); }
+    .crawler-avatar.risk { background: var(--risk); }
+    .crawler-avatar.brand { background: var(--brand); }
+    .crawler-tooltip {
+      position: absolute;
+      bottom: -2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card);
+      color: var(--card-foreground);
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 10;
+      box-shadow: 0 2px 8px 0 var(--primary);
+    }
+    .crawler-avatar:hover .crawler-tooltip {
+      opacity: 1;
+    }
+    .coordination-map {
+      min-height: 120px;
+      position: relative;
+      background: linear-gradient(90deg, var(--muted) 60%, var(--background) 100%);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .coordination-line {
+      position: absolute;
+      height: 4px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      box-shadow: 0 0 8px 2px var(--primary);
+      animation: lineDraw 0.8s ease-out;
+    }
+    @keyframes lineDraw {
+      0% { width: 0; opacity: 0; }
+      100% { width: 100%; opacity: 1; }
+    }
+    .recommendation-feed {
+      max-height: 180px;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+    .feed-item {
+      background: var(--card);
+      border-left: 4px solid var(--primary);
+      margin-bottom: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px 0 var(--primary);
+      animation: feedSlideIn 0.4s cubic-bezier(.4,0,.2,1);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .feed-item.urgent {
+      border-left: 4px solid var(--risk);
+      background: linear-gradient(90deg, var(--risk) 10%, var(--card) 100%);
+      animation: urgentHighlight 0.6s;
+    }
+    @keyframes feedSlideIn {
+      0% { opacity: 0; transform: translateX(40px) scale(0.95); }
+      100% { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes urgentHighlight {
+      0% { background: var(--risk); }
+      100% { background: linear-gradient(90deg, var(--risk) 10%, var(--card) 100%); }
+    }
+    .feed-action {
+      background: var(--primary);
+      color: var(--background);
+      border-radius: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px 0 var(--primary);
+    }
+    .feed-action:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 var(--primary);
+    }
+    .autonomy-panel, .feedback-panel {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 8px 0 var(--primary);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      animation: panelFadeIn 0.5s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes panelFadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .priority-slider {
+      accent-color: var(--primary);
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+    .feedback-highlight {
+      background: var(--primary);
+      color: var(--background);
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-weight: 700;
+      animation: learningHighlight 0.8s;
+    }
+    @keyframes learningHighlight {
+      0% { background: var(--primary); transform: scale(1.08); }
+      100% { background: var(--primary); transform: scale(1); }
+    }
+    .scrollbar::-webkit-scrollbar {
+      width: 8px;
+      background: var(--card);
+    }
+    .scrollbar::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="flex items-center justify-between px-8 py-4 glass mb-4">
+    <div class="flex items-center gap-4">
+      <span class="text-2xl font-bold" style="font-family: 'Orbitron', sans-serif; color: var(--primary);">CRAWLER<span style="color: var(--secondary);">AI</span></span>
+      <span class="ml-6 text-sm text-muted-foreground tracking-widest">Digital Boardroom</span>
+    </div>
+    <div class="flex items-center gap-6">
+      <button class="relative"><i data-lucide="bell" class="w-6 h-6 text-primary"></i></button>
+      <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-lg font-bold text-background shadow-lg">U</div>
+    </div>
+  </header>
+  <main class="flex-1 flex flex-col gap-6 px-8 pb-8">
+    <!-- Active Crawler Grid -->
+    <section class="glass p-6 mb-2">
+      <h2 class="text-xl font-bold mb-4" style="font-family: 'Orbitron', sans-serif; color: var(--primary);">Active Crawler Team</h2>
+      <div class="flex flex-wrap gap-2">
+        <div class="crawler-avatar finance active" title="Finance AI">
+          F
+          <span class="crawler-tooltip">Analyzing cashflow. Last: Paid 12 invoices.</span>
+        </div>
+        <div class="crawler-avatar ops active" title="Ops AI">
+          O
+          <span class="crawler-tooltip">Supplier risk detected. Mitigating...</span>
+        </div>
+        <div class="crawler-avatar hr" title="HR AI">
+          H
+          <span class="crawler-tooltip">No urgent HR tasks.</span>
+        </div>
+        <div class="crawler-avatar legal active" title="Legal AI">
+          L
+          <span class="crawler-tooltip">New regulation flagged. Summarizing...</span>
+        </div>
+        <div class="crawler-avatar growth" title="Growth AI">
+          G
+          <span class="crawler-tooltip">Market scan in progress.</span>
+        </div>
+        <div class="crawler-avatar tech active" title="Tech AI">
+          T
+          <span class="crawler-tooltip">System update deployed.</span>
+        </div>
+        <div class="crawler-avatar risk" title="Risk AI">
+          R
+          <span class="crawler-tooltip">Churn risk detected. Alerting team.</span>
+        </div>
+        <div class="crawler-avatar brand" title="Brand AI">
+          B
+          <span class="crawler-tooltip">Brand sentiment: Positive.</span>
+        </div>
+        <!-- Add more avatars for other specialties as needed -->
+      </div>
+    </section>
+    <!-- Coordination Map -->
+    <section class="glass p-6 mb-2 coordination-map relative">
+      <h2 class="text-xl font-bold mb-4" style="font-family: 'Orbitron', sans-serif; color: var(--primary);">Coordination Map</h2>
+      <!-- Example animated lines/arcs (static for demo) -->
+      <div class="coordination-line" style="top: 40px; left: 80px; width: 120px;"></div>
+      <div class="coordination-line" style="top: 60px; left: 200px; width: 80px; background: linear-gradient(90deg, var(--risk), var(--primary));"></div>
+      <div class="flex gap-8 mt-8">
+        <span class="text-sm" style="color: var(--finance);">Finance + Ops: Joint scenario analysis running…</span>
+        <span class="text-sm" style="color: var(--risk);">Risk + Legal: Compliance review in progress…</span>
+      </div>
+    </section>
+    <!-- Live Recommendation Feed -->
+    <section class="glass p-6 mb-2 recommendation-feed scrollbar">
+      <h2 class="text-xl font-bold mb-4" style="font-family: 'Orbitron', sans-serif; color: var(--primary);">Live Recommendation Feed</h2>
+      <div class="feed-item">
+        <i data-lucide="trending-up" class="w-5 h-5 text-growth"></i>
+        <span>Growth AI: New market detected. Simulate entry?</span>
+        <button class="feed-action">Simulate</button>
+        <button class="feed-action">Ask Why</button>
+      </div>
+      <div class="feed-item urgent">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-risk"></i>
+        <span>Risk AI: Supplier risk detected. Mitigate?</span>
+        <button class="feed-action">Mitigate</button>
+        <button class="feed-action">Assign to Human</button>
+      </div>
+      <div class="feed-item">
+        <i data-lucide="file-text" class="w-5 h-5 text-legal"></i>
+        <span>Legal AI: Regulation flagged. Want summary?</span>
+        <button class="feed-action">Summary</button>
+      </div>
+      <div class="feed-item">
+        <i data-lucide="users" class="w-5 h-5 text-hr"></i>
+        <span>HR AI: New candidate pipeline ready. Review?</span>
+        <button class="feed-action">Review</button>
+      </div>
+    </section>
+    <!-- Autonomy & Priority Panel + Feedback Loop -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <section class="autonomy-panel">
+        <h3 class="font-bold mb-2" style="font-family: 'Orbitron', sans-serif; color: var(--primary);">Autonomy & Priority</h3>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" checked class="accent-finance" /> Finance AI can act solo
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" checked class="accent-ops" /> Ops AI can act solo
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" class="accent-hr" /> HR AI can act solo
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" checked class="accent-legal" /> Legal AI can act solo
+          </label>
+        </div>
+        <div class="mt-4">
+          <label class="block mb-1 text-sm">Priority: Finance</label>
+          <input type="range" min="0" max="100" value="80" class="priority-slider" />
+        </div>
+      </section>
+      <section class="feedback-panel">
+        <h3 class="font-bold mb-2" style="font-family: 'Orbitron', sans-serif; color: var(--primary);">Feedback & Learning</h3>
+        <div class="feedback-highlight mb-2">Here's what we learned this week: Supplier risk flagged earlier, improved cashflow prediction accuracy by 8%.</div>
+        <div class="text-sm text-muted-foreground">Here's what we'll do differently: Increase monitoring on new suppliers, automate compliance checks.</div>
+      </section>
+    </div>
+  </main>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

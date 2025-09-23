@@ -1,0 +1,20 @@
+{
+  "api": {
+    "averageResponseTime": 0,
+    "requestsPerSecond": 0,
+    "errorRate": 0
+  },
+  "database": {
+    "averageQueryTime": 0,
+    "slowQueryCount": 0
+  },
+  "memory": {
+    "peakUsage": 0,
+    "leaksDetected": false
+  },
+  "overall": {
+    "totalDuration": 8075,
+    "testCount": null,
+    "successRate": null
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "@upstash/context7-mcp",
+        "--api-key",
+        "ctx7sk-63485f97-a194-4380-a721-55b3c5afee7b"
+      ]
+    },
+    "magic": {
+      "command": "npx",
+      "args": [
+        "@21st-dev/magic"
+      ],
+      "disabled": true,
+      "alwaysAllow": []
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "@jpisnice/shadcn-ui-mcp-server"
+      ]
+    }
+  }
+}

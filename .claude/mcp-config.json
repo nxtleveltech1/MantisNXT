@@ -1,0 +1,76 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "node",
+      "args": [
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/index.js",
+        "K:\\00Project\\MantisNXT"
+      ],
+      "description": "Filesystem operations for MantisNXT project"
+    },
+    "sequential-thinking": {
+      "command": "node",
+      "args": [
+        "node_modules/@modelcontextprotocol/server-sequential-thinking/dist/index.js"
+      ],
+      "description": "Sequential thinking and problem-solving server"
+    },
+    "memory": {
+      "command": "node",
+      "args": [
+        "node_modules/@modelcontextprotocol/server-memory/dist/index.js"
+      ],
+      "description": "Memory and knowledge graph server"
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["@upstash/context7-mcp", "--api-key", "ctx7sk-63485f97-a194-4380-a721-55b3c5afee7b"],
+      "description": "Context7 documentation server with API key configured"
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["puppeteer-mcp-server"],
+      "description": "Browser automation and testing server"
+    },
+    "magic": {
+      "command": "npx",
+      "args": ["@21st-dev/magic"],
+      "description": "Magic UI component generation server by 21st.dev"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp"],
+      "description": "Official Playwright MCP server for browser automation"
+    },
+    "magic-client": {
+      "command": "npx",
+      "args": ["magic-mcp-client"],
+      "description": "Magic MCP client for AI-powered UI component generation"
+    },
+    "shadcn-ui-jpisnice": {
+      "command": "npx",
+      "args": ["@jpisnice/shadcn-ui-mcp-server"],
+      "description": "Shadcn/UI components server with demos, blocks, and metadata"
+    },
+    "shadcn-ui-heilgar": {
+      "command": "npx",
+      "args": ["@heilgar/shadcn-ui-mcp-server"],
+      "description": "Shadcn/UI component references server"
+    },
+    "shadcn-ui-basic": {
+      "command": "npx",
+      "args": ["shadcn-ui-mcp-server"],
+      "description": "Basic Shadcn/UI component references server"
+    },
+    "shadcn-studio": {
+      "command": "npx",
+      "args": ["shadcn-studio-cli"],
+      "description": "Shadcn Studio CLI for component installation and management"
+    },
+    "starwind-ui": {
+      "command": "npx",
+      "args": ["@starwind-ui/mcp"],
+      "description": "Starwind UI components server for Astro and other frameworks"
+    }
+  }
+}

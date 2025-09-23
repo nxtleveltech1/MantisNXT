@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "K:\\00Project\\MantisNXT\\.claude\\logs\\.f60b4825b27c9773cc39d58382cb397257647009-audit.json",
+    "files": [
+        {
+            "date": 1758139055264,
+            "name": "K:\\00Project\\MantisNXT\\.claude\\logs\\mcp-puppeteer-2025-09-17.log",
+            "hash": "2eab486f46f3e2fbe087076a5ff72b6bbbfa4a16f0aa53a00f4683759b6c8f97"
+        }
+    ],
+    "hashType": "sha256"
+}
