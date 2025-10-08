@@ -1,113 +1,67 @@
-import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/lib/database';
+import { calculateTurnover, fillRate } from '@/lib/utils/inventory-metrics';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    // Get total inventory value
-    const totalValueQuery = `
-      SELECT COALESCE(SUM(total_value_zar), 0) as total_value
+    const url = new URL(req.url);
+    const days = Math.max(7, Math.min(90, parseInt(url.searchParams.get('days') || '30', 10)));
+
+    // Active items
+    const { rows: invRows } = await query(`
+      SELECT COUNT(*)::int AS total_items,
+             SUM(CASE WHEN (stock_qty <= reorder_point AND stock_qty > 0) THEN 1 ELSE 0 END)::int AS low_stock,
+             SUM(CASE WHEN stock_qty = 0 THEN 1 ELSE 0 END)::int AS out_of_stock,
+             SUM(stock_qty)::int AS total_units,
+             SUM(COALESCE(cost_price,0) * stock_qty)::numeric AS total_value
       FROM inventory_items
-    `
+    `);
 
-    // Get total items count
-    const totalItemsQuery = `
-      SELECT COUNT(*) as total_items
+    // Movements (use plural table per plan)
+    const { rows: mvRows } = await query(
+      `SELECT movement_type, quantity::numeric, created_at
+       FROM stock_movements
+       WHERE created_at >= NOW() - INTERVAL '${days} days'`
+    );
+
+    const totalOutbound = mvRows
+      .filter((m: any) => String(m.movement_type).toLowerCase() === 'outbound' || String(m.movement_type).toLowerCase() === 'out')
+      .reduce((acc: number, m: any) => acc + Number(m.quantity || 0), 0);
+
+    // Average inventory proxy: use total_units snapshot (approximation)
+    const avgInventory = Number(invRows[0]?.total_units || 0) || 0;
+    const turnover = calculateTurnover(totalOutbound, avgInventory);
+
+    // Placeholder fill rate using fulfilled vs requested (if available later)
+    const forecastAccuracy = 0.85; // integrate proper forecast calc later
+    const fr = fillRate(totalOutbound, totalOutbound); // best effort if no requested baseline
+
+    // Excess/dead stock approximations
+    const { rows: excessRows } = await query(`
+      SELECT SUM(CASE WHEN (max_stock_level IS NOT NULL AND stock_qty > max_stock_level)
+                      THEN (stock_qty - max_stock_level) * COALESCE(cost_price,0) ELSE 0 END)::numeric AS excess_value,
+             SUM(CASE WHEN (stock_qty = 0 AND updated_at < NOW() - INTERVAL '90 days')
+                      THEN COALESCE(cost_price,0) ELSE 0 END)::numeric AS dead_value
       FROM inventory_items
-    `
+    `);
 
-    // Get low stock items count
-    const lowStockQuery = `
-      SELECT COUNT(*) as low_stock_count
-      FROM inventory_items
-      WHERE current_stock <= reorder_point AND current_stock > 0
-    `
+    const payload = {
+      totalItems: invRows[0]?.total_items ?? 0,
+      lowStock: invRows[0]?.low_stock ?? 0,
+      outOfStock: invRows[0]?.out_of_stock ?? 0,
+      totalUnits: invRows[0]?.total_units ?? 0,
+      totalValue: Number(invRows[0]?.total_value ?? 0),
+      turnover,
+      forecastAccuracy,
+      fillRate: fr,
+      criticalItems: invRows[0]?.low_stock ?? 0,
+      excessStockValue: Number(excessRows[0]?.excess_value ?? 0),
+      deadStockValue: Number(excessRows[0]?.dead_value ?? 0),
+      daysWindow: days,
+    };
 
-    // Get out of stock items count
-    const outOfStockQuery = `
-      SELECT COUNT(*) as out_of_stock_count
-      FROM inventory_items
-      WHERE current_stock = 0
-    `
-
-    // Get top categories by value
-    const topCategoriesQuery = `
-      SELECT
-        p.category,
-        SUM(i.total_value_zar) as value,
-        COUNT(*) as count
-      FROM inventory_items i
-      JOIN products p ON i.product_id = p.id
-      GROUP BY p.category
-      ORDER BY value DESC
-      LIMIT 5
-    `
-
-    // Get recent stock movements
-    const recentMovementsQuery = `
-      SELECT
-        sm.*,
-        p.name as product_name,
-        p.sku
-      FROM stock_movements sm
-      JOIN inventory_items i ON sm.inventory_item_id = i.id
-      JOIN products p ON i.product_id = p.id
-      ORDER BY sm.created_at DESC
-      LIMIT 10
-    `
-
-    // Execute all queries in parallel
-    const [
-      totalValueResult,
-      totalItemsResult,
-      lowStockResult,
-      outOfStockResult,
-      topCategoriesResult,
-      recentMovementsResult
-    ] = await Promise.all([
-      db.query(totalValueQuery),
-      db.query(totalItemsQuery),
-      db.query(lowStockQuery),
-      db.query(outOfStockQuery),
-      db.query(topCategoriesQuery),
-      db.query(recentMovementsQuery)
-    ])
-
-    // Calculate average turnover (mock calculation)
-    const avgTurnover = 4.2
-
-    const analytics = {
-      totalValue: parseFloat(totalValueResult.rows[0].total_value),
-      totalItems: parseInt(totalItemsResult.rows[0].total_items),
-      lowStockCount: parseInt(lowStockResult.rows[0].low_stock_count),
-      outOfStockCount: parseInt(outOfStockResult.rows[0].out_of_stock_count),
-      avgTurnover,
-      topCategories: topCategoriesResult.rows.map(row => ({
-        name: row.category.replace('_', ' ').toUpperCase(),
-        value: parseFloat(row.value),
-        count: parseInt(row.count)
-      })),
-      recentMovements: recentMovementsResult.rows.map(row => ({
-        date: row.created_at,
-        type: row.movement_type,
-        quantity: row.quantity,
-        product: row.product_name,
-        sku: row.sku
-      }))
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: analytics
-    })
-  } catch (error) {
-    console.error('Error fetching inventory analytics:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch inventory analytics',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: true, data: payload });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: 'ANALYTICS_FAILED', detail: err?.message ?? String(err) }, { status: 500 });
   }
 }

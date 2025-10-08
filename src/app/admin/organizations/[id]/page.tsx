@@ -57,9 +57,10 @@ interface Feature {
   tier: string[]
 }
 
-export default function OrganizationDetailPage({ params }: { params: { id: string } }) {
+export default function OrganizationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const [paramData, setParamData] = useState<{ id: string } | null>(null)
   const [organization, setOrganization] = useState({
-    id: params.id,
+    id: '',
     name: 'Acme Corporation',
     domain: 'acme.mantisnxt.com',
     logo: '/logos/acme.png',
@@ -165,6 +166,14 @@ export default function OrganizationDetailPage({ params }: { params: { id: strin
   const [hasChanges, setHasChanges] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+
+  // Resolve params Promise
+  React.useEffect(() => {
+    params.then(resolvedParams => {
+      setParamData(resolvedParams)
+      setOrganization(prev => ({ ...prev, id: resolvedParams.id }))
+    })
+  }, [params])
 
   const handleOrgChange = (field: string, value: string) => {
     setOrganization(prev => ({ ...prev, [field]: value }))

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { pool } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   const results = {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   try {
     // Test 1: Database Connection
     try {
-      const connectionResult = await db.query('SELECT NOW() as current_time, version() as pg_version')
+      const connectionResult = await pool.query('SELECT NOW() as current_time, version() as pg_version')
       addTest('Database Connection', true, {
         time: connectionResult.rows[0].current_time,
         version: connectionResult.rows[0].pg_version.split(' ')[0]
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
       for (const table of tables) {
         try {
-          const result = await db.query(`SELECT COUNT(*) as count FROM ${table}`)
+          const result = await pool.query(`SELECT COUNT(*) as count FROM ${table}`)
           tableResults.push({ table, count: result.rows[0].count, status: 'exists' })
         } catch (error) {
           tableResults.push({ table, count: 0, status: 'missing' })
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     // Test 3: Suppliers CRUD Operations
     try {
       // Create test supplier
-      const createResult = await db.query(`
+      const createResult = await pool.query(`
         INSERT INTO suppliers (name, email, contact_person, primary_category, status)
         VALUES ('API Test Supplier', 'apitest@supplier.com', 'Test Contact', 'Testing', 'active')
         RETURNING id, name
@@ -80,13 +80,13 @@ export async function GET(request: NextRequest) {
       const supplierId = createResult.rows[0].id
 
       // Read supplier
-      const readResult = await db.query('SELECT * FROM suppliers WHERE id = $1', [supplierId])
+      const readResult = await pool.query('SELECT * FROM suppliers WHERE id = $1', [supplierId])
 
       // Update supplier
-      await db.query('UPDATE suppliers SET phone = $1 WHERE id = $2', ['+27123456789', supplierId])
+      await pool.query('UPDATE suppliers SET phone = $1 WHERE id = $2', ['+27123456789', supplierId])
 
       // Clean up
-      await db.query('DELETE FROM suppliers WHERE id = $1', [supplierId])
+      await pool.query('DELETE FROM suppliers WHERE id = $1', [supplierId])
 
       addTest('Suppliers CRUD', true, {
         created: createResult.rows[0].name,
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     // Test 4: Inventory Operations
     try {
       // Check inventory table structure
-      const inventorySchema = await db.query(`
+      const inventorySchema = await pool.query(`
         SELECT column_name, data_type, is_nullable
         FROM information_schema.columns
         WHERE table_name = 'inventory_items'
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
 
       // Test insert with sample data
       const testSKU = `TEST-${Date.now()}`
-      const inventoryResult = await db.query(`
+      const inventoryResult = await pool.query(`
         INSERT INTO inventory_items (sku, name, category, cost_price, stock_qty, status)
         VALUES ($1, 'Test Product', 'Test Category', 100.00, 10, 'active')
         RETURNING id, sku, name
@@ -119,14 +119,14 @@ export async function GET(request: NextRequest) {
       const inventoryId = inventoryResult.rows[0].id
 
       // Test stock movement
-      await db.query(`
+      await pool.query(`
         INSERT INTO stock_movements (item_id, movement_type, quantity, reason)
         VALUES ($1, 'in', 5, 'API Test Movement')
       `, [inventoryId])
 
       // Clean up
-      await db.query('DELETE FROM stock_movements WHERE item_id = $1', [inventoryId])
-      await db.query('DELETE FROM inventory_items WHERE id = $1', [inventoryId])
+      await pool.query('DELETE FROM stock_movements WHERE item_id = $1', [inventoryId])
+      await pool.query('DELETE FROM inventory_items WHERE id = $1', [inventoryId])
 
       addTest('Inventory Operations', true, {
         schemaColumns: inventorySchema.rows.length,
@@ -143,12 +143,12 @@ export async function GET(request: NextRequest) {
       const authResults = []
 
       for (const table of authTables) {
-        const result = await db.query(`SELECT COUNT(*) as count FROM ${table}`)
+        const result = await pool.query(`SELECT COUNT(*) as count FROM ${table}`)
         authResults.push({ table, count: parseInt(result.rows[0].count) })
       }
 
       // Check default admin user
-      const adminResult = await db.query(`
+      const adminResult = await pool.query(`
         SELECT u.email, u.first_name, u.last_name, array_agg(r.name) as roles
         FROM users u
         JOIN user_roles ur ON u.id = ur.user_id
@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
 
       for (const table of uploadTables) {
         try {
-          const result = await db.query(`SELECT COUNT(*) as count FROM ${table}`)
+          const result = await pool.query(`SELECT COUNT(*) as count FROM ${table}`)
           uploadResults.push({ table, count: parseInt(result.rows[0].count), status: 'ready' })
         } catch (error) {
           uploadResults.push({ table, count: 0, status: 'error' })
@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
       const startTime = Date.now()
 
       // Run a complex query to test performance
-      const perfResult = await db.query(`
+      const perfResult = await pool.query(`
         SELECT
           (SELECT COUNT(*) FROM suppliers) as supplier_count,
           (SELECT COUNT(*) FROM inventory_items) as inventory_count,

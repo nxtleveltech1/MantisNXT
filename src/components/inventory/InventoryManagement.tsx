@@ -65,6 +65,7 @@ import { useSupplierStore } from '@/lib/stores/supplier-store'
 import { useNotificationStore } from '@/lib/stores/notification-store'
 import type { InventoryItem, Product, Supplier, InventoryFilters } from '@/lib/types/inventory'
 import { format } from 'date-fns'
+import { deriveStockStatus } from '@/lib/utils/inventory-metrics'
 import AddProductDialog from './AddProductDialog'
 import EditProductDialog from './EditProductDialog'
 import StockAdjustmentDialog from './StockAdjustmentDialog'
@@ -97,18 +98,6 @@ export default function InventoryManagement() {
   const [adjustingStock, setAdjustingStock] = useState<InventoryItem | null>(null)
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      setFilters({ search: searchTerm })
-    }, 500)
-
-    return () => clearTimeout(debounceTimer)
-  }, [searchTerm])
-
   const loadData = useCallback(async () => {
     try {
       await Promise.all([
@@ -124,6 +113,18 @@ export default function InventoryManagement() {
       })
     }
   }, [fetchItems, fetchProducts, fetchSuppliers, addNotification])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      setFilters({ search: searchTerm })
+    }, 500)
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchTerm])
 
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
@@ -160,18 +161,48 @@ export default function InventoryManagement() {
     return 'In Stock'
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string | null | undefined) => {
+    const value = Number(amount)
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR',
       minimumFractionDigits: 0
-    }).format(amount)
+    }).format(Number.isFinite(value) ? value : 0)
   }
 
-  const enrichedItems = items.map(item => {
-    const product = products.find(p => p.id === item.product_id)
-    const supplier = suppliers.find(s => s.id === product?.supplier_id)
-    return { ...item, product, supplier }
+  const enrichedItems = items.map((item) => {
+    const matchedProduct = products.find((p) => p.id === item.product_id)
+    const baseProduct = matchedProduct || item.product || {
+      id: item.product_id || item.id,
+      supplier_id: item.supplier?.id ?? item.supplier_id ?? null,
+      name: item.product?.name || item.name || 'Unknown Product',
+      description: item.product?.description || item.description || '',
+      category: item.product?.category || item.category || 'uncategorized',
+      sku: item.product?.sku || item.sku || item.supplier_sku || '-',
+      unit_of_measure: item.product?.unit_of_measure || item.unit || 'each',
+      status: item.status || 'active',
+    } as Product
+
+    const matchedSupplier = suppliers.find((s) => s.id === baseProduct.supplier_id)
+    const baseSupplier = matchedSupplier || item.supplier || (item.supplier_name
+      ? ({ id: item.supplier?.id ?? item.supplier_id ?? 'unknown', name: item.supplier_name, status: item.supplier_status || 'unknown' } as Supplier)
+      : undefined)
+
+    const normalizedCost = Number(item.cost_per_unit_zar ?? item.cost_price ?? baseProduct.unit_cost_zar ?? 0)
+    const normalizedStock = Number(item.current_stock ?? item.currentStock ?? 0)
+    const normalizedValue = item.total_value_zar ?? item.totalValueZar ?? item.totalValue ?? normalizedStock * normalizedCost
+
+    return {
+      ...item,
+      product: baseProduct,
+      supplier: baseSupplier,
+      cost_per_unit_zar: normalizedCost,
+      total_value_zar: normalizedValue,
+      supplier_name: baseSupplier?.name || item.supplier_name || 'Unknown',
+      supplier_status: baseSupplier?.status || item.supplier_status || 'unknown',
+      stock_status: item.stock_status || deriveStockStatus(normalizedStock, Number(item.reorder_point || 0), Number(item.max_stock_level || 0)),
+      currency: item.currency || 'ZAR',
+    }
   })
 
   const categories = [...new Set(products.map(p => p.category))].sort()
@@ -260,16 +291,16 @@ export default function InventoryManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Category</label>
                     <Select
-                      value={filters.category?.[0] || ''}
+                      value={filters.category?.[0] || 'all_categories'}
                       onValueChange={(value) =>
-                        setFilters({ category: value ? [value as any] : undefined })
+                        setFilters({ category: value && value !== 'all_categories' ? [value as any] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All categories" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All categories</SelectItem>
+                        <SelectItem value="all_categories">All categories</SelectItem>
                         {categories.map(category => (
                           <SelectItem key={category} value={category}>
                             {category.replace('_', ' ').toUpperCase()}
@@ -282,16 +313,16 @@ export default function InventoryManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Supplier</label>
                     <Select
-                      value={filters.supplier_id?.[0] || ''}
+                      value={filters.supplier_id?.[0] || 'all_suppliers'}
                       onValueChange={(value) =>
-                        setFilters({ supplier_id: value ? [value] : undefined })
+                        setFilters({ supplier_id: value && value !== 'all_suppliers' ? [value] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All suppliers" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All suppliers</SelectItem>
+                        <SelectItem value="all_suppliers">All suppliers</SelectItem>
                         {suppliers.map(supplier => (
                           <SelectItem key={supplier.id} value={supplier.id}>
                             {supplier.name}
@@ -304,16 +335,16 @@ export default function InventoryManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Stock Status</label>
                     <Select
-                      value={filters.stock_status?.[0] || ''}
+                      value={filters.stock_status?.[0] || 'all_statuses'}
                       onValueChange={(value) =>
-                        setFilters({ stock_status: value ? [value as any] : undefined })
+                        setFilters({ stock_status: value && value !== 'all_statuses' ? [value as any] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All statuses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All statuses</SelectItem>
+                        <SelectItem value="all_statuses">All statuses</SelectItem>
                         {stockStatuses.map(status => (
                           <SelectItem key={status} value={status}>
                             {status.replace('_', ' ').toUpperCase()}
@@ -326,16 +357,16 @@ export default function InventoryManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Location</label>
                     <Select
-                      value={filters.location?.[0] || ''}
+                      value={filters.location?.[0] || 'all_locations'}
                       onValueChange={(value) =>
-                        setFilters({ location: value ? [value] : undefined })
+                        setFilters({ location: value && value !== 'all_locations' ? [value] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All locations" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All locations</SelectItem>
+                        <SelectItem value="all_locations">All locations</SelectItem>
                         {locations.map(location => (
                           <SelectItem key={location} value={location}>
                             {location}

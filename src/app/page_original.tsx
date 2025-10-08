@@ -51,11 +51,10 @@ const mockActivities = [
 ]
 
 const sidebarItems = [
-  { icon: HomeIcon, label: "Dashboard", href: "/", active: true },
+  { icon: HomeIcon, label: "Dashboard v1", href: "/dashboard-v1", active: true },
   { icon: Building2, label: "Suppliers", href: "/suppliers", badge: "22" },
   { icon: Users, label: "Add Supplier", href: "/suppliers/new" },
   { icon: ShoppingCart, label: "Purchase Orders", href: "/purchase-orders", badge: "12" },
-  { icon: FileText, label: "Contracts", href: "/contracts", badge: "5" },
   { icon: Package, label: "Inventory", href: "/inventory" },
   { icon: CreditCard, label: "Invoices", href: "/invoices", badge: "8" },
   { icon: DollarSign, label: "Payments", href: "/payments" },
@@ -298,3 +297,4 @@ export default function Home() {
     </div>
   )
 }
+

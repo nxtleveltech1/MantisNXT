@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { CacheInvalidator } from '@/lib/cache/invalidation'
 
 // Import mock data from parent route
 let mockWarehouseData = [
@@ -178,10 +179,10 @@ interface Params {
 // GET /api/warehouses/[id] - Get specific warehouse details
 export async function GET(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     const warehouse = mockWarehouseData.find(w => w.id === id)
 
@@ -201,7 +202,7 @@ export async function GET(
         itemName: 'Dell XPS 13 Laptop',
         quantity: 25,
         zone: 'Zone A',
-        timestamp: new Date('2024-09-22T10:30:00'),
+        timestamp: '2024-09-22T10:30:00',
         performedBy: 'warehouse.clerk@company.com'
       },
       {
@@ -210,7 +211,7 @@ export async function GET(
         action: 'capacity_change',
         zone: 'Zone B',
         details: 'Capacity increased by 500 pallets',
-        timestamp: new Date('2024-09-21T15:45:00'),
+        timestamp: '2024-09-21T15:45:00',
         performedBy: 'manager@company.com'
       }
     ]
@@ -275,10 +276,10 @@ export async function GET(
 // PUT /api/warehouses/[id] - Update specific warehouse
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const warehouseIndex = mockWarehouseData.findIndex(w => w.id === id)
@@ -329,6 +330,9 @@ export async function PUT(
 
     mockWarehouseData[warehouseIndex] = updatedWarehouse
 
+    // Invalidate cache after successful update
+    CacheInvalidator.invalidateWarehouse(id)
+
     return NextResponse.json({
       success: true,
       data: updatedWarehouse,
@@ -356,10 +360,10 @@ export async function PUT(
 // DELETE /api/warehouses/[id] - Delete specific warehouse
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     const warehouseIndex = mockWarehouseData.findIndex(w => w.id === id)
 
@@ -396,6 +400,9 @@ export async function DELETE(
     const deletedWarehouse = mockWarehouseData[warehouseIndex]
     mockWarehouseData.splice(warehouseIndex, 1)
 
+    // Invalidate cache after successful deletion
+    CacheInvalidator.invalidateWarehouse(id)
+
     return NextResponse.json({
       success: true,
       data: deletedWarehouse,
@@ -415,10 +422,10 @@ export async function DELETE(
 // POST /api/warehouses/[id] - Add zone to warehouse
 export async function POST(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const warehouseIndex = mockWarehouseData.findIndex(w => w.id === id)
@@ -476,6 +483,9 @@ export async function POST(
     warehouse.updatedAt = new Date()
 
     mockWarehouseData[warehouseIndex] = warehouse
+
+    // Invalidate cache after zone addition
+    CacheInvalidator.invalidateWarehouse(id)
 
     return NextResponse.json({
       success: true,

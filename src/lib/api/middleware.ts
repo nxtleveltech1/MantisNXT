@@ -12,6 +12,8 @@ const RATE_LIMITS = {
   auth: { requests: 5, window: 60000 }, // 5 auth requests per minute
   upload: { requests: 10, window: 60000 }, // 10 uploads per minute
   bulk: { requests: 5, window: 300000 }, // 5 bulk operations per 5 minutes
+  aiGenerate: { requests: 40, window: 60000 }, // AI text generation quotas
+  aiAnalyze: { requests: 8, window: 600000 }, // Analysis workloads are heavier
 }
 
 // Mock user data - in production this would come from database

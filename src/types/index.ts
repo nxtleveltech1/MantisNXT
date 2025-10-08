@@ -1,5 +1,6 @@
 // Extended types for the complete procurement system
 export * from './supplier';
+export * from './ai';
 
 // Additional types for analytics and performance tracking
 export interface SupplierPerformance {

@@ -312,7 +312,6 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
 
       try {
         // Mock processing logic
-        console.log(`Processing ${action.id} for order ${order.poNumber}`)
 
         // Simulate some failures
         if (Math.random() < 0.1) {

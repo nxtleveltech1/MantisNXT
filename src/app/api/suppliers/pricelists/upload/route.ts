@@ -901,7 +901,7 @@ async function createBackup(sessionId: string, processedRows: ProcessedRow[]): P
   const backup: BackupRecord = {
     id: backupId,
     sessionId,
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     affectedRecords: affectedSkus,
     originalData: JSON.parse(JSON.stringify(affectedRecords)), // Deep copy
     changesSummary: {

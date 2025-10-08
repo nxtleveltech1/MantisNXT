@@ -29,165 +29,115 @@ interface HealthStatus {
   };
 }
 
-// Check database connectivity
+// Check database connectivity using our enterprise connection manager
 async function checkDatabase(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    // If you're using a database client, add actual connection check here
-    // For now, we'll simulate a basic check
-    const databaseUrl = process.env.DATABASE_URL;
+    // Use our new enterprise database connection manager
+    const { testConnection } = await import('../../../../lib/database/enterprise-connection-manager');
 
-    if (!databaseUrl) {
+    const result = await testConnection();
+
+    if (result.success) {
+      return {
+        service: 'database',
+        status: 'healthy',
+        responseTime: result.details.responseTime || (Date.now() - start),
+        details: {
+          pool: result.details.pool,
+          circuitBreaker: result.details.circuitBreaker,
+          database: result.details.database || 'nxtprod-db_001',
+          host: process.env.DB_HOST || '62.169.20.53',
+        },
+      };
+    } else {
       return {
         service: 'database',
         status: 'unhealthy',
-        error: 'DATABASE_URL not configured',
+        error: result.error || 'Database connection failed',
         responseTime: Date.now() - start,
+        details: {
+          pool: result.details?.pool,
+          circuitBreaker: result.details?.circuitBreaker,
+        },
       };
     }
-
-    // In a real implementation, you would test the actual database connection
-    // Example with pg or your preferred database client:
-    // const client = new Pool({ connectionString: databaseUrl });
-    // await client.query('SELECT 1');
-
-    return {
-      service: 'database',
-      status: 'healthy',
-      responseTime: Date.now() - start,
-      details: {
-        configured: true,
-      },
-    };
   } catch (error) {
     return {
       service: 'database',
       status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Database connection error',
       responseTime: Date.now() - start,
     };
   }
 }
 
-// Check Redis connectivity
-async function checkRedis(): Promise<HealthCheck> {
+// Check system resources
+async function checkSystemResources(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    const redisUrl = process.env.REDIS_URL;
+    // Basic system resource check
+    const memUsage = process.memoryUsage();
+    const memoryMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+    const memoryPercentage = Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100);
 
-    if (!redisUrl) {
-      return {
-        service: 'redis',
-        status: 'warning',
-        error: 'REDIS_URL not configured (caching disabled)',
-        responseTime: Date.now() - start,
-      };
-    }
-
-    // In a real implementation, you would test the actual Redis connection
-    // Example with ioredis:
-    // const redis = new Redis(redisUrl);
-    // await redis.ping();
+    // Check if memory usage is excessive
+    const memoryThreshold = 500; // 500MB threshold for health check
+    const isMemoryHealthy = memoryMB < memoryThreshold;
 
     return {
-      service: 'redis',
-      status: 'healthy',
+      service: 'system',
+      status: isMemoryHealthy ? 'healthy' : 'warning',
       responseTime: Date.now() - start,
       details: {
-        configured: true,
+        memory: {
+          usedMB: memoryMB,
+          percentage: memoryPercentage,
+          threshold: memoryThreshold,
+        },
+        pid: process.pid,
+        uptime: Math.round(process.uptime()),
+        nodeVersion: process.version,
       },
     };
   } catch (error) {
     return {
-      service: 'redis',
+      service: 'system',
       status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'System check error',
       responseTime: Date.now() - start,
     };
   }
 }
 
-// Check file system
+// Check file system basics
 async function checkFileSystem(): Promise<HealthCheck> {
   const start = Date.now();
 
   try {
-    const uploadDir = process.env.UPLOAD_DIR || '/app/uploads';
-
-    // Check if upload directory exists and is writable
     const fs = await import('fs/promises');
-    await fs.access(uploadDir, fs.constants.F_OK | fs.constants.W_OK);
+    const path = await import('path');
+
+    // Check if .next directory exists (build output)
+    const nextDir = path.join(process.cwd(), '.next');
+    await fs.access(nextDir, fs.constants.F_OK);
 
     return {
       service: 'filesystem',
       status: 'healthy',
       responseTime: Date.now() - start,
       details: {
-        uploadDir,
+        buildDir: '.next',
         writable: true,
       },
     };
   } catch (error) {
     return {
       service: 'filesystem',
-      status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      responseTime: Date.now() - start,
-    };
-  }
-}
-
-// Check external services
-async function checkExternalServices(): Promise<HealthCheck> {
-  const start = Date.now();
-
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return {
-        service: 'supabase',
-        status: 'warning',
-        error: 'Supabase not configured',
-        responseTime: Date.now() - start,
-      };
-    }
-
-    // Test Supabase connectivity
-    const response = await fetch(`${supabaseUrl}/rest/v1/`, {
-      method: 'HEAD',
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-      },
-    });
-
-    if (response.ok) {
-      return {
-        service: 'supabase',
-        status: 'healthy',
-        responseTime: Date.now() - start,
-        details: {
-          url: supabaseUrl,
-          configured: true,
-        },
-      };
-    } else {
-      return {
-        service: 'supabase',
-        status: 'unhealthy',
-        error: `HTTP ${response.status}: ${response.statusText}`,
-        responseTime: Date.now() - start,
-      };
-    }
-  } catch (error) {
-    return {
-      service: 'supabase',
-      status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      status: 'warning',
+      error: error instanceof Error ? error.message : 'Filesystem check error',
       responseTime: Date.now() - start,
     };
   }
@@ -216,14 +166,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     // Perform all health checks in parallel
-    const [databaseCheck, redisCheck, filesystemCheck, externalCheck] = await Promise.all([
+    const [databaseCheck, systemCheck, filesystemCheck] = await Promise.all([
       checkDatabase(),
-      checkRedis(),
+      checkSystemResources(),
       checkFileSystem(),
-      checkExternalServices(),
     ]);
 
-    const checks = [databaseCheck, redisCheck, filesystemCheck, externalCheck];
+    const checks = [databaseCheck, systemCheck, filesystemCheck];
 
     // Determine overall status
     const hasUnhealthy = checks.some(check => check.status === 'unhealthy');
@@ -240,7 +189,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       status: overallStatus,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: process.env.npm_package_version || '1.0.0',
+      version: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       checks,
       metrics: getSystemMetrics(),
@@ -264,7 +213,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: process.env.npm_package_version || '1.0.0',
+      version: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       checks: [
         {

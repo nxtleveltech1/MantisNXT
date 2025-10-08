@@ -183,3 +183,36 @@ export function debounce<T extends (...args: any[]) => any>(
     timeout = setTimeout(() => func(...args), wait)
   }
 }
+
+// Timestamp utilities for consistent API serialization
+export function ensureTimestampSerialization(timestamp: Date | string | undefined | null): string {
+  if (!timestamp) return new Date().toISOString()
+
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString()
+  }
+
+  // If it's already a string, validate it's a proper ISO string
+  try {
+    return new Date(timestamp).toISOString()
+  } catch (error) {
+    console.warn('Invalid timestamp provided, using current time:', timestamp)
+    return new Date().toISOString()
+  }
+}
+
+export function parseTimestampSafely(timestamp: Date | string | undefined | null): Date | null {
+  if (!timestamp) return null
+
+  if (timestamp instanceof Date) {
+    return isNaN(timestamp.getTime()) ? null : timestamp
+  }
+
+  try {
+    const parsed = new Date(timestamp)
+    return isNaN(parsed.getTime()) ? null : parsed
+  } catch (error) {
+    console.warn('Failed to parse timestamp:', timestamp)
+    return null
+  }
+}

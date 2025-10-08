@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { testConnection, query } from "../../../../lib/database/connection";
+import { testConnection, query } from "@/lib/database/unified-connection";
 
 export async function GET(request: NextRequest) {
   try {
     // Test basic connection
-    const isConnected = await testConnection();
+    const connectionResult = await testConnection();
 
-    if (!isConnected) {
+    if (!connectionResult.success) {
       return NextResponse.json(
         {
           success: false,
           error: "Database connection failed",
+          details: connectionResult.error
         },
         { status: 500 }
       );
@@ -43,6 +44,8 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+
 
 
 

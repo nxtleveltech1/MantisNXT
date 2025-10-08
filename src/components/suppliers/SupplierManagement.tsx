@@ -351,16 +351,16 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Status</label>
                     <Select
-                      value={filters.status?.[0] || ''}
+                      value={filters.status?.[0] || 'all_statuses'}
                       onValueChange={(value) =>
-                        setFilters({ status: value ? [value as any] : undefined })
+                        setFilters({ status: value && value !== 'all_statuses' ? [value as any] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All statuses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All statuses</SelectItem>
+                        <SelectItem value="all_statuses">All statuses</SelectItem>
                         {statuses.map(status => (
                           <SelectItem key={status} value={status}>
                             {status.replace('_', ' ').toUpperCase()}
@@ -373,16 +373,16 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Performance Tier</label>
                     <Select
-                      value={filters.performance_tier?.[0] || ''}
+                      value={filters.performance_tier?.[0] || 'all_tiers'}
                       onValueChange={(value) =>
-                        setFilters({ performance_tier: value ? [value as any] : undefined })
+                        setFilters({ performance_tier: value && value !== 'all_tiers' ? [value as any] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All tiers" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All tiers</SelectItem>
+                        <SelectItem value="all_tiers">All tiers</SelectItem>
                         {performanceTiers.map(tier => (
                           <SelectItem key={tier} value={tier}>
                             {tier.toUpperCase()}
@@ -395,16 +395,16 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Category</label>
                     <Select
-                      value={filters.category?.[0] || ''}
+                      value={filters.category?.[0] || 'all_categories'}
                       onValueChange={(value) =>
-                        setFilters({ category: value ? [value] : undefined })
+                        setFilters({ category: value && value !== 'all_categories' ? [value] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All categories" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All categories</SelectItem>
+                        <SelectItem value="all_categories">All categories</SelectItem>
                         {categories.map(category => (
                           <SelectItem key={category} value={category}>
                             {category}
@@ -417,16 +417,16 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Region</label>
                     <Select
-                      value={filters.region?.[0] || ''}
+                      value={filters.region?.[0] || 'all_regions'}
                       onValueChange={(value) =>
-                        setFilters({ region: value ? [value] : undefined })
+                        setFilters({ region: value && value !== 'all_regions' ? [value] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All regions" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All regions</SelectItem>
+                        <SelectItem value="all_regions">All regions</SelectItem>
                         {regions.map(region => (
                           <SelectItem key={region} value={region}>
                             {region}
@@ -439,16 +439,16 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">BEE Level</label>
                     <Select
-                      value={filters.bee_level?.[0] || ''}
+                      value={filters.bee_level?.[0] || 'all_levels'}
                       onValueChange={(value) =>
-                        setFilters({ bee_level: value ? [value] : undefined })
+                        setFilters({ bee_level: value && value !== 'all_levels' ? [value] : undefined })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All levels" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All levels</SelectItem>
+                        <SelectItem value="all_levels">All levels</SelectItem>
                         {beeLevels.map(level => (
                           <SelectItem key={level} value={level}>
                             {level}

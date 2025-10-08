@@ -1,6 +1,29 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Supplier, SupplierSearchFilters, DashboardMetrics } from '@/types/supplier'
 
+// Simple interface that matches our actual API response
+interface DatabaseSupplier {
+  id: string
+  name: string
+  supplier_code?: string
+  company_name?: string
+  status: string
+  performance_tier: string
+  primary_category?: string
+  website?: string
+  email?: string
+  phone?: string
+  contact_person?: string
+  address?: string
+  tax_id?: string
+  payment_terms?: string
+  preferred_supplier: boolean
+  spend_last_12_months: string
+  rating: string
+  created_at: string
+  updated_at: string
+}
+
 interface UseSupplierOptions {
   filters?: SupplierSearchFilters
   autoFetch?: boolean
@@ -25,7 +48,7 @@ interface APIResponse<T> {
 export function useSuppliers(options: UseSupplierOptions = {}) {
   const { filters, autoFetch = true } = options
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [suppliers, setSuppliers] = useState<DatabaseSupplier[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -46,13 +69,15 @@ export function useSuppliers(options: UseSupplierOptions = {}) {
         params.append('preferred_only', filtersToUse.hasActiveContracts.toString())
       }
 
-      const response = await fetch(`/api/suppliers?${params.toString()}`)
+      const url = `/api/suppliers?${params.toString()}`
+
+      const response = await fetch(url)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const result: APIResponse<Supplier[]> = await response.json()
+      const result: APIResponse<DatabaseSupplier[]> = await response.json()
 
       if (result.success) {
         setSuppliers(result.data)

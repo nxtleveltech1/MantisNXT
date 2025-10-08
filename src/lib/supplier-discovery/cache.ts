@@ -87,8 +87,26 @@ class SupplierDiscoveryCache {
    * Delete cached supplier data
    */
   delete(supplierName: string, additionalContext?: any): number {
-    const key = this.generateKey(supplierName, additionalContext);
-    return this.cache.del(key);
+    // Try exact match first
+    const exactKey = this.generateKey(supplierName, additionalContext);
+    const exactDelete = this.cache.del(exactKey);
+
+    // Then delete all variations (wildcard delete)
+    const wildcardDelete = this.deleteAll(supplierName);
+
+    return exactDelete + wildcardDelete;
+  }
+
+  /**
+   * Delete all cache entries matching a supplier name pattern (wildcard)
+   */
+  deleteAll(supplierName: string): number {
+    const pattern = `supplier_${supplierName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const keys = this.cache.keys().filter(k => k.startsWith(pattern));
+    const count = keys.map(k => this.cache.del(k)).reduce((a, b) => a + b, 0);
+
+    console.log(`🗑️ Deleted ${count} cache entries for pattern: ${pattern}`);
+    return count;
   }
 
   /**

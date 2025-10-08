@@ -228,7 +228,6 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
   const handleSubmit = () => {
     if (validateStep(4)) {
       // Mock submission
-      console.log('Submitting PO:', { formData, lineItems, totalAmount: finalTotal })
       onClose()
     }
   }

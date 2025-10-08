@@ -1,460 +1,223 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/database/unified-connection";
+import { toDisplay } from "@/lib/utils/transformers/inventory";
+import { performance } from "perf_hooks";
 
-// Validation schemas
-const CreateInventoryItemSchema = z.object({
-  sku: z.string().min(1, 'SKU is required'),
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  category: z.string().min(1, 'Category is required'),
-  subcategory: z.string().optional(),
-  currentStock: z.number().min(0, 'Current stock must be non-negative'),
-  reorderPoint: z.number().min(0, 'Reorder point must be non-negative'),
-  maxStock: z.number().min(0, 'Max stock must be non-negative'),
-  minStock: z.number().min(0, 'Min stock must be non-negative'),
-  unitCost: z.number().min(0, 'Unit cost must be non-negative'),
-  unitPrice: z.number().min(0, 'Unit price must be non-negative'),
-  currency: z.string().default('USD'),
-  unit: z.string().default('pcs'),
-  supplierId: z.string().optional(),
-  supplierName: z.string().optional(),
-  supplierSku: z.string().optional(),
-  primaryLocationId: z.string(),
-  batchTracking: z.boolean().default(false),
-  tags: z.array(z.string()).default([]),
-  notes: z.string().optional()
-})
+type Format = "display" | "raw";
 
-const UpdateInventoryItemSchema = CreateInventoryItemSchema.partial()
+const SLOW_QUERY_THRESHOLD_MS = 1000;
 
-const SearchInventorySchema = z.object({
-  query: z.string().optional(),
-  category: z.array(z.string()).optional(),
-  status: z.array(z.string()).optional(),
-  warehouse: z.array(z.string()).optional(),
-  supplier: z.array(z.string()).optional(),
-  lowStock: z.boolean().optional(),
-  outOfStock: z.boolean().optional(),
-  page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(100).default(20),
-  sortBy: z.enum(['name', 'sku', 'category', 'currentStock', 'value', 'lastStockUpdate', 'status']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).default('asc')
-})
-
-// Mock database - In a real app, this would be your database connection
-let mockInventoryData = [
-  {
-    id: 'item_001',
-    sku: 'DELL-XPS13-001',
-    name: 'Dell XPS 13 Laptop (i7, 16GB)',
-    description: 'Premium ultrabook with Intel i7 processor and 16GB RAM',
-    category: 'Electronics',
-    subcategory: 'Laptops',
-    currentStock: 25,
-    reservedStock: 3,
-    availableStock: 22,
-    reorderPoint: 10,
-    maxStock: 50,
-    minStock: 5,
-    locations: [{
-      id: 'loc_001',
-      warehouseId: 'wh_001',
-      warehouseName: 'Main Warehouse',
-      zone: 'A',
-      aisle: '1',
-      shelf: '2',
-      bin: '3',
-      locationCode: 'A-1-2-3',
-      quantity: 25,
-      reservedQuantity: 3,
-      isDefault: true,
-      isPrimary: true
-    }],
-    primaryLocationId: 'loc_001',
-    batchTracking: false,
-    lots: [],
-    supplierId: 'sup_001',
-    supplierName: 'Dell Technologies',
-    supplierSku: 'XPS13-I7-16GB',
-    unitCost: 1299.99,
-    unitPrice: 1599.99,
-    currency: 'USD',
-    unit: 'pcs',
-    weight: 2.8,
-    dimensions: {
-      length: 29.5,
-      width: 19.8,
-      height: 1.7,
-      unit: 'cm'
-    },
-    status: 'active',
-    alerts: [],
-    lastStockUpdate: new Date('2024-09-22T10:30:00'),
-    lastOrderDate: new Date('2024-09-15'),
-    nextDeliveryDate: new Date('2024-09-30'),
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-09-22'),
-    createdBy: 'admin@company.com',
-    tags: ['laptop', 'premium', 'dell'],
-    notes: 'High-demand item, monitor stock levels closely'
-  }
-]
-
-// GET /api/inventory - List inventory items with filtering and pagination
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-
-    // Parse and validate query parameters
-    const queryParams = {
-      query: searchParams.get('query') || undefined,
-      category: searchParams.get('category')?.split(',') || undefined,
-      status: searchParams.get('status')?.split(',') || undefined,
-      warehouse: searchParams.get('warehouse')?.split(',') || undefined,
-      supplier: searchParams.get('supplier')?.split(',') || undefined,
-      lowStock: searchParams.get('lowStock') === 'true' || undefined,
-      outOfStock: searchParams.get('outOfStock') === 'true' || undefined,
-      page: parseInt(searchParams.get('page') || '1'),
-      limit: parseInt(searchParams.get('limit') || '20'),
-      sortBy: searchParams.get('sortBy') || undefined,
-      sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' || 'asc'
-    }
-
-    const validatedParams = SearchInventorySchema.parse(queryParams)
-
-    // Apply filters
-    let filteredItems = mockInventoryData.filter(item => {
-      // Text search
-      if (validatedParams.query) {
-        const query = validatedParams.query.toLowerCase()
-        const matchesQuery =
-          item.name.toLowerCase().includes(query) ||
-          item.sku.toLowerCase().includes(query) ||
-          item.description?.toLowerCase().includes(query) ||
-          item.category.toLowerCase().includes(query) ||
-          item.tags.some(tag => tag.toLowerCase().includes(query))
-
-        if (!matchesQuery) return false
-      }
-
-      // Category filter
-      if (validatedParams.category && validatedParams.category.length > 0) {
-        if (!validatedParams.category.includes(item.category)) return false
-      }
-
-      // Status filter
-      if (validatedParams.status && validatedParams.status.length > 0) {
-        if (!validatedParams.status.includes(item.status)) return false
-      }
-
-      // Low stock filter
-      if (validatedParams.lowStock && item.currentStock > item.reorderPoint) {
-        return false
-      }
-
-      // Out of stock filter
-      if (validatedParams.outOfStock && item.currentStock > 0) {
-        return false
-      }
-
-      return true
-    })
-
-    // Apply sorting
-    if (validatedParams.sortBy) {
-      filteredItems.sort((a, b) => {
-        let aValue: any, bValue: any
-
-        switch (validatedParams.sortBy) {
-          case 'name':
-            aValue = a.name
-            bValue = b.name
-            break
-          case 'sku':
-            aValue = a.sku
-            bValue = b.sku
-            break
-          case 'category':
-            aValue = a.category
-            bValue = b.category
-            break
-          case 'currentStock':
-            aValue = a.currentStock
-            bValue = b.currentStock
-            break
-          case 'value':
-            aValue = a.currentStock * a.unitCost
-            bValue = b.currentStock * b.unitCost
-            break
-          case 'lastStockUpdate':
-            aValue = a.lastStockUpdate
-            bValue = b.lastStockUpdate
-            break
-          case 'status':
-            aValue = a.status
-            bValue = b.status
-            break
-          default:
-            aValue = a.name
-            bValue = b.name
-        }
-
-        if (aValue < bValue) return validatedParams.sortOrder === 'asc' ? -1 : 1
-        if (aValue > bValue) return validatedParams.sortOrder === 'asc' ? 1 : -1
-        return 0
-      })
-    }
-
-    // Apply pagination
-    const total = filteredItems.length
-    const totalPages = Math.ceil(total / validatedParams.limit)
-    const offset = (validatedParams.page - 1) * validatedParams.limit
-    const paginatedItems = filteredItems.slice(offset, offset + validatedParams.limit)
-
-    // Calculate metrics
-    const metrics = {
-      totalItems: mockInventoryData.length,
-      totalValue: mockInventoryData.reduce((sum, item) => sum + (item.currentStock * item.unitCost), 0),
-      lowStockItems: mockInventoryData.filter(item => item.currentStock <= item.reorderPoint).length,
-      outOfStockItems: mockInventoryData.filter(item => item.currentStock === 0).length,
-      averageValue: mockInventoryData.length > 0 ?
-        mockInventoryData.reduce((sum, item) => sum + (item.currentStock * item.unitCost), 0) / mockInventoryData.length : 0
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: paginatedItems,
-      pagination: {
-        page: validatedParams.page,
-        limit: validatedParams.limit,
-        total,
-        totalPages,
-        hasNext: validatedParams.page < totalPages,
-        hasPrev: validatedParams.page > 1
-      },
-      metrics,
-      filters: validatedParams
-    })
-
-  } catch (error) {
-    console.error('Error fetching inventory:', error)
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid query parameters',
-        details: error.errors
-      }, { status: 400 })
-    }
-
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
-  }
+function parseFormat(req: NextRequest): Format {
+  const f = (req.nextUrl.searchParams.get("format") || "display").toLowerCase();
+  return f === "raw" ? "raw" : "display";
 }
 
-// POST /api/inventory - Create new inventory item
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const validatedData = CreateInventoryItemSchema.parse(body)
+export async function GET(req: NextRequest) {
+  const format = parseFormat(req);
 
-    // Check if SKU already exists
-    const existingItem = mockInventoryData.find(item => item.sku === validatedData.sku)
-    if (existingItem) {
-      return NextResponse.json({
-        success: false,
-        error: 'SKU already exists',
-        details: { sku: validatedData.sku }
-      }, { status: 409 })
-    }
+  const url = req.nextUrl;
+  const limitParam = parseInt(url.searchParams.get("limit") || "", 10);
+  const pageParam = parseInt(url.searchParams.get("page") || "", 10);
 
-    // Create new item
-    const newItem = {
-      id: `item_${Date.now()}`,
-      ...validatedData,
-      reservedStock: 0,
-      availableStock: validatedData.currentStock,
-      locations: [{
-        id: `loc_${Date.now()}`,
-        warehouseId: 'wh_001',
-        warehouseName: 'Main Warehouse',
-        zone: 'A',
-        aisle: '1',
-        shelf: '1',
-        bin: '1',
-        locationCode: 'A-1-1-1',
-        quantity: validatedData.currentStock,
-        reservedQuantity: 0,
-        isDefault: true,
-        isPrimary: true
-      }],
-      lots: [],
-      alerts: [],
-      status: validatedData.currentStock > 0 ? 'active' : 'out_of_stock',
-      lastStockUpdate: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: 'api_user@company.com'
-    }
+  // Enforce conservative server-side limits to prevent expensive scans/timeouts
+  const MAX_LIMIT = 1000; // hard cap per-request
+  const DEFAULT_LIMIT = 250; // safer default
+  const MAX_OFFSET = 100000; // encourage cursor-based pagination beyond this
 
-    mockInventoryData.push(newItem)
+  const limit = Number.isFinite(limitParam) && limitParam > 0
+    ? Math.min(limitParam, MAX_LIMIT)
+    : DEFAULT_LIMIT;
 
-    // Generate stock alerts if needed
-    const alerts = []
-    if (newItem.currentStock <= newItem.reorderPoint) {
-      alerts.push({
-        id: `alert_${Date.now()}`,
-        type: newItem.currentStock === 0 ? 'out_of_stock' : 'low_stock',
-        severity: 'warning',
-        title: `${newItem.currentStock === 0 ? 'Out of Stock' : 'Low Stock'} Alert`,
-        message: `${newItem.name} ${newItem.currentStock === 0 ? 'is out of stock' : 'is running low'}`,
-        isActive: true,
-        createdAt: new Date()
-      })
-    }
+  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+  const offset = (page - 1) * Math.max(limit, 1);
+  const cursor = url.searchParams.get("cursor")?.trim() || "";
 
-    return NextResponse.json({
-      success: true,
-      data: newItem,
-      alerts,
-      message: 'Inventory item created successfully'
-    }, { status: 201 })
-
-  } catch (error) {
-    console.error('Error creating inventory item:', error)
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors
-      }, { status: 400 })
-    }
-
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
+  // Request validation
+  if (limit > MAX_LIMIT) {
+    return NextResponse.json(
+      { error: "Limit too large", detail: `Maximum limit is ${MAX_LIMIT}` },
+      { status: 400 }
+    );
   }
-}
 
-// PUT /api/inventory - Batch update inventory items
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { items } = body
-
-    if (!Array.isArray(items)) {
-      return NextResponse.json({
-        success: false,
-        error: 'Items must be an array'
-      }, { status: 400 })
-    }
-
-    const updatedItems = []
-    const errors = []
-
-    for (const updateData of items) {
-      try {
-        const validatedData = UpdateInventoryItemSchema.parse(updateData)
-
-        if (!validatedData.id) {
-          errors.push({ id: updateData.id, error: 'ID is required for updates' })
-          continue
-        }
-
-        const itemIndex = mockInventoryData.findIndex(item => item.id === validatedData.id)
-        if (itemIndex === -1) {
-          errors.push({ id: validatedData.id, error: 'Item not found' })
-          continue
-        }
-
-        // Update item
-        const existingItem = mockInventoryData[itemIndex]
-        const updatedItem = {
-          ...existingItem,
-          ...validatedData,
-          availableStock: validatedData.currentStock !== undefined ?
-            validatedData.currentStock - existingItem.reservedStock :
-            existingItem.availableStock,
-          updatedAt: new Date()
-        }
-
-        mockInventoryData[itemIndex] = updatedItem
-        updatedItems.push(updatedItem)
-
-      } catch (error) {
-        errors.push({
-          id: updateData.id,
-          error: error instanceof z.ZodError ? error.errors : 'Invalid data'
-        })
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        updated: updatedItems,
-        errors
+  if (!cursor && offset > MAX_OFFSET) {
+    return NextResponse.json(
+      {
+        error: "Offset too large",
+        detail: "Use cursor-based pagination for large offsets (use 'cursor' param)",
       },
-      message: `${updatedItems.length} items updated successfully${errors.length > 0 ? `, ${errors.length} errors` : ''}`
-    })
-
-  } catch (error) {
-    console.error('Error batch updating inventory:', error)
-
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
+      { status: 400 }
+    );
   }
-}
 
-// DELETE /api/inventory - Batch delete inventory items
-export async function DELETE(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { ids } = body
+  const search = url.searchParams.get("search")?.trim() || "";
+  const category = url.searchParams.get("category")?.trim() || "";
+  const supplierId = url.searchParams.get("supplierId")?.trim() || "";
+  const status = url.searchParams.get("status")?.trim() || "";
 
-    if (!Array.isArray(ids)) {
-      return NextResponse.json({
-        success: false,
-        error: 'IDs must be an array'
-      }, { status: 400 })
-    }
-
-    const deletedItems = []
-    const notFoundIds = []
-
-    for (const id of ids) {
-      const itemIndex = mockInventoryData.findIndex(item => item.id === id)
-      if (itemIndex === -1) {
-        notFoundIds.push(id)
-        continue
-      }
-
-      const deletedItem = mockInventoryData[itemIndex]
-      mockInventoryData.splice(itemIndex, 1)
-      deletedItems.push(deletedItem)
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        deleted: deletedItems,
-        notFound: notFoundIds
+  // Validate search term length
+  if (search && search.length < 2) {
+    return NextResponse.json(
+      {
+        error: "Search term too short",
+        detail: "Search term must be at least 2 characters",
       },
-      message: `${deletedItems.length} items deleted successfully${notFoundIds.length > 0 ? `, ${notFoundIds.length} not found` : ''}`
-    })
+      { status: 400 }
+    );
+  }
 
-  } catch (error) {
-    console.error('Error batch deleting inventory:', error)
+  const where: string[] = [];
+  const params: any[] = [];
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
+  // Cursor-based pagination
+  if (cursor) {
+    const [lastSku, lastId] = cursor.split("|");
+    if (lastSku && lastId) {
+      params.push(lastSku, lastSku, lastId);
+      where.push(
+        `(ii.sku > $${params.length - 2} OR (ii.sku = $${
+          params.length - 1
+        } AND ii.id > $${params.length}))`
+      );
+    }
+  }
+
+  // Supplier filter (most selective, goes early)
+  if (supplierId) {
+    params.push(supplierId);
+    where.push(`ii.supplier_id = $${params.length}`);
+  }
+
+  // Category filter with validation (GIN index will be used)
+  if (category) {
+    const cats = category
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (cats.length > 50) {
+      return NextResponse.json(
+        {
+          error: "Too many categories",
+          detail: "Maximum 50 categories allowed",
+        },
+        { status: 400 }
+      );
+    }
+    if (cats.length > 0) {
+      params.push(cats);
+      where.push(`ii.category = ANY($${params.length})`);
+    }
+  }
+
+  // Search filter - use separate parameters for better index usage (trigram indexes)
+  if (search) {
+    params.push(`%${search}%`);
+    const skuParam = params.length;
+    params.push(`%${search}%`);
+    const nameParam = params.length;
+    where.push(`(ii.sku ILIKE $${skuParam} OR ii.name ILIKE $${nameParam})`);
+  }
+
+  // Stock status filter - uses partial indexes for optimized queries
+  if (status) {
+    // Map UI status to SQL predicates
+    switch (status) {
+      case "out_of_stock":
+        // Uses partial index: idx_inventory_items_out_of_stock (WHERE stock_qty = 0)
+        where.push(`ii.stock_qty = 0`);
+        break;
+      case "low_stock":
+        // Uses partial index: idx_inventory_items_low_stock (WHERE stock_qty > 0 AND stock_qty <= reorder_point)
+        where.push(
+          `ii.stock_qty > 0 AND ii.stock_qty <= COALESCE(ii.reorder_point, 0)`
+        );
+        break;
+      case "critical":
+        where.push(
+          `COALESCE(ii.reorder_point, 0) > 0 AND ii.stock_qty > 0 AND ii.stock_qty <= (ii.reorder_point / 2.0)`
+        );
+        break;
+      case "in_stock":
+        where.push(`ii.stock_qty > COALESCE(ii.reorder_point, 0)`);
+        break;
+      default:
+        // ignore unknown
+        break;
+    }
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  // Query hint for PostgreSQL
+  const sql = `
+    /* inventory_list_query */
+    SELECT
+      ii.id,
+      ii.sku,
+      ii.name,
+      ii.category,
+      ii.stock_qty,
+      ii.reserved_qty,
+      COALESCE(ii.available_qty, ii.stock_qty - COALESCE(ii.reserved_qty, 0)) AS available_qty,
+      ii.cost_price,
+      ii.sale_price,
+      ii.supplier_id,
+      ii.brand_id
+    FROM inventory_items AS ii
+    ${whereSql}
+    ORDER BY ii.sku ASC, ii.id ASC
+    ${cursor ? `LIMIT ${limit}` : `LIMIT ${limit} OFFSET ${offset}`}
+  `;
+
+  const queryStartTime = performance.now();
+
+  try {
+    const { rows } = await query(sql, params, { timeout: 10000, maxRetries: 0 });
+    const queryDuration = performance.now() - queryStartTime;
+
+    // Log slow queries
+    if (queryDuration > SLOW_QUERY_THRESHOLD_MS) {
+      console.warn(`🐌 SLOW INVENTORY QUERY: ${queryDuration.toFixed(2)}ms`, {
+        search,
+        category,
+        supplierId,
+        status,
+        limit,
+        offset,
+        cursor,
+        rowCount: rows.length,
+      });
+    }
+
+    // Generate next cursor for cursor-based pagination
+    let nextCursor = null;
+    if (cursor && rows.length > 0) {
+      const lastRow = rows[rows.length - 1];
+      nextCursor = `${lastRow.sku}|${lastRow.id}`;
+    }
+
+    const responseData = format === "raw" ? rows : rows.map(toDisplay);
+    const response = NextResponse.json(
+      nextCursor ? { items: responseData, nextCursor } : responseData,
+      { status: 200 }
+    );
+
+    // Add performance and pagination headers
+    response.headers.set("X-Query-Duration-Ms", queryDuration.toFixed(2));
+    response.headers.set("X-Query-Fingerprint", `inventory_list_${search ? "search" : "filter"}`);
+    response.headers.set("X-Effective-Limit", String(limit));
+    if (!cursor) {
+      response.headers.set("X-Pagination-Mode", offset > 0 ? "offset" : "offset-first-page");
+    } else {
+      response.headers.set("X-Pagination-Mode", "cursor");
+      if (nextCursor) response.headers.set("X-Next-Cursor", nextCursor);
+    }
+
+    return response;
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: "INVENTORY_QUERY_FAILED", detail: err?.message ?? String(err) },
+      { status: 500 }
+    );
   }
 }

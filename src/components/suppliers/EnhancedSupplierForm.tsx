@@ -454,8 +454,6 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
         await onSubmit(data)
       } else {
         // Default submission logic
-        console.log("Submitting supplier data:", data)
-
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000))
 

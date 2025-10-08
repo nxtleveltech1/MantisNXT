@@ -13,6 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
 import { Activity, Users, Package, DollarSign, TrendingUp, TrendingDown, AlertTriangle, CheckCircle } from 'lucide-react';
+import ActivityFeed from './ActivityFeed';
+import DataErrorBoundary from '@/components/error-boundaries/DataErrorBoundary';
+import { formatTimestamp } from '@/lib/utils/date-utils';
 
 interface DashboardMetrics {
   totalRevenue: number;
@@ -164,25 +167,26 @@ export default function RealTimeDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Connection Status */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Real-Time Dashboard</h1>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className={`h-3 w-3 rounded-full ${ordersData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-sm text-gray-600">Orders</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className={`h-3 w-3 rounded-full ${inventoryData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-sm text-gray-600">Inventory</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className={`h-3 w-3 rounded-full ${customersData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-sm text-gray-600">Customers</span>
+    <DataErrorBoundary category="ui" retryable={true}>
+      <div className="space-y-6">
+        {/* Connection Status */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Real-Time Dashboard</h1>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className={`h-3 w-3 rounded-full ${ordersData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm text-gray-600">Orders</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className={`h-3 w-3 rounded-full ${inventoryData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm text-gray-600">Inventory</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className={`h-3 w-3 rounded-full ${customersData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm text-gray-600">Customers</span>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -403,33 +407,14 @@ export default function RealTimeDashboard() {
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest system events and transactions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {metrics.recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Badge variant={
-                        activity.type === 'order' ? 'default' :
-                        activity.type === 'payment' ? 'secondary' :
-                        activity.type === 'inventory' ? 'outline' : 'destructive'
-                      }>
-                        {activity.type}
-                      </Badge>
-                      <span className="font-medium">{activity.description}</span>
-                    </div>
-                    <span className="text-sm text-gray-600">
-                      {new Date(activity.timestamp).toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <DataErrorBoundary category="data" retryable={true}>
+            <ActivityFeed
+              limit={10}
+              autoRefresh={true}
+              refreshInterval={30000}
+              showMetrics={true}
+            />
+          </DataErrorBoundary>
         </TabsContent>
       </Tabs>
 
@@ -442,6 +427,7 @@ export default function RealTimeDashboard() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </DataErrorBoundary>
   );
 }

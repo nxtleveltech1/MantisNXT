@@ -1,1 +1,256 @@
-node_modules
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+.playwright/
+test-results.json
+
+# Next.js
+.next/
+out/
+build
+dist
+
+# Production
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dev.log
+server.log
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+venv_*/
+.venv/
+.venv_*/
+ENV/
+env/
+.env
+
+# Database & Migrations
+*.db
+*.sqlite
+*.sqlite3
+nul
+
+# Batch processing
+batch*.json
+*.log
+migration*.log
+processing*.log
+tmp_*.txt
+temp_*.py
+stock_values_*.txt
+stock_migration_*.sql
+bulk_stock_insert_*.sql
+
+# Claude AI files
+.claude/mcp-config.json
+.claude/settings.local.json
+.claude/start-mcp-servers.sh
+.claude/agents/
+.claude/todos.md
+.claude/*.md
+.playwright-mcp/
+
+# Documentation (keep in repo but exclude AI-generated reports)
+*_REPORT.md
+*_SUMMARY.md
+*_COMPLETE.md
+*_FIX*.md
+AI_*.md
+AGENT_*.md
+BACKEND_*.md
+FRONTEND_*.md
+DATABASE_*.md
+CRITICAL_*.md
+EMERGENCY_*.md
+INCIDENT_*.md
+IMPLEMENTATION_*.md
+INTEGRATION_*.md
+NEON_*.md
+PERFORMANCE_*.md
+PRODUCTION_*.md
+SUPPLIER_*.md
+SYSTEM_*.md
+TIMESTAMP_*.md
+VERCEL_*.md
+CACHE_*.md
+CONTRACTS_*.md
+CURRENCY_*.md
+DATA_*.md
+INFRASTRUCTURE_*.md
+INVENTORY_*.md
+NEXTJS15_*.md
+PIPELINE_*.md
+QUICK_*.md
+REAL_*.md
+RESILIENT_*.md
+SECURITY_*.md
+ALERT_*.md
+COMPREHENSIVE_*.md
+
+# Specific files
+claudedocs/
+analyze_*.py
+column_mapping_analyzer.py
+complete_stock_migration*.sh
+comprehensive_data_validation.*
+export_all_inventory.js
+fix_*.py
+fix_*.sql
+insert_pricelist_batch.js
+inspect_batch*.py
+migrate_*.js
+process_inventory_batch*.py
+validation-report.md
+migration-report.md
+api_surface.md
+batch*.json
+deployment_guide.md
+update_claude_container.sh
+test-cache-invalidation.sh
+test-api.js
+test-server.js
+
+# BMAD Method
+BMAD-METHOD/
+.bmad-core/
+
+# Database uploads and data files
+database/FULL FINAL.csv
+database/FULLFINAL_*.csv
+database/Uploads/
+database/deduplication/
+
+# SQL scripts (keep schema but exclude data)
+sql/
+scripts/add_missing_*.js
+scripts/agent*.js
+scripts/analyze_*.py
+scripts/analyze_*.js
+scripts/batch*_processor.py
+scripts/check_*.js
+scripts/comprehensive_*.py
+scripts/create_*.sql
+scripts/data_cleanup/
+scripts/fix_*.js
+scripts/fix_*.py
+scripts/fix_*.sql
+scripts/generate_*.js
+scripts/generate_*.sql
+scripts/get_*.js
+scripts/insert_*.js
+scripts/insert_*.sql
+scripts/list_*.js
+scripts/migrate_*.js
+scripts/process_*.py
+scripts/process_*.js
+scripts/process_*.ps1
+scripts/populate_*.js
+scripts/purge_*.js
+scripts/run_*.js
+scripts/test_*.js
+scripts/validate_*.js
+scripts/validate_*.py
+scripts/verify_*.js
+scripts/*_report_*.json
+scripts/optimized_report_*.json
+scripts/processing_report_*.json
+
+# Monitoring
+monitoring/
+
+# Secrets
+secrets/
+
+# Nginx
+nginx/
+
+# Migration files
+migrations/0200_*.sql
+migrations/0201_*.sql
+migrations/0202_*.sql
+migrations/0204_*.sql
+migrations/0205_*.sql
+migrations/data/
+migrations/neon/
+
+# Database files
+database/migrations/data/
+database/migrations/neon/
+database/optimizations/
+database/performance/
+database/procedures/
+database/validation/
+database/views/
+database/ai-*.sql
+database/enhanced-*.sql
+database/production-*.sql
+
+# Docs planning
+docs/0 PLANNING/
+
+# Test files
+tests/ai/
+tests/e2e/*.spec.ts
+
+# Pages (if migrated to app directory)
+pages/
+
+# Library data imports
+lib/data-import/
+lib/data-validation/
+
+# Temporary files
+test_queries.sql
+verify_schema.sql
+create_sample_data.sql
+fix_missing_tables.sql
+temp_*.sql
+*.backup
+*.old

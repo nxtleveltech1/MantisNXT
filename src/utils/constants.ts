@@ -234,7 +234,6 @@ export const DEFAULTS = {
 export const API_ENDPOINTS = {
   SUPPLIERS: '/api/suppliers',
   PURCHASE_ORDERS: '/api/purchase-orders',
-  CONTRACTS: '/api/contracts',
   COMMUNICATIONS: '/api/communications',
   FINANCIALS: '/api/financials',
   DOCUMENTS: '/api/documents',
@@ -264,15 +263,6 @@ export const NAVIGATION_ITEMS = [
     children: [
       { label: 'All Orders', href: '/purchase-orders' },
       { label: 'Create Order', href: '/purchase-orders/new' },
-    ],
-  },
-  {
-    label: 'Contracts',
-    href: '/contracts',
-    icon: 'FileText',
-    children: [
-      { label: 'All Contracts', href: '/contracts' },
-      { label: 'Create Contract', href: '/contracts/new' },
     ],
   },
   {

@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import * as XLSX from 'xlsx'
-import { db, withTransaction } from '@/lib/db'
+import { query, withTransaction } from '@/lib/database'
 
 // Enhanced validation schemas
 const UploadSessionSchema = z.object({
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get session from database
-    const sessionResult = await db.query(`
+    const sessionResult = await query(`
       SELECT * FROM upload_sessions WHERE id = $1
     `, [sessionId])
 
@@ -242,7 +242,7 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
 
   try {
     // Get supplier information
-    const supplierResult = await db.query(
+    const supplierResult = await query(
       'SELECT name, email FROM suppliers WHERE id = $1',
       [supplierId]
     )
@@ -292,7 +292,7 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
     // Create upload session in database
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-    await db.query(`
+    await query(`
       INSERT INTO upload_sessions (
         id, supplier_id, supplier_name, filename, file_size, total_rows,
         status, progress, headers, sample_data, created_at, updated_at
@@ -309,7 +309,7 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
     ])
 
     // Store complete file data temporarily
-    await db.query(`
+    await query(`
       INSERT INTO upload_temp_data (session_id, data, created_at)
       VALUES ($1, $2, NOW())
     `, [sessionId, JSON.stringify({ headers, data })])
@@ -354,7 +354,7 @@ async function handleUploadProcessing(request: NextRequest): Promise<NextRespons
   const body = await request.json()
   const validatedData = ProcessUploadSchema.parse(body)
 
-  return withTransaction(async (client) => {
+  return await withTransaction(async (client) => {
     // Get session from database
     const sessionResult = await client.query(
       'SELECT * FROM upload_sessions WHERE id = $1',

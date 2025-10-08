@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { pool } from '@/lib/database'
 import { z } from 'zod'
 
 const productSchema = z.object({
@@ -31,24 +31,85 @@ const productSchema = z.object({
   model_number: z.string().optional()
 })
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = parseInt(searchParams.get('offset') || '0')
+
+    // Get products from products table (actual uploaded data)
     const query = `
       SELECT
-        p.*,
-        s.name as supplier_name,
-        s.status as supplier_status
+        p.id,
+        p.sku,
+        p.name,
+        p.description,
+        p.category,
+        p.brand,
+        p.cost_price as price,
+        p.retail_price as sale_price,
+        0 as stock,
+        COALESCE(p.minimum_stock, 10) as reorder_point,
+        p.status,
+        p.unit_of_measure as unit,
+        COALESCE(s.name, 'Unknown') as supplier_name,
+        p.created_at,
+        p.updated_at
       FROM products p
-      JOIN suppliers s ON p.supplier_id = s.id
+      LEFT JOIN suppliers s ON p.supplier_id = s.id
       WHERE p.status = 'active'
-      ORDER BY p.name
+      ORDER BY p.name ASC
+      LIMIT $1 OFFSET $2
     `
 
-    const result = await db.query(query)
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM products
+      WHERE status = 'active'
+    `
+
+    const [productsResult, countResult] = await Promise.all([
+      pool.query(query, [limit, offset]),
+      pool.query(countQuery)
+    ])
+
+    const products = productsResult.rows.map(row => ({
+      id: row.id,
+      sku: row.sku,
+      name: row.name,
+      description: row.description,
+      category: row.category,
+      brand: row.brand,
+      price: parseFloat(row.price),
+      salePrice: parseFloat(row.sale_price || row.price),
+      stock: row.stock,
+      reorderPoint: row.reorder_point,
+      status: row.status,
+      unit: row.unit,
+      supplier: row.supplier_name,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }))
+
+    const total = parseInt(countResult.rows[0].total)
+
+    console.log('Products API Response:', {
+      success: true,
+      dataLength: products.length,
+      total,
+      limit,
+      offset
+    })
 
     return NextResponse.json({
       success: true,
-      data: result.rows
+      data: products,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total
+      }
     })
   } catch (error) {
     console.error('Error fetching products:', error)
@@ -69,7 +130,7 @@ export async function POST(request: NextRequest) {
     const validatedData = productSchema.parse(body)
 
     // Check if supplier exists and is active
-    const supplierCheck = await db.query(
+    const supplierCheck = await pool.query(
       'SELECT id, status FROM suppliers WHERE id = $1',
       [validatedData.supplier_id]
     )
@@ -90,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     // Check for duplicate SKU if provided
     if (validatedData.sku) {
-      const skuCheck = await db.query(
+      const skuCheck = await pool.query(
         'SELECT id FROM products WHERE sku = $1 AND status = $2',
         [validatedData.sku, 'active']
       )
@@ -106,48 +167,44 @@ export async function POST(request: NextRequest) {
     // Insert product
     const insertQuery = `
       INSERT INTO products (
-        supplier_id, name, description, category, sku, unit_of_measure,
-        unit_cost_zar, lead_time_days, minimum_order_quantity, barcode,
-        weight_kg, dimensions_cm, shelf_life_days, storage_requirements,
-        country_of_origin, brand, model_number, status
+        supplier_id, name, description, category, sku, cost_price,
+        retail_price, currency, status, unit_of_measure, minimum_stock,
+        brand, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'active'
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
       ) RETURNING *
     `
 
-    const insertResult = await db.query(insertQuery, [
+    const insertResult = await pool.query(insertQuery, [
       validatedData.supplier_id,
       validatedData.name,
       validatedData.description,
       validatedData.category,
-      validatedData.sku,
-      validatedData.unit_of_measure,
+      validatedData.sku || `PROD-${Date.now()}`,
       validatedData.unit_cost_zar,
-      validatedData.lead_time_days,
-      validatedData.minimum_order_quantity,
-      validatedData.barcode,
-      validatedData.weight_kg,
-      validatedData.dimensions_cm,
-      validatedData.shelf_life_days,
-      validatedData.storage_requirements,
-      validatedData.country_of_origin,
-      validatedData.brand,
-      validatedData.model_number
+      validatedData.unit_cost_zar * 1.2, // 20% markup for retail price
+      'ZAR',
+      'active',
+      validatedData.unit_of_measure,
+      validatedData.minimum_order_quantity || 10,
+      validatedData.brand
     ])
 
-    // Create initial inventory item
+    // Create initial inventory item in inventory_items table
     const inventoryQuery = `
       INSERT INTO inventory_items (
-        product_id, location, current_stock, reserved_stock, available_stock,
-        reorder_point, max_stock_level, cost_per_unit_zar, total_value_zar,
-        stock_status
+        sku, name, description, category, cost_price, stock_qty,
+        reserved_qty, reorder_point, status, location
       ) VALUES (
-        $1, 'Main Warehouse', 0, 0, 0, 10, 100, $2, 0, 'out_of_stock'
+        $1, $2, $3, $4, $5, 0, 0, 10, 'active', 'Main Warehouse'
       )
     `
 
-    await db.query(inventoryQuery, [
-      insertResult.rows[0].id,
+    await pool.query(inventoryQuery, [
+      validatedData.sku || `PROD-${Date.now()}`,
+      validatedData.name,
+      validatedData.description,
+      validatedData.category,
       validatedData.unit_cost_zar
     ])
 

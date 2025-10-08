@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { pool } from '@/lib/database/connection'
+import { pool } from '@/lib/database'
 import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 import { AISupplierDiscoveryService } from '@/lib/suppliers/services/AISupplierDiscoveryService'
 import type {
@@ -14,7 +14,7 @@ import type {
 } from '@/lib/suppliers/types/SupplierDomain'
 
 // Initialize services
-const repository = new PostgreSQLSupplierRepository(pool)
+const repository = new PostgreSQLSupplierRepository()
 const aiService = new AISupplierDiscoveryService()
 
 // Validation Schema
@@ -44,7 +44,7 @@ function createErrorResponse(message: string, status: number = 400): NextRespons
     success: false,
     data: null,
     error: message,
-    timestamp: new Date()
+    timestamp: new Date().toISOString()
   }
 
   return NextResponse.json(response, { status })
@@ -55,7 +55,7 @@ function createSuccessResponse<T>(data: T, message?: string): NextResponse {
     success: true,
     data,
     message,
-    timestamp: new Date()
+    timestamp: new Date().toISOString()
   }
 
   return NextResponse.json(response)
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         totalExisting: existingSuppliers.total,
         newFound: sortedMatches.length,
         sources: discoveryRequest.sources,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString().toISOString()
       }
     }
 

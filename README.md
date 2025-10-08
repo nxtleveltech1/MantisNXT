@@ -91,3 +91,63 @@ For open source projects, say how it is licensed.
 
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+
+---
+
+## Performance Optimization
+
+### Query Performance
+
+For detailed information on query optimization, index usage, and troubleshooting slow queries, see:
+- [Query Optimization Guide](docs/QUERY_OPTIMIZATION_GUIDE.md)
+- [Slow Query Analysis Script](scripts/analyze-slow-queries.sql)
+
+### Monitoring
+
+Query performance metrics are available at:
+- Endpoint: `GET /api/health/query-metrics`
+- Requires authentication (admin token)
+
+### Key Metrics
+- Slow query threshold: 1000ms (configurable via `SLOW_QUERY_THRESHOLD_MS`)
+- Query logging: Enabled by default in development
+- Circuit breaker threshold: 3 consecutive failures
+
+### Quick Troubleshooting
+
+1. **Check slow queries**:
+   ```bash
+   # View query metrics
+   curl http://localhost:3000/api/health/query-metrics
+   ```
+
+2. **Analyze database performance**:
+   ```bash
+   # Connect to database
+   psql $DATABASE_URL
+   
+   # Run analysis script
+   \i scripts/analyze-slow-queries.sql
+   ```
+
+3. **Enable detailed query logging**:
+   ```bash
+   # In .env.local
+   QUERY_LOG_ENABLED=true
+   LOG_QUERY_TEXT=true
+   LOG_PARAMETERS=true
+   SLOW_QUERY_THRESHOLD_MS=500
+   ```
+
+### Index Maintenance
+
+Run these commands periodically:
+```sql
+-- Update statistics
+ANALYZE inventory_items;
+ANALYZE suppliers;
+
+-- Vacuum to reclaim space
+VACUUM ANALYZE inventory_items;
+VACUUM ANALYZE suppliers;
+```

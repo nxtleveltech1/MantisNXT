@@ -9,9 +9,9 @@ import { mockSupplierData } from '../route'
 
 // GET /api/v2/suppliers/[id] - Get specific supplier
 export const GET = ApiMiddleware.withAuth(
-  async (request: NextRequest, context: RequestContext, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context: RequestContext, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const { id } = params
+      const { id } = await params
 
       const supplier = mockSupplierData.find(supplier => supplier.id === id)
       if (!supplier) {
@@ -146,9 +146,9 @@ export const GET = ApiMiddleware.withAuth(
 
 // PUT /api/v2/suppliers/[id] - Update specific supplier
 export const PUT = ApiMiddleware.withValidation(UpdateSupplierSchema)(
-  async (request: NextRequest, context: RequestContext, validatedData, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context: RequestContext, validatedData, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const { id } = params
+      const { id } = await params
 
       const supplierIndex = mockSupplierData.findIndex(supplier => supplier.id === id)
       if (supplierIndex === -1) {
@@ -278,9 +278,9 @@ export const PUT = ApiMiddleware.withValidation(UpdateSupplierSchema)(
 
 // DELETE /api/v2/suppliers/[id] - Delete specific supplier
 export const DELETE = ApiMiddleware.withAuth(
-  async (request: NextRequest, context: RequestContext, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context: RequestContext, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const { id } = params
+      const { id } = await params
 
       const supplierIndex = mockSupplierData.findIndex(supplier => supplier.id === id)
       if (supplierIndex === -1) {

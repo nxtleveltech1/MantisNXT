@@ -206,23 +206,19 @@ const POTemplates: React.FC<POTemplatesProps> = ({ open, onClose }) => {
 
   const handleUseTemplate = (template: POTemplate) => {
     // Logic to create new PO from template
-    console.log('Using template:', template)
     onClose()
   }
 
   const handleToggleFavorite = (templateId: string) => {
     // Logic to toggle favorite status
-    console.log('Toggle favorite for template:', templateId)
   }
 
   const handleDeleteTemplate = (templateId: string) => {
     // Logic to delete template
-    console.log('Delete template:', templateId)
   }
 
   const handleDuplicateTemplate = (templateId: string) => {
     // Logic to duplicate template
-    console.log('Duplicate template:', templateId)
   }
 
   return (

@@ -746,7 +746,7 @@ export default function PurchaseOrdersPage() {
   )
 
   return (
-    <SelfContainedLayout title="Purchase Orders" breadcrumbs={[]}>
+    <SelfContainedLayout title="Purchase Orders" breadcrumbs={[{ label: "Purchase Order Management" }]}>
       <TooltipProvider>
         <div className="space-y-6">
         {/* Header */}

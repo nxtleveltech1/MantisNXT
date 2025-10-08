@@ -433,25 +433,25 @@ const QuickActions: React.FC = () => {
       icon: <Plus className="h-4 w-4" />,
       label: "Add Supplier",
       color: "bg-blue-600 hover:bg-blue-700",
-      onClick: () => console.log("Add Supplier")
+      onClick: () => {}
     },
     {
       icon: <Search className="h-4 w-4" />,
       label: "Search",
       color: "bg-green-600 hover:bg-green-700",
-      onClick: () => console.log("Search")
+      onClick: () => {}
     },
     {
       icon: <Filter className="h-4 w-4" />,
       label: "Filter",
       color: "bg-yellow-600 hover:bg-yellow-700",
-      onClick: () => console.log("Filter")
+      onClick: () => {}
     },
     {
       icon: <Download className="h-4 w-4" />,
       label: "Export",
       color: "bg-purple-600 hover:bg-purple-700",
-      onClick: () => console.log("Export")
+      onClick: () => {}
     }
   ];
 

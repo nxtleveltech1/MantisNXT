@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { pool } from '@/lib/database/connection'
+import { pool } from '@/lib/database'
 import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 import { SupplierExportService } from '@/lib/suppliers/services/SupplierExportService'
 import type {
@@ -15,7 +15,7 @@ import type {
 } from '@/lib/suppliers/types/SupplierDomain'
 
 // Initialize services
-const repository = new PostgreSQLSupplierRepository(pool)
+  const repository = new PostgreSQLSupplierRepository()
 const exportService = new SupplierExportService(repository)
 
 // Validation Schema
@@ -52,7 +52,7 @@ function createErrorResponse(message: string, status: number = 400): NextRespons
     success: false,
     data: null,
     error: message,
-    timestamp: new Date()
+    timestamp: new Date().toISOString()
   }
 
   return NextResponse.json(response, { status })

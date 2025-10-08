@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { pool } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
     // Simple metrics query that works with current schema
-    const result = await db.query(`
+    const result = await pool.query(`
       SELECT
         COUNT(*) as total_suppliers,
         COUNT(CASE WHEN status = 'active' THEN 1 END) as active_suppliers,
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         COALESCE(AVG(on_time_delivery_rate), 0) as on_time_delivery_rate,
         COALESCE(AVG(quality_rating), 0) as quality_acceptance_rate,
         0 as total_purchase_value
-      FROM supplier
+      FROM suppliers
     `)
 
     const data = result.rows[0]

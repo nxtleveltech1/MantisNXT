@@ -1,167 +1,119 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { query, withTransaction } from '@/lib/database/unified-connection'
 import { z } from 'zod'
-
-// Mock database - In a real app, this would be your database connection
-let mockInventoryData = [
-  {
-    id: 'item_001',
-    sku: 'DELL-XPS13-001',
-    name: 'Dell XPS 13 Laptop (i7, 16GB)',
-    description: 'Premium ultrabook with Intel i7 processor and 16GB RAM',
-    category: 'Electronics',
-    subcategory: 'Laptops',
-    currentStock: 25,
-    reservedStock: 3,
-    availableStock: 22,
-    reorderPoint: 10,
-    maxStock: 50,
-    minStock: 5,
-    locations: [{
-      id: 'loc_001',
-      warehouseId: 'wh_001',
-      warehouseName: 'Main Warehouse',
-      zone: 'A',
-      aisle: '1',
-      shelf: '2',
-      bin: '3',
-      locationCode: 'A-1-2-3',
-      quantity: 25,
-      reservedQuantity: 3,
-      isDefault: true,
-      isPrimary: true
-    }],
-    primaryLocationId: 'loc_001',
-    batchTracking: false,
-    lots: [],
-    supplierId: 'sup_001',
-    supplierName: 'Dell Technologies',
-    supplierSku: 'XPS13-I7-16GB',
-    unitCost: 1299.99,
-    unitPrice: 1599.99,
-    currency: 'USD',
-    unit: 'pcs',
-    weight: 2.8,
-    dimensions: {
-      length: 29.5,
-      width: 19.8,
-      height: 1.7,
-      unit: 'cm'
-    },
-    status: 'active',
-    alerts: [],
-    lastStockUpdate: new Date('2024-09-22T10:30:00'),
-    lastOrderDate: new Date('2024-09-15'),
-    nextDeliveryDate: new Date('2024-09-30'),
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-09-22'),
-    createdBy: 'admin@company.com',
-    tags: ['laptop', 'premium', 'dell'],
-    notes: 'High-demand item, monitor stock levels closely'
-  }
-]
+import { CacheInvalidator } from '@/lib/cache/invalidation'
 
 // Validation schemas
 const UpdateInventoryItemSchema = z.object({
-  sku: z.string().optional(),
-  name: z.string().optional(),
+  sku: z.string().min(1, 'SKU is required').optional(),
+  name: z.string().min(1, 'Name is required').optional(),
   description: z.string().optional(),
-  category: z.string().optional(),
+  category: z.string().min(1, 'Category is required').optional(),
   subcategory: z.string().optional(),
-  currentStock: z.number().min(0).optional(),
-  reorderPoint: z.number().min(0).optional(),
-  maxStock: z.number().min(0).optional(),
-  minStock: z.number().min(0).optional(),
-  unitCost: z.number().min(0).optional(),
-  unitPrice: z.number().min(0).optional(),
-  currency: z.string().optional(),
-  unit: z.string().optional(),
+  currentStock: z.number().min(0, 'Current stock must be non-negative').optional(),
+  reorderPoint: z.number().min(0, 'Reorder point must be non-negative').optional(),
+  maxStock: z.number().min(0, 'Max stock must be non-negative').optional(),
+  minStock: z.number().min(0, 'Min stock must be non-negative').optional(),
+  unitCost: z.number().min(0, 'Unit cost must be non-negative').optional(),
+  unitPrice: z.number().min(0, 'Unit price must be non-negative').optional(),
+  currency: z.string().default('USD').optional(),
+  unit: z.string().default('pcs').optional(),
   supplierId: z.string().optional(),
   supplierName: z.string().optional(),
   supplierSku: z.string().optional(),
   primaryLocationId: z.string().optional(),
-  batchTracking: z.boolean().optional(),
-  tags: z.array(z.string()).optional(),
-  notes: z.string().optional()
+  batchTracking: z.boolean().default(false).optional(),
+  tags: z.array(z.string()).default([]).optional(),
+  notes: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'discontinued']).optional()
 })
 
-const StockAdjustmentSchema = z.object({
-  adjustment: z.number(),
-  reason: z.string().min(1, 'Reason is required'),
-  locationId: z.string().optional(),
-  lotNumber: z.string().optional(),
-  referenceNumber: z.string().optional(),
-  notes: z.string().optional()
-})
-
-interface Params {
-  id: string
+interface RouteParams {
+  params: Promise<{
+    id: string
+  }>
 }
 
-// GET /api/inventory/[id] - Get specific inventory item
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Params }
-) {
+// GET /api/inventory/[id] - Get single inventory item
+export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params
+    const { id } = await params
 
-    const item = mockInventoryData.find(item => item.id === id)
-
-    if (!item) {
+    if (!id) {
       return NextResponse.json({
         success: false,
-        error: 'Inventory item not found'
+        error: 'Item ID is required'
+      }, { status: 400 })
+    }
+
+    // Use query() for read-only operations
+    const itemQuery = `
+      SELECT
+        i.*,
+        s.name as supplier_name,
+        s.contact_email as supplier_email,
+        s.contact_phone as supplier_phone
+      FROM inventory_items i
+      LEFT JOIN suppliers s ON i.supplier_id = s.id
+      WHERE i.id = $1
+    `
+
+    const result = await query(itemQuery, [id])
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'Item not found'
       }, { status: 404 })
     }
 
-    // Get stock movement history for this item (mock data)
-    const stockMovements = [
-      {
-        id: 'mov_001',
-        type: 'inbound',
-        quantity: 30,
-        reason: 'Purchase Order Receipt',
-        timestamp: new Date('2024-09-20T10:00:00'),
-        performedBy: 'warehouse.clerk@company.com',
-        referenceNumber: 'PO-2024-0850'
-      },
-      {
-        id: 'mov_002',
-        type: 'outbound',
-        quantity: -5,
-        reason: 'Sales Order Fulfillment',
-        timestamp: new Date('2024-09-21T14:30:00'),
-        performedBy: 'picker.jane@company.com',
-        referenceNumber: 'SO-2024-1420'
-      }
-    ]
+    const item = result.rows[0]
 
-    // Get related alerts for this item
-    const alerts = [
-      {
-        id: 'alert_001',
-        type: 'low_stock',
-        severity: 'warning',
-        message: 'Stock level approaching reorder point',
-        isActive: item.currentStock <= item.reorderPoint,
-        createdAt: new Date('2024-09-22T08:00:00')
-      }
-    ]
+    // Get stock movements for this item (last 10)
+    const movementsQuery = `
+      SELECT
+        type,
+        quantity,
+        reason,
+        notes,
+        created_at,
+        created_by
+      FROM stock_movements
+      WHERE inventory_item_id = $1
+      ORDER BY created_at DESC
+      LIMIT 10
+    `
+
+    const movementsResult = await query(movementsQuery, [id])
+
+    // Calculate inventory metrics
+    const totalValue = (item.stock_qty || 0) * (item.unit_cost || 0)
+    const isLowStock = (item.stock_qty || 0) <= (item.reorder_point || 0)
+    const isOutOfStock = (item.stock_qty || 0) === 0
+
+    const responseData = {
+      ...item,
+      totalValue,
+      isLowStock,
+      isOutOfStock,
+      recentMovements: movementsResult.rows,
+      // Convert database snake_case to frontend camelCase
+      currentStock: item.stock_qty,
+      unitCost: item.unit_cost,
+      unitPrice: item.unit_price,
+      reorderPoint: item.reorder_point,
+      maxStock: item.max_stock,
+      minStock: item.min_stock,
+      primaryLocationId: item.primary_location_id,
+      supplierSku: item.supplier_sku,
+      batchTracking: item.batch_tracking || false,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    }
 
     return NextResponse.json({
       success: true,
-      data: {
-        ...item,
-        stockMovements,
-        alerts: alerts.filter(alert => alert.isActive),
-        analytics: {
-          stockTurnover: 4.2,
-          daysInStock: 87,
-          velocity: 'medium',
-          lastMovementDate: new Date('2024-09-21T14:30:00'),
-          averageMonthlyConsumption: 12
-        }
-      }
+      data: responseData
     })
 
   } catch (error) {
@@ -174,82 +126,116 @@ export async function GET(
   }
 }
 
-// PUT /api/inventory/[id] - Update specific inventory item
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Params }
-) {
+// PUT /api/inventory/[id] - Update single inventory item
+export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
-    const itemIndex = mockInventoryData.findIndex(item => item.id === id)
-
-    if (itemIndex === -1) {
+    if (!id) {
       return NextResponse.json({
         success: false,
-        error: 'Inventory item not found'
-      }, { status: 404 })
+        error: 'Item ID is required'
+      }, { status: 400 })
     }
 
     const validatedData = UpdateInventoryItemSchema.parse(body)
 
-    // Check if SKU change conflicts with existing items
-    if (validatedData.sku) {
-      const existingItem = mockInventoryData.find(item =>
-        item.sku === validatedData.sku && item.id !== id
+    // Use withTransaction for atomic operations
+    const result = await withTransaction(async (client) => {
+      // Check if item exists
+      const checkResult = await client.query(
+        'SELECT * FROM inventory_items WHERE id = $1',
+        [id]
       )
-      if (existingItem) {
-        return NextResponse.json({
-          success: false,
-          error: 'SKU already exists for another item',
-          details: { sku: validatedData.sku }
-        }, { status: 409 })
+
+      if (checkResult.rows.length === 0) {
+        throw new Error('Item not found')
       }
-    }
 
-    const existingItem = mockInventoryData[itemIndex]
-    const updatedItem = {
-      ...existingItem,
-      ...validatedData,
-      availableStock: validatedData.currentStock !== undefined ?
-        validatedData.currentStock - existingItem.reservedStock :
-        existingItem.availableStock,
-      updatedAt: new Date()
-    }
+      // Check for SKU uniqueness if updating SKU
+      if (validatedData.sku) {
+        const existingItem = await client.query(
+          'SELECT id FROM inventory_items WHERE sku = $1 AND id != $2',
+          [validatedData.sku, id]
+        )
 
-    // Update status based on stock levels
-    if (validatedData.currentStock !== undefined) {
-      if (validatedData.currentStock === 0) {
-        updatedItem.status = 'out_of_stock'
-      } else if (validatedData.currentStock <= updatedItem.reorderPoint) {
-        updatedItem.status = 'low_stock'
-      } else {
-        updatedItem.status = 'active'
+        if (existingItem.rows.length > 0) {
+          throw new Error('SKU already exists for another item')
+        }
       }
-    }
 
-    mockInventoryData[itemIndex] = updatedItem
+      // Build dynamic update query
+      const updateFields = []
+      const updateValues = []
+      let paramIndex = 1
 
-    // Generate alerts if stock levels require attention
-    const alerts = []
-    if (updatedItem.currentStock <= updatedItem.reorderPoint) {
-      alerts.push({
-        id: `alert_${Date.now()}`,
-        type: updatedItem.currentStock === 0 ? 'out_of_stock' : 'low_stock',
-        severity: updatedItem.currentStock === 0 ? 'critical' : 'warning',
-        title: `${updatedItem.currentStock === 0 ? 'Out of Stock' : 'Low Stock'} Alert`,
-        message: `${updatedItem.name} ${updatedItem.currentStock === 0 ? 'is out of stock' : 'is running low'}`,
-        isActive: true,
-        createdAt: new Date()
+      Object.entries(validatedData).forEach(([key, value]) => {
+        if (value !== undefined) {
+          // Convert camelCase to snake_case for database columns
+          let dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase()
+
+          // Handle special cases
+          if (dbKey === 'current_stock') dbKey = 'stock_qty'
+          if (dbKey === 'unit_cost') dbKey = 'unit_cost'
+          if (dbKey === 'unit_price') dbKey = 'unit_price'
+
+          updateFields.push(`${dbKey} = $${paramIndex}`)
+          updateValues.push(value)
+          paramIndex++
+        }
       })
-    }
+
+      updateFields.push(`updated_at = $${paramIndex}`)
+      updateValues.push(new Date())
+      updateValues.push(id) // for WHERE clause
+
+      const updateQuery = `
+        UPDATE inventory_items
+        SET ${updateFields.join(', ')}
+        WHERE id = $${paramIndex + 1}
+        RETURNING *
+      `
+
+      const updateResult = await client.query(updateQuery, updateValues)
+
+      // Create stock movement record if stock quantity changed
+      if (validatedData.currentStock !== undefined) {
+        const oldStock = checkResult.rows[0].stock_qty || 0
+        const newStock = validatedData.currentStock
+        const difference = newStock - oldStock
+
+        if (difference !== 0) {
+          await client.query(`
+            INSERT INTO stock_movements (
+              inventory_item_id,
+              type,
+              quantity,
+              reason,
+              notes,
+              created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6)
+          `, [
+            id,
+            difference > 0 ? 'adjustment_in' : 'adjustment_out',
+            Math.abs(difference),
+            'Manual adjustment via API',
+            `Stock adjusted from ${oldStock} to ${newStock}`,
+            new Date()
+          ])
+        }
+      }
+
+      return updateResult.rows[0]
+    })
+
+    // Invalidate cache after successful update
+    CacheInvalidator.invalidateInventory(id, result.supplier_id)
 
     return NextResponse.json({
       success: true,
-      data: updatedItem,
-      alerts,
-      message: 'Inventory item updated successfully'
+      data: result,
+      message: 'Item updated successfully'
     })
 
   } catch (error) {
@@ -258,9 +244,25 @@ export async function PUT(
     if (error instanceof z.ZodError) {
       return NextResponse.json({
         success: false,
-        error: 'Invalid request data',
+        error: 'Validation error',
         details: error.errors
       }, { status: 400 })
+    }
+
+    // Handle custom error messages from transaction
+    if (error instanceof Error) {
+      if (error.message === 'Item not found') {
+        return NextResponse.json({
+          success: false,
+          error: error.message
+        }, { status: 404 })
+      }
+      if (error.message === 'SKU already exists for another item') {
+        return NextResponse.json({
+          success: false,
+          error: error.message
+        }, { status: 400 })
+      }
     }
 
     return NextResponse.json({
@@ -270,163 +272,86 @@ export async function PUT(
   }
 }
 
-// DELETE /api/inventory/[id] - Delete specific inventory item
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Params }
-) {
+// DELETE /api/inventory/[id] - Delete single inventory item
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params
+    const { id } = await params
 
-    const itemIndex = mockInventoryData.findIndex(item => item.id === id)
-
-    if (itemIndex === -1) {
+    if (!id) {
       return NextResponse.json({
         success: false,
-        error: 'Inventory item not found'
-      }, { status: 404 })
+        error: 'Item ID is required'
+      }, { status: 400 })
     }
 
-    const deletedItem = mockInventoryData[itemIndex]
+    // Use withTransaction for atomic delete operations
+    const result = await withTransaction(async (client) => {
+      // Check if item exists
+      const checkResult = await client.query(
+        'SELECT * FROM inventory_items WHERE id = $1',
+        [id]
+      )
 
-    // Check if item has reserved stock or active orders
-    if (deletedItem.reservedStock > 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'Cannot delete item with reserved stock',
-        details: { reservedStock: deletedItem.reservedStock }
-      }, { status: 409 })
-    }
+      if (checkResult.rows.length === 0) {
+        throw new Error('Item not found')
+      }
 
-    // Soft delete in production - here we'll actually remove it
-    mockInventoryData.splice(itemIndex, 1)
+      // Check if there are any pending orders or movements
+      const dependenciesQuery = `
+        SELECT
+          (SELECT COUNT(*) FROM stock_movements WHERE inventory_item_id = $1) as movements_count
+      `
+
+      const dependenciesResult = await client.query(dependenciesQuery, [id])
+      const { movements_count } = dependenciesResult.rows[0]
+
+      // If there are movements, soft delete by changing status to 'discontinued'
+      if (movements_count > 0) {
+        const updateResult = await client.query(
+          `UPDATE inventory_items
+           SET status = 'discontinued', updated_at = $1
+           WHERE id = $2
+           RETURNING *`,
+          [new Date(), id]
+        )
+
+        return {
+          type: 'soft_delete',
+          data: updateResult.rows[0],
+          message: 'Item marked as discontinued (soft delete due to existing movements)'
+        }
+      }
+
+      // Hard delete if no dependencies
+      const deleteResult = await client.query(
+        'DELETE FROM inventory_items WHERE id = $1 RETURNING *',
+        [id]
+      )
+
+      return {
+        type: 'hard_delete',
+        data: deleteResult.rows[0],
+        message: 'Item deleted successfully'
+      }
+    })
+
+    // Invalidate cache after delete
+    CacheInvalidator.invalidateInventory(id, result.data.supplier_id)
 
     return NextResponse.json({
       success: true,
-      data: deletedItem,
-      message: 'Inventory item deleted successfully'
+      data: result.data,
+      message: result.message
     })
 
   } catch (error) {
     console.error('Error deleting inventory item:', error)
 
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
-  }
-}
-
-// POST /api/inventory/[id]/stock-adjustment - Adjust stock for specific item
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Params }
-) {
-  try {
-    const { id } = params
-    const body = await request.json()
-
-    const itemIndex = mockInventoryData.findIndex(item => item.id === id)
-
-    if (itemIndex === -1) {
+    if (error instanceof Error && error.message === 'Item not found') {
       return NextResponse.json({
         success: false,
-        error: 'Inventory item not found'
+        error: error.message
       }, { status: 404 })
-    }
-
-    const validatedData = StockAdjustmentSchema.parse(body)
-    const existingItem = mockInventoryData[itemIndex]
-
-    // Calculate new stock level
-    const newStock = existingItem.currentStock + validatedData.adjustment
-
-    if (newStock < 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'Insufficient stock for adjustment',
-        details: {
-          currentStock: existingItem.currentStock,
-          requestedAdjustment: validatedData.adjustment,
-          resultingStock: newStock
-        }
-      }, { status: 409 })
-    }
-
-    // Update item
-    const updatedItem = {
-      ...existingItem,
-      currentStock: newStock,
-      availableStock: newStock - existingItem.reservedStock,
-      lastStockUpdate: new Date(),
-      updatedAt: new Date()
-    }
-
-    // Update status based on new stock level
-    if (newStock === 0) {
-      updatedItem.status = 'out_of_stock'
-    } else if (newStock <= updatedItem.reorderPoint) {
-      updatedItem.status = 'low_stock'
-    } else {
-      updatedItem.status = 'active'
-    }
-
-    mockInventoryData[itemIndex] = updatedItem
-
-    // Create stock movement record
-    const stockMovement = {
-      id: `mov_${Date.now()}`,
-      itemId: id,
-      type: validatedData.adjustment > 0 ? 'inbound' : 'outbound',
-      subType: 'adjustment',
-      quantity: Math.abs(validatedData.adjustment),
-      reason: validatedData.reason,
-      locationId: validatedData.locationId || existingItem.primaryLocationId,
-      lotNumber: validatedData.lotNumber,
-      referenceNumber: validatedData.referenceNumber || `ADJ-${Date.now()}`,
-      unitCost: existingItem.unitCost,
-      totalValue: Math.abs(validatedData.adjustment) * existingItem.unitCost,
-      performedBy: 'api_user@company.com', // In real app, get from auth
-      timestamp: new Date(),
-      notes: validatedData.notes
-    }
-
-    // Generate alerts if needed
-    const alerts = []
-    if (updatedItem.currentStock <= updatedItem.reorderPoint) {
-      alerts.push({
-        id: `alert_${Date.now()}`,
-        type: updatedItem.currentStock === 0 ? 'out_of_stock' : 'low_stock',
-        severity: updatedItem.currentStock === 0 ? 'critical' : 'warning',
-        title: `${updatedItem.currentStock === 0 ? 'Out of Stock' : 'Low Stock'} Alert`,
-        message: `${updatedItem.name} ${updatedItem.currentStock === 0 ? 'is out of stock after adjustment' : 'is running low after adjustment'}`,
-        isActive: true,
-        createdAt: new Date()
-      })
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        item: updatedItem,
-        stockMovement,
-        previousStock: existingItem.currentStock,
-        newStock: updatedItem.currentStock,
-        adjustment: validatedData.adjustment
-      },
-      alerts,
-      message: 'Stock adjustment completed successfully'
-    })
-
-  } catch (error) {
-    console.error('Error adjusting stock:', error)
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors
-      }, { status: 400 })
     }
 
     return NextResponse.json({

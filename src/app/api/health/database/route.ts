@@ -4,14 +4,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { pool } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Testing database connection...')
 
     // Test basic connectivity
-    const connectionTest = await db.query('SELECT NOW() as current_time, version() as pg_version')
+    const connectionTest = await pool.query('SELECT NOW() as current_time, version() as pg_version')
 
     if (!connectionTest.rows || connectionTest.rows.length === 0) {
       throw new Error('No response from database')
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       ORDER BY table_name
     `
 
-    const tablesResult = await db.query(tablesQuery)
+    const tablesResult = await pool.query(tablesQuery)
     const tables = tablesResult.rows
 
     // Check for key enterprise tables
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     const tableCounts = {}
     for (const table of existingTables) {
       try {
-        const countResult = await db.query(`SELECT COUNT(*) as count FROM "${table}"`)
+        const countResult = await pool.query(`SELECT COUNT(*) as count FROM "${table}"`)
         tableCounts[table] = parseInt(countResult.rows[0].count)
       } catch (error) {
         tableCounts[table] = 'Error accessing table'
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 
     // Test suppliers table
     try {
-      const suppliersTest = await db.query('SELECT COUNT(*) as count FROM suppliers')
+      const suppliersTest = await pool.query('SELECT COUNT(*) as count FROM suppliers')
       functionalityTests.push({
         test: 'Suppliers Table Access',
         status: 'success',
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 
     // Test inventory table
     try {
-      const inventoryTest = await db.query('SELECT COUNT(*) as count FROM inventory_items')
+      const inventoryTest = await pool.query('SELECT COUNT(*) as count FROM inventory_items')
       functionalityTests.push({
         test: 'Inventory Table Access',
         status: 'success',
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
 
     // Test users/auth tables
     try {
-      const usersTest = await db.query('SELECT COUNT(*) as count FROM users')
+      const usersTest = await pool.query('SELECT COUNT(*) as count FROM users')
       functionalityTests.push({
         test: 'Users Table Access',
         status: 'success',

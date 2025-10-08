@@ -11,9 +11,9 @@ import { mockInventoryData } from '../route'
 
 // GET /api/v2/inventory/[id] - Get specific inventory item
 export const GET = ApiMiddleware.withAuth(
-  async (request: NextRequest, context: RequestContext, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context: RequestContext, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const { id } = params
+      const { id } = await params
 
       const item = mockInventoryData.find(item => item.id === id)
       if (!item) {
@@ -100,9 +100,9 @@ export const GET = ApiMiddleware.withAuth(
 
 // PUT /api/v2/inventory/[id] - Update specific inventory item
 export const PUT = ApiMiddleware.withValidation(UpdateInventoryItemSchema)(
-  async (request: NextRequest, context: RequestContext, validatedData, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context: RequestContext, validatedData, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const { id } = params
+      const { id } = await params
 
       const itemIndex = mockInventoryData.findIndex(item => item.id === id)
       if (itemIndex === -1) {
@@ -239,9 +239,9 @@ export const PUT = ApiMiddleware.withValidation(UpdateInventoryItemSchema)(
 
 // DELETE /api/v2/inventory/[id] - Delete specific inventory item
 export const DELETE = ApiMiddleware.withAuth(
-  async (request: NextRequest, context: RequestContext, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context: RequestContext, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const { id } = params
+      const { id } = await params
 
       const itemIndex = mockInventoryData.findIndex(item => item.id === id)
       if (itemIndex === -1) {

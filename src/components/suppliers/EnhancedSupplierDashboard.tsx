@@ -80,6 +80,10 @@ import {
 } from "lucide-react"
 import NextJsXlsxConverter from "@/components/inventory/NextJsXlsxConverter"
 import type { DataValidationResult } from "@/components/inventory/NextJsXlsxConverter"
+import AISupplierDiscovery from "@/components/suppliers/AISupplierDiscovery"
+import AIInsightCards from "@/components/ai/InsightCards"
+import AIChatInterface from "@/components/ai/ChatInterface"
+import { AIErrorBoundary } from "@/components/ai/AIErrorHandler"
 
 // Enhanced Supplier Types
 export interface SupplierPerformanceMetrics {
@@ -419,7 +423,6 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
       return supplier
     }))
 
-    console.log(`Pricelist uploaded for supplier ${supplierId}:`, newPricelist)
   }, [])
 
   // Filter suppliers
@@ -539,7 +542,8 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <AIErrorBoundary>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -561,12 +565,20 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="directory">Directory</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="pricelists">Pricelists</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="ai-discovery" className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            AI Discovery
+          </TabsTrigger>
+          <TabsTrigger value="ai-insights" className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            AI Insights
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -1067,6 +1079,43 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
             </Card>
           </div>
         </TabsContent>
+
+        {/* AI Discovery Tab */}
+        <TabsContent value="ai-discovery" className="space-y-6">
+          <AIErrorBoundary>
+            <AISupplierDiscovery
+              onSupplierSelect={(supplier) => {
+                console.log('AI Supplier selected:', supplier)
+                // Convert AI supplier to enhanced supplier format if needed
+                onSupplierSelect?.(supplier as any)
+              }}
+              onSupplierBookmark={(supplierId) => {
+                console.log('AI Supplier bookmarked:', supplierId)
+              }}
+            />
+          </AIErrorBoundary>
+        </TabsContent>
+
+        {/* AI Insights Tab */}
+        <TabsContent value="ai-insights" className="space-y-6">
+          <AIErrorBoundary>
+            <AIInsightCards
+              filterBy={{
+                category: ['Supplier Management', 'Cost Optimization', 'Risk Management']
+              }}
+              onInsightAction={(insightId, action) => {
+                console.log('AI Insight action:', insightId, action)
+                // Handle insight actions like creating plans, analyzing suppliers, etc.
+              }}
+              onInsightStatusChange={(id, status) => {
+                console.log('AI Insight status changed:', id, status)
+              }}
+              onRefresh={() => {
+                console.log('AI Insights refreshed')
+              }}
+            />
+          </AIErrorBoundary>
+        </TabsContent>
       </Tabs>
 
       {/* Supplier Detail Dialog */}
@@ -1184,7 +1233,8 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
           </DialogContent>
         </Dialog>
       )}
-    </div>
+      </div>
+    </AIErrorBoundary>
   )
 }
 

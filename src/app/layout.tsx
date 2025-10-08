@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth/auth-context'
+import { QueryProvider } from '@/lib/query-provider'
 
 export const metadata: Metadata = {
   title: 'MantisNXT - Procurement Management System',
@@ -23,9 +24,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-inter antialiased">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   )

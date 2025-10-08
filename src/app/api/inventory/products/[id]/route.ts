@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { pool } from '@/lib/database'
 import { z } from 'zod'
 
 const updateProductSchema = z.object({
@@ -32,15 +32,15 @@ const updateProductSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const validatedData = updateProductSchema.parse(body)
 
     // Check if product exists
-    const productCheck = await db.query(
+    const productCheck = await pool.query(
       'SELECT id FROM products WHERE id = $1 AND status = $2',
       [id, 'active']
     )
@@ -54,7 +54,7 @@ export async function PUT(
 
     // Check for duplicate SKU if provided and different from current
     if (validatedData.sku) {
-      const skuCheck = await db.query(
+      const skuCheck = await pool.query(
         'SELECT id FROM products WHERE sku = $1 AND id != $2 AND status = $3',
         [validatedData.sku, id, 'active']
       )
@@ -72,9 +72,26 @@ export async function PUT(
     const updateValues = []
     let paramIndex = 1
 
+    // Map frontend fields to database columns
+    const fieldMapping: { [key: string]: string } = {
+      name: 'name',
+      description: 'description',
+      category: 'category',
+      sku: 'sku',
+      unit_of_measure: 'unit_of_measure',
+      unit_cost_zar: 'cost_price',
+      lead_time_days: 'lead_time_days',
+      minimum_order_quantity: 'min_order_qty',
+      barcode: 'upc_barcode',
+      weight_kg: 'weight',
+      dimensions_cm: 'dimensions_l', // simplified mapping
+      brand: 'brand',
+      model_number: 'model'
+    }
+
     Object.entries(validatedData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        updateFields.push(`${key} = $${paramIndex}`)
+      if (value !== undefined && fieldMapping[key]) {
+        updateFields.push(`${fieldMapping[key]} = $${paramIndex}`)
         updateValues.push(value)
         paramIndex++
       }
@@ -97,12 +114,12 @@ export async function PUT(
       RETURNING *
     `
 
-    const result = await db.query(updateQuery, updateValues)
+    const result = await pool.query(updateQuery, updateValues)
 
     // Update inventory item cost if unit cost changed
     if (validatedData.unit_cost_zar) {
-      await db.query(
-        'UPDATE inventory_items SET cost_per_unit_zar = $1, total_value_zar = current_stock * $1 WHERE product_id = $2',
+      await pool.query(
+        'UPDATE inventory_items SET cost_price = $1 WHERE product_id = $2',
         [validatedData.unit_cost_zar, id]
       )
     }
@@ -139,13 +156,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     // Check if product exists
-    const productCheck = await db.query(
+    const productCheck = await pool.query(
       'SELECT id FROM products WHERE id = $1 AND status = $2',
       [id, 'active']
     )
@@ -158,8 +175,8 @@ export async function DELETE(
     }
 
     // Check if product has active inventory
-    const inventoryCheck = await db.query(
-      'SELECT id FROM inventory_items WHERE product_id = $1 AND current_stock > 0',
+    const inventoryCheck = await pool.query(
+      'SELECT id FROM inventory_items WHERE product_id = $1 AND stock_qty > 0',
       [id]
     )
 
@@ -174,7 +191,7 @@ export async function DELETE(
     }
 
     // Soft delete - mark as discontinued
-    await db.query(
+    await pool.query(
       'UPDATE products SET status = $1, updated_at = NOW() WHERE id = $2',
       ['discontinued', id]
     )

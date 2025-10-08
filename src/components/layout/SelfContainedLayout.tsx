@@ -66,8 +66,13 @@ const navigationGroups: NavigationGroup[] = [
     title: "Overview",
     items: [
       {
-        title: "Dashboard",
+        title: "Dashboard (AI)",
         url: "/",
+        icon: LayoutDashboard,
+      },
+      {
+        title: "Dashboard v1",
+        url: "/dashboard-v1",
         icon: LayoutDashboard,
       },
       {
@@ -106,12 +111,6 @@ const navigationGroups: NavigationGroup[] = [
         url: "/purchase-orders",
         icon: ShoppingCart,
         badge: "12",
-      },
-      {
-        title: "Contracts",
-        url: "/contracts",
-        icon: FileText,
-        badge: "5",
       },
       {
         title: "Inventory",

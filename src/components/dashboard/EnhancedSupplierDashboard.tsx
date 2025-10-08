@@ -31,6 +31,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn, formatCurrency, formatPercentage, getStatusColor, getTierColor } from "@/lib/utils"
+import { safeFormatDate, safeRelativeTime, safeParseDate } from "@/lib/utils/safe-data"
+import { SupplierBoundary, DataTableBoundary, ChartBoundary } from "@/components/error-boundaries/GranularErrorBoundary"
+import { DataError, InvalidDateFallback } from "@/components/fallbacks/FallbackComponents"
 import {
   Supplier,
   DashboardMetrics,
@@ -495,14 +498,15 @@ const PerformanceOverview: React.FC<{ suppliers: Supplier[] }> = ({ suppliers })
   if (!performanceMetrics) return null
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5" />
-          Performance Overview
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ChartBoundary chartName="Performance Overview">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Performance Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -546,6 +550,7 @@ const PerformanceOverview: React.FC<{ suppliers: Supplier[] }> = ({ suppliers })
         </div>
       </CardContent>
     </Card>
+    </ChartBoundary>
   )
 }
 
@@ -557,20 +562,21 @@ const TopSuppliersTable: React.FC<{ suppliers: Supplier[] }> = ({ suppliers }) =
   }, [suppliers])
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Top Performing Suppliers
-          </CardTitle>
-          <Button variant="outline" size="sm" asChild>
-            <a href="/suppliers">View All</a>
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
+    <DataTableBoundary tableName="Top Performing Suppliers">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Top Performing Suppliers
+            </CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/suppliers">View All</a>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Supplier</TableHead>
@@ -670,10 +676,6 @@ const TopSuppliersTable: React.FC<{ suppliers: Supplier[] }> = ({ suppliers }) =
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem>
-                        <FileText className="mr-2 h-4 w-4" />
-                        View Contracts
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Purchase Orders
                       </DropdownMenuItem>
@@ -686,6 +688,7 @@ const TopSuppliersTable: React.FC<{ suppliers: Supplier[] }> = ({ suppliers }) =
         </Table>
       </CardContent>
     </Card>
+    </DataTableBoundary>
   )
 }
 
@@ -711,36 +714,25 @@ const ActivityFeed: React.FC<{ activities: DashboardActivity[] }> = ({ activitie
     }
   }
 
-  const formatTimestamp = (timestamp: Date) => {
-    const now = new Date()
-    const diffMs = now.getTime() - timestamp.getTime()
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffHours / 24)
-
-    if (diffDays > 0) {
-      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
-    } else if (diffHours > 0) {
-      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
-    } else {
-      const diffMinutes = Math.floor(diffMs / (1000 * 60))
-      return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`
-    }
+  const formatTimestamp = (timestamp: Date | string | unknown) => {
+    return safeRelativeTime(timestamp, 'Unknown time')
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Recent Activity
-          </CardTitle>
-          <Button variant="ghost" size="sm">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <SupplierBoundary>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Recent Activity
+            </CardTitle>
+            <Button variant="ghost" size="sm">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
         <div className="space-y-4 max-h-80 overflow-y-auto">
           {activities.map((activity) => (
             <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
@@ -773,6 +765,7 @@ const ActivityFeed: React.FC<{ activities: DashboardActivity[] }> = ({ activitie
         </div>
       </CardContent>
     </Card>
+    </SupplierBoundary>
   )
 }
 
@@ -791,16 +784,10 @@ const QuickActions: React.FC = () => {
       href: "/purchase-orders/new"
     },
     {
-      icon: <FileText className="h-4 w-4" />,
-      label: "New Contract",
-      color: "bg-purple-600 hover:bg-purple-700",
-      href: "/contracts/new"
-    },
-    {
       icon: <Download className="h-4 w-4" />,
       label: "Export Data",
       color: "bg-orange-600 hover:bg-orange-700",
-      onClick: () => console.log("Export")
+      onClick: () => {}
     }
   ]
 
@@ -840,7 +827,7 @@ const EnhancedSupplierDashboard: React.FC = () => {
   ]
 
   return (
-    
+    <SupplierBoundary>
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -945,7 +932,7 @@ const EnhancedSupplierDashboard: React.FC = () => {
         {/* Quick Actions */}
         <QuickActions />
       </div>
-    
+    </SupplierBoundary>
   )
 }
 

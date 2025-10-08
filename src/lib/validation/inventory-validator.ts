@@ -880,8 +880,4 @@ export const validateSingleItem = InventoryValidator.validateInventoryItem
 export const validateBulkItems = InventoryValidator.validateInventoryBulk
 export const getValidationSummary = InventoryValidator.getValidationSummary
 
-// Export validation schemas for external use
-export {
-  InventoryItemValidationSchema,
-  SupplierProductValidationSchema
-}
+// Export validation schemas for external use already handled above

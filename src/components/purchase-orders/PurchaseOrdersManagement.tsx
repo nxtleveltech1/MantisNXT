@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import {
   Plus,
   Search,
@@ -65,6 +65,7 @@ import ApprovalWorkflow from './ApprovalWorkflow'
 import BulkOperations from './BulkOperations'
 import POTemplates from './POTemplates'
 import CurrencyManager from './CurrencyManager'
+import { usePurchaseOrders, usePurchaseOrderMetrics } from '@/hooks/usePurchaseOrders'
 
 // Types
 export interface PurchaseOrderItem {
@@ -242,38 +243,71 @@ const PurchaseOrdersManagement: React.FC = () => {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [currentView, setCurrentView] = useState<'grid' | 'list'>('list')
   const [isWizardOpen, setIsWizardOpen] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isBulkOperationsOpen, setIsBulkOperationsOpen] = useState(false)
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
   const [isCurrencyManagerOpen, setIsCurrencyManagerOpen] = useState(false)
 
+  // Real API data hooks
+  const {
+    orders: databaseOrders,
+    loading: ordersLoading,
+    error: ordersError,
+    fetchPurchaseOrders,
+    deletePurchaseOrders
+  } = usePurchaseOrders()
+
+  const {
+    metrics: databaseMetrics,
+    loading: metricsLoading,
+    error: metricsError
+  } = usePurchaseOrderMetrics()
+
   // Filter and search logic
   const filteredOrders = useMemo(() => {
-    return mockPurchaseOrders.filter(order => {
+    if (!databaseOrders || ordersLoading) return []
+
+    return databaseOrders.filter(order => {
       const matchesSearch =
-        order.poNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.department.toLowerCase().includes(searchTerm.toLowerCase())
+        order.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.supplier_name && order.supplier_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.notes && order.notes.toLowerCase().includes(searchTerm.toLowerCase()))
 
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter
-      const matchesPriority = priorityFilter === 'all' || order.priority === priorityFilter
-      const matchesDepartment = departmentFilter === 'all' || order.department === departmentFilter
+      // Note: priority filter disabled for now since our database schema doesn't have priority field
+      // const matchesPriority = priorityFilter === 'all' || order.priority === priorityFilter
+      // const matchesDepartment = departmentFilter === 'all' || order.department === departmentFilter
 
-      return matchesSearch && matchesStatus && matchesPriority && matchesDepartment
+      return matchesSearch && matchesStatus
     })
-  }, [searchTerm, statusFilter, priorityFilter, departmentFilter])
+  }, [databaseOrders, searchTerm, statusFilter, ordersLoading])
 
-  // Statistics
+  // Statistics from API metrics
   const stats = useMemo(() => {
-    const total = mockPurchaseOrders.length
-    const pending = mockPurchaseOrders.filter(po => po.status === 'pending').length
-    const approved = mockPurchaseOrders.filter(po => po.status === 'approved').length
-    const inProgress = mockPurchaseOrders.filter(po => ['sent', 'acknowledged', 'in_progress', 'shipped'].includes(po.status)).length
-    const totalValue = mockPurchaseOrders.reduce((sum, po) => sum + po.totalAmount, 0)
+    if (databaseMetrics) {
+      return {
+        total: databaseMetrics.totalOrders || 0,
+        pending: databaseMetrics.pendingApprovals || 0,
+        approved: databaseMetrics.statusBreakdown?.approved || 0,
+        inProgress: databaseMetrics.inProgress || 0,
+        totalValue: databaseMetrics.totalValue || 0
+      }
+    }
 
-    return { total, pending, approved, inProgress, totalValue }
-  }, [])
+    // Fallback calculation from orders data if metrics not available
+    if (databaseOrders && databaseOrders.length > 0) {
+      const total = databaseOrders.length
+      const pending = databaseOrders.filter(po => po.status === 'pending_approval').length
+      const approved = databaseOrders.filter(po => po.status === 'approved').length
+      const inProgress = databaseOrders.filter(po => ['sent', 'acknowledged', 'in_progress', 'shipped'].includes(po.status)).length
+      const totalValue = databaseOrders.reduce((sum, po) => sum + (po.total_amount || 0), 0)
+
+      return { total, pending, approved, inProgress, totalValue }
+    }
+
+    return { total: 0, pending: 0, approved: 0, inProgress: 0, totalValue: 0 }
+  }, [databaseMetrics, databaseOrders])
 
   const handleOrderSelect = (orderId: string, checked: boolean) => {
     if (checked) {
@@ -291,21 +325,38 @@ const PurchaseOrdersManagement: React.FC = () => {
     }
   }
 
-  const openOrderDetails = (order: PurchaseOrder) => {
+  const openOrderDetails = (order: any) => {
     setSelectedOrder(order)
     setIsDetailsOpen(true)
+  }
+
+  const handleDeleteOrders = async (orderIds: string[]) => {
+    if (window.confirm(`Are you sure you want to delete ${orderIds.length} order(s)?`)) {
+      try {
+        await deletePurchaseOrders(orderIds)
+        setSelectedOrders(prev => prev.filter(id => !orderIds.includes(id)))
+      } catch (error) {
+        console.error('Error deleting orders:', error)
+        alert('Failed to delete orders. Please try again.')
+      }
+    }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'draft': return <FileText className="h-4 w-4" />
-      case 'pending': return <Clock className="h-4 w-4" />
+      case 'pending_approval': return <Clock className="h-4 w-4" />
       case 'approved': return <CheckCircle className="h-4 w-4" />
       case 'sent': return <Send className="h-4 w-4" />
+      case 'acknowledged': return <CheckCircle className="h-4 w-4" />
       case 'in_progress': return <Package className="h-4 w-4" />
       case 'shipped': return <Truck className="h-4 w-4" />
-      case 'delivered': return <CheckCircle className="h-4 w-4" />
+      case 'received': return <CheckCircle className="h-4 w-4" />
+      case 'completed': return <CheckCircle className="h-4 w-4" />
       case 'cancelled': return <XCircle className="h-4 w-4" />
+      // Legacy support
+      case 'pending': return <Clock className="h-4 w-4" />
+      case 'delivered': return <CheckCircle className="h-4 w-4" />
       default: return <FileText className="h-4 w-4" />
     }
   }
@@ -422,11 +473,14 @@ const PurchaseOrdersManagement: React.FC = () => {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="pending_approval">Pending Approval</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="acknowledged">Acknowledged</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="received">Received</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
@@ -535,124 +589,151 @@ const PurchaseOrdersManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedOrders.includes(order.id)}
-                        onCheckedChange={(checked) => handleOrderSelect(order.id, checked as boolean)}
-                        aria-label={`Select ${order.poNumber}`}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{order.poNumber}</span>
-                        <span className="text-sm text-muted-foreground">
-                          by {order.requestedBy}
-                        </span>
+                {ordersLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-8">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        Loading purchase orders...
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{order.supplierName}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {order.items.length} item(s)
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(order.status)}
-                        <Badge
-                          variant="outline"
-                          className={getStatusColor(order.status)}
-                        >
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getPriorityIcon(order.priority)}
-                        <span className="capitalize">{order.priority}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{order.department}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {formatCurrency(order.totalAmount, order.currency)}
-                        </span>
-                        {order.currency !== 'USD' && (
-                          <span className="text-sm text-muted-foreground">
-                            Rate: {order.exchangeRate}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {formatDate(order.createdDate)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {formatDate(order.requestedDeliveryDate)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <Progress value={getOrderProgress(order)} className="w-20" />
-                        <span className="text-xs text-muted-foreground">
-                          {getOrderProgress(order)}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openOrderDetails(order)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Copy className="h-4 w-4 mr-2" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <Send className="h-4 w-4 mr-2" />
-                            Send to Supplier
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Mail className="h-4 w-4 mr-2" />
-                            Email
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Printer className="h-4 w-4 mr-2" />
-                            Print
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : ordersError ? (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-8 text-red-600">
+                      Error loading purchase orders: {ordersError}
+                    </TableCell>
+                  </TableRow>
+                ) : filteredOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                      No purchase orders found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedOrders.includes(order.id)}
+                          onCheckedChange={(checked) => handleOrderSelect(order.id, checked as boolean)}
+                          aria-label={`Select ${order.po_number}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{order.po_number}</span>
+                          <span className="text-sm text-muted-foreground">
+                            Created: {new Date(order.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{order.supplier_name || 'Unknown Supplier'}</span>
+                          <span className="text-sm text-muted-foreground">
+                            Code: {order.supplier_code || 'N/A'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(order.status)}
+                          <Badge
+                            variant="outline"
+                            className={getStatusColor(order.status)}
+                          >
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <span className="capitalize">Medium</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">General</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {formatCurrency(order.total_amount, order.currency)}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            Tax: {formatCurrency(order.tax_amount, order.currency)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {order.required_date
+                            ? new Date(order.required_date).toLocaleDateString()
+                            : 'Not specified'
+                          }
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Progress value={getOrderProgressFromStatus(order.status)} className="w-20" />
+                          <span className="text-xs text-muted-foreground">
+                            {getOrderProgressFromStatus(order.status)}%
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openOrderDetails(order)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>
+                              <Send className="h-4 w-4 mr-2" />
+                              Send to Supplier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Mail className="h-4 w-4 mr-2" />
+                              Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Printer className="h-4 w-4 mr-2" />
+                              Print
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteOrders([order.id])}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -675,7 +756,7 @@ const PurchaseOrdersManagement: React.FC = () => {
         open={isBulkOperationsOpen}
         onClose={() => setIsBulkOperationsOpen(false)}
         selectedOrders={selectedOrders}
-        orders={mockPurchaseOrders}
+        orders={databaseOrders || []}
       />
 
       <POTemplates
@@ -691,7 +772,25 @@ const PurchaseOrdersManagement: React.FC = () => {
   )
 }
 
-// Helper function to calculate order progress
+// Helper function to calculate order progress from database status
+function getOrderProgressFromStatus(status: string): number {
+  const statusProgress: Record<string, number> = {
+    'draft': 10,
+    'pending_approval': 20,
+    'approved': 40,
+    'sent': 50,
+    'acknowledged': 60,
+    'in_progress': 70,
+    'shipped': 85,
+    'received': 95,
+    'completed': 100,
+    'cancelled': 0
+  }
+
+  return statusProgress[status] || 0
+}
+
+// Helper function to calculate order progress (legacy support)
 function getOrderProgress(order: PurchaseOrder): number {
   const statusProgress: Record<string, number> = {
     'draft': 10,

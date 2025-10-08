@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -48,7 +49,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useSuppliers } from "@/hooks/useSuppliers"
 import { cn, formatCurrency, formatDate, formatPercentage } from "@/lib/utils"
+import { getDisplayUrl } from "@/lib/utils/url-validation"
+import { SafeLink } from "@/components/ui/SafeLink"
 import {
   Building2,
   TrendingUp,
@@ -138,6 +142,66 @@ interface SupplierData {
   tags: string[]
   createdAt: Date
   updatedAt: Date
+}
+
+// Transformation function to convert DatabaseSupplier to SupplierData
+function transformDatabaseSupplierToSupplierData(dbSupplier: any): SupplierData {
+  // Generate a risk level based on performance tier
+  const getRiskLevel = (performanceTier: string): 'low' | 'medium' | 'high' | 'critical' => {
+    switch (performanceTier) {
+      case 'tier_1': return 'low'
+      case 'tier_2': return 'low'
+      case 'tier_3': return 'medium'
+      case 'unrated':
+      default: return 'high'
+    }
+  }
+
+  // Parse address or use defaults
+  const parseAddress = (address: string | null) => {
+    if (!address) {
+      return {
+        city: 'Unknown',
+        country: 'South Africa',
+        full: 'Address not provided'
+      }
+    }
+    // Simple parsing - could be enhanced
+    return {
+      city: 'Various',
+      country: 'South Africa',
+      full: address
+    }
+  }
+
+  return {
+    id: dbSupplier.id,
+    code: dbSupplier.supplier_code || 'N/A',
+    name: dbSupplier.name,
+    companyName: dbSupplier.company_name || dbSupplier.name,
+    status: dbSupplier.status,
+    tier: dbSupplier.performance_tier === 'tier_1' ? 'strategic' :
+          dbSupplier.performance_tier === 'tier_2' ? 'preferred' :
+          dbSupplier.performance_tier === 'tier_3' ? 'approved' : 'conditional',
+    category: dbSupplier.primary_category || 'General',
+    subcategory: undefined,
+    website: dbSupplier.website || undefined,
+    rating: parseFloat(dbSupplier.rating) || 0,
+    onTimeDelivery: 85, // Default value - could be calculated
+    totalSpend: parseFloat(dbSupplier.spend_last_12_months) || 0,
+    riskLevel: getRiskLevel(dbSupplier.performance_tier),
+    lastContact: null, // Not available in DB
+    primaryContact: {
+      name: dbSupplier.contact_person || 'Unknown',
+      email: dbSupplier.email || '',
+      phone: dbSupplier.phone || '',
+      role: 'Primary Contact'
+    },
+    address: parseAddress(dbSupplier.address),
+    tags: [],
+    createdAt: new Date(dbSupplier.created_at),
+    updatedAt: new Date(dbSupplier.updated_at)
+  }
 }
 
 // Sample data with South African suppliers
@@ -388,7 +452,78 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   initialTab = "overview"
 }) => {
   const router = useRouter()
-  const [suppliers] = useState<SupplierData[]>(sampleSuppliers)
+  const { suppliers: apiSuppliers, loading: suppliersLoading, error: suppliersError } = useSuppliers()
+
+  // Convert API suppliers to component format
+  const suppliers = useMemo(() => {
+    return apiSuppliers.map((supplier: any) => transformDatabaseSupplierToSupplierData(supplier))
+  }, [apiSuppliers])
+
+  // Legacy code (remove after confirming new transformation works)
+  const legacyTransform = useMemo(() => {
+    return apiSuppliers.map((supplier: any) => ({
+      website: supplier.website || '',
+      contactInfo: {
+        primaryContact: {
+          name: supplier.contact_person || '',
+          title: '',
+          email: supplier.email || '',
+          phone: supplier.phone || '',
+          department: ''
+        },
+        address: {
+          street: supplier.address || '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: 'South Africa'
+        }
+      },
+      businessInfo: {
+        taxId: supplier.tax_id || '',
+        registrationNumber: '',
+        foundedYear: 0,
+        employeeCount: 0,
+        annualRevenue: 0,
+        currency: 'ZAR'
+      },
+      capabilities: {
+        products: [],
+        services: [],
+        certifications: [],
+        leadTime: 30,
+        minimumOrderValue: 0,
+        paymentTerms: supplier.payment_terms || 'Net 30'
+      },
+      performance: {
+        overallRating: parseFloat(supplier.rating) || 0,
+        qualityRating: 0,
+        deliveryRating: 0,
+        serviceRating: 0,
+        priceRating: 0,
+        onTimeDeliveryRate: 0.9,
+        qualityAcceptanceRate: 0.95,
+        responseTime: 24
+      },
+      financial: {
+        creditRating: 'Good',
+        creditLimit: 0,
+        totalPurchaseValue: parseFloat(supplier.spend_last_12_months) || 0,
+        paymentHistory: 'Good',
+        riskScore: supplier.performance_tier === 'tier_1' ? 20 :
+                  supplier.performance_tier === 'tier_2' ? 35 : 60
+      },
+      contractInfo: {
+        hasActiveContract: false,
+        contractExpiry: new Date(),
+        preferredSupplier: supplier.preferred_supplier || false
+      },
+      tags: [],
+      createdAt: new Date(supplier.created_at),
+      updatedAt: new Date(supplier.updated_at)
+    }))
+  }, [apiSuppliers])
+
   const [selectedSupplier, setSelectedSupplier] = useState<SupplierData | null>(null)
   const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -533,9 +668,55 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
     return colors[risk as keyof typeof colors] || colors.low
   }
 
+  // Handle loading and error states
+  if (suppliersLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Loading suppliers...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (suppliersError) {
+    return (
+      <Alert className="max-w-md mx-auto">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Error loading suppliers: {suppliersError}
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  // Debug: show raw data
+  if (apiSuppliers && apiSuppliers.length === 0) {
+    return (
+      <div className="p-4">
+        <h2 className="text-xl font-bold mb-4">Debug Info</h2>
+        <p>API Suppliers Length: {apiSuppliers.length}</p>
+        <p>Loading: {suppliersLoading ? 'Yes' : 'No'}</p>
+        <p>Error: {suppliersError || 'None'}</p>
+        <pre className="bg-gray-100 p-4 mt-4 text-sm">
+          {JSON.stringify(apiSuppliers, null, 2)}
+        </pre>
+      </div>
+    )
+  }
+
+  const breadcrumbs = [
+    { label: "Supplier Management" }
+  ]
+
   return (
-    <TooltipProvider>
-      <div className="space-y-6">
+    <SelfContainedLayout
+      title="Suppliers"
+      breadcrumbs={breadcrumbs}
+    >
+      <TooltipProvider>
+        <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -1163,7 +1344,6 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
 
             <AISupplierDiscovery
               onSupplierFound={(data) => {
-                console.log('AI discovered supplier data:', data)
                 // Navigate to new supplier form with pre-filled data
                 setShowAIDiscovery(false)
                 navigateToNewSupplier()
@@ -1211,15 +1391,15 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                         {selectedSupplier.website && (
                           <div className="flex items-center gap-2">
                             <Globe className="h-4 w-4 text-muted-foreground" />
-                            <a
+                            <SafeLink
                               href={selectedSupplier.website}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:underline flex items-center gap-1"
                             >
-                              {selectedSupplier.website}
+                              {getDisplayUrl(selectedSupplier.website) || selectedSupplier.website}
                               <ExternalLink className="h-3 w-3" />
-                            </a>
+                            </SafeLink>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
@@ -1305,6 +1485,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
         )}
       </div>
     </TooltipProvider>
+    </SelfContainedLayout>
   )
 }
 

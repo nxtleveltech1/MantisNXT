@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SupplierAPI } from '@/lib/api/suppliers'
+import { CacheInvalidator } from '@/lib/cache/invalidation'
 
 
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supplier = await SupplierAPI.getSupplierById(params.id)
+    const { id } = await params
+    const supplier = await SupplierAPI.getSupplierById(id)
 
     if (!supplier) {
       return NextResponse.json(
@@ -39,12 +41,16 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
 
-    const supplier = await SupplierAPI.updateSupplier(params.id, body)
+    const supplier = await SupplierAPI.updateSupplier(id, body)
+
+    // Invalidate cache after successful update
+    CacheInvalidator.invalidateSupplier(id, supplier.name)
 
     return NextResponse.json({
       success: true,
@@ -66,10 +72,19 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await SupplierAPI.deleteSupplier(params.id)
+    const { id } = await params
+
+    // Get supplier name before deletion (for cache invalidation)
+    const supplier = await SupplierAPI.getSupplierById(id)
+    const supplierName = supplier?.name
+
+    await SupplierAPI.deleteSupplier(id)
+
+    // Invalidate cache after successful deletion
+    CacheInvalidator.invalidateSupplier(id, supplierName)
 
     return NextResponse.json({
       success: true,

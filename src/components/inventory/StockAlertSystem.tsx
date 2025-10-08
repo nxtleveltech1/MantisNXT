@@ -370,7 +370,6 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
 
   // Handle auto-action execution
   const handleExecuteAutoAction = useCallback((alertId: string, action: string) => {
-    console.log(`Executing auto-action: ${action} for alert: ${alertId}`)
 
     // Simulate action execution
     setAlerts(prev => prev.map(alert =>
@@ -431,7 +430,6 @@ const StockAlertSystem: React.FC<StockAlertSystemProps> = ({
   useEffect(() => {
     const interval = setInterval(() => {
       // In a real app, this would fetch fresh alerts from the API
-      console.log('Refreshing alerts...')
     }, 30000)
 
     return () => clearInterval(interval)

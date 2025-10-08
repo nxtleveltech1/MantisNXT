@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { pool } from '@/lib/database/connection'
+import { pool } from '@/lib/database'
 import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 import { SupplierService } from '@/lib/suppliers/services/SupplierService'
 import type {
@@ -17,7 +17,7 @@ import type {
 } from '@/lib/suppliers/types/SupplierDomain'
 
 // Initialize services
-const repository = new PostgreSQLSupplierRepository(pool)
+const repository = new PostgreSQLSupplierRepository()
 const supplierService = new SupplierService(repository)
 
 // Validation Schemas
@@ -96,7 +96,7 @@ function createErrorResponse(message: string, status: number = 400, details?: an
     success: false,
     data: null,
     error: message,
-    timestamp: new Date()
+    timestamp: new Date().toISOString()
   }
 
   if (details) {
@@ -111,7 +111,7 @@ function createSuccessResponse<T>(data: T, message?: string): NextResponse {
     success: true,
     data,
     message,
-    timestamp: new Date()
+    timestamp: new Date().toISOString()
   }
 
   return NextResponse.json(response)
@@ -122,7 +122,7 @@ function createPaginatedResponse<T>(data: T, pagination: any, message?: string):
     success: true,
     data,
     message,
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     pagination
   }
 

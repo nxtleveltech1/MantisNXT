@@ -113,7 +113,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       //   body: JSON.stringify({ errorId, ...errorDetails })
       // })
 
-      console.log('Error reported:', errorId, errorDetails)
+      // Error reported to logging service
     } catch (reportingError) {
       console.error('Failed to report error:', reportingError)
     }

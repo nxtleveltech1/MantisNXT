@@ -15,6 +15,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Search, RefreshCcw, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useSupplierDiscovery } from '@/hooks/useSupplierDiscovery';
 import { DiscoveredSupplierData } from '@/lib/supplier-discovery/types';
+import { getDisplayUrl } from '@/lib/utils/url-validation';
+import { SafeLink } from '@/components/ui/SafeLink';
 
 interface SupplierDiscoveryWidgetProps {
   onSupplierFound?: (data: DiscoveredSupplierData) => void;
@@ -213,14 +215,14 @@ export function SupplierDiscoveryWidget({
               {data.contactInfo.website && (
                 <div>
                   <Label className="text-sm font-medium">Website</Label>
-                  <a
+                  <SafeLink
                     href={data.contactInfo.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:underline"
                   >
-                    {data.contactInfo.website}
-                  </a>
+                    {getDisplayUrl(data.contactInfo.website) || data.contactInfo.website}
+                  </SafeLink>
                 </div>
               )}
               {data.businessInfo.industry && (

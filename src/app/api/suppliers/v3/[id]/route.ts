@@ -5,16 +5,17 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { pool } from '@/lib/database/connection'
+import { pool } from '@/lib/database'
 import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 import { SupplierService } from '@/lib/suppliers/services/SupplierService'
 import type {
   UpdateSupplierData,
   APIResponse
 } from '@/lib/suppliers/types/SupplierDomain'
+import { CacheInvalidator } from '@/lib/cache/invalidation'
 
 // Initialize services
-const repository = new PostgreSQLSupplierRepository(pool)
+const repository = new PostgreSQLSupplierRepository()
 const supplierService = new SupplierService(repository)
 
 // Validation Schema for updates
@@ -68,7 +69,7 @@ function createErrorResponse(message: string, status: number = 400, details?: an
     success: false,
     data: null,
     error: message,
-    timestamp: new Date()
+    timestamp: new Date().toISOString()
   }
 
   if (details) {
@@ -83,22 +84,22 @@ function createSuccessResponse<T>(data: T, message?: string): NextResponse {
     success: true,
     data,
     message,
-    timestamp: new Date()
+    timestamp: new Date().toISOString()
   }
 
   return NextResponse.json(response)
 }
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // GET /api/suppliers/v3/[id] - Get supplier by ID
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return createErrorResponse('Supplier ID is required')
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT /api/suppliers/v3/[id] - Update supplier
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return createErrorResponse('Supplier ID is required')
@@ -161,6 +162,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const updatedSupplier = await supplierService.updateSupplier(id, updateData)
 
+    // Invalidate cache after successful update
+    CacheInvalidator.invalidateSupplier(id, updatedSupplier.name)
+
     return createSuccessResponse(updatedSupplier, 'Supplier updated successfully')
   } catch (error) {
     console.error('Error updating supplier:', error)
@@ -185,7 +189,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/suppliers/v3/[id] - Delete supplier
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return createErrorResponse('Supplier ID is required')
@@ -207,7 +211,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Get supplier name before deletion (for cache invalidation)
+    const supplierName = existingSupplier.name
+
     await supplierService.deleteSupplier(id)
+
+    // Invalidate cache after successful deletion
+    CacheInvalidator.invalidateSupplier(id, supplierName)
 
     return createSuccessResponse(null, 'Supplier deleted successfully')
   } catch (error) {

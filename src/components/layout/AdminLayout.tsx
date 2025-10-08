@@ -72,8 +72,14 @@ const sidebarNavigation = [
     title: "Overview",
     items: [
       {
-        title: "Dashboard",
+        title: "Dashboard (AI)",
         url: "/",
+        icon: LayoutDashboard,
+        isActive: false,
+      },
+      {
+        title: "Dashboard v1",
+        url: "/dashboard-v1",
         icon: LayoutDashboard,
         isActive: false,
       },
@@ -118,13 +124,6 @@ const sidebarNavigation = [
         icon: ShoppingCart,
         isActive: false,
         badge: "12",
-      },
-      {
-        title: "Contracts",
-        url: "/contracts",
-        icon: FileText,
-        isActive: false,
-        badge: "5",
       },
       {
         title: "Inventory",

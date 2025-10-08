@@ -440,7 +440,7 @@ export default function InvoicesPage() {
   )
 
   return (
-    <SelfContainedLayout title="Invoice Management" breadcrumbs={[]}>
+    <SelfContainedLayout title="Invoices" breadcrumbs={[{ label: "Invoice Management" }]}>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
