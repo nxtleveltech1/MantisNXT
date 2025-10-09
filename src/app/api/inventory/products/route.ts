@@ -37,35 +37,49 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    // Get products from products table (actual uploaded data)
+    console.log(`🔍 Fetching products: limit=${limit}, offset=${offset}`);
+
+    // Get products from core.supplier_product table with proper schema
     const query = `
       SELECT
-        p.id,
-        p.sku,
-        p.name,
-        p.description,
-        p.category,
-        p.brand,
-        p.cost_price as price,
-        p.retail_price as sale_price,
-        0 as stock,
-        COALESCE(p.minimum_stock, 10) as reorder_point,
-        p.status,
-        p.unit_of_measure as unit,
-        COALESCE(s.name, 'Unknown') as supplier_name,
-        p.created_at,
-        p.updated_at
-      FROM products p
-      LEFT JOIN suppliers s ON p.supplier_id = s.id
-      WHERE p.status = 'active'
-      ORDER BY p.name ASC
+        sp.supplier_product_id::text as id,
+        sp.supplier_sku as sku,
+        sp.name_from_supplier as name,
+        '' as description,
+        '' as category,
+        '' as brand,
+        COALESCE(ph.price, 0) as price,
+        COALESCE(ph.price, 0) as sale_price,
+        COALESCE(soh.qty, 0) as stock,
+        10 as reorder_point,
+        CASE WHEN sp.is_active THEN 'active' ELSE 'inactive' END as status,
+        sp.uom as unit,
+        s.name as supplier_name,
+        sp.created_at,
+        sp.updated_at
+      FROM core.supplier_product sp
+      JOIN core.supplier s ON s.supplier_id = sp.supplier_id
+      LEFT JOIN LATERAL (
+        SELECT price FROM core.price_history
+        WHERE supplier_product_id = sp.supplier_product_id
+          AND is_current = true
+        LIMIT 1
+      ) ph ON true
+      LEFT JOIN LATERAL (
+        SELECT qty FROM core.stock_on_hand
+        WHERE supplier_product_id = sp.supplier_product_id
+        ORDER BY as_of_ts DESC
+        LIMIT 1
+      ) soh ON true
+      WHERE sp.is_active = true
+      ORDER BY sp.name_from_supplier ASC
       LIMIT $1 OFFSET $2
     `
 
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM products
-      WHERE status = 'active'
+      FROM core.supplier_product
+      WHERE is_active = true
     `
 
     const [productsResult, countResult] = await Promise.all([
@@ -129,9 +143,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = productSchema.parse(body)
 
-    // Check if supplier exists and is active
+    console.log(`📦 Creating new product: ${validatedData.name}`);
+
+    // Check if supplier exists and is active - using core.supplier
     const supplierCheck = await pool.query(
-      'SELECT id, status FROM suppliers WHERE id = $1',
+      'SELECT supplier_id, active FROM core.supplier WHERE supplier_id = $1',
       [validatedData.supplier_id]
     )
 
@@ -142,75 +158,75 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (supplierCheck.rows[0].status !== 'active') {
+    if (!supplierCheck.rows[0].active) {
       return NextResponse.json(
         { success: false, error: 'Supplier is not active' },
         { status: 400 }
       )
     }
 
-    // Check for duplicate SKU if provided
+    // Check for duplicate SKU if provided - using core.supplier_product
     if (validatedData.sku) {
       const skuCheck = await pool.query(
-        'SELECT id FROM products WHERE sku = $1 AND status = $2',
-        [validatedData.sku, 'active']
+        'SELECT supplier_product_id FROM core.supplier_product WHERE supplier_id = $1 AND supplier_sku = $2 AND is_active = true',
+        [validatedData.supplier_id, validatedData.sku]
       )
 
       if (skuCheck.rows.length > 0) {
         return NextResponse.json(
-          { success: false, error: 'SKU already exists' },
+          { success: false, error: 'SKU already exists for this supplier' },
           { status: 409 }
         )
       }
     }
 
-    // Insert product
+    // Insert product into core.supplier_product
     const insertQuery = `
-      INSERT INTO products (
-        supplier_id, name, description, category, sku, cost_price,
-        retail_price, currency, status, unit_of_measure, minimum_stock,
-        brand, created_at, updated_at
+      INSERT INTO core.supplier_product (
+        supplier_id, supplier_sku, name_from_supplier, uom,
+        pack_size, barcode, is_new, is_active, first_seen_at, last_seen_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
-      ) RETURNING *
+        $1, $2, $3, $4, $5, $6, true, true, NOW(), NOW()
+      ) RETURNING supplier_product_id, supplier_sku, name_from_supplier, created_at, updated_at
     `
 
     const insertResult = await pool.query(insertQuery, [
       validatedData.supplier_id,
-      validatedData.name,
-      validatedData.description,
-      validatedData.category,
       validatedData.sku || `PROD-${Date.now()}`,
-      validatedData.unit_cost_zar,
-      validatedData.unit_cost_zar * 1.2, // 20% markup for retail price
-      'ZAR',
-      'active',
+      validatedData.name,
       validatedData.unit_of_measure,
-      validatedData.minimum_order_quantity || 10,
-      validatedData.brand
+      validatedData.minimum_order_quantity?.toString(),
+      validatedData.barcode
     ])
 
-    // Create initial inventory item in inventory_items table
-    const inventoryQuery = `
-      INSERT INTO inventory_items (
-        sku, name, description, category, cost_price, stock_qty,
-        reserved_qty, reorder_point, status, location
+    const product = insertResult.rows[0];
+
+    // Insert initial price into core.price_history
+    const priceQuery = `
+      INSERT INTO core.price_history (
+        supplier_product_id, price, currency, valid_from, is_current
       ) VALUES (
-        $1, $2, $3, $4, $5, 0, 0, 10, 'active', 'Main Warehouse'
+        $1, $2, $3, NOW(), true
       )
     `
 
-    await pool.query(inventoryQuery, [
-      validatedData.sku || `PROD-${Date.now()}`,
-      validatedData.name,
-      validatedData.description,
-      validatedData.category,
-      validatedData.unit_cost_zar
+    await pool.query(priceQuery, [
+      product.supplier_product_id,
+      validatedData.unit_cost_zar,
+      'ZAR'
     ])
+
+    console.log(`✅ Product created: ${product.supplier_product_id}`);
 
     return NextResponse.json({
       success: true,
-      data: insertResult.rows[0],
+      data: {
+        id: product.supplier_product_id,
+        sku: product.supplier_sku,
+        name: product.name_from_supplier,
+        created_at: product.created_at,
+        updated_at: product.updated_at
+      },
       message: 'Product created successfully'
     })
   } catch (error) {

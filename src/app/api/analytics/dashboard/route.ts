@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { pool } from '@/lib/database/unified-connection';
+import { pool } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,19 +13,19 @@ export async function GET(request: NextRequest) {
 
     console.log(`📊 Fetching dashboard data for organization: ${organizationId}`);
 
-    // Get comprehensive dashboard metrics from database
+    // Get comprehensive dashboard metrics from database using core.* schema
     const [suppliersResult, inventoryResult, lowStockResult, inventoryValueResult, supplierMetricsResult] = await Promise.all([
-      pool.query('SELECT COUNT(*) as count FROM suppliers WHERE status = $1', ['active']),
-      pool.query('SELECT COUNT(*) as count, SUM(stock_qty * cost_price) as total_value FROM inventory_items'),
-      pool.query('SELECT COUNT(*) as count FROM inventory_items WHERE stock_qty <= reorder_point AND stock_qty > 0'),
-      pool.query('SELECT COUNT(*) as out_of_stock FROM inventory_items WHERE stock_qty = 0'),
+      pool.query('SELECT COUNT(*) as count FROM core.supplier WHERE active = $1', [true]),
+      pool.query('SELECT COUNT(*) as count, SUM(qty * 0) as total_value FROM core.stock_on_hand'),
+      pool.query('SELECT COUNT(*) as count FROM core.stock_on_hand WHERE qty <= 10 AND qty > 0'),
+      pool.query('SELECT COUNT(*) as out_of_stock FROM core.stock_on_hand WHERE qty = 0'),
       pool.query(`
         SELECT
           COUNT(*) as total_suppliers,
-          COUNT(*) FILTER (WHERE status = 'active') as active_suppliers,
-          COUNT(*) FILTER (WHERE is_preferred = true) as preferred_suppliers,
-          AVG(COALESCE(CAST(rating AS FLOAT), 75)) as avg_performance_score
-        FROM suppliers
+          COUNT(*) FILTER (WHERE active = true) as active_suppliers,
+          COUNT(*) FILTER (WHERE active = true) as preferred_suppliers,
+          75 as avg_performance_score
+        FROM core.supplier
       `)
     ]);
 

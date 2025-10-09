@@ -94,8 +94,9 @@ export async function GET(request: NextRequest) {
 
     // Add status filter first for partial index usage
     if (status?.length) {
-      sqlQuery += ` AND status = ANY($${paramIndex})`;
-      queryParams.push(status);
+      const statusBooleans = status.map(s => s === 'active');
+      sqlQuery += ` AND active = ANY($${paramIndex})`;
+      queryParams.push(statusBooleans);
       paramIndex++;
     }
 
@@ -206,21 +207,22 @@ export async function GET(request: NextRequest) {
     `;
 
     // Apply same filters to count query (excluding pagination)
-    const countParams = queryParams.slice(0, -2); // Remove limit and offset
+    const countParams: any[] = [];
     let countParamIndex = 1;
+
+    if (status?.length) {
+      const statusBooleans = status.map(s => s === 'active');
+      countQuery += ` AND active = ANY($${countParamIndex})`;
+      countParams.push(statusBooleans);
+      countParamIndex++;
+    }
 
     if (search) {
       countQuery += ` AND (
         name ILIKE $${countParamIndex} OR
-        email ILIKE $${countParamIndex} OR
-        contact_person ILIKE $${countParamIndex} OR
-        primary_category ILIKE $${countParamIndex}
+        contact_email ILIKE $${countParamIndex}
       )`;
-      countParamIndex++;
-    }
-
-    if (status?.length) {
-      countQuery += ` AND status = ANY($${countParamIndex})`;
+      countParams.push(`%${search}%`);
       countParamIndex++;
     }
 
