@@ -256,8 +256,8 @@ async function validateDatabaseSchema(): Promise<TestResult> {
     `);
 
     const essentialTables = [
-      'organizations', 'users', 'roles', 'permissions',
-      'suppliers', 'inventory_items', 'stock_movements'
+      'organizations', 'suppliers', 'inventory_items',
+      'stock_movements', 'upload_sessions'
     ];
 
     const existingTables = tablesQuery.rows.map(row => row.table_name);

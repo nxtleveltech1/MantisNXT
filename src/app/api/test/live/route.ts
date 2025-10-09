@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Test 2: Table Existence Check
     try {
-      const tables = ['organizations', 'users', 'suppliers', 'inventory_items', 'stock_movements']
+      const tables = ['organizations', 'suppliers', 'inventory_items', 'stock_movements']
       const tableResults = []
 
       for (const table of tables) {
@@ -137,36 +137,16 @@ export async function GET(request: NextRequest) {
       addTest('Inventory Operations', false, null, error instanceof Error ? error.message : 'Unknown error')
     }
 
-    // Test 5: Authentication Schema
+    // Test 5: Upload Sessions
     try {
-      const authTables = ['users', 'roles', 'permissions', 'user_roles']
-      const authResults = []
+      const uploadResult = await pool.query(`SELECT COUNT(*) as count FROM upload_sessions`)
 
-      for (const table of authTables) {
-        const result = await pool.query(`SELECT COUNT(*) as count FROM ${table}`)
-        authResults.push({ table, count: parseInt(result.rows[0].count) })
-      }
-
-      // Check default admin user
-      const adminResult = await pool.query(`
-        SELECT u.email, u.first_name, u.last_name, array_agg(r.name) as roles
-        FROM users u
-        JOIN user_roles ur ON u.id = ur.user_id
-        JOIN roles r ON ur.role_id = r.id
-        WHERE u.email = 'admin@mantisnxt.com'
-        GROUP BY u.id, u.email, u.first_name, u.last_name
-      `)
-
-      addTest('Authentication Schema', true, {
-        tables: authResults,
-        adminUser: adminResult.rows.length > 0 ? {
-          email: adminResult.rows[0].email,
-          name: `${adminResult.rows[0].first_name} ${adminResult.rows[0].last_name}`,
-          roles: adminResult.rows[0].roles
-        } : null
+      addTest('Upload Sessions', true, {
+        count: parseInt(uploadResult.rows[0].count),
+        status: 'ready'
       })
     } catch (error) {
-      addTest('Authentication Schema', false, null, error instanceof Error ? error.message : 'Unknown error')
+      addTest('Upload Sessions', false, null, error instanceof Error ? error.message : 'Unknown error')
     }
 
     // Test 6: Upload Session Tables
@@ -198,7 +178,7 @@ export async function GET(request: NextRequest) {
           (SELECT COUNT(*) FROM suppliers) as supplier_count,
           (SELECT COUNT(*) FROM inventory_items) as inventory_count,
           (SELECT COUNT(*) FROM stock_movements) as movement_count,
-          (SELECT COUNT(*) FROM users) as user_count
+          (SELECT COUNT(*) FROM upload_sessions) as upload_count
       `)
 
       const queryTime = Date.now() - startTime

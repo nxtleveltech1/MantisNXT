@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         SELECT
           COUNT(*) as total_suppliers,
           COUNT(*) FILTER (WHERE status = 'active') as active_suppliers,
-          COUNT(*) FILTER (WHERE preferred_supplier = true) as preferred_suppliers,
+          COUNT(*) FILTER (WHERE is_preferred = true) as preferred_suppliers,
           AVG(COALESCE(CAST(rating AS FLOAT), 75)) as avg_performance_score
         FROM suppliers
       `)

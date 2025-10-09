@@ -12,9 +12,7 @@
       "command": "npx",
       "args": [
         "@21st-dev/magic"
-      ],
-      "disabled": true,
-      "alwaysAllow": []
+      ]
     },
     "playwright": {
       "command": "npx",
@@ -27,6 +25,49 @@
       "args": [
         "@jpisnice/shadcn-ui-mcp-server"
       ]
+    },
+    "fetch": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch"
+      ],
+      "env": {}
+    },
+    "postgres": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://USER:PASS@HOST:5432/DBNAME"
+      ],
+      "env": {}
+    },
+    "fs": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-filesystem"
+      ],
+      "env": {}
+    },
+    "git": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-git"
+      ],
+      "env": {}
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ],
+      "env": {}
     }
   }
 }

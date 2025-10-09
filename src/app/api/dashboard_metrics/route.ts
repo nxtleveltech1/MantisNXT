@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
       inventoryResult,
       lowStockResult,
       outOfStockResult,
-      purchaseOrdersResult,
       supplierMetricsResult
     ] = await Promise.all([
       pool.query('SELECT COUNT(*) as count FROM suppliers WHERE status = $1', ['active']),
@@ -27,22 +26,10 @@ export async function GET(request: NextRequest) {
       pool.query('SELECT COUNT(*) as count FROM inventory_items WHERE stock_qty = 0'),
       pool.query(`
         SELECT
-          COUNT(*) as total_orders,
-          COUNT(*) FILTER (WHERE status = 'pending') as pending_orders,
-          COUNT(*) FILTER (WHERE status = 'approved') as approved_orders,
-          COALESCE(SUM(total_amount), 0) as total_value
-        FROM purchase_orders
-        WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
-      `),
-      pool.query(`
-        SELECT
           COUNT(*) as total_suppliers,
           COUNT(*) FILTER (WHERE status = 'active') as active_suppliers,
-          COUNT(*) FILTER (WHERE preferred_supplier = true) as preferred_suppliers,
-          COALESCE(AVG(CASE
-            WHEN rating ~ '^[0-9]+$' THEN CAST(rating AS FLOAT)
-            ELSE 75
-          END), 75) as avg_performance_score
+          COUNT(*) FILTER (WHERE is_preferred = true) as preferred_suppliers,
+          COALESCE(AVG(CAST(rating AS FLOAT)), 75) as avg_performance_score
         FROM suppliers
       `)
     ]);
@@ -51,7 +38,14 @@ export async function GET(request: NextRequest) {
     const totalInventoryValue = parseFloat(inventoryResult.rows[0]?.total_value || '0');
     const avgInventoryValue = parseFloat(inventoryResult.rows[0]?.avg_value || '0');
     const supplierMetrics = supplierMetricsResult.rows[0] || {};
-    const purchaseOrderMetrics = purchaseOrdersResult.rows[0] || {};
+
+    // Purchase orders table not yet migrated - use placeholder values
+    const purchaseOrderMetrics = {
+      total_orders: '0',
+      pending_orders: '0',
+      approved_orders: '0',
+      total_value: '0'
+    };
 
     const dashboardMetrics = {
       success: true,

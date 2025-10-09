@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { initializeInvalidationManager } from './cache/event-invalidation'
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -28,6 +29,18 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       },
     },
   }))
+
+  // Initialize cache invalidation manager
+  useEffect(() => {
+    const manager = initializeInvalidationManager(queryClient, {
+      enabled: true,
+      logInvalidations: process.env.NODE_ENV === 'development',
+    })
+
+    return () => {
+      manager.destroy()
+    }
+  }, [queryClient])
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -1,11 +1,11 @@
 {
+  "/api/analytics/dashboard/route": "app/api/analytics/dashboard/route.js",
+  "/api/analytics/anomalies/route": "app/api/analytics/anomalies/route.js",
   "/api/analytics/predictions/route": "app/api/analytics/predictions/route.js",
   "/api/analytics/recommendations/route": "app/api/analytics/recommendations/route.js",
-  "/api/analytics/anomalies/route": "app/api/analytics/anomalies/route.js",
-  "/api/analytics/dashboard/route": "app/api/analytics/dashboard/route.js",
-  "/page": "app/page.js",
   "/analytics/page": "app/analytics/page.js",
-  "/inventory/page": "app/inventory/page.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/nxt-spp/page": "app/nxt-spp/page.js"
+  "/suppliers/page": "app/suppliers/page.js",
+  "/dashboard-v1/page": "app/dashboard-v1/page.js",
+  "/page": "app/page.js",
+  "/inventory/page": "app/inventory/page.js"
 }

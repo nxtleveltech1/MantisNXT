@@ -269,11 +269,9 @@ export async function GET(request: NextRequest) {
         SELECT
           sm.*,
           i.sku,
-          i.name as item_name,
-          u.first_name || ' ' || u.last_name as user_name
+          i.name as item_name
         FROM stock_movements sm
         LEFT JOIN inventory_items i ON sm.item_id = i.id
-        LEFT JOIN users u ON sm.user_id = u.id
         ORDER BY sm.created_at DESC
         LIMIT 50
       `

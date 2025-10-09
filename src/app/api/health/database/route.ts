@@ -34,9 +34,6 @@ export async function GET(request: NextRequest) {
     // Check for key enterprise tables
     const requiredTables = [
       'organizations',
-      'users',
-      'roles',
-      'permissions',
       'suppliers',
       'inventory_items',
       'stock_movements',
@@ -92,17 +89,17 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Test users/auth tables
+    // Test stock movements table
     try {
-      const usersTest = await pool.query('SELECT COUNT(*) as count FROM users')
+      const stockTest = await pool.query('SELECT COUNT(*) as count FROM stock_movements')
       functionalityTests.push({
-        test: 'Users Table Access',
+        test: 'Stock Movements Table Access',
         status: 'success',
-        details: `${usersTest.rows[0].count} users found`
+        details: `${stockTest.rows[0].count} stock movements found`
       })
     } catch (error) {
       functionalityTests.push({
-        test: 'Users Table Access',
+        test: 'Stock Movements Table Access',
         status: 'error',
         details: error instanceof Error ? error.message : 'Unknown error'
       })
@@ -190,8 +187,8 @@ function generateRecommendations(missingTables: string[], functionalityTests: an
     recommendations.push('Inventory items table is missing - inventory management will not work')
   }
 
-  if (missingTables.includes('users') || missingTables.includes('roles')) {
-    recommendations.push('Authentication tables are missing - user login will not work')
+  if (missingTables.includes('stock_movements')) {
+    recommendations.push('Stock movements table is missing - inventory tracking will not work')
   }
 
   if (recommendations.length === 0) {

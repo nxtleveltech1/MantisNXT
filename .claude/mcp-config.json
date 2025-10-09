@@ -71,6 +71,37 @@
       "command": "npx",
       "args": ["@starwind-ui/mcp"],
       "description": "Starwind UI components server for Astro and other frameworks"
+    },
+    "neon": {
+      "command": "npx",
+      "args": ["-y", "@neondatabase/mcp-server-neon"],
+      "env": {
+        "NEON_API_KEY": "napi_ae3y6xxnvl319pckn17o2b2jtx8e3oq841kxluuaciqv6rig603wxsn7pxaek7fd"
+      },
+      "description": "Neon serverless PostgreSQL database management"
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "description": "Fetch and process web content"
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git"],
+      "description": "Git repository operations"
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@joshuarileydev/postgres-mcp-server"],
+      "env": {
+        "POSTGRES_CONNECTION_STRING": "postgresql://nxtdb_admin:P@33w0rd-1@62.169.20.53:6600/nxtprod-db_001"
+      },
+      "description": "PostgreSQL OLD database (62.169.20.53:6600) - READ-ONLY"
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "@executeautomation/chrome-mcp"],
+      "description": "Chrome DevTools Protocol for browser automation and testing"
     }
   }
 }
