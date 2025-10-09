@@ -179,44 +179,44 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
 
       // Combine insights from different sources
       const allInsights: AnalyticsInsight[] = [
-        ...(anomaliesData.success ? anomaliesData.data.map((anomaly: any) => ({
-          id: `anomaly-${anomaly.id}`,
+        ...(anomaliesData.success && anomaliesData.data.anomalies ? anomaliesData.data.anomalies.map((anomaly: any) => ({
+          id: `anomaly-${anomaly.type}-${Date.now()}`,
           type: 'anomaly' as const,
           priority: anomaly.severity === 'high' ? 'high' as const : 'medium' as const,
-          title: `${anomaly.metric} Anomaly Detected`,
+          title: anomaly.title || `${anomaly.type} Anomaly Detected`,
           description: anomaly.description,
-          impact: anomaly.impact,
-          recommendation: anomaly.suggestion,
-          confidence: anomaly.confidence,
+          impact: `Value: ${anomaly.value}, Threshold: ${anomaly.threshold}`,
+          recommendation: `Review ${anomaly.type} anomaly`,
+          confidence: 0.85,
           value: anomaly.value,
-          category: anomaly.category,
-          createdAt: anomaly.detectedAt
+          category: anomaly.type,
+          createdAt: anomaly.detected_at || new Date().toISOString()
         })) : []),
-        ...(predictionsData.success ? predictionsData.data.map((prediction: any) => ({
-          id: `prediction-${prediction.id}`,
+        ...(predictionsData.success && predictionsData.data.predictions ? predictionsData.data.predictions.map((prediction: any) => ({
+          id: `prediction-${prediction.type}-${Date.now()}`,
           type: 'trend' as const,
-          priority: 'medium' as const,
+          priority: prediction.action_required ? 'high' as const : 'medium' as const,
           title: prediction.title,
           description: prediction.description,
-          impact: `Predicted ${prediction.change > 0 ? 'increase' : 'decrease'} of ${Math.abs(prediction.change)}%`,
-          recommendation: prediction.recommendation,
-          confidence: prediction.confidence,
-          value: prediction.value,
-          category: prediction.category,
-          createdAt: prediction.createdAt
+          impact: `Timeline: ${prediction.timeline}`,
+          recommendation: prediction.action_required ? 'Action required' : 'Monitor situation',
+          confidence: prediction.confidence / 100,
+          value: 0,
+          category: prediction.type,
+          createdAt: new Date().toISOString()
         })) : []),
-        ...(recommendationsData.success ? recommendationsData.data.map((rec: any) => ({
-          id: `recommendation-${rec.id}`,
+        ...(recommendationsData.success && recommendationsData.data.recommendations ? recommendationsData.data.recommendations.map((rec: any) => ({
+          id: rec.id || `recommendation-${Date.now()}`,
           type: 'opportunity' as const,
           priority: rec.priority,
           title: rec.title,
           description: rec.description,
-          impact: `Potential savings: ${rec.potentialSavings}`,
-          recommendation: rec.actionItems.join('; '),
-          confidence: rec.confidence,
-          value: rec.estimatedValue,
+          impact: `Impact: ${rec.impact}, Effort: ${rec.effort}`,
+          recommendation: rec.action,
+          confidence: 0.75,
+          value: 0,
           category: rec.category,
-          createdAt: rec.createdAt
+          createdAt: rec.created_at || new Date().toISOString()
         })) : [])
       ]
 
