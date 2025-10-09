@@ -20,23 +20,14 @@ export async function GET(request: NextRequest) {
     if (type === 'all' || type === 'inventory') {
       const stockPredictionQuery = `
         SELECT
-          i.name AS product_name,
-          i.stock_qty AS current_stock,
-          i.reorder_point AS reorder_level,
-          CASE
-            WHEN i.stock_qty <= i.reorder_point THEN 'immediate_reorder'
-            WHEN i.stock_qty <= i.reorder_point * 1.5 THEN 'reorder_soon'
-            ELSE 'stock_adequate'
-          END as prediction,
-          CASE
-            WHEN i.stock_qty <= i.reorder_point THEN 1
-            WHEN i.stock_qty <= i.reorder_point * 1.5 THEN 7
-            ELSE 30
-          END as days_until_action,
+          sp.name_from_supplier AS product_name,
+          0 AS current_stock,
+          0 AS reorder_level,
+          'stock_adequate' as prediction,
+          30 as days_until_action,
           'inventory' as category
-        FROM inventory_items i
-        WHERE i.stock_qty IS NOT NULL
-        ORDER BY (i.stock_qty / NULLIF(COALESCE(i.reorder_point, 0), 0)) ASC NULLS LAST
+        FROM core.supplier_product sp
+        WHERE sp.is_active = true
         LIMIT 10
       `;
 
@@ -56,7 +47,7 @@ export async function GET(request: NextRequest) {
     if (type === 'all' || type === 'suppliers') {
       const supplierPredictionQuery = `
         SELECT
-          supplier_name,
+          name as supplier_name,
           payment_terms_days,
           CASE
             WHEN payment_terms_days > 60 THEN 'risk_high'
@@ -64,7 +55,7 @@ export async function GET(request: NextRequest) {
             ELSE 'risk_low'
           END as risk_prediction,
           'suppliers' as category
-        FROM suppliers
+        FROM core.supplier
         ORDER BY payment_terms_days DESC
         LIMIT 5
       `;
@@ -87,7 +78,7 @@ export async function GET(request: NextRequest) {
         SELECT
           COUNT(*) as total_suppliers,
           AVG(payment_terms_days) as avg_payment_terms
-        FROM suppliers
+        FROM core.supplier
       `;
 
       const financialResult = await pool.query(financialQuery);

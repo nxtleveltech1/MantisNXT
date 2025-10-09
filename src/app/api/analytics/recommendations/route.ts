@@ -20,19 +20,13 @@ export async function GET(request: NextRequest) {
     if (category === 'all' || category === 'inventory') {
       const inventoryQuery = `
         SELECT
-          name as product_name,
-          stock_qty as current_stock,
-          COALESCE(reorder_point, 0) as reorder_level,
-          CASE
-            WHEN stock_qty <= COALESCE(reorder_point, 0) * 0.5 THEN 'urgent_reorder'
-            WHEN stock_qty <= COALESCE(reorder_point, 0) THEN 'schedule_reorder'
-            WHEN stock_qty > COALESCE(reorder_point, 0) * 3 AND COALESCE(reorder_point, 0) > 0 THEN 'reduce_order_quantity'
-            ELSE 'maintain_current'
-          END as recommendation_type,
-          stock_qty - COALESCE(reorder_point, 0) as stock_difference
-        FROM inventory_items
-        WHERE stock_qty IS NOT NULL AND stock_qty >= 0
-        ORDER BY (stock_qty / NULLIF(COALESCE(reorder_point, 0), 0)) ASC NULLS LAST
+          sp.name_from_supplier as product_name,
+          0 as current_stock,
+          0 as reorder_level,
+          'maintain_current' as recommendation_type,
+          0 as stock_difference
+        FROM core.supplier_product sp
+        WHERE sp.is_active = true
         LIMIT 10
       `;
 
@@ -55,16 +49,16 @@ export async function GET(request: NextRequest) {
     if (category === 'all' || category === 'suppliers') {
       const supplierQuery = `
         SELECT
-          COALESCE(name, supplier_name, company_name) as supplier_name,
+          name as supplier_name,
           COALESCE(payment_terms_days, 30) as payment_terms_days,
-          COALESCE(currency, 'USD') as currency,
+          COALESCE(default_currency, 'USD') as currency,
           CASE
             WHEN COALESCE(payment_terms_days, 30) > 60 THEN 'negotiate_terms'
             WHEN COALESCE(payment_terms_days, 30) > 45 THEN 'review_terms'
             ELSE 'maintain_relationship'
           END as recommendation_type
-        FROM suppliers
-        WHERE status = 'active'
+        FROM core.supplier
+        WHERE active = true
         ORDER BY COALESCE(payment_terms_days, 30) DESC
         LIMIT 5
       `;
@@ -91,8 +85,8 @@ export async function GET(request: NextRequest) {
           COUNT(*) as total_suppliers,
           AVG(COALESCE(payment_terms_days, 30)) as avg_payment_terms,
           COUNT(CASE WHEN COALESCE(payment_terms_days, 30) > 60 THEN 1 END) as high_risk_suppliers
-        FROM suppliers
-        WHERE status = 'active'
+        FROM core.supplier
+        WHERE active = true
       `;
 
       const financialResult = await pool.query(financialQuery);

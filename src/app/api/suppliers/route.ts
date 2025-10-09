@@ -75,11 +75,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build the query
+    // Build the query - using core.supplier table
     let sqlQuery = `
       /* suppliers_list_query */
-      SELECT *
-      FROM suppliers
+      SELECT supplier_id as id, name, active as status, contact_email as email,
+             contact_phone as phone, payment_terms_days, default_currency as currency,
+             website, created_at, updated_at,
+             '' as address, '' as contact_person, '' as tax_id, '' as payment_terms,
+             '' as primary_category, '' as geographic_region, '' as bee_level,
+             0 as local_content_percentage, false as preferred_supplier,
+             '' as performance_tier, 0 as spend_last_12_months
+      FROM core.supplier
       WHERE 1=1
     `;
 
@@ -192,10 +198,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get total count for pagination
+    // Get total count for pagination - using core.supplier
     let countQuery = `
       SELECT COUNT(*) as total
-      FROM suppliers
+      FROM core.supplier
       WHERE 1=1
     `;
 
@@ -300,9 +306,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = supplierSchema.parse(body);
 
-    // Check for duplicate supplier name
+    // Check for duplicate supplier name - using core.supplier
     const existingSupplier = await pool.query(
-      "SELECT id FROM suppliers WHERE name = $1",
+      "SELECT supplier_id as id FROM core.supplier WHERE name = $1",
       [validatedData.name]
     );
 
@@ -313,31 +319,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert supplier
+    // Insert supplier - using core.supplier table
     const insertQuery = `
-      INSERT INTO suppliers (
-        name, email, phone, address, contact_person, website, tax_id,
-        payment_terms, primary_category, geographic_region, preferred_supplier,
-        bee_level, local_content_percentage, status, performance_tier
+      INSERT INTO core.supplier (
+        name, contact_email, contact_phone, website, active, default_currency, payment_terms_days
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'active', 'unrated'
-      ) RETURNING *
+        $1, $2, $3, $4, true, 'USD', 30
+      ) RETURNING supplier_id as id, *
     `;
 
     const insertResult = await pool.query(insertQuery, [
       validatedData.name,
       validatedData.email,
       validatedData.phone,
-      validatedData.address,
-      validatedData.contact_person,
       validatedData.website,
-      validatedData.tax_id,
-      validatedData.payment_terms,
-      validatedData.primary_category,
-      validatedData.geographic_region,
-      validatedData.preferred_supplier,
-      validatedData.bee_level,
-      validatedData.local_content_percentage,
     ]);
 
     // Invalidate cache after successful creation

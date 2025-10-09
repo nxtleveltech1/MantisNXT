@@ -14,29 +14,28 @@ export async function GET(request: NextRequest) {
 
     console.log(`🔍 Fetching anomalies for organization: ${organizationId}`);
 
-    // Detect inventory anomalies (low stock, unusual movements)
+    // Detect inventory anomalies from core.stock_on_hand
     const inventoryAnomaliesQuery = `
       SELECT
         'inventory' as type,
         'Low Stock Alert' as title,
-        CONCAT('Item ', name, ' has only ', stock_qty, ' units left') as description,
+        CONCAT('Stock location has low quantity') as description,
         'high' as severity,
-        stock_qty as value,
-        reorder_point as threshold,
+        qty as value,
+        10 as threshold,
         NOW() as detected_at
-      FROM inventory_items
-      WHERE stock_qty <= reorder_point
-      AND stock_qty > 0
-      ORDER BY (reorder_point - stock_qty) DESC
+      FROM core.stock_on_hand
+      WHERE qty < 10 AND qty > 0
+      ORDER BY qty ASC
       LIMIT $1
     `;
 
-    // Detect supplier anomalies (performance issues)
+    // Detect supplier anomalies from core.supplier
     const supplierAnomaliesQuery = `
       SELECT
         'supplier' as type,
         'Supplier Performance Issue' as title,
-        CONCAT('Supplier ', COALESCE(name, supplier_name, company_name), ' has concerning metrics') as description,
+        CONCAT('Supplier ', name, ' has concerning metrics') as description,
         CASE
           WHEN payment_terms_days > 60 THEN 'high'
           WHEN payment_terms_days > 30 THEN 'medium'
@@ -45,7 +44,7 @@ export async function GET(request: NextRequest) {
         payment_terms_days as value,
         30 as threshold,
         NOW() as detected_at
-      FROM suppliers
+      FROM core.supplier
       WHERE payment_terms_days > 30
       ORDER BY payment_terms_days DESC
       LIMIT $1
