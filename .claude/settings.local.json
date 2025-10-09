@@ -3,7 +3,8 @@
     "allow": [
       "Bash(ping:*)",
       "Bash(node:*)",
-      "Bash(nslookup:*)"
+      "Bash(nslookup:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []

@@ -4,6 +4,9 @@
   "/api/inventory/alerts/route": "app/api/inventory/alerts/route.js",
   "/api/inventory/trends/route": "app/api/inventory/trends/route.js",
   "/api/stock-movements/route": "app/api/stock-movements/route.js",
+  "/api/suppliers/route": "app/api/suppliers/route.js",
+  "/api/inventory/products/route": "app/api/inventory/products/route.js",
   "/page": "app/page.js",
-  "/inventory/page": "app/inventory/page.js"
+  "/inventory/page": "app/inventory/page.js",
+  "/nxt-spp/page": "app/nxt-spp/page.js"
 }

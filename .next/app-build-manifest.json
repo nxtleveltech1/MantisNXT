@@ -80,6 +80,21 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/stock-movements/route.js"
+    ],
+    "/nxt-spp/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/nxt-spp/layout.js"
+    ],
+    "/nxt-spp/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/nxt-spp/page.js"
+    ],
+    "/api/inventory/products/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/inventory/products/route.js"
     ]
   }
 }
