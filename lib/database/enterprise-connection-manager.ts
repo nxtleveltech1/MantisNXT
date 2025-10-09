@@ -41,11 +41,11 @@ interface ConnectionManagerStatus {
 
 const DEFAULT_MAX_POOL = 10;
 const DEFAULT_IDLE_TIMEOUT = 30000;
-const DEFAULT_CONNECTION_TIMEOUT = 2000;
-const DEFAULT_QUERY_TIMEOUT = 30000;
-const DEFAULT_MAX_RETRIES = 2;
+const DEFAULT_CONNECTION_TIMEOUT = 120000; // EMERGENCY FIX: Increased to 120s for slow DNS resolution
+const DEFAULT_QUERY_TIMEOUT = 60000; // Increased to 60s
+const DEFAULT_MAX_RETRIES = 3; // Increased retries for intermittent DNS issues
 const DEFAULT_RESET_TIMEOUT = 60000;
-const CLIENT_ACQUIRE_TIMEOUT = 45000;
+const CLIENT_ACQUIRE_TIMEOUT = 180000; // EMERGENCY FIX: 3 minutes for DNS + SSL handshake
 
 // Module-level flag to track cleanup handler registration
 let cleanupHandlersRegistered = false;
@@ -161,7 +161,16 @@ class EnterpriseConnectionManager {
 
   private ensurePool(): Pool {
     if (!this.pool) {
+      console.log("🔌 Initializing Enterprise Connection Pool with config:", {
+        host: this.poolConfig.connectionString?.substring(0, 50) + "...",
+        max: this.poolConfig.max,
+        idleTimeoutMillis: this.poolConfig.idleTimeoutMillis,
+        connectionTimeoutMillis: this.poolConfig.connectionTimeoutMillis,
+        ssl: !!this.poolConfig.ssl,
+      });
+
       this.pool = new Pool(this.poolConfig);
+
       this.pool.on("error", (error) => {
         console.error(
           "❌ Unhandled pool error in EnterpriseConnectionManager:",
@@ -181,6 +190,11 @@ class EnterpriseConnectionManager {
           this.openCircuitBreaker();
         }
       });
+
+      this.pool.on("connect", (client) => {
+        console.log("✅ New client connected to enterprise pool");
+      });
+
       this.setupCleanupHandlers();
     }
 

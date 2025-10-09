@@ -1,9 +1,9 @@
 {
-  "/api/core/selections/active/route": "app/api/core/selections/active/route.js",
-  "/api/spp/dashboard/metrics/route": "app/api/spp/dashboard/metrics/route.js",
-  "/api/activities/recent/route": "app/api/activities/recent/route.js",
-  "/api/alerts/route": "app/api/alerts/route.js",
+  "/api/inventory/analytics/route": "app/api/inventory/analytics/route.js",
   "/api/inventory/route": "app/api/inventory/route.js",
-  "/api/analytics/dashboard/route": "app/api/analytics/dashboard/route.js",
-  "/api/suppliers/route": "app/api/suppliers/route.js"
+  "/api/inventory/alerts/route": "app/api/inventory/alerts/route.js",
+  "/api/inventory/trends/route": "app/api/inventory/trends/route.js",
+  "/api/stock-movements/route": "app/api/stock-movements/route.js",
+  "/page": "app/page.js",
+  "/inventory/page": "app/inventory/page.js"
 }

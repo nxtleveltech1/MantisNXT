@@ -1,9 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "mcp__chrome-devtools__get_network_request",
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Emergency fix for 4 critical API endpoint failures\n\nCRITICAL PRODUCTION FIXES:\n\n1. /api/suppliers?status=active&limit=5000 - 400 Bad Request (REGRESSION)\n   - Fixed boolean array conversion in status filter\n   - Optimized single-value filters to use direct equality\n   - Added case-insensitive status matching\n   - File: src/app/api/suppliers/route.ts\n\n2. /api/spp/upload?limit=10 - 500 Internal Server Error\n   - Made supplier_id parameter optional (was incorrectly required)\n   - Added status filter support\n   - Aligned with service layer capabilities\n   - File: src/app/api/spp/upload/route.ts\n\n3. /api/core/selections/active - 500 Internal Server Error\n   - Removed dependency on non-existent serve.v_nxt_soh view\n   - Replaced with direct table joins (price_history + stock_on_hand)\n   - Added proper error handling with fallback values\n   - File: src/lib/services/InventorySelectionService.ts\n\n4. /api/spp/dashboard/metrics - 500 Internal Server Error\n   - Removed dependency on non-existent serve.v_nxt_soh view\n   - Replaced with direct table joins for real-time calculation\n   - Added comprehensive try-catch with safe default returns\n   - File: src/lib/services/PricelistService.ts\n\nAll endpoints now:\n- Use core.* schema prefix consistently\n- Implement proper error handling\n- Return standardized response formats\n- Include detailed error logging\n- Provide safe fallbacks instead of crashing\n\nSee API_EMERGENCY_FIX_PHASE_2.md for complete fix report.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(ping:*)",
+      "Bash(node:*)",
+      "Bash(nslookup:*)"
     ],
     "deny": [],
     "ask": []
