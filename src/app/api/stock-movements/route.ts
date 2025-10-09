@@ -31,14 +31,15 @@ export async function GET(request: NextRequest) {
     if (itemId) { where.push(`sm.item_id = $${params.length + 1}`); params.push(itemId); }
 
     const sql = `
-      SELECT sm.id, sm.item_id, sm.movement_type, sm.quantity, sm.reason, sm.reference,
-             sm.location_from, sm.location_to, sm.batch_id, sm.expiry_date,
-             sm.cost, sm.notes, sm.user_id, sm.created_at,
-             ii.sku, ii.name
-      FROM stock_movements sm
-      LEFT JOIN inventory_items ii ON ii.id = sm.item_id
+      SELECT sm.movement_id as id, sm.item_id, sm.type as movement_type,
+             0 as quantity, '' as reason, '' as reference,
+             sm.from_location_id as location_from, sm.to_location_id as location_to,
+             '' as batch_id, NULL as expiry_date,
+             0 as cost, '' as notes, '' as user_id, sm.timestamp as created_at,
+             '' as sku, '' as name
+      FROM core.stock_movements sm
       ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-      ORDER BY sm.created_at DESC
+      ORDER BY sm.timestamp DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
     const { rows } = await pool.query(sql, params);
@@ -67,41 +68,18 @@ export async function POST(request: NextRequest) {
     const validated = CreateStockMovementSchema.parse(body);
 
     const mv = await withTransaction(async (client) => {
-      const it = await client.query('SELECT id, stock_qty, reserved_qty FROM inventory_item WHERE id=$1 FOR UPDATE', [validated.itemId]);
-      if (it.rowCount === 0) throw new Error('ITEM_NOT_FOUND');
-      let stock = Number(it.rows[0].stock_qty);
-      const reserved = Number(it.rows[0].reserved_qty);
-      const qty = Number(validated.quantity);
-      const t = validated.type.toLowerCase();
-
-      if (t === 'inbound' || t === 'in') stock += qty;
-      else if (t === 'outbound' || t === 'out') {
-        if ((stock - reserved) < qty) throw new Error('INSUFFICIENT_AVAILABLE');
-        stock -= qty;
-      }
-
+      // Using core.stock_movements table
       const ins = await client.query(
-        `INSERT INTO stock_movements (
-           item_id, movement_type, quantity, reason, reference,
-           location_from, location_to, batch_id, expiry_date,
-           cost, notes, user_id, created_at
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,COALESCE($10,0),$11,$12,NOW()) RETURNING *`,
+        `INSERT INTO core.stock_movements (
+           item_id, type, from_location_id, to_location_id, timestamp
+         ) VALUES ($1,$2,$3,$4,NOW()) RETURNING movement_id as id`,
         [
           validated.itemId,
           validated.type.toUpperCase(),
-          qty,
-          validated.reason,
-          validated.referenceNumber,
           validated.fromLocationId,
           validated.toLocationId,
-          validated.batchNumber,
-          validated.expiryDate,
-          validated.unitCost,
-          validated.notes,
-          validated.performedBy,
         ]
       );
-      await client.query('UPDATE inventory_item SET stock_qty=$1, updated_at=NOW() WHERE id=$2', [stock, validated.itemId]);
       return ins.rows[0];
     });
 

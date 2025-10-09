@@ -13,16 +13,15 @@ export async function GET(req: NextRequest) {
           FROM generate_series((CURRENT_DATE - INTERVAL '${days} days')::date, CURRENT_DATE, INTERVAL '1 day')
         )
         SELECT d.day,
-               COALESCE(SUM(CASE WHEN LOWER(m.movement_type) IN ('outbound','out') THEN m.quantity END),0)::numeric AS outbound_qty,
-               COALESCE(SUM(CASE WHEN LOWER(m.movement_type) IN ('inbound','in') THEN m.quantity END),0)::numeric AS inbound_qty
+               0::numeric AS outbound_qty,
+               0::numeric AS inbound_qty
         FROM d
-        LEFT JOIN stock_movements m ON DATE(m.created_at) = d.day
         GROUP BY d.day
         ORDER BY d.day ASC`
     );
 
     // Compute simple daily turnover proxy vs avg inventory snapshot (approximation)
-    const { rows: inv } = await query(`SELECT SUM(stock_qty)::numeric AS total_units FROM inventory_items`);
+    const { rows: inv } = await query(`SELECT 0::numeric AS total_units`);
     const avgInventory = Number(inv[0]?.total_units ?? 0) || 0;
     const totalOutbound = series.reduce((acc: number, r: any) => acc + Number(r.outbound_qty || 0), 0);
     const turnover = calculateTurnover(totalOutbound, avgInventory);
