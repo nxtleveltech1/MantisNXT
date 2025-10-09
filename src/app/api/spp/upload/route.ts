@@ -120,31 +120,51 @@ export async function GET(request: NextRequest) {
     const supplierId = searchParams.get('supplier_id');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const status = searchParams.get('status')?.split(',') as Array<'received' | 'validating' | 'validated' | 'failed' | 'merged'> | undefined;
 
-    if (!supplierId) {
-      return NextResponse.json(
-        { success: false, error: 'Supplier ID is required' },
-        { status: 400 }
-      );
+    // Build filters object - supplier_id is now optional
+    const filters: {
+      supplier_id?: string;
+      status?: Array<'received' | 'validating' | 'validated' | 'failed' | 'merged'>;
+      limit: number;
+      offset: number;
+    } = {
+      limit,
+      offset
+    };
+
+    if (supplierId) {
+      filters.supplier_id = supplierId;
     }
 
-    const uploads = await pricelistService.listUploads(supplierId, limit, offset);
+    if (status && status.length > 0) {
+      filters.status = status;
+    }
+
+    const result = await pricelistService.listUploads(filters);
 
     return NextResponse.json({
       success: true,
-      uploads,
+      data: {
+        uploads: result.uploads,
+        total: result.total
+      },
       pagination: {
         limit,
         offset,
-        total: uploads.length
-      }
+        total: result.total,
+        page: Math.floor(offset / limit) + 1,
+        totalPages: Math.ceil(result.total / limit)
+      },
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('List uploads error:', error);
+    console.error('❌ [GET /api/spp/upload] Error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to list uploads'
+        error: 'Failed to list uploads',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

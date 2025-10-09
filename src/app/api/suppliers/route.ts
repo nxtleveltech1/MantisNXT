@@ -75,16 +75,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build the query - using core.supplier table
+    // Build the query - using core.supplier table with ONLY existing columns
     let sqlQuery = `
       /* suppliers_list_query */
-      SELECT supplier_id as id, name, active as status, contact_email as email,
-             contact_phone as phone, payment_terms_days, default_currency as currency,
-             website, created_at, updated_at,
-             '' as address, '' as contact_person, '' as tax_id, '' as payment_terms,
-             '' as primary_category, '' as geographic_region, '' as bee_level,
-             0 as local_content_percentage, false as preferred_supplier,
-             '' as performance_tier, 0 as spend_last_12_months
+      SELECT
+        supplier_id as id,
+        name,
+        active as status,
+        contact_email as email,
+        contact_phone as phone,
+        payment_terms_days,
+        default_currency as currency,
+        website,
+        terms,
+        created_at,
+        updated_at
       FROM core.supplier
       WHERE 1=1
     `;
@@ -94,84 +99,56 @@ export async function GET(request: NextRequest) {
 
     // Add status filter first for partial index usage
     if (status?.length) {
-      const statusBooleans = status.map(s => s === 'active');
-      sqlQuery += ` AND active = ANY($${paramIndex})`;
-      queryParams.push(statusBooleans);
-      paramIndex++;
+      // Map string values to boolean: 'active' -> true, 'inactive' -> false
+      const statusBooleans = status.map(s => s.toLowerCase() === 'active');
+
+      // If all values are the same, use simple equality instead of ANY
+      const allTrue = statusBooleans.every(b => b === true);
+      const allFalse = statusBooleans.every(b => b === false);
+
+      if (allTrue) {
+        sqlQuery += ` AND active = true`;
+      } else if (allFalse) {
+        sqlQuery += ` AND active = false`;
+      } else {
+        sqlQuery += ` AND active = ANY($${paramIndex})`;
+        queryParams.push(statusBooleans);
+        paramIndex++;
+      }
     }
 
     // Add cursor-based pagination
     if (cursor) {
-      sqlQuery += ` AND id > $${paramIndex}`;
-      queryParams.push(cursor);
+      sqlQuery += ` AND supplier_id > $${paramIndex}`;
+      queryParams.push(parseInt(cursor));
       paramIndex++;
     }
 
-    // Add search filter - trigram index on name will be used for primary search
+    // Add search filter - only search on existing columns
     if (search) {
       sqlQuery += ` AND (
         name ILIKE $${paramIndex} OR
-        email ILIKE $${paramIndex} OR
-        contact_person ILIKE $${paramIndex}
+        contact_email ILIKE $${paramIndex} OR
+        contact_phone ILIKE $${paramIndex}
       )`;
       queryParams.push(`%${search}%`);
       paramIndex++;
     }
 
-    // Add performance tier filter
-    if (performanceTier?.length) {
-      sqlQuery += ` AND performance_tier = ANY($${paramIndex})`;
-      queryParams.push(performanceTier);
-      paramIndex++;
-    }
-
-    // Add category filter
-    if (category?.length) {
-      sqlQuery += ` AND primary_category = ANY($${paramIndex})`;
-      queryParams.push(category);
-      paramIndex++;
-    }
-
-    // Add region filter
-    if (region?.length) {
-      sqlQuery += ` AND geographic_region = ANY($${paramIndex})`;
-      queryParams.push(region);
-      paramIndex++;
-    }
-
-    // Add BEE level filter
-    if (beeLevel?.length) {
-      sqlQuery += ` AND bee_level = ANY($${paramIndex})`;
-      queryParams.push(beeLevel);
-      paramIndex++;
-    }
-
-    // Add preferred supplier filter
-    if (preferredOnly) {
-      sqlQuery += ` AND preferred_supplier = true`;
-    }
-
-    // Add spend filters
-    if (minSpend) {
-      sqlQuery += ` AND spend_last_12_months >= $${paramIndex}`;
-      queryParams.push(parseFloat(minSpend));
-      paramIndex++;
-    }
-
-    if (maxSpend) {
-      sqlQuery += ` AND spend_last_12_months <= $${paramIndex}`;
-      queryParams.push(parseFloat(maxSpend));
-      paramIndex++;
-    }
+    // REMOVED: Non-existent column filters
+    // - performanceTier (column doesn't exist)
+    // - category (column doesn't exist)
+    // - region (column doesn't exist)
+    // - beeLevel (column doesn't exist)
+    // - preferredOnly (column doesn't exist)
+    // - minSpend/maxSpend (column doesn't exist)
 
     // Add ordering and pagination
     if (cursor) {
-      sqlQuery += ` ORDER BY id ASC LIMIT $${paramIndex}`;
+      sqlQuery += ` ORDER BY supplier_id ASC LIMIT $${paramIndex}`;
       queryParams.push(limit);
     } else {
-      sqlQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${
-        paramIndex + 1
-      }`;
+      sqlQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
       queryParams.push(limit, offset);
     }
 
@@ -199,7 +176,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get total count for pagination - using core.supplier
+    // Get total count for pagination - using core.supplier with ONLY existing columns
     let countQuery = `
       SELECT COUNT(*) as total
       FROM core.supplier
@@ -211,54 +188,35 @@ export async function GET(request: NextRequest) {
     let countParamIndex = 1;
 
     if (status?.length) {
-      const statusBooleans = status.map(s => s === 'active');
-      countQuery += ` AND active = ANY($${countParamIndex})`;
-      countParams.push(statusBooleans);
-      countParamIndex++;
+      // Map string values to boolean: 'active' -> true, 'inactive' -> false
+      const statusBooleans = status.map(s => s.toLowerCase() === 'active');
+
+      // If all values are the same, use simple equality instead of ANY
+      const allTrue = statusBooleans.every(b => b === true);
+      const allFalse = statusBooleans.every(b => b === false);
+
+      if (allTrue) {
+        countQuery += ` AND active = true`;
+      } else if (allFalse) {
+        countQuery += ` AND active = false`;
+      } else {
+        countQuery += ` AND active = ANY($${countParamIndex})`;
+        countParams.push(statusBooleans);
+        countParamIndex++;
+      }
     }
 
     if (search) {
       countQuery += ` AND (
         name ILIKE $${countParamIndex} OR
-        contact_email ILIKE $${countParamIndex}
+        contact_email ILIKE $${countParamIndex} OR
+        contact_phone ILIKE $${countParamIndex}
       )`;
       countParams.push(`%${search}%`);
       countParamIndex++;
     }
 
-    if (performanceTier?.length) {
-      countQuery += ` AND performance_tier = ANY($${countParamIndex})`;
-      countParamIndex++;
-    }
-
-    if (category?.length) {
-      countQuery += ` AND primary_category = ANY($${countParamIndex})`;
-      countParamIndex++;
-    }
-
-    if (region?.length) {
-      countQuery += ` AND geographic_region = ANY($${countParamIndex})`;
-      countParamIndex++;
-    }
-
-    if (beeLevel?.length) {
-      countQuery += ` AND bee_level = ANY($${countParamIndex})`;
-      countParamIndex++;
-    }
-
-    if (preferredOnly) {
-      countQuery += ` AND preferred_supplier = true`;
-    }
-
-    if (minSpend) {
-      countQuery += ` AND spend_last_12_months >= $${countParamIndex}`;
-      countParamIndex++;
-    }
-
-    if (maxSpend) {
-      countQuery += ` AND spend_last_12_months <= $${countParamIndex}`;
-      countParamIndex++;
-    }
+    // REMOVED: All filters on non-existent columns
 
     const countResult = await query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].total);
@@ -268,7 +226,7 @@ export async function GET(request: NextRequest) {
     let nextCursor = null;
     if (cursor && result.rows.length > 0) {
       const lastRow = result.rows[result.rows.length - 1];
-      nextCursor = lastRow.id;
+      nextCursor = lastRow.id.toString();
     }
 
     const response = NextResponse.json({

@@ -5,16 +5,11 @@ import { serializeTimestamp } from '@/lib/utils/date-utils';
 import { CacheInvalidator } from '@/lib/cache/invalidation';
 
 const CreateStockMovementSchema = z.object({
-  itemId: z.string().min(1),
-  type: z.enum(['inbound', 'outbound', 'transfer', 'adjustment']),
-  quantity: z.number().positive(),
-  reason: z.string().min(1),
-  fromLocationId: z.string().optional(),
-  toLocationId: z.string().optional(),
-  batchNumber: z.string().optional(),
-  expiryDate: z.string().optional(),
-  referenceNumber: z.string().optional(),
-  unitCost: z.number().min(0).optional(),
+  supplierProductId: z.number().positive('Valid supplier product ID is required'),
+  locationId: z.number().positive('Valid location ID is required'),
+  movementType: z.enum(['RECEIPT', 'ISSUE', 'TRANSFER', 'ADJUSTMENT', 'RETURN']),
+  quantity: z.number().positive('Quantity must be positive'),
+  referenceDoc: z.string().optional(),
   notes: z.string().optional(),
   performedBy: z.string().optional(),
 });
@@ -22,43 +17,94 @@ const CreateStockMovementSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const itemId = searchParams.get('itemId');
+    const supplierProductId = searchParams.get('supplierProductId');
+    const locationId = searchParams.get('locationId');
+    const movementType = searchParams.get('movementType');
     const limit = Math.min(100, parseInt(searchParams.get('limit') || '50', 10));
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10));
 
+    console.log(`🔍 Fetching stock movements: supplierProductId=${supplierProductId}, locationId=${locationId}, type=${movementType}`);
+
     const where: string[] = [];
     const params: any[] = [];
-    if (itemId) { where.push(`sm.item_id = $${params.length + 1}`); params.push(itemId); }
 
+    if (supplierProductId) {
+      where.push(`sm.supplier_product_id = $${params.length + 1}`);
+      params.push(parseInt(supplierProductId));
+    }
+
+    if (locationId) {
+      where.push(`sm.location_id = $${params.length + 1}`);
+      params.push(parseInt(locationId));
+    }
+
+    if (movementType) {
+      where.push(`sm.movement_type = $${params.length + 1}`);
+      params.push(movementType.toUpperCase());
+    }
+
+    // Query using correct table: core.stock_movement (singular, not plural)
     const sql = `
-      SELECT sm.movement_id as id, sm.item_id, sm.type as movement_type,
-             0 as quantity, '' as reason, '' as reference,
-             sm.from_location_id as location_from, sm.to_location_id as location_to,
-             '' as batch_id, NULL as expiry_date,
-             0 as cost, '' as notes, '' as user_id, sm.timestamp as created_at,
-             '' as sku, '' as name
-      FROM core.stock_movements sm
+      SELECT
+        sm.movement_id as id,
+        sm.supplier_product_id,
+        sp.supplier_sku as sku,
+        sp.name_from_supplier as item_name,
+        sm.movement_type,
+        sm.qty as quantity,
+        sm.reference_doc as reference,
+        sm.notes,
+        sm.location_id,
+        sl.name as location_name,
+        sm.movement_ts as timestamp,
+        sm.created_by,
+        sm.created_at
+      FROM core.stock_movement sm
+      JOIN core.supplier_product sp ON sp.supplier_product_id = sm.supplier_product_id
+      LEFT JOIN core.stock_location sl ON sl.location_id = sm.location_id
       ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-      ORDER BY sm.timestamp DESC
-      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+      ORDER BY sm.movement_ts DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+
     params.push(limit, offset);
     const { rows } = await pool.query(sql, params);
+
     const data = rows.map((r: any) => ({
       id: r.id,
-      itemId: r.item_id,
+      supplierProductId: r.supplier_product_id,
       sku: r.sku,
-      itemName: r.name,
-      type: String(r.movement_type).toLowerCase(),
-      quantity: Number(r.quantity || 0),
-      reason: r.reason,
+      itemName: r.item_name,
+      movementType: r.movement_type,
+      quantity: parseFloat(r.quantity || 0),
       reference: r.reference,
-      unitCost: Number(r.cost || 0),
-      createdAt: serializeTimestamp(r.created_at),
       notes: r.notes,
+      locationId: r.location_id,
+      locationName: r.location_name,
+      timestamp: serializeTimestamp(r.timestamp),
+      createdBy: r.created_by,
+      createdAt: serializeTimestamp(r.created_at),
     }));
-    return NextResponse.json({ success: true, data });
+
+    console.log(`✅ Found ${data.length} stock movements`);
+
+    return NextResponse.json({
+      success: true,
+      data,
+      pagination: {
+        limit,
+        offset,
+        total: data.length,
+        hasMore: data.length === limit
+      }
+    });
   } catch (e: any) {
-    return NextResponse.json({ success: false, error: 'STOCK_MOVEMENTS_LIST_FAILED', detail: e?.message ?? String(e) }, { status: 500 });
+    console.error('❌ Stock movements query failed:', e);
+    return NextResponse.json({
+      success: false,
+      error: 'STOCK_MOVEMENTS_LIST_FAILED',
+      detail: e?.message ?? String(e)
+    }, { status: 500 });
   }
 }
 
@@ -67,27 +113,59 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = CreateStockMovementSchema.parse(body);
 
+    console.log(`📦 Creating stock movement: ${validated.movementType} for product ${validated.supplierProductId}`);
+
     const mv = await withTransaction(async (client) => {
-      // Using core.stock_movements table
+      // Using correct table: core.stock_movement (singular)
       const ins = await client.query(
-        `INSERT INTO core.stock_movements (
-           item_id, type, from_location_id, to_location_id, timestamp
-         ) VALUES ($1,$2,$3,$4,NOW()) RETURNING movement_id as id`,
+        `INSERT INTO core.stock_movement (
+           location_id, supplier_product_id, movement_type, qty,
+           reference_doc, notes, movement_ts, created_by
+         ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
+         RETURNING movement_id as id, movement_ts as timestamp`,
         [
-          validated.itemId,
-          validated.type.toUpperCase(),
-          validated.fromLocationId,
-          validated.toLocationId,
+          validated.locationId,
+          validated.supplierProductId,
+          validated.movementType,
+          validated.quantity,
+          validated.referenceDoc || null,
+          validated.notes || null,
+          validated.performedBy || 'system',
         ]
       );
+
+      console.log(`✅ Stock movement created: ID ${ins.rows[0].id}`);
       return ins.rows[0];
     });
 
-    CacheInvalidator.invalidateStockMovements(validated.itemId);
-    return NextResponse.json({ success: true, data: { id: mv.id } }, { status: 201 });
+    CacheInvalidator.invalidateStockMovements(validated.supplierProductId.toString());
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: mv.id,
+        timestamp: serializeTimestamp(mv.timestamp)
+      },
+      message: 'Stock movement recorded successfully'
+    }, { status: 201 });
+
   } catch (e: any) {
+    console.error('❌ Stock movement creation failed:', e);
+
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({
+        success: false,
+        error: 'VALIDATION_FAILED',
+        details: e.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+      }, { status: 400 });
+    }
+
     const status = e?.message === 'INSUFFICIENT_AVAILABLE' ? 400 : 500;
-    return NextResponse.json({ success: false, error: 'STOCK_MOVEMENTS_CREATE_FAILED', detail: e?.message ?? String(e) }, { status });
+    return NextResponse.json({
+      success: false,
+      error: 'STOCK_MOVEMENTS_CREATE_FAILED',
+      detail: e?.message ?? String(e)
+    }, { status });
   }
 }
 

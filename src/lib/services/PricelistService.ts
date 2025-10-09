@@ -598,55 +598,71 @@ export class PricelistService {
     new_products_count: number;
     recent_price_changes_count: number;
   }> {
-    const metricsQueries = await Promise.all([
-      // Total suppliers with uploads
-      neonDb.query<{ count: string }>(
-        'SELECT COUNT(DISTINCT supplier_id) as count FROM spp.pricelist_upload'
-      ),
+    try {
+      const metricsQueries = await Promise.all([
+        // Total suppliers with uploads
+        neonDb.query<{ count: string }>(
+          'SELECT COUNT(DISTINCT supplier_id) as count FROM spp.pricelist_upload'
+        ),
 
-      // Total products in core catalog
-      neonDb.query<{ count: string }>(
-        'SELECT COUNT(*) as count FROM core.supplier_product'
-      ),
+        // Total products in core catalog
+        neonDb.query<{ count: string }>(
+          'SELECT COUNT(*) as count FROM core.supplier_product WHERE is_active = true'
+        ),
 
-      // Selected products in active selection
-      neonDb.query<{ count: string }>(
-        `SELECT COUNT(DISTINCT isi.supplier_product_id) as count
-         FROM core.inventory_selection s
-         JOIN core.inventory_selected_item isi ON isi.selection_id = s.selection_id
-         WHERE s.status = 'active' AND isi.status = 'selected'`
-      ),
+        // Selected products in active selection
+        neonDb.query<{ count: string }>(
+          `SELECT COUNT(DISTINCT isi.supplier_product_id) as count
+           FROM core.inventory_selection s
+           JOIN core.inventory_selected_item isi ON isi.selection_id = s.selection_id
+           WHERE s.status = 'active' AND isi.status = 'selected'`
+        ),
 
-      // Selected inventory value
-      neonDb.query<{ total: string }>(
-        `SELECT COALESCE(SUM(inventory_value), 0) as total
-         FROM serve.v_nxt_soh
-         WHERE selection_id IN (SELECT selection_id FROM core.inventory_selection WHERE status = 'active')`
-      ),
+        // Selected inventory value - calculate from price history and stock on hand
+        neonDb.query<{ total: string }>(
+          `SELECT COALESCE(SUM(ph.price * soh.qty), 0) as total
+           FROM core.inventory_selection s
+           JOIN core.inventory_selected_item isi ON isi.selection_id = s.selection_id
+           JOIN core.price_history ph ON ph.supplier_product_id = isi.supplier_product_id AND ph.is_current = true
+           LEFT JOIN core.stock_on_hand soh ON soh.supplier_product_id = isi.supplier_product_id
+           WHERE s.status = 'active' AND isi.status = 'selected'`
+        ),
 
-      // New products count (last 30 days)
-      neonDb.query<{ count: string }>(
-        `SELECT COUNT(*) as count
-         FROM core.supplier_product
-         WHERE created_at >= NOW() - INTERVAL '30 days'`
-      ),
+        // New products count (last 30 days)
+        neonDb.query<{ count: string }>(
+          `SELECT COUNT(*) as count
+           FROM core.supplier_product
+           WHERE created_at >= NOW() - INTERVAL '30 days' AND is_active = true`
+        ),
 
-      // Recent price changes (last 7 days)
-      neonDb.query<{ count: string }>(
-        `SELECT COUNT(*) as count
-         FROM core.price_history
-         WHERE created_at >= NOW() - INTERVAL '7 days'`
-      )
-    ]);
+        // Recent price changes (last 7 days)
+        neonDb.query<{ count: string }>(
+          `SELECT COUNT(*) as count
+           FROM core.price_history
+           WHERE created_at >= NOW() - INTERVAL '7 days'`
+        )
+      ]);
 
-    return {
-      total_suppliers: parseInt(metricsQueries[0].rows[0].count),
-      total_products: parseInt(metricsQueries[1].rows[0].count),
-      selected_products: parseInt(metricsQueries[2].rows[0].count),
-      selected_inventory_value: parseFloat(metricsQueries[3].rows[0].total),
-      new_products_count: parseInt(metricsQueries[4].rows[0].count),
-      recent_price_changes_count: parseInt(metricsQueries[5].rows[0].count)
-    };
+      return {
+        total_suppliers: parseInt(metricsQueries[0].rows[0]?.count || '0'),
+        total_products: parseInt(metricsQueries[1].rows[0]?.count || '0'),
+        selected_products: parseInt(metricsQueries[2].rows[0]?.count || '0'),
+        selected_inventory_value: parseFloat(metricsQueries[3].rows[0]?.total || '0'),
+        new_products_count: parseInt(metricsQueries[4].rows[0]?.count || '0'),
+        recent_price_changes_count: parseInt(metricsQueries[5].rows[0]?.count || '0')
+      };
+    } catch (error) {
+      console.error('[PricelistService] getDashboardMetrics error:', error);
+      // Return safe defaults instead of crashing
+      return {
+        total_suppliers: 0,
+        total_products: 0,
+        selected_products: 0,
+        selected_inventory_value: 0,
+        new_products_count: 0,
+        recent_price_changes_count: 0
+      };
+    }
   }
 
   /**

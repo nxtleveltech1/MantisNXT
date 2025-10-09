@@ -1,39 +1,54 @@
--- Rollback Migration 005: Performance Optimization Indexes
--- Purpose: Remove indexes created in migration 005
--- Created: 2025-10-09
+-- Rollback Migration 005: Remove Analytics Table Sequences
+-- WARNING: This will prevent auto-increment on analytics tables
+-- Only use this if migration 005 needs to be reverted
 
--- Drop all indexes created in migration 005
-DROP INDEX CONCURRENTLY IF EXISTS core.idx_supplier_list_filter;
-DROP INDEX CONCURRENTLY IF EXISTS core.idx_stock_qty_alerts;
-DROP INDEX CONCURRENTLY IF EXISTS core.idx_supplier_product_active_search;
-DROP INDEX CONCURRENTLY IF EXISTS core.idx_price_history_current_covering;
-DROP INDEX CONCURRENTLY IF EXISTS core.idx_pricelist_items_active;
-DROP INDEX CONCURRENTLY IF EXISTS core.idx_analytics_anomalies_dashboard;
-DROP INDEX CONCURRENTLY IF EXISTS core.idx_analytics_predictions_dashboard;
-DROP INDEX CONCURRENTLY IF EXISTS core.idx_stock_movements_product_recent;
+-- ============================================================================
+-- REMOVE DEFAULT VALUES
+-- ============================================================================
 
--- Verification
-DO $$
-DECLARE
-  remaining_count INTEGER;
-BEGIN
-  SELECT COUNT(*) INTO remaining_count
-  FROM pg_indexes
-  WHERE schemaname = 'core'
-    AND indexname IN (
-      'idx_supplier_list_filter',
-      'idx_stock_qty_alerts',
-      'idx_supplier_product_active_search',
-      'idx_price_history_current_covering',
-      'idx_pricelist_items_active',
-      'idx_analytics_anomalies_dashboard',
-      'idx_analytics_predictions_dashboard',
-      'idx_stock_movements_product_recent'
-    );
+-- Remove default from analytics_anomalies.anomaly_id
+ALTER TABLE core.analytics_anomalies
+  ALTER COLUMN anomaly_id DROP DEFAULT;
 
-  IF remaining_count = 0 THEN
-    RAISE NOTICE 'All performance optimization indexes successfully removed';
-  ELSE
-    RAISE WARNING 'Found % indexes still present after rollback', remaining_count;
-  END IF;
-END $$;
+-- Remove default from analytics_predictions.prediction_id
+ALTER TABLE core.analytics_predictions
+  ALTER COLUMN prediction_id DROP DEFAULT;
+
+-- ============================================================================
+-- DROP SEQUENCES
+-- ============================================================================
+
+-- Drop analytics_anomalies sequence
+DROP SEQUENCE IF EXISTS core.analytics_anomalies_anomaly_id_seq CASCADE;
+
+-- Drop analytics_predictions sequence
+DROP SEQUENCE IF EXISTS core.analytics_predictions_prediction_id_seq CASCADE;
+
+-- ============================================================================
+-- VERIFICATION
+-- ============================================================================
+
+-- Verify sequences are removed
+SELECT
+  'core.analytics_anomalies' as table_name,
+  column_name,
+  column_default
+FROM information_schema.columns
+WHERE table_schema = 'core'
+  AND table_name = 'analytics_anomalies'
+  AND column_name = 'anomaly_id'
+
+UNION ALL
+
+SELECT
+  'core.analytics_predictions' as table_name,
+  column_name,
+  column_default
+FROM information_schema.columns
+WHERE table_schema = 'core'
+  AND table_name = 'analytics_predictions'
+  AND column_name = 'prediction_id';
+
+-- ============================================================================
+-- ROLLBACK COMPLETE
+-- ============================================================================

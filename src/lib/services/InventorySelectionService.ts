@@ -603,19 +603,22 @@ export class InventorySelectionService {
     const itemCountResult = await neonDb.query<{ count: string }>(itemCountQuery, [selection.selection_id]);
     const itemCount = parseInt(itemCountResult.rows[0].count);
 
-    // Get inventory value (if NXT SOH view exists)
+    // Get inventory value (calculate from price history and stock on hand)
     let inventoryValue = 0;
     try {
       const valueQuery = `
-        SELECT COALESCE(SUM(inventory_value), 0) as total
-        FROM serve.v_nxt_soh
-        WHERE selection_id = $1
+        SELECT COALESCE(SUM(ph.price * soh.qty), 0) as total
+        FROM core.inventory_selected_item isi
+        JOIN core.price_history ph ON ph.supplier_product_id = isi.supplier_product_id AND ph.is_current = true
+        JOIN core.stock_on_hand soh ON soh.supplier_product_id = isi.supplier_product_id
+        WHERE isi.selection_id = $1 AND isi.status = 'selected'
       `;
       const valueResult = await neonDb.query<{ total: string }>(valueQuery, [selection.selection_id]);
-      inventoryValue = parseFloat(valueResult.rows[0].total);
+      inventoryValue = parseFloat(valueResult.rows[0]?.total || '0');
     } catch (error) {
-      // View might not exist yet, silently ignore
-      console.warn('serve.v_nxt_soh view not available:', error);
+      // If stock_on_hand table doesn't exist or query fails, return 0
+      console.warn('[InventorySelectionService] Cannot calculate inventory value:', error instanceof Error ? error.message : 'Unknown error');
+      inventoryValue = 0;
     }
 
     return {
