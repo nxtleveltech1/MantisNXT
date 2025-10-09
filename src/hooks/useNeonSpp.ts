@@ -113,7 +113,8 @@ export function usePricelistUploads(filters?: { limit?: number; status?: string 
       const response = await fetch(`/api/spp/upload?${params}`);
       if (!response.ok) throw new Error('Failed to fetch uploads');
       const data = await response.json();
-      return data.data || [];
+      // API returns { success: true, data: { uploads: [...], total: 123 } }
+      return data.data?.uploads || [];
     },
     staleTime: 1 * 60 * 1000, // 1 minute
   });
