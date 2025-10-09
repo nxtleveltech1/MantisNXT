@@ -53,6 +53,9 @@ import {
   Target
 } from "lucide-react";
 
+// React Query hooks for optimized caching and performance
+import { useDashboardMetrics } from '@/hooks/api/useDashboardMetrics';
+
 // Fixed hooks for real data integration with better error handling
 import {
   useRealTimeDashboard,
@@ -296,7 +299,10 @@ const RealDataDashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState('30');
   const [refreshing, setRefreshing] = useState(false);
 
-  // Real-time data hooks with safe data validation
+  // PRIMARY DATA SOURCE: React Query cached dashboard metrics (FAST!)
+  const dashboardQuery = useDashboardMetrics();
+
+  // FALLBACK: Real-time data hooks for additional features
   const {
     metrics: dashboardMetrics,
     activities: rawActivities,
@@ -359,50 +365,35 @@ const RealDataDashboard: React.FC = () => {
   const alertsQuery = useAlerts();
   const alerts = React.useMemo(() => {
     try {
-      console.log('🚨 Processing alerts data:', {
-        hasData: !!alertsQuery.data,
-        dataType: typeof alertsQuery.data,
-        hasDataArray: !!alertsQuery.data?.data,
-        arrayLength: alertsQuery.data?.data?.length
-      });
-
-      // Use enhanced alert processing with comprehensive error recovery
       const validatedAlerts = processAlertsData(alertsQuery.data);
-      
-      console.log(`✅ Enhanced alert processing complete: ${validatedAlerts.length} validated alerts`);
-      
       return validatedAlerts;
     } catch (error) {
       errorLogger.logError('alerts-validation', error, 'Enhanced alerts validation failed');
-      console.error('❌ Enhanced alert validation error details:', {
-        error: error instanceof Error ? error.message : error,
-        stack: error instanceof Error ? error.stack : undefined,
-        rawData: alertsQuery.data
-      });
       return [];
     }
   }, [alertsQuery.data]);
 
-  // Refresh all data
+  // Refresh all data including React Query cache
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      // Use the refetch functions from our fixed hooks
       await Promise.all([
+        dashboardQuery.refetch(),  // React Query hook - FAST!
         realTimeData.refetch?.(),
         suppliersData.refetch?.(),
         inventoryData.refetch?.(),
         alertsQuery.refetch?.()
       ].filter(Boolean));
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      errorLogger.logError('dashboard-refresh', error, 'Error refreshing dashboard data');
     } finally {
       setRefreshing(false);
     }
   };
 
-  const loading = dashboardLoading || suppliersLoading || inventoryLoading || alertsQuery.isLoading;
-  const error = dashboardError || suppliersError || inventoryError || alertsQuery.error;
+  // Prefer React Query data when available (cached and faster)
+  const loading = dashboardQuery.isLoading || dashboardLoading || suppliersLoading || inventoryLoading || alertsQuery.isLoading;
+  const error = dashboardQuery.error || dashboardError || suppliersError || inventoryError || alertsQuery.error;
 
   return (
     <div className="space-y-6">
@@ -411,6 +402,14 @@ const RealDataDashboard: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             Real-Time Dashboard
+            {!dashboardQuery.isLoading && dashboardQuery.data && (
+              <div className="flex items-center gap-1">
+                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Cached
+                </Badge>
+              </div>
+            )}
             {realTimeData.connected && (
               <div className="flex items-center gap-1 text-green-600">
                 <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
