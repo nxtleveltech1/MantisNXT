@@ -52,7 +52,11 @@
     "db:sample-data": "node scripts/sample-data-generator.js",
     "ai:verify": "node scripts/verify-ai-providers.js",
     "ai:test": "node scripts/test-ai-generation.js",
-    "ai:test:all": "node scripts/test-ai-generation.js --all"
+    "ai:test:all": "node scripts/test-ai-generation.js --all",
+    "validate:api": "tsx scripts/validate-api-endpoints.ts",
+    "validate:api:report": "bash scripts/run-validation.sh",
+    "validate:endpoints": "npm run validate:api && npm run validate:api:report",
+    "validate:browser": "echo 'Use Chrome DevTools MCP - see VALIDATION_WORKFLOW.md'"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
@@ -117,6 +121,9 @@
     "xlsx": "^0.18.5",
     "zod": "^4.1.9",
     "zustand": "^5.0.8"
+  },
+  "overrides": {
+    "zod": "^4.1.9"
   },
   "devDependencies": {
     "@axe-core/cli": "^4.8.5",
