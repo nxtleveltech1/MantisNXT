@@ -56,7 +56,16 @@
     "validate:api": "tsx scripts/validate-api-endpoints.ts",
     "validate:api:report": "bash scripts/run-validation.sh",
     "validate:endpoints": "npm run validate:api && npm run validate:api:report",
-    "validate:browser": "echo 'Use Chrome DevTools MCP - see VALIDATION_WORKFLOW.md'"
+    "validate:browser": "echo 'Use Chrome DevTools MCP - see VALIDATION_WORKFLOW.md'",
+    "// Integration Scripts": "Commands for full inventory integration",
+    "db:purge": "psql $NEON_SPP_DATABASE_URL -f database/scripts/purge_all_inventory_data.sql",
+    "db:verify-schema": "psql $NEON_SPP_DATABASE_URL -f database/scripts/verify_schema_exists.sql",
+    "db:create-schemas": "psql $NEON_SPP_DATABASE_URL -f database/scripts/create_missing_schemas.sql",
+    "import:master": "tsx scripts/import_master_dataset.ts",
+    "import:create-selection": "tsx scripts/create_default_selection.ts",
+    "import:seed-stock": "tsx scripts/seed_stock_on_hand.ts",
+    "integration:full": "./scripts/run_full_integration.sh",
+    "integration:verify": "tsx scripts/verify_integration.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
@@ -64,6 +73,7 @@
     "@ai-sdk/openai": "^1.0.0",
     "@ai-sdk/vercel": "^1.0.0",
     "@hookform/resolvers": "^5.2.2",
+    "@neondatabase/serverless": "^1.0.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-checkbox": "^1.3.3",
@@ -151,6 +161,7 @@
     "msw": "^2.4.5",
     "redis": "^5.8.2",
     "supertest": "^7.0.0",
+    "tsx": "^4.7.0",
     "wait-on": "^7.2.0"
   }
 }

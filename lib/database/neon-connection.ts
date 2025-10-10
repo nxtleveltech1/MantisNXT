@@ -2,221 +2,172 @@
  * Neon Database Connection for NXT-SPP-Supplier Inventory Portfolio
  *
  * This module manages the connection to the new Neon PostgreSQL database
- * with proper pooling, error handling, and performance monitoring.
+ * using the Neon serverless client with proper error handling and performance monitoring.
  */
 
-import { Pool, PoolClient, PoolConfig, QueryResult } from 'pg';
+import { neon, neonConfig } from "@neondatabase/serverless";
 
-// Parse Neon connection URL to extract components
-function parseNeonConnectionString(connectionString: string | undefined) {
+// Validate Neon connection URL
+function validateNeonConnectionString(connectionString: string | undefined) {
   if (!connectionString) {
-    throw new Error('NEON_SPP_DATABASE_URL environment variable is not set');
+    throw new Error("NEON_SPP_DATABASE_URL environment variable is not set");
   }
 
   try {
-    const url = new URL(connectionString);
-
-    // Extract SSL mode from query parameters
-    const sslMode = url.searchParams.get('sslmode');
-
-    return {
-      user: decodeURIComponent(url.username),
-      password: decodeURIComponent(url.password),
-      host: url.hostname,
-      port: parseInt(url.port || '5432'),
-      database: url.pathname.slice(1), // Remove leading slash
-      sslMode: sslMode || 'require' // Default to 'require' for Neon
-    };
+    new URL(connectionString);
+    return connectionString;
   } catch (error) {
-    throw new Error(`Failed to parse Neon connection string: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Invalid Neon connection string: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
-// Neon database configuration
-// Neon REQUIRES SSL with sslmode=require in connection string
-const connectionDetails = parseNeonConnectionString(process.env.NEON_SPP_DATABASE_URL);
-
-const NEON_CONFIG: PoolConfig = {
-  user: connectionDetails.user,
-  password: connectionDetails.password,
-  host: connectionDetails.host,
-  port: connectionDetails.port,
-  database: connectionDetails.database,
-
-  // Neon requires SSL - pooler endpoint handles SSL termination
-  // Use rejectUnauthorized: false for pooler endpoints
-  ssl: connectionDetails.sslMode === 'require' ? {
-    rejectUnauthorized: false
-  } : false,
-
-  // Connection pool settings optimized for Neon serverless
-  min: parseInt(process.env.NEON_POOL_MIN || '1', 10),
-  max: parseInt(process.env.NEON_POOL_MAX || '10', 10),
-  idleTimeoutMillis: parseInt(process.env.NEON_POOL_IDLE_TIMEOUT || '30000', 10),
-  connectionTimeoutMillis: parseInt(process.env.NEON_POOL_CONNECTION_TIMEOUT || '10000', 10),
-
-  // Application name for monitoring
-  application_name: 'MantisNXT-SPP',
-};
+// Get validated connection string
+const connectionString = validateNeonConnectionString(
+  process.env.NEON_SPP_DATABASE_URL
+);
 
 /**
- * Neon connection pool singleton
+ * Neon serverless SQL client
  */
-class NeonConnectionManager {
-  private pool: Pool | null = null;
-  private isConnected: boolean = false;
+const sql = neon(connectionString);
 
+/**
+ * Neon database wrapper that supports both template literals and .query() method
+ */
+class NeonDbWrapper {
   /**
-   * Get or create the connection pool
+   * Execute a query using template literal syntax
+   * Usage: neonDb`SELECT * FROM table WHERE id = ${id}`
    */
-  public getPool(): Pool {
-    if (!this.pool) {
-      this.pool = new Pool(NEON_CONFIG);
-
-      // Handle pool errors
-      this.pool.on('error', (err) => {
-        console.error('🔴 Unexpected error on Neon pool client:', err);
-      });
-
-      // Log successful connections
-      this.pool.on('connect', () => {
-        console.log('✅ New client connected to Neon database');
-        this.isConnected = true;
-      });
-
-      // Log disconnections
-      this.pool.on('remove', () => {
-        console.log('⚠️ Client removed from Neon pool');
-      });
-    }
-
-    return this.pool;
+  async __call__(strings: TemplateStringsArray, ...values: any[]) {
+    return sql(strings, ...values);
   }
 
   /**
-   * Execute a query with automatic connection management
+   * Execute a query using .query() method for compatibility
+   * Usage: neonDb.query('SELECT * FROM table WHERE id = $1', [id])
    */
-  public async query<T = any>(
-    text: string,
+  async query<T = any>(
+    queryText: string,
     params?: any[]
   ): Promise<{ rows: T[]; rowCount: number }> {
-    const pool = this.getPool();
     const start = Date.now();
 
     try {
-      const result = await pool.query(text, params);
+      // Use neon's parameterized query support
+      let result: any;
+      if (params && params.length > 0) {
+        // Replace $1, $2, etc. with actual values for template literal
+        let processedQuery = queryText;
+        const values: any[] = [];
+
+        // Build the query string with placeholders
+        for (let i = 0; i < params.length; i++) {
+          const placeholder = `$${i + 1}`;
+          const regex = new RegExp(`\\$${i + 1}\\b`, "g");
+          processedQuery = processedQuery.replace(regex, `{${i}}`);
+          values.push(params[i]);
+        }
+
+        // Create template literal
+        const parts = processedQuery.split(/\{(\d+)\}/);
+        const strings: string[] = [];
+        const templateValues: any[] = [];
+
+        for (let i = 0; i < parts.length; i++) {
+          if (i % 2 === 0) {
+            strings.push(parts[i]);
+          } else {
+            const index = parseInt(parts[i]);
+            templateValues.push(values[index]);
+          }
+        }
+
+        // Ensure we have the final string
+        if (strings.length === templateValues.length) {
+          strings.push("");
+        }
+
+        const templateStrings = strings as any;
+        templateStrings.raw = strings;
+
+        result = await sql(templateStrings, ...templateValues);
+      } else {
+        const templateStrings = [queryText] as any;
+        templateStrings.raw = [queryText];
+        result = await sql(templateStrings);
+      }
+
       const duration = Date.now() - start;
 
       // Log slow queries
       if (duration > 1000) {
-        console.warn(`⚠️ Slow query (${duration}ms):`, text.substring(0, 100));
+        console.warn(
+          `⚠️ Slow query (${duration}ms):`,
+          queryText.substring(0, 100)
+        );
       }
 
       return {
-        rows: result.rows,
-        rowCount: result.rowCount || 0
+        rows: Array.isArray(result) ? result : [result],
+        rowCount: Array.isArray(result) ? result.length : 1,
       };
     } catch (error) {
-      console.error('🔴 Neon query error:', error);
+      console.error("🔴 Neon query error:", error);
       throw error;
-    }
-  }
-
-  /**
-   * Execute a transaction with automatic rollback on error
-   */
-  public async withTransaction<T>(
-    callback: (client: PoolClient) => Promise<T>
-  ): Promise<T> {
-    const pool = this.getPool();
-    const client = await pool.connect();
-
-    try {
-      await client.query('BEGIN');
-      const result = await callback(client);
-      await client.query('COMMIT');
-      return result;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      console.error('🔴 Neon transaction error, rolled back:', error);
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  /**
-   * Test the database connection
-   */
-  public async testConnection(): Promise<{
-    success: boolean;
-    latency: number;
-    error?: string;
-  }> {
-    const start = Date.now();
-
-    try {
-      await this.query('SELECT NOW()');
-      const latency = Date.now() - start;
-
-      return {
-        success: true,
-        latency
-      };
-    } catch (error) {
-      return {
-        success: false,
-        latency: Date.now() - start,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  /**
-   * Get pool status for monitoring
-   */
-  public getPoolStatus() {
-    if (!this.pool) {
-      return {
-        total: 0,
-        idle: 0,
-        waiting: 0,
-        connected: false
-      };
-    }
-
-    return {
-      total: this.pool.totalCount,
-      idle: this.pool.idleCount,
-      waiting: this.pool.waitingCount,
-      connected: this.isConnected
-    };
-  }
-
-  /**
-   * Gracefully close the connection pool
-   */
-  public async closePool(): Promise<void> {
-    if (this.pool) {
-      await this.pool.end();
-      this.pool = null;
-      this.isConnected = false;
-      console.log('✅ Neon connection pool closed');
     }
   }
 }
 
-// Export singleton instance
-export const neonDb = new NeonConnectionManager();
+// Create a proxy to support both template literal and method calls
+const dbWrapper = new NeonDbWrapper();
 
-// Export convenience functions
-export const query = neonDb.query.bind(neonDb);
-export const withTransaction = neonDb.withTransaction.bind(neonDb);
-export const testConnection = neonDb.testConnection.bind(neonDb);
-export const getPoolStatus = neonDb.getPoolStatus.bind(neonDb);
-export const closePool = neonDb.closePool.bind(neonDb);
+export const neonDb = new Proxy(
+  function (...args: any[]) {
+    return sql(...args);
+  },
+  {
+    get(target, prop) {
+      if (prop === "query") {
+        return dbWrapper.query.bind(dbWrapper);
+      }
+      return (target as any)[prop];
+    },
+    apply(target, thisArg, args) {
+      return sql(...args);
+    },
+  }
+) as typeof sql & { query: typeof dbWrapper.query };
 
-// Export types
-export type { PoolClient, QueryResult };
+/**
+ * Test the database connection
+ */
+export async function testConnection(): Promise<{
+  success: boolean;
+  latency: number;
+  error?: string;
+}> {
+  const start = Date.now();
 
-console.log('🚀 Neon database connection module initialized');
+  try {
+    await neonDb`SELECT NOW()`;
+    const latency = Date.now() - start;
+
+    return {
+      success: true,
+      latency,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      latency: Date.now() - start,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+console.log("🚀 Neon serverless database connection module initialized");

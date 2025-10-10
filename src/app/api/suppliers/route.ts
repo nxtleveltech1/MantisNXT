@@ -81,13 +81,15 @@ export async function GET(request: NextRequest) {
       SELECT
         supplier_id as id,
         name,
+        code,
         active as status,
-        contact_email as email,
-        contact_phone as phone,
-        payment_terms_days,
+        contact_info,
+        contact_info->>'email' as email,
+        contact_info->>'phone' as phone,
+        contact_info->>'website' as website,
+        payment_terms,
         default_currency as currency,
-        website,
-        terms,
+        tax_number,
         created_at,
         updated_at
       FROM core.supplier
@@ -100,11 +102,11 @@ export async function GET(request: NextRequest) {
     // Add status filter first for partial index usage
     if (status?.length) {
       // Map string values to boolean: 'active' -> true, 'inactive' -> false
-      const statusBooleans = status.map(s => s.toLowerCase() === 'active');
+      const statusBooleans = status.map((s) => s.toLowerCase() === "active");
 
       // If all values are the same, use simple equality instead of ANY
-      const allTrue = statusBooleans.every(b => b === true);
-      const allFalse = statusBooleans.every(b => b === false);
+      const allTrue = statusBooleans.every((b) => b === true);
+      const allFalse = statusBooleans.every((b) => b === false);
 
       if (allTrue) {
         sqlQuery += ` AND active = true`;
@@ -128,8 +130,9 @@ export async function GET(request: NextRequest) {
     if (search) {
       sqlQuery += ` AND (
         name ILIKE $${paramIndex} OR
-        contact_email ILIKE $${paramIndex} OR
-        contact_phone ILIKE $${paramIndex}
+        code ILIKE $${paramIndex} OR
+        contact_info->>'email' ILIKE $${paramIndex} OR
+        contact_info->>'phone' ILIKE $${paramIndex}
       )`;
       queryParams.push(`%${search}%`);
       paramIndex++;
@@ -148,7 +151,9 @@ export async function GET(request: NextRequest) {
       sqlQuery += ` ORDER BY supplier_id ASC LIMIT $${paramIndex}`;
       queryParams.push(limit);
     } else {
-      sqlQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+      sqlQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${
+        paramIndex + 1
+      }`;
       queryParams.push(limit, offset);
     }
 
@@ -189,11 +194,11 @@ export async function GET(request: NextRequest) {
 
     if (status?.length) {
       // Map string values to boolean: 'active' -> true, 'inactive' -> false
-      const statusBooleans = status.map(s => s.toLowerCase() === 'active');
+      const statusBooleans = status.map((s) => s.toLowerCase() === "active");
 
       // If all values are the same, use simple equality instead of ANY
-      const allTrue = statusBooleans.every(b => b === true);
-      const allFalse = statusBooleans.every(b => b === false);
+      const allTrue = statusBooleans.every((b) => b === true);
+      const allFalse = statusBooleans.every((b) => b === false);
 
       if (allTrue) {
         countQuery += ` AND active = true`;
@@ -209,8 +214,9 @@ export async function GET(request: NextRequest) {
     if (search) {
       countQuery += ` AND (
         name ILIKE $${countParamIndex} OR
-        contact_email ILIKE $${countParamIndex} OR
-        contact_phone ILIKE $${countParamIndex}
+        code ILIKE $${countParamIndex} OR
+        contact_info->>'email' ILIKE $${countParamIndex} OR
+        contact_info->>'phone' ILIKE $${countParamIndex}
       )`;
       countParams.push(`%${search}%`);
       countParamIndex++;
@@ -279,20 +285,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert supplier - using core.supplier table
+    // Insert supplier - using core.supplier table with JSONB contact_info
+    const contactInfo = {
+      email: validatedData.email,
+      phone: validatedData.phone,
+      website: validatedData.website,
+      address: validatedData.address,
+      contact_person: validatedData.contact_person,
+    };
+
     const insertQuery = `
       INSERT INTO core.supplier (
-        name, contact_email, contact_phone, website, active, default_currency, payment_terms_days
+        name, contact_info, active, default_currency, payment_terms, tax_number
       ) VALUES (
-        $1, $2, $3, $4, true, 'USD', 30
+        $1, $2::jsonb, true, 'USD', $3, $4
       ) RETURNING supplier_id as id, *
     `;
 
     const insertResult = await pool.query(insertQuery, [
       validatedData.name,
-      validatedData.email,
-      validatedData.phone,
-      validatedData.website,
+      JSON.stringify(contactInfo),
+      validatedData.payment_terms || "30 days",
+      validatedData.tax_id,
     ]);
 
     // Invalidate cache after successful creation

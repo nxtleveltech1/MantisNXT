@@ -1,96 +1,191 @@
 # MantisNXT
 
+A comprehensive inventory management system with integrated supplier portfolio management, built with Next.js, TypeScript, and PostgreSQL.
 
+## 🎉 NXT-SPP Integration Complete
 
-## Getting started
+The inventory management system has been fully integrated with the NXT-SPP (Supplier Inventory Portfolio) platform. All supplier pricelist uploads, product selection, and stock tracking are now managed through a unified workflow.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+**Quick Start:**
+- Access the system at: `http://localhost:3000/nxt-spp`
+- See [Integration Documentation](docs/INTEGRATION_COMPLETE.md) for details
+- See [NXT-SPP README](NXT-SPP-README.md) for API reference
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Features
 
-## Add your files
+- ✅ **Unified supplier inventory management (NXT-SPP)**
+- ✅ **End-to-end workflow: Upload → Select → Stock**
+- ✅ **Single-active-selection business rule enforcement**
+- ✅ **Real-time stock on hand reporting**
+- ✅ **Automated pricelist validation and merging**
+- ✅ **Comprehensive dashboard and analytics**
+- ✅ **Multi-supplier support with price history tracking**
+- ✅ **Inventory selection interface (ISI)**
+- ✅ **Performance-optimized database queries**
+- ✅ **RESTful API with comprehensive error handling**
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## 📋 Key Workflows
 
+1. **Supplier Pricelist Management**: Upload and validate supplier pricelists → [NXT-SPP Dashboard](http://localhost:3000/nxt-spp)
+2. **Inventory Selection**: Choose which products to stock → [Selection Interface](http://localhost:3000/nxt-spp?tab=selections)
+3. **Stock Reporting**: View stock on hand for selected items → [Stock Reports](http://localhost:3000/nxt-spp?tab=stock-reports)
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- PostgreSQL database
+- Environment variables configured
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://gitlab.com/gambew/MantisNXT.git
+   cd MantisNXT
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your database credentials
+   ```
+
+4. **Run full integration**
+   ```bash
+   npm run integration:full
+   ```
+
+5. **Verify integration**
+   ```bash
+   npm run integration:verify
+   ```
+
+6. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+7. **Access the application**
+   - NXT-SPP Dashboard: `http://localhost:3000/nxt-spp`
+   - Inventory Management: `http://localhost:3000/inventory`
+
+## 🔄 Migration from Legacy System
+
+If you were using the previous inventory system:
+- All functionality has moved to `/nxt-spp`
+- The `/inventory` route now redirects to the unified system
+- Your data can be migrated using the integration scripts
+- See [Integration Documentation](docs/INTEGRATION_COMPLETE.md) for details
+
+## Integration Scripts
+
+The system includes comprehensive integration scripts for data management:
+
+```bash
+# Database operations
+npm run db:purge              # Purge all inventory data
+npm run db:verify-schema      # Verify database schema
+npm run db:create-schemas     # Create missing schemas
+
+# Data import
+npm run import:master         # Import master dataset
+npm run import:create-selection # Create default selection
+npm run import:seed-stock     # Seed stock on hand
+
+# Full integration
+npm run integration:full     # Run complete integration
+npm run integration:verify   # Verify integration success
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/gambew/MantisNXT.git
-git branch -M main
-git push -uf origin main
+
+## Architecture
+
+The system follows a 3-layer architecture:
+
+- **SPP Layer** (Staging): Pricelist uploads and validation
+- **CORE Layer** (Canonical): Normalized master data
+- **SERVE Layer** (Reporting): Read-optimized views
+
+## API Endpoints
+
+### Selection Management
+- `GET /api/core/selections/active` - Get active selection
+- `POST /api/core/selections/[id]/activate` - Activate selection
+- `GET /api/core/selections/[id]/items` - Get selection items
+
+### Stock Reporting
+- `GET /api/serve/nxt-soh` - NXT Stock on Hand (selected items only)
+
+### Pricelist Management
+- `POST /api/spp/upload` - Upload pricelist
+- `POST /api/spp/validate` - Validate pricelist
+- `POST /api/spp/merge` - Merge pricelist to core
+
+## Business Rules
+
+- **Single Active Selection**: Only one selection can be active at a time
+- **Selected Items Only**: Stock reports show ONLY items in active selection
+- **Price History**: SCD Type 2 tracking with valid_from/valid_to
+- **Supplier Product Mapping**: Each supplier SKU maps to internal product
+
+## Documentation
+
+- [Integration Documentation](docs/INTEGRATION_COMPLETE.md) - Complete integration guide
+- [NXT-SPP README](NXT-SPP-README.md) - API reference and technical details
+- [Database Schema](database/schema/) - Schema documentation
+- [Type Definitions](src/types/nxt-spp.ts) - TypeScript interfaces
+
+## Development
+
+### Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript type checking
+npm run test         # Run tests
+npm run test:e2e     # Run end-to-end tests
 ```
 
-## Integrate with your tools
+### Testing
 
-- [ ] [Set up project integrations](https://gitlab.com/gambew/MantisNXT/-/settings/integrations)
+```bash
+# Run all tests
+npm run test:all
 
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+# Run specific test suites
+npm run test:component  # Component tests
+npm run test:api        # API tests
+npm run test:integration # Integration tests
+npm run test:e2e       # End-to-end tests
+```
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the [documentation](docs/)
+- Review the [integration guide](docs/INTEGRATION_COMPLETE.md)
 
 ---
 

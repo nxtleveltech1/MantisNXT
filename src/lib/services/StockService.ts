@@ -9,8 +9,8 @@
  * - Calculate inventory values
  */
 
-import { neonDb } from '../../../lib/database/neon-connection';
-import { isFeatureEnabled, FeatureFlag } from '@/lib/feature-flags';
+import { neonDb } from "../../../lib/database/neon-connection";
+import { isFeatureEnabled, FeatureFlag } from "@/lib/feature-flags";
 import {
   StockOnHand,
   SohBySupplier,
@@ -19,10 +19,90 @@ import {
   SohReportRequestSchema,
   StockOnHandSchema,
   NxtSoh,
-  NxtSohSchema
-} from '../../types/nxt-spp';
+  NxtSohSchema,
+} from "../../types/nxt-spp";
 
 export class StockService {
+  /**
+   * Get total count of NXT SOH records (selected items only) for pagination
+   */
+  async getNxtSohCount(filters?: {
+    supplier_ids?: string[];
+    location_ids?: string[];
+    search?: string;
+  }): Promise<number> {
+    // If using view, count from view
+    if (isFeatureEnabled(FeatureFlag.USE_NXT_SOH_VIEW)) {
+      const conditions: string[] = ["1=1"];
+      const params: any[] = [];
+      let idx = 1;
+      if (filters?.supplier_ids?.length) {
+        conditions.push(`supplier_id = ANY($${idx++}::uuid[])`);
+        params.push(filters.supplier_ids);
+      }
+      if (filters?.location_ids?.length) {
+        conditions.push(`location_id = ANY($${idx++}::uuid[])`);
+        params.push(filters.location_ids);
+      }
+      if (filters?.search) {
+        conditions.push(
+          `(product_name ILIKE $${idx} OR supplier_sku ILIKE $${idx})`
+        );
+        params.push(`%${filters.search}%`);
+        idx++;
+      }
+      const q = `SELECT COUNT(*) AS cnt FROM serve.v_nxt_soh WHERE ${conditions.join(
+        " AND "
+      )}`;
+      const r = await neonDb.query<{ cnt: string }>(q, params);
+      return parseInt(r.rows[0]?.cnt || "0", 10);
+    }
+
+    // Legacy path: count with selection constraint
+    const conditions: string[] = [
+      `EXISTS(
+        SELECT 1 FROM core.inventory_selected_item isi
+        JOIN core.inventory_selection sel ON sel.selection_id = isi.selection_id
+        WHERE isi.supplier_product_id = sp.supplier_product_id
+          AND sel.status = 'active'
+          AND isi.status = 'selected'
+      )`,
+    ];
+    const params: any[] = [];
+    let idx = 1;
+    if (filters?.supplier_ids?.length) {
+      conditions.push(`s.supplier_id = ANY($${idx++}::uuid[])`);
+      params.push(filters.supplier_ids);
+    }
+    if (filters?.location_ids?.length) {
+      conditions.push(`l.location_id = ANY($${idx++}::uuid[])`);
+      params.push(filters.location_ids);
+    }
+    if (filters?.search) {
+      conditions.push(
+        `(sp.name_from_supplier ILIKE $${idx} OR sp.supplier_sku ILIKE $${idx})`
+      );
+      params.push(`%${filters.search}%`);
+      idx++;
+    }
+
+    const q = `
+      WITH latest_stock AS (
+        SELECT DISTINCT ON (location_id, supplier_product_id)
+          location_id, supplier_product_id, as_of_ts
+        FROM core.stock_on_hand
+        ORDER BY location_id, supplier_product_id, as_of_ts DESC
+      )
+      SELECT COUNT(*) AS cnt
+      FROM latest_stock soh
+      JOIN core.stock_location l ON l.location_id = soh.location_id
+      JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
+      JOIN core.supplier s ON s.supplier_id = sp.supplier_id
+      WHERE ${conditions.join(" AND ")}
+    `;
+    const r = await neonDb.query<{ cnt: string }>(q, params);
+    return parseInt(r.rows[0]?.cnt || "0", 10);
+  }
   /**
    * Record a stock snapshot
    */
@@ -32,23 +112,19 @@ export class StockService {
     qty: number;
     unit_cost?: number;
     as_of_ts?: Date;
-    source?: 'manual' | 'import' | 'system';
+    source?: "manual" | "import" | "system";
   }): Promise<StockOnHand> {
     const validated = StockOnHandSchema.parse({
       ...data,
       as_of_ts: data.as_of_ts || new Date(),
-      source: data.source || 'manual'
+      source: data.source || "manual",
     });
-
-    const totalValue = validated.unit_cost
-      ? validated.qty * validated.unit_cost
-      : null;
 
     const query = `
       INSERT INTO core.stock_on_hand (
-        location_id, supplier_product_id, qty, unit_cost, total_value, as_of_ts, source
+        location_id, supplier_product_id, qty, unit_cost, as_of_ts, source
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
 
@@ -57,9 +133,8 @@ export class StockService {
       validated.supplier_product_id,
       validated.qty,
       validated.unit_cost || null,
-      totalValue,
       validated.as_of_ts,
-      validated.source
+      validated.source,
     ];
 
     const result = await neonDb.query<StockOnHand>(query, values);
@@ -69,13 +144,15 @@ export class StockService {
   /**
    * Bulk import stock snapshots
    */
-  async bulkImportStock(stocks: Array<{
-    location_id: string;
-    supplier_product_id: string;
-    qty: number;
-    unit_cost?: number;
-    as_of_ts?: Date;
-  }>): Promise<{ imported: number; errors: string[] }> {
+  async bulkImportStock(
+    stocks: Array<{
+      location_id: string;
+      supplier_product_id: string;
+      qty: number;
+      unit_cost?: number;
+      as_of_ts?: Date;
+    }>
+  ): Promise<{ imported: number; errors: string[] }> {
     let imported = 0;
     const errors: string[] = [];
 
@@ -89,13 +166,12 @@ export class StockService {
         const placeholders: string[] = [];
         let paramIndex = 1;
 
-        batch.forEach(stock => {
-          const totalValue = stock.unit_cost ? stock.qty * stock.unit_cost : null;
+        batch.forEach((stock) => {
           const asOfTs = stock.as_of_ts || new Date();
 
           placeholders.push(
             `($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
-            `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, 'import')`
+              `$${paramIndex++}, $${paramIndex++}, 'import')`
           );
 
           values.push(
@@ -103,7 +179,6 @@ export class StockService {
             stock.supplier_product_id,
             stock.qty,
             stock.unit_cost || null,
-            totalValue,
             asOfTs
           );
         });
@@ -111,15 +186,19 @@ export class StockService {
         try {
           const query = `
             INSERT INTO core.stock_on_hand (
-              location_id, supplier_product_id, qty, unit_cost, total_value, as_of_ts, source
+              location_id, supplier_product_id, qty, unit_cost, as_of_ts, source
             )
-            VALUES ${placeholders.join(', ')}
+            VALUES ${placeholders.join(", ")}
           `;
 
           const result = await client.query(query, values);
           imported += result.rowCount || 0;
         } catch (error) {
-          errors.push(`Batch ${i / batchSize + 1} failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(
+            `Batch ${i / batchSize + 1} failed: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
         }
       }
     });
@@ -133,7 +212,7 @@ export class StockService {
   async getSohBySupplier(request: SohReportRequest): Promise<SohBySupplier[]> {
     const validated = SohReportRequestSchema.parse(request);
 
-    const conditions: string[] = ['1=1'];
+    const conditions: string[] = ["1=1"];
     const params: any[] = [];
     let paramIndex = 1;
 
@@ -153,7 +232,7 @@ export class StockService {
     }
 
     if (!validated.include_zero_stock) {
-      conditions.push('soh.qty > 0');
+      conditions.push("soh.qty > 0");
     }
 
     if (validated.selected_only) {
@@ -170,7 +249,7 @@ export class StockService {
 
     const asOfCondition = validated.as_of_date
       ? `soh.as_of_ts <= $${paramIndex++}`
-      : '1=1';
+      : "1=1";
 
     if (validated.as_of_date) {
       params.push(validated.as_of_date);
@@ -224,7 +303,7 @@ export class StockService {
       JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
-      WHERE ${conditions.join(' AND ')}
+      WHERE ${conditions.join(" AND ")}
       ORDER BY s.name, sp.name_from_supplier, l.name
     `;
 
@@ -238,7 +317,7 @@ export class StockService {
   async getSohRolledUp(request: SohReportRequest): Promise<SohRolledUp[]> {
     const validated = SohReportRequestSchema.parse(request);
 
-    const conditions: string[] = ['sp.product_id IS NOT NULL'];
+    const conditions: string[] = ["sp.product_id IS NOT NULL"];
     const params: any[] = [];
     let paramIndex = 1;
 
@@ -261,7 +340,7 @@ export class StockService {
 
     const asOfCondition = validated.as_of_date
       ? `soh.as_of_ts <= $${paramIndex++}`
-      : '1=1';
+      : "1=1";
 
     if (validated.as_of_date) {
       params.push(validated.as_of_date);
@@ -305,7 +384,7 @@ export class StockService {
         JOIN core.supplier s ON s.supplier_id = sp.supplier_id
         LEFT JOIN core.category c ON c.category_id = p.category_id
         LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
-        WHERE ${conditions.join(' AND ')}
+        WHERE ${conditions.join(" AND ")}
         GROUP BY p.product_id, p.name, c.name, sp.supplier_id, s.name
       )
       SELECT
@@ -333,13 +412,13 @@ export class StockService {
     const result = await neonDb.query(query, params);
 
     // Transform the jsonb suppliers array
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       ...row,
       total_qty: parseFloat(row.total_qty),
       supplier_count: parseInt(row.supplier_count),
       total_value: parseFloat(row.total_value),
       weighted_avg_cost: parseFloat(row.weighted_avg_cost),
-      suppliers: row.suppliers || []
+      suppliers: row.suppliers || [],
     }));
   }
 
@@ -357,7 +436,10 @@ export class StockService {
       LIMIT 1
     `;
 
-    const result = await neonDb.query<StockOnHand>(query, [locationId, supplierProductId]);
+    const result = await neonDb.query<StockOnHand>(query, [
+      locationId,
+      supplierProductId,
+    ]);
     return result.rows[0] || null;
   }
 
@@ -369,7 +451,7 @@ export class StockService {
     locationId?: string,
     limit = 100
   ): Promise<StockOnHand[]> {
-    const conditions = ['supplier_product_id = $1'];
+    const conditions = ["supplier_product_id = $1"];
     const params: any[] = [supplierProductId];
     let paramIndex = 2;
 
@@ -380,7 +462,7 @@ export class StockService {
 
     const query = `
       SELECT * FROM core.stock_on_hand
-      WHERE ${conditions.join(' AND ')}
+      WHERE ${conditions.join(" AND ")}
       ORDER BY as_of_ts DESC
       LIMIT $${paramIndex}
     `;
@@ -407,7 +489,7 @@ export class StockService {
       qty: number;
     }>;
   }> {
-    const conditions: string[] = ['1=1'];
+    const conditions: string[] = ["1=1"];
     const params: any[] = [];
     let paramIndex = 1;
 
@@ -460,18 +542,18 @@ export class StockService {
       JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
-      WHERE ${conditions.join(' AND ')}
+      WHERE ${conditions.join(" AND ")}
       GROUP BY s.supplier_id, s.name
       ORDER BY value DESC
     `;
 
     const result = await neonDb.query(query, params);
 
-    const bySupplier = result.rows.map(row => ({
+    const bySupplier = result.rows.map((row) => ({
       supplier_id: row.supplier_id,
       supplier_name: row.supplier_name,
       value: parseFloat(row.value || 0),
-      qty: parseFloat(row.qty || 0)
+      qty: parseFloat(row.qty || 0),
     }));
 
     const totalValue = bySupplier.reduce((sum, s) => sum + s.value, 0);
@@ -480,7 +562,7 @@ export class StockService {
     return {
       total_value: totalValue,
       total_qty: totalQty,
-      by_supplier: bySupplier
+      by_supplier: bySupplier,
     };
   }
 
@@ -525,17 +607,17 @@ export class StockService {
     limit?: number;
     offset?: number;
   }): Promise<NxtSoh[]> {
-    const conditions: string[] = ['1=1'];
+    const conditions: string[] = ["1=1"];
     const params: any[] = [];
     let paramIndex = 1;
 
     if (filters?.supplier_ids && filters.supplier_ids.length > 0) {
-      conditions.push(`supplier_id = ANY($${paramIndex++}::bigint[])`);
+      conditions.push(`supplier_id = ANY($${paramIndex++}::uuid[])`);
       params.push(filters.supplier_ids);
     }
 
     if (filters?.location_ids && filters.location_ids.length > 0) {
-      conditions.push(`location_id = ANY($${paramIndex++}::bigint[])`);
+      conditions.push(`location_id = ANY($${paramIndex++}::uuid[])`);
       params.push(filters.location_ids);
     }
 
@@ -553,7 +635,7 @@ export class StockService {
     const query = `
       SELECT *
       FROM serve.v_nxt_soh
-      WHERE ${conditions.join(' AND ')}
+      WHERE ${conditions.join(" AND ")}
       ORDER BY supplier_name, product_name
       LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;
@@ -583,7 +665,7 @@ export class StockService {
         WHERE isi.supplier_product_id = sp.supplier_product_id
           AND sel.status = 'active'
           AND isi.status = 'selected'
-      )`
+      )`,
     ];
     const params: any[] = [];
     let paramIndex = 1;
@@ -657,7 +739,7 @@ export class StockService {
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
       CROSS JOIN active_selection sel
-      WHERE ${conditions.join(' AND ')}
+      WHERE ${conditions.join(" AND ")}
       ORDER BY s.name, sp.name_from_supplier, l.name
       LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;

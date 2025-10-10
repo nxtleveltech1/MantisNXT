@@ -24,9 +24,10 @@ export async function GET(req: NextRequest) {
   const DEFAULT_LIMIT = 250; // safer default
   const MAX_OFFSET = 100000; // encourage cursor-based pagination beyond this
 
-  const limit = Number.isFinite(limitParam) && limitParam > 0
-    ? Math.min(limitParam, MAX_LIMIT)
-    : DEFAULT_LIMIT;
+  const limit =
+    Number.isFinite(limitParam) && limitParam > 0
+      ? Math.min(limitParam, MAX_LIMIT)
+      : DEFAULT_LIMIT;
 
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
   const offset = (page - 1) * Math.max(limit, 1);
@@ -44,7 +45,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         error: "Offset too large",
-        detail: "Use cursor-based pagination for large offsets (use 'cursor' param)",
+        detail:
+          "Use cursor-based pagination for large offsets (use 'cursor' param)",
       },
       { status: 400 }
     );
@@ -75,9 +77,9 @@ export async function GET(req: NextRequest) {
     if (lastSku && lastId) {
       params.push(lastSku, lastSku, lastId);
       where.push(
-        `(ii.sku > $${params.length - 2} OR (ii.sku = $${
+        `(sp.supplier_sku > $${params.length - 2} OR (sp.supplier_sku = $${
           params.length - 1
-        } AND ii.id > $${params.length}))`
+        } AND soh.soh_id > CAST($${params.length} AS uuid)))`
       );
     }
   }
@@ -85,10 +87,10 @@ export async function GET(req: NextRequest) {
   // Supplier filter (most selective, goes early)
   if (supplierId) {
     params.push(supplierId);
-    where.push(`ii.supplier_id = $${params.length}`);
+    where.push(`sp.supplier_id = CAST($${params.length} AS uuid)`);
   }
 
-  // Category filter with validation (GIN index will be used)
+  // Category filter with validation
   if (category) {
     const cats = category
       .split(",")
@@ -105,40 +107,38 @@ export async function GET(req: NextRequest) {
     }
     if (cats.length > 0) {
       params.push(cats);
-      where.push(`ii.category = ANY($${params.length})`);
+      where.push(
+        `COALESCE(p.category_id, sp.category_id) = ANY($${params.length}::uuid[])`
+      );
     }
   }
 
-  // Search filter - use separate parameters for better index usage (trigram indexes)
+  // Search filter
   if (search) {
     params.push(`%${search}%`);
     const skuParam = params.length;
     params.push(`%${search}%`);
     const nameParam = params.length;
-    where.push(`(ii.sku ILIKE $${skuParam} OR ii.name ILIKE $${nameParam})`);
+    where.push(
+      `(sp.supplier_sku ILIKE $${skuParam} OR COALESCE(p.name, sp.name_from_supplier) ILIKE $${nameParam})`
+    );
   }
 
-  // Stock status filter - uses partial indexes for optimized queries
+  // Stock status filter
   if (status) {
     // Map UI status to SQL predicates
     switch (status) {
       case "out_of_stock":
-        // Uses partial index: idx_inventory_items_out_of_stock (WHERE stock_qty = 0)
-        where.push(`ii.stock_qty = 0`);
+        where.push(`soh.qty = 0`);
         break;
       case "low_stock":
-        // Uses partial index: idx_inventory_items_low_stock (WHERE stock_qty > 0 AND stock_qty <= reorder_point)
-        where.push(
-          `ii.stock_qty > 0 AND ii.stock_qty <= COALESCE(ii.reorder_point, 0)`
-        );
+        where.push(`soh.qty > 0 AND soh.qty <= 10`);
         break;
       case "critical":
-        where.push(
-          `COALESCE(ii.reorder_point, 0) > 0 AND ii.stock_qty > 0 AND ii.stock_qty <= (ii.reorder_point / 2.0)`
-        );
+        where.push(`soh.qty > 0 AND soh.qty <= 5`);
         break;
       case "in_stock":
-        where.push(`ii.stock_qty > COALESCE(ii.reorder_point, 0)`);
+        where.push(`soh.qty > 10`);
         break;
       default:
         // ignore unknown
@@ -148,31 +148,36 @@ export async function GET(req: NextRequest) {
 
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
-  // Query hint for PostgreSQL
+  // Query hint for PostgreSQL - using core schema tables
   const sql = `
     /* inventory_list_query */
     SELECT
-      ii.id,
-      ii.sku,
-      ii.name,
-      ii.category,
-      ii.stock_qty,
-      ii.reserved_qty,
-      COALESCE(ii.available_qty, ii.stock_qty - COALESCE(ii.reserved_qty, 0)) AS available_qty,
-      ii.cost_price,
-      ii.sale_price,
-      ii.supplier_id,
-      ii.brand_id
-    FROM inventory_items AS ii
+      soh.soh_id as id,
+      sp.supplier_sku as sku,
+      COALESCE(p.name, sp.name_from_supplier) as name,
+      COALESCE(p.category_id, sp.category_id) as category,
+      soh.qty as stock_qty,
+      0 as reserved_qty,
+      soh.qty as available_qty,
+      soh.unit_cost as cost_price,
+      soh.unit_cost as sale_price,
+      sp.supplier_id,
+      p.brand_id
+    FROM core.stock_on_hand AS soh
+    JOIN core.supplier_product AS sp ON sp.supplier_product_id = soh.supplier_product_id
+    LEFT JOIN core.product AS p ON p.product_id = sp.product_id
     ${whereSql}
-    ORDER BY ii.sku ASC, ii.id ASC
+    ORDER BY sp.supplier_sku ASC, soh.soh_id ASC
     ${cursor ? `LIMIT ${limit}` : `LIMIT ${limit} OFFSET ${offset}`}
   `;
 
   const queryStartTime = performance.now();
 
   try {
-    const { rows } = await query(sql, params, { timeout: 10000, maxRetries: 0 });
+    const { rows } = await query(sql, params, {
+      timeout: 10000,
+      maxRetries: 0,
+    });
     const queryDuration = performance.now() - queryStartTime;
 
     // Log slow queries
@@ -204,10 +209,16 @@ export async function GET(req: NextRequest) {
 
     // Add performance and pagination headers
     response.headers.set("X-Query-Duration-Ms", queryDuration.toFixed(2));
-    response.headers.set("X-Query-Fingerprint", `inventory_list_${search ? "search" : "filter"}`);
+    response.headers.set(
+      "X-Query-Fingerprint",
+      `inventory_list_${search ? "search" : "filter"}`
+    );
     response.headers.set("X-Effective-Limit", String(limit));
     if (!cursor) {
-      response.headers.set("X-Pagination-Mode", offset > 0 ? "offset" : "offset-first-page");
+      response.headers.set(
+        "X-Pagination-Mode",
+        offset > 0 ? "offset" : "offset-first-page"
+      );
     } else {
       response.headers.set("X-Pagination-Mode", "cursor");
       if (nextCursor) response.headers.set("X-Next-Cursor", nextCursor);

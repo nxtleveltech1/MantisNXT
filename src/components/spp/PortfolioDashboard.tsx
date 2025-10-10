@@ -327,7 +327,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
               </div>
               <div className="font-medium">Select</div>
               <div className="text-2xl font-bold text-purple-600 mt-1">
-                {metrics?.selected_products.toLocaleString() || 0}
+                {metrics?.selected_products?.toLocaleString() || 0}
               </div>
               <div className="text-xs text-muted-foreground">Products selected</div>
             </div>
