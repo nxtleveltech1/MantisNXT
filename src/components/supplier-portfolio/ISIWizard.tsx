@@ -131,7 +131,7 @@ export function ISIWizard({
         body: JSON.stringify({
           selection_name: selectionName,
           description: 'Created via ISI Wizard',
-          created_by: 'current-user-id', // Replace with actual user ID
+          created_by: '00000000-0000-0000-0000-000000000000', // System user placeholder
           status: 'draft',
         }),
       })
@@ -167,7 +167,7 @@ export function ISIWizard({
           selection_id: selectionId,
           supplier_product_ids: selectedProductIds,
           action: 'select',
-          selected_by: 'current-user-id', // Replace with actual user ID
+          selected_by: '00000000-0000-0000-0000-000000000000', // System user placeholder
         }),
       })
 

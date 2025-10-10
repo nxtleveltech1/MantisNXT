@@ -79,7 +79,7 @@ function MetricCard({
           </div>
 
           {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <div className="text-xs text-muted-foreground">{description}</div>
           )}
 
           {trend && (

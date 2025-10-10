@@ -4,7 +4,10 @@
       "Bash(ping:*)",
       "Bash(node:*)",
       "Bash(nslookup:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

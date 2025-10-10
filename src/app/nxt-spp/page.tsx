@@ -5,7 +5,7 @@
  * Complete integration with Neon database backend
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -20,7 +20,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { triggerConfetti } from '@/components/spp/AnimatedComponents';
 import type { MergeResult, InventorySelection } from '@/types/nxt-spp';
 
-export default function NxtSppPage() {
+function NxtSppContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -204,5 +204,22 @@ export default function NxtSppPage() {
         </Tabs>
       </div>
     </SelfContainedLayout>
+  );
+}
+
+export default function NxtSppPage() {
+  return (
+    <Suspense fallback={
+      <SelfContainedLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </SelfContainedLayout>
+    }>
+      <NxtSppContent />
+    </Suspense>
   );
 }

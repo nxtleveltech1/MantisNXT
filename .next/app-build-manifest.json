@@ -21,50 +21,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/not-found.js"
     ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
-    ],
-    "/api/dashboard_metrics/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/dashboard_metrics/route.js"
-    ],
-    "/api/activities/recent/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/activities/recent/route.js"
-    ],
-    "/api/suppliers/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/suppliers/route.js"
-    ],
-    "/api/inventory/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/inventory/route.js"
-    ],
-    "/api/alerts/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/alerts/route.js"
-    ],
     "/inventory/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/inventory/page.js"
     ],
-    "/api/analytics/dashboard/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/analytics/dashboard/route.js"
-    ],
     "/api/inventory/analytics/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/inventory/analytics/route.js"
+    ],
+    "/api/inventory/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/inventory/route.js"
     ],
     "/api/inventory/alerts/route": [
       "static/chunks/webpack.js",
@@ -81,6 +51,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/stock-movements/route.js"
     ],
+    "/api/suppliers/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/suppliers/route.js"
+    ],
+    "/api/inventory/products/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/inventory/products/route.js"
+    ],
     "/nxt-spp/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -91,10 +71,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/nxt-spp/page.js"
     ],
-    "/api/inventory/products/route": [
+    "/api/spp/dashboard/metrics/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/inventory/products/route.js"
+      "static/chunks/app/api/spp/dashboard/metrics/route.js"
+    ],
+    "/api/spp/upload/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/spp/upload/route.js"
+    ],
+    "/api/core/selections/active/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/core/selections/active/route.js"
+    ],
+    "/api/core/selections/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/core/selections/route.js"
     ]
   }
 }
