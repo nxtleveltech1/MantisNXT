@@ -1,1 +1,8 @@
-{}
+{
+  "/api/dashboard_metrics/route": "app/api/dashboard_metrics/route.js",
+  "/api/activities/recent/route": "app/api/activities/recent/route.js",
+  "/api/alerts/route": "app/api/alerts/route.js",
+  "/api/inventory/route": "app/api/inventory/route.js",
+  "/api/suppliers/route": "app/api/suppliers/route.js",
+  "/page": "app/page.js"
+}

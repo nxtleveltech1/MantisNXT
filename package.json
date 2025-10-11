@@ -176,8 +176,7 @@
     "prettier": "^3.1.0",
     "prettier-plugin-tailwindcss": "^0.5.9",
     "chrome-devtools-mcp": "^0.4.0",
-    "fetch-mcp": "^0.3.0",
-    "prisma-postgres-mcp": "^0.2.0"
+    "fetch-mcp": "0.0.5"
   }
   ,
   "lint-staged": {
