@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "@/middleware/api-auth";
 import { query } from "@/lib/database/unified-connection";
 import { toDisplay } from "@/lib/utils/transformers/inventory";
 import { performance } from "perf_hooks";
@@ -12,7 +13,7 @@ function parseFormat(req: NextRequest): Format {
   return f === "raw" ? "raw" : "display";
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withAuth(async (req: NextRequest) => {
   const format = parseFormat(req);
 
   const url = req.nextUrl;
@@ -203,7 +204,7 @@ export async function GET(req: NextRequest) {
 
     const responseData = format === "raw" ? rows : rows.map(toDisplay);
     const response = NextResponse.json(
-      nextCursor ? { items: responseData, nextCursor } : responseData,
+      { items: responseData, nextCursor: nextCursor || null },
       { status: 200 }
     );
 
@@ -231,4 +232,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

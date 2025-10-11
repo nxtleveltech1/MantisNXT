@@ -250,20 +250,63 @@ export function ISIWizard({
     if (!selectionId) return
 
     try {
-      const response = await fetch(`/api/core/selections/${selectionId}/items`)
-      if (response.ok) {
-        const data = await response.json()
-        const items = data.data || []
+      // Fetch selection items
+      const itemsResponse = await fetch(`/api/core/selections/${selectionId}/items`)
+      if (!itemsResponse.ok) {
+        console.error('Failed to fetch selection items')
+        return
+      }
 
+      const itemsData = await itemsResponse.json()
+      const items = itemsData.data || []
+
+      // Fetch catalog to get enriched product data with prices
+      const catalogResponse = await fetch('/api/core/selections/catalog')
+      if (!catalogResponse.ok) {
+        // Fallback to basic item count if catalog fails
         setSelectionSummary({
           count: items.length,
-          totalValue: items.reduce((sum: number, item: any) => sum + (item.current_price || 0), 0),
-          supplierCount: new Set(items.map((item: any) => item.supplier_id)).size,
-          categoryCount: new Set(items.map((item: any) => item.category_id)).size,
+          totalValue: 0,
+          supplierCount: 0,
+          categoryCount: 0,
         })
+        return
       }
+
+      const catalogData = await catalogResponse.json()
+      const catalog = catalogData.catalog || []
+
+      // Match items with catalog to get enriched data
+      const enrichedItems = items.map((item: any) => {
+        const catalogProduct = catalog.find((p: any) => p.supplier_product_id === item.supplier_product_id)
+        return {
+          ...item,
+          current_price: catalogProduct?.current_price || 0,
+          supplier_id: catalogProduct?.supplier_id || item.supplier_id,
+          category_id: catalogProduct?.category_id || item.category_id,
+        }
+      })
+
+      // Calculate metrics
+      const totalValue = enrichedItems.reduce((sum: number, item: any) => sum + (item.current_price || 0), 0)
+      const supplierIds = new Set(enrichedItems.map((item: any) => item.supplier_id).filter(Boolean))
+      const categoryIds = new Set(enrichedItems.map((item: any) => item.category_id).filter(Boolean))
+
+      setSelectionSummary({
+        count: enrichedItems.length,
+        totalValue,
+        supplierCount: supplierIds.size,
+        categoryCount: categoryIds.size,
+      })
     } catch (err) {
       console.error('Failed to update summary:', err)
+      // Set zero metrics on error
+      setSelectionSummary({
+        count: 0,
+        totalValue: 0,
+        supplierCount: 0,
+        categoryCount: 0,
+      })
     }
   }, [selectionId])
 

@@ -12,7 +12,17 @@ const PUBLIC_ENDPOINTS = [
   '/api/health',
   '/api/health/database',
   '/api/health/database-enterprise',
+  // Selection APIs are public for read operations (UI access without auth)
+  '/api/core/selections',
+  '/api/core/selections/active',
+  '/api/core/selections/catalog',
 ];
+
+// Transitional flag: allow public GETs on selected endpoints
+const ALLOW_PUBLIC_GET_ENDPOINTS = (process.env.ALLOW_PUBLIC_GET_ENDPOINTS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 /**
  * Validates JWT token from Authorization header
@@ -70,7 +80,9 @@ function extractToken(request: NextRequest): string | null {
  * @returns true if public, false otherwise
  */
 function isPublicEndpoint(pathname: string): boolean {
-  return PUBLIC_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint));
+  if (PUBLIC_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint))) return true;
+  if (ALLOW_PUBLIC_GET_ENDPOINTS.length === 0) return false;
+  return ALLOW_PUBLIC_GET_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint));
 }
 
 /**
@@ -95,6 +107,14 @@ export function withAuth(
 
     // Skip auth for public endpoints
     if (isPublicEndpoint(pathname)) {
+      return handler(request, context);
+    }
+
+    // Support transitional public GETs via env config
+    if (
+      request.method === 'GET' &&
+      ALLOW_PUBLIC_GET_ENDPOINTS.some((e) => pathname.startsWith(e))
+    ) {
       return handler(request, context);
     }
 
@@ -213,6 +233,14 @@ export function withApiKey(
 
     // Skip auth for public endpoints
     if (isPublicEndpoint(pathname)) {
+      return handler(request, context);
+    }
+
+    // Transitional public GETs support
+    if (
+      request.method === 'GET' &&
+      ALLOW_PUBLIC_GET_ENDPOINTS.some((e) => pathname.startsWith(e))
+    ) {
       return handler(request, context);
     }
 

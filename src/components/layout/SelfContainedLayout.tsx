@@ -71,11 +71,6 @@ const navigationGroups: NavigationGroup[] = [
         icon: LayoutDashboard,
       },
       {
-        title: "Dashboard v1",
-        url: "/dashboard-v1",
-        icon: LayoutDashboard,
-      },
-      {
         title: "Analytics",
         url: "/analytics",
         icon: TrendingUp,
@@ -107,12 +102,6 @@ const navigationGroups: NavigationGroup[] = [
     title: "Operations",
     items: [
       {
-        title: "Purchase Orders",
-        url: "/purchase-orders",
-        icon: ShoppingCart,
-        badge: "12",
-      },
-      {
         title: "Inventory",
         url: "/inventory",
         icon: Package,
@@ -122,17 +111,6 @@ const navigationGroups: NavigationGroup[] = [
   {
     title: "Financial",
     items: [
-      {
-        title: "Invoices",
-        url: "/invoices",
-        icon: CreditCard,
-        badge: "8",
-      },
-      {
-        title: "Payments",
-        url: "/payments",
-        icon: DollarSign,
-      },
     ],
   },
   {
@@ -143,6 +121,28 @@ const navigationGroups: NavigationGroup[] = [
         url: "/messages",
         icon: MessageSquare,
         badge: "3",
+      },
+    ],
+  },
+  {
+    title: "Modules Coming",
+    items: [
+      {
+        title: "Purchase Orders",
+        url: "/purchase-orders",
+        icon: ShoppingCart,
+        badge: "12",
+      },
+      {
+        title: "Invoices",
+        url: "/invoices",
+        icon: CreditCard,
+        badge: "8",
+      },
+      {
+        title: "Payments",
+        url: "/payments",
+        icon: DollarSign,
       },
     ],
   },

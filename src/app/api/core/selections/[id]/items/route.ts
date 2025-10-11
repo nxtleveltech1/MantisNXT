@@ -7,10 +7,10 @@ import { inventorySelectionService } from "@/lib/services/InventorySelectionServ
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const selectionId = params.id;
+    const { id: selectionId } = await params;
 
     // Validate selection ID format
     if (!selectionId || typeof selectionId !== "string") {

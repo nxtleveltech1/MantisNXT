@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "@/middleware/api-auth";
 import { query, pool } from "@/lib/database/unified-connection";
 import { z } from "zod";
 import { CacheInvalidator } from "@/lib/cache/invalidation";
@@ -6,13 +7,14 @@ import { performance } from "perf_hooks";
 
 const SLOW_QUERY_THRESHOLD_MS = 1000;
 
+// Simple schema for basic supplier creation
 const supplierSchema = z.object({
   name: z.string().min(1, "Supplier name is required"),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
   contact_person: z.string().optional(),
-  website: z.string().url().optional(),
+  website: z.string().url().optional().or(z.literal("")),
   tax_id: z.string().optional(),
   payment_terms: z.string().optional(),
   primary_category: z.string().optional(),
@@ -22,7 +24,51 @@ const supplierSchema = z.object({
   local_content_percentage: z.number().min(0).max(100).optional(),
 });
 
-export async function GET(request: NextRequest) {
+// Enhanced schema for complex supplier form data
+const enhancedSupplierSchema = z.object({
+  name: z.string().min(1),
+  code: z.string().min(1),
+  legalName: z.string().optional(),
+  website: z.string().optional().or(z.literal("")),
+  industry: z.string().optional(),
+  tier: z.string().optional(),
+  status: z.string().optional(),
+  category: z.string().optional(),
+  subcategory: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  primaryContact: z
+    .object({
+      name: z.string().optional(),
+      title: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      department: z.string().optional(),
+    })
+    .optional(),
+  taxId: z.string().optional(),
+  registrationNumber: z.string().optional(),
+  foundedYear: z.number().optional(),
+  employeeCount: z.number().optional(),
+  annualRevenue: z.number().optional(),
+  currency: z.string().optional(),
+  address: z
+    .object({
+      street: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      postalCode: z.string().optional(),
+      country: z.string().optional(),
+    })
+    .optional(),
+  products: z.array(z.string()).optional(),
+  services: z.array(z.string()).optional(),
+  certifications: z.array(z.string()).optional(),
+  leadTime: z.number().optional(),
+  minimumOrderValue: z.number().optional(),
+  paymentTerms: z.string().optional(),
+});
+
+export const GET = withAuth(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
 
@@ -37,21 +83,13 @@ export async function GET(request: NextRequest) {
     const minSpend = searchParams.get("min_spend");
     const maxSpend = searchParams.get("max_spend");
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limitParam = parseInt(searchParams.get("limit") || "50");
+    const limit = Math.min(Math.max(1, limitParam), 1000);
     const offset = (page - 1) * limit;
     const cursor = searchParams.get("cursor");
 
     // Request validation
-    if (limit > 1000) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Limit too large",
-          detail: "Maximum limit is 1000",
-        },
-        { status: 400 }
-      );
-    }
+    // limit is clamped to [1,1000] above
 
     if (page > 10000) {
       return NextResponse.json(
@@ -82,7 +120,7 @@ export async function GET(request: NextRequest) {
         supplier_id as id,
         name,
         code,
-        active as status,
+        CASE WHEN active = true THEN 'active' ELSE 'inactive' END as status,
         contact_info,
         contact_info->>'email' as email,
         contact_info->>'phone' as phone,
@@ -119,12 +157,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Add cursor-based pagination
-    if (cursor) {
-      sqlQuery += ` AND supplier_id > $${paramIndex}`;
-      queryParams.push(parseInt(cursor));
-      paramIndex++;
-    }
+    // Removed incorrect cursor-based pagination on UUIDs
 
     // Add search filter - only search on existing columns
     if (search) {
@@ -146,14 +179,29 @@ export async function GET(request: NextRequest) {
     // - preferredOnly (column doesn't exist)
     // - minSpend/maxSpend (column doesn't exist)
 
-    // Add ordering and pagination
+    // Cursor-based pagination (name, id) for stable ordering
+    let usingCursor = false;
+    let cursorName: string | null = null;
+    let cursorId: string | null = null;
     if (cursor) {
-      sqlQuery += ` ORDER BY supplier_id ASC LIMIT $${paramIndex}`;
+      const parts = cursor.split("|");
+      if (parts.length === 2) {
+        cursorName = parts[0];
+        cursorId = parts[1];
+        // Apply keyset condition
+        sqlQuery += ` AND (name > $${paramIndex} OR (name = $${paramIndex} AND supplier_id > $${paramIndex + 1}::uuid))`;
+        queryParams.push(cursorName, cursorId);
+        paramIndex += 2;
+        usingCursor = true;
+      }
+    }
+
+    // Add ordering and pagination
+    if (usingCursor) {
+      sqlQuery += ` ORDER BY name ASC, supplier_id ASC LIMIT $${paramIndex}`;
       queryParams.push(limit);
     } else {
-      sqlQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${
-        paramIndex + 1
-      }`;
+      sqlQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
       queryParams.push(limit, offset);
     }
 
@@ -229,10 +277,10 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit);
 
     // Generate next cursor for cursor-based pagination
-    let nextCursor = null;
-    if (cursor && result.rows.length > 0) {
+    let nextCursor: string | null = null;
+    if (result.rows.length === limit && result.rows.length > 0) {
       const lastRow = result.rows[result.rows.length - 1];
-      nextCursor = lastRow.id.toString();
+      nextCursor = `${lastRow.name}|${lastRow.id}`;
     }
 
     const response = NextResponse.json({
@@ -265,12 +313,22 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest) => {
   try {
     const body = await request.json();
-    const validatedData = supplierSchema.parse(body);
+
+    // Try enhanced schema first (from EnhancedSupplierForm), fall back to simple schema
+    let validatedData: any;
+    let isEnhanced = false;
+
+    try {
+      validatedData = enhancedSupplierSchema.parse(body);
+      isEnhanced = true;
+    } catch {
+      validatedData = supplierSchema.parse(body);
+    }
 
     // Check for duplicate supplier name - using core.supplier
     const existingSupplier = await pool.query(
@@ -285,28 +343,73 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert supplier - using core.supplier table with JSONB contact_info
-    const contactInfo = {
-      email: validatedData.email,
-      phone: validatedData.phone,
-      website: validatedData.website,
-      address: validatedData.address,
-      contact_person: validatedData.contact_person,
-    };
+    // Build contact_info JSONB based on schema type
+    let contactInfo: any = {};
+
+    if (isEnhanced) {
+      // Enhanced form data
+      contactInfo = {
+        email: validatedData.primaryContact?.email || "",
+        phone: validatedData.primaryContact?.phone || "",
+        website: validatedData.website || "",
+        contact_person: validatedData.primaryContact?.name || "",
+        job_title: validatedData.primaryContact?.title || "",
+        department: validatedData.primaryContact?.department || "",
+        address: validatedData.address
+          ? {
+              street: validatedData.address.street,
+              city: validatedData.address.city,
+              state: validatedData.address.state,
+              postalCode: validatedData.address.postalCode,
+              country: validatedData.address.country,
+            }
+          : null,
+      };
+    } else {
+      // Simple form data
+      contactInfo = {
+        email: validatedData.email || "",
+        phone: validatedData.phone || "",
+        website: validatedData.website || "",
+        address: validatedData.address,
+        contact_person: validatedData.contact_person || "",
+      };
+    }
+
+    // Generate code if not provided
+    const code =
+      isEnhanced && validatedData.code
+        ? validatedData.code
+        : validatedData.name
+            .substring(0, 10)
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, "");
 
     const insertQuery = `
       INSERT INTO core.supplier (
-        name, contact_info, active, default_currency, payment_terms, tax_number
+        name,
+        code,
+        contact_info,
+        active,
+        default_currency,
+        payment_terms,
+        tax_number,
+        created_at,
+        updated_at
       ) VALUES (
-        $1, $2::jsonb, true, 'USD', $3, $4
+        $1, $2, $3::jsonb, true, $4, $5, $6, NOW(), NOW()
       ) RETURNING supplier_id as id, *
     `;
 
     const insertResult = await pool.query(insertQuery, [
       validatedData.name,
+      code,
       JSON.stringify(contactInfo),
-      validatedData.payment_terms || "30 days",
-      validatedData.tax_id,
+      isEnhanced ? validatedData.currency || "USD" : "USD",
+      validatedData.paymentTerms || validatedData.payment_terms || "30 days",
+      isEnhanced
+        ? validatedData.taxId || validatedData.registrationNumber
+        : validatedData.tax_id,
     ]);
 
     // Invalidate cache after successful creation
@@ -343,4 +446,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

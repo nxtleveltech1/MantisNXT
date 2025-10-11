@@ -33,6 +33,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -65,15 +66,45 @@ import {
   Columns,
   Download,
   RefreshCw,
+  AlertTriangle,
 } from 'lucide-react'
-import type {
-  ProductTableBySupplier,
-  SupplierProductFilters,
-  PaginationParams,
-  SupplierProductTableProps,
-} from '@/types/supplier-portfolio'
-import { supplierPortfolioAPI } from '@/lib/api/supplier-portfolio-client'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+
+// Enhanced Product Type with Complete Selection Data
+interface SelectionProduct {
+  supplier_product_id: string
+  supplier_id: string
+  supplier_name: string
+  supplier_code?: string
+  supplier_sku: string
+  name_from_supplier: string
+  brand?: string
+  category_id?: string
+  category_name?: string
+  current_price: number
+  currency: string
+  barcode?: string
+  uom?: string
+  pack_size?: string
+  qty_on_hand?: number
+  is_in_stock: boolean
+  selected_at: string
+  first_seen_at?: string
+  last_seen_at?: string
+  price_change_percent?: number
+  price_change_direction?: 'up' | 'down' | 'none'
+  is_new?: boolean
+  is_mapped?: boolean
+  is_active?: boolean
+  is_selected?: boolean
+}
+
+interface SupplierProductTableProps {
+  supplier_id?: string
+  selection_id?: string
+  enable_selection?: boolean
+  on_selection_change?: (selected: string[]) => void
+}
 
 // Column visibility configuration
 type ColumnId =
@@ -106,7 +137,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'brand', label: 'Brand', visible: true, sortable: true, width: 'w-32' },
   { id: 'category', label: 'Category', visible: true, sortable: true, width: 'w-32' },
   { id: 'price', label: 'Current Price', visible: true, sortable: true, width: 'w-32' },
-  { id: 'price_change', label: 'Price Change', visible: true, sortable: true, width: 'w-32' },
+  { id: 'price_change', label: 'Price Change', visible: false, sortable: true, width: 'w-32' },
   { id: 'status', label: 'Status', visible: true, sortable: false, width: 'w-40' },
   { id: 'stock', label: 'Stock', visible: false, sortable: true, width: 'w-24' },
   { id: 'first_seen', label: 'First Seen', visible: false, sortable: true, width: 'w-32' },
@@ -115,83 +146,205 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
   supplier_id,
-  filters: initialFilters = {},
   selection_id,
   enable_selection = false,
   on_selection_change,
 }) => {
   // State management
-  const [products, setProducts] = useState<ProductTableBySupplier[]>([])
+  const [products, setProducts] = useState<SelectionProduct[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<SelectionProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Filters and pagination
-  const [filters, setFilters] = useState<SupplierProductFilters>({
-    ...initialFilters,
-    ...(supplier_id && { supplier_id }),
-    ...(selection_id && { selection_id }),
-  })
-  const [pagination, setPagination] = useState<PaginationParams>({
-    page: 1,
-    page_size: 50,
-    sort_by: 'name',
-    sort_direction: 'asc',
-  })
-  const [totalCount, setTotalCount] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterSupplier, setFilterSupplier] = useState<string>('')
+  const [filterCategory, setFilterCategory] = useState<string>('')
 
   // UI state
-  const [searchTerm, setSearchTerm] = useState('')
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS)
-  const [detailsProduct, setDetailsProduct] = useState<ProductTableBySupplier | null>(null)
-  const [priceHistoryProduct, setPriceHistoryProduct] = useState<ProductTableBySupplier | null>(null)
-  const [priceHistory, setPriceHistory] = useState<any[]>([])
+  const [detailsProduct, setDetailsProduct] = useState<SelectionProduct | null>(null)
+  const [sortColumn, setSortColumn] = useState<string>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
-  // Fetch products
+  // Fetch products for the selection
   const fetchProducts = useCallback(async () => {
+    if (!selection_id) {
+      setError('No selection ID provided')
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
     try {
-      const result = await supplierPortfolioAPI.getSupplierProducts(filters, pagination)
+      // Fetch products IN the selection (already selected items)
+      const itemsResponse = await fetch(`/api/core/selections/${selection_id}/items`)
 
-      if (result.success && result.data) {
-        setProducts(result.data.data)
-        setTotalCount(result.data.pagination.total_count)
-        setTotalPages(result.data.pagination.total_pages)
-      } else {
-        setError(result.error || 'Failed to load products')
+      if (!itemsResponse.ok) {
+        if (itemsResponse.status === 401) {
+          throw new Error('Authentication required. Please log in.')
+        }
+        throw new Error(`Failed to fetch selection items: ${itemsResponse.statusText}`)
       }
+
+      const itemsData = await itemsResponse.json()
+
+      if (!itemsData.success) {
+        throw new Error(itemsData.error || 'Failed to load selection items')
+      }
+
+      const items = itemsData.data || []
+
+      // Fetch full product details from catalog
+      const catalogResponse = await fetch('/api/core/selections/catalog')
+
+      if (!catalogResponse.ok) {
+        if (catalogResponse.status === 401) {
+          // Fallback: use basic items data if catalog fails due to auth
+          console.warn('Catalog API unauthorized, using basic selection items')
+          setProducts(items.map((item: any) => ({
+            supplier_product_id: item.supplier_product_id,
+            supplier_id: item.supplier_id || '',
+            supplier_name: 'Unknown Supplier',
+            supplier_sku: item.supplier_product_id,
+            name_from_supplier: 'Product Details Unavailable',
+            current_price: 0,
+            currency: 'ZAR',
+            is_in_stock: false,
+            selected_at: item.selected_at,
+            is_selected: true,
+          })))
+          setLoading(false)
+          return
+        }
+        throw new Error(`Failed to fetch catalog: ${catalogResponse.statusText}`)
+      }
+
+      const catalogData = await catalogResponse.json()
+
+      if (!catalogData.success) {
+        throw new Error(catalogData.error || 'Failed to load catalog')
+      }
+
+      const catalog = catalogData.catalog || []
+
+      // Match selection items with catalog data
+      const enrichedProducts = items.map((item: any) => {
+        const catalogProduct = catalog.find((p: any) => p.supplier_product_id === item.supplier_product_id)
+
+        return {
+          supplier_product_id: item.supplier_product_id,
+          supplier_id: catalogProduct?.supplier_id || item.supplier_id || '',
+          supplier_name: catalogProduct?.supplier_name || 'Unknown Supplier',
+          supplier_code: catalogProduct?.supplier_code,
+          supplier_sku: catalogProduct?.supplier_sku || item.supplier_product_id,
+          name_from_supplier: catalogProduct?.product_name || 'Product Details Unavailable',
+          brand: catalogProduct?.brand,
+          category_id: catalogProduct?.category_id,
+          category_name: catalogProduct?.category_name,
+          current_price: catalogProduct?.current_price || 0,
+          currency: catalogProduct?.currency || 'ZAR',
+          barcode: catalogProduct?.barcode,
+          uom: catalogProduct?.uom,
+          pack_size: catalogProduct?.pack_size,
+          qty_on_hand: catalogProduct?.qty_on_hand,
+          is_in_stock: catalogProduct?.is_in_stock || false,
+          selected_at: item.selected_at || catalogProduct?.selected_at,
+          is_selected: true,
+        }
+      })
+
+      setProducts(enrichedProducts)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load products'
+      console.error('Error fetching selection products:', err)
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
-  }, [filters, pagination])
+  }, [selection_id])
 
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
 
-  // Search handler with debounce
+  // Apply filters and sorting
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setFilters(prev => ({ ...prev, search: searchTerm }))
-      setPagination(prev => ({ ...prev, page: 1 }))
-    }, 500)
+    let filtered = [...products]
 
-    return () => clearTimeout(timer)
-  }, [searchTerm])
+    // Search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase()
+      filtered = filtered.filter(p =>
+        p.name_from_supplier.toLowerCase().includes(search) ||
+        p.supplier_sku.toLowerCase().includes(search) ||
+        p.supplier_name.toLowerCase().includes(search) ||
+        (p.barcode && p.barcode.toLowerCase().includes(search))
+      )
+    }
+
+    // Supplier filter
+    if (filterSupplier) {
+      filtered = filtered.filter(p => p.supplier_id === filterSupplier)
+    }
+
+    // Category filter
+    if (filterCategory) {
+      filtered = filtered.filter(p => p.category_id === filterCategory)
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal: any = a[sortColumn as keyof SelectionProduct]
+      let bVal: any = b[sortColumn as keyof SelectionProduct]
+
+      if (aVal === undefined || aVal === null) return 1
+      if (bVal === undefined || bVal === null) return -1
+
+      if (typeof aVal === 'string') {
+        return sortDirection === 'asc'
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal)
+      }
+
+      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
+    })
+
+    setFilteredProducts(filtered)
+  }, [products, searchTerm, filterSupplier, filterCategory, sortColumn, sortDirection])
+
+  // Get unique suppliers and categories for filters
+  const suppliers = useMemo(() => {
+    const unique = new Map()
+    products.forEach(p => {
+      if (p.supplier_id && !unique.has(p.supplier_id)) {
+        unique.set(p.supplier_id, { id: p.supplier_id, name: p.supplier_name })
+      }
+    })
+    return Array.from(unique.values())
+  }, [products])
+
+  const categories = useMemo(() => {
+    const unique = new Map()
+    products.forEach(p => {
+      if (p.category_id && !unique.has(p.category_id)) {
+        unique.set(p.category_id, { id: p.category_id, name: p.category_name })
+      }
+    })
+    return Array.from(unique.values())
+  }, [products])
 
   // Selection handlers
   const handleSelectAll = useCallback((checked: boolean) => {
     if (checked) {
-      setSelectedRows(new Set(products.map(p => p.supplier_product_id)))
+      setSelectedRows(new Set(filteredProducts.map(p => p.supplier_product_id)))
     } else {
       setSelectedRows(new Set())
     }
-  }, [products])
+  }, [filteredProducts])
 
   const handleSelectRow = useCallback((id: string, checked: boolean) => {
     setSelectedRows(prev => {
@@ -225,23 +378,13 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
 
   // Sorting
   const handleSort = useCallback((columnId: string) => {
-    setPagination(prev => ({
-      ...prev,
-      sort_by: columnId,
-      sort_direction: prev.sort_by === columnId && prev.sort_direction === 'asc' ? 'desc' : 'asc',
-      page: 1,
-    }))
-  }, [])
-
-  // Price history modal
-  const handleViewPriceHistory = useCallback(async (product: ProductTableBySupplier) => {
-    setPriceHistoryProduct(product)
-
-    const result = await supplierPortfolioAPI.getPriceHistory(product.supplier_product_id)
-    if (result.success && result.data) {
-      setPriceHistory(result.data)
+    if (sortColumn === columnId) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(columnId)
+      setSortDirection('asc')
     }
-  }, [])
+  }, [sortColumn])
 
   // Render loading skeleton
   if (loading && products.length === 0) {
@@ -256,6 +399,32 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="font-medium">Error Loading Products</div>
+              <div className="text-sm mt-1">{error}</div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchProducts}
+                className="mt-3"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     )
@@ -280,67 +449,36 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2">
-              {/* Filters */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filters
-                    {Object.keys(filters).length > 0 && (
-                      <Badge variant="secondary" className="ml-2">
-                        {Object.keys(filters).length}
-                      </Badge>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuLabel>Filter Products</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+            <div className="flex gap-2 flex-wrap">
+              {/* Supplier Filter */}
+              {suppliers.length > 0 && (
+                <Select value={filterSupplier} onValueChange={setFilterSupplier}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="All Suppliers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Suppliers</SelectItem>
+                    {suppliers.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
-                  <div className="p-2 space-y-2">
-                    {/* Status Filters */}
-                    <DropdownMenuCheckboxItem
-                      checked={filters.is_new}
-                      onCheckedChange={(checked) =>
-                        setFilters(prev => ({ ...prev, is_new: checked }))
-                      }
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      New Products
-                    </DropdownMenuCheckboxItem>
-
-                    <DropdownMenuCheckboxItem
-                      checked={filters.has_price_change}
-                      onCheckedChange={(checked) =>
-                        setFilters(prev => ({ ...prev, has_price_change: checked }))
-                      }
-                    >
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Price Changes
-                    </DropdownMenuCheckboxItem>
-
-                    <DropdownMenuCheckboxItem
-                      checked={filters.is_mapped === false}
-                      onCheckedChange={(checked) =>
-                        setFilters(prev => ({ ...prev, is_mapped: checked ? false : undefined }))
-                      }
-                    >
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                      Unmapped
-                    </DropdownMenuCheckboxItem>
-                  </div>
-
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem
-                    onClick={() => setFilters({})}
-                    className="text-destructive"
-                  >
-                    Clear All Filters
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Category Filter */}
+              {categories.length > 0 && (
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Categories</SelectItem>
+                    {categories.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
               {/* Column Visibility */}
               <DropdownMenu>
@@ -371,54 +509,13 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fetchProducts()}
+                onClick={fetchProducts}
                 disabled={loading}
               >
                 <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
               </Button>
-
-              {/* Export */}
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
             </div>
           </div>
-
-          {/* Selected Items Actions */}
-          <AnimatePresence>
-            {selectedRows.size > 0 && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-blue-900">
-                    {selectedRows.size} item{selectedRows.size !== 1 ? 's' : ''} selected
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Tag className="h-4 w-4 mr-2" />
-                      Assign Category
-                    </Button>
-                    {enable_selection && (
-                      <>
-                        <Button variant="outline" size="sm">
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Add to Selection
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Remove from Selection
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </CardContent>
       </Card>
 
@@ -435,8 +532,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                         <TableHead key={col.id} className={col.width}>
                           <Checkbox
                             checked={
-                              products.length > 0 &&
-                              selectedRows.size === products.length
+                              filteredProducts.length > 0 &&
+                              selectedRows.size === filteredProducts.length
                             }
                             onCheckedChange={handleSelectAll}
                             aria-label="Select all"
@@ -471,7 +568,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
               </TableHeader>
 
               <TableBody>
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <TableRow
                     key={product.supplier_product_id}
                     className="hover:bg-muted/50 cursor-pointer"
@@ -523,9 +620,6 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                             <div className="text-sm">
                               {product.supplier_name || 'Unknown'}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {product.supplier_code}
-                            </div>
                           </TableCell>
                         )
                       }
@@ -546,8 +640,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                                 {product.category_name}
                               </Badge>
                             ) : (
-                              <Badge variant="destructive" className="text-xs">
-                                Unmapped
+                              <Badge variant="secondary" className="text-xs">
+                                -
                               </Badge>
                             )}
                           </TableCell>
@@ -596,22 +690,13 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                         return (
                           <TableCell key={col.id}>
                             <div className="flex flex-wrap gap-1">
-                              {product.is_new && (
+                              <Badge variant="default" className="bg-green-100 text-green-700">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Selected
+                              </Badge>
+                              {product.is_in_stock && (
                                 <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                                  <Sparkles className="h-3 w-3 mr-1" />
-                                  New
-                                </Badge>
-                              )}
-                              {!product.is_mapped && (
-                                <Badge variant="destructive" className="text-xs">
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                  Unmapped
-                                </Badge>
-                              )}
-                              {product.is_selected && (
-                                <Badge variant="default" className="bg-green-100 text-green-700">
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                                  Selected
+                                  In Stock
                                 </Badge>
                               )}
                             </div>
@@ -622,8 +707,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                       if (col.id === 'stock') {
                         return (
                           <TableCell key={col.id}>
-                            {product.stock_quantity !== undefined ? (
-                              <div className="text-sm">{product.stock_quantity}</div>
+                            {product.qty_on_hand !== undefined ? (
+                              <div className="text-sm">{product.qty_on_hand}</div>
                             ) : (
                               '-'
                             )}
@@ -634,7 +719,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                       if (col.id === 'first_seen') {
                         return (
                           <TableCell key={col.id} className="text-sm text-muted-foreground">
-                            {formatDate(product.first_seen_at)}
+                            {product.first_seen_at ? formatDate(product.first_seen_at) : '-'}
                           </TableCell>
                         )
                       }
@@ -653,14 +738,6 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleViewPriceHistory(product)}>
-                                  <BarChart3 className="h-4 w-4 mr-2" />
-                                  Price History
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Mapping
-                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -672,7 +749,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                   </TableRow>
                 ))}
 
-                {products.length === 0 && !loading && (
+                {filteredProducts.length === 0 && !loading && (
                   <TableRow>
                     <TableCell
                       colSpan={visibleColumns.length}
@@ -682,7 +759,9 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                         <Package className="h-12 w-12 text-muted-foreground" />
                         <div className="text-lg font-medium">No products found</div>
                         <div className="text-sm text-muted-foreground">
-                          Try adjusting your filters or search term
+                          {searchTerm || filterSupplier || filterCategory
+                            ? 'Try adjusting your filters'
+                            : 'Add products to this selection to see them here'}
                         </div>
                       </div>
                     </TableCell>
@@ -702,54 +781,17 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
           )}
         </div>
 
-        {/* Pagination */}
-        <div className="border-t p-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Showing {products.length} of {totalCount} products
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(prev => ({ ...prev, page: 1 }))}
-                disabled={pagination.page === 1}
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                disabled={pagination.page === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-
-              <div className="text-sm">
-                Page {pagination.page} of {totalPages}
+        {/* Pagination Info */}
+        {filteredProducts.length > 0 && (
+          <div className="border-t p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {filteredProducts.length} of {products.length} products
+                {selectedRows.size > 0 && ` (${selectedRows.size} selected)`}
               </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                disabled={pagination.page === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(prev => ({ ...prev, page: totalPages }))}
-                disabled={pagination.page === totalPages}
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
             </div>
           </div>
-        </div>
+        )}
       </Card>
 
       {/* Product Details Dialog */}
@@ -784,7 +826,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Category</label>
-                  <div className="mt-1">{detailsProduct.category_name || 'Unmapped'}</div>
+                  <div className="mt-1">{detailsProduct.category_name || '-'}</div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Current Price</label>
@@ -793,90 +835,28 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">UOM / Pack Size</label>
-                  <div className="mt-1">{detailsProduct.uom} {detailsProduct.pack_size && `/ ${detailsProduct.pack_size}`}</div>
+                  <label className="text-sm font-medium text-muted-foreground">Stock Quantity</label>
+                  <div className="mt-1">{detailsProduct.qty_on_hand || 0}</div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Barcode</label>
                   <div className="mt-1 font-mono">{detailsProduct.barcode || '-'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">First Seen</label>
-                  <div className="mt-1">{formatDate(detailsProduct.first_seen_at)}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Last Seen</label>
-                  <div className="mt-1">
-                    {detailsProduct.last_seen_at ? formatDate(detailsProduct.last_seen_at) : 'N/A'}
-                  </div>
+                  <label className="text-sm font-medium text-muted-foreground">Selected At</label>
+                  <div className="mt-1">{formatDate(detailsProduct.selected_at)}</div>
                 </div>
               </div>
 
-              {/* Status Badges */}
+              {/* Status */}
               <div className="flex gap-2">
-                {detailsProduct.is_new && (
-                  <Badge variant="secondary">New Product</Badge>
-                )}
-                {detailsProduct.is_mapped ? (
-                  <Badge variant="default">Mapped</Badge>
-                ) : (
-                  <Badge variant="destructive">Unmapped</Badge>
-                )}
-                {detailsProduct.is_active ? (
-                  <Badge variant="default">Active</Badge>
-                ) : (
-                  <Badge variant="secondary">Inactive</Badge>
+                <Badge variant="default" className="bg-green-100 text-green-700">Selected</Badge>
+                {detailsProduct.is_in_stock && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">In Stock</Badge>
                 )}
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Price History Dialog */}
-      <Dialog
-        open={!!priceHistoryProduct}
-        onOpenChange={(open) => !open && setPriceHistoryProduct(null)}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Price History</DialogTitle>
-            <DialogDescription>
-              Historical pricing for {priceHistoryProduct?.name_from_supplier}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {priceHistory.length > 0 ? (
-              <ScrollArea className="h-[400px]">
-                <div className="space-y-2">
-                  {priceHistory.map((record, index) => (
-                    <div
-                      key={index}
-                      className="p-3 border rounded-lg flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="font-medium">
-                          {formatCurrency(record.price, record.currency)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {formatDate(record.valid_from)}
-                          {record.valid_to && ` - ${formatDate(record.valid_to)}`}
-                        </div>
-                      </div>
-                      {record.is_current && (
-                        <Badge variant="default">Current</Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No price history available
-              </div>
-            )}
-          </div>
         </DialogContent>
       </Dialog>
     </div>

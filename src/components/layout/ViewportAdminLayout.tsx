@@ -78,12 +78,6 @@ const sidebarNavigation = [
         isActive: false,
       },
       {
-        title: "Dashboard v1",
-        url: "/dashboard-v1",
-        icon: LayoutDashboard,
-        isActive: false,
-      },
-      {
         title: "Analytics",
         url: "/analytics",
         icon: TrendingUp,
@@ -119,13 +113,6 @@ const sidebarNavigation = [
     title: "Operations",
     items: [
       {
-        title: "Purchase Orders",
-        url: "/purchase-orders",
-        icon: ShoppingCart,
-        isActive: false,
-        badge: "12",
-      },
-      {
         title: "Inventory",
         url: "/inventory",
         icon: Package,
@@ -136,6 +123,30 @@ const sidebarNavigation = [
   {
     title: "Financial",
     items: [
+    ],
+  },
+  {
+    title: "Communication",
+    items: [
+      {
+        title: "Messages",
+        url: "/messages",
+        icon: MessageSquare,
+        isActive: false,
+        badge: "3",
+      },
+    ],
+  },
+  {
+    title: "Modules Coming",
+    items: [
+      {
+        title: "Purchase Orders",
+        url: "/purchase-orders",
+        icon: ShoppingCart,
+        isActive: false,
+        badge: "12",
+      },
       {
         title: "Invoices",
         url: "/invoices",
@@ -148,18 +159,6 @@ const sidebarNavigation = [
         url: "/payments",
         icon: DollarSign,
         isActive: false,
-      },
-    ],
-  },
-  {
-    title: "Communication",
-    items: [
-      {
-        title: "Messages",
-        url: "/messages",
-        icon: MessageSquare,
-        isActive: false,
-        badge: "3",
       },
     ],
   },

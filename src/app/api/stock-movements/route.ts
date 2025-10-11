@@ -1,14 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { pool, withTransaction } from '@/lib/database';
-import { serializeTimestamp } from '@/lib/utils/date-utils';
-import { CacheInvalidator } from '@/lib/cache/invalidation';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { pool, withTransaction } from "@/lib/database";
+import { serializeTimestamp } from "@/lib/utils/date-utils";
+import { CacheInvalidator } from "@/lib/cache/invalidation";
 
 const CreateStockMovementSchema = z.object({
-  supplierProductId: z.number().positive('Valid supplier product ID is required'),
-  locationId: z.number().positive('Valid location ID is required'),
-  movementType: z.enum(['RECEIPT', 'ISSUE', 'TRANSFER', 'ADJUSTMENT', 'RETURN']),
-  quantity: z.number().positive('Quantity must be positive'),
+  supplierProductId: z
+    .number()
+    .positive("Valid supplier product ID is required"),
+  locationId: z.number().positive("Valid location ID is required"),
+  movementType: z.enum([
+    "RECEIPT",
+    "ISSUE",
+    "TRANSFER",
+    "ADJUSTMENT",
+    "RETURN",
+  ]),
+  quantity: z.number().positive("Quantity must be positive"),
   referenceDoc: z.string().optional(),
   notes: z.string().optional(),
   performedBy: z.string().optional(),
@@ -17,25 +25,30 @@ const CreateStockMovementSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const supplierProductId = searchParams.get('supplierProductId');
-    const locationId = searchParams.get('locationId');
-    const movementType = searchParams.get('movementType');
-    const limit = Math.min(100, parseInt(searchParams.get('limit') || '50', 10));
-    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10));
+    const supplierProductId = searchParams.get("supplierProductId");
+    const locationId = searchParams.get("locationId");
+    const movementType = searchParams.get("movementType");
+    const limit = Math.min(
+      100,
+      parseInt(searchParams.get("limit") || "50", 10)
+    );
+    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10));
 
-    console.log(`🔍 Fetching stock movements: supplierProductId=${supplierProductId}, locationId=${locationId}, type=${movementType}`);
+    console.log(
+      `🔍 Fetching stock movements: supplierProductId=${supplierProductId}, locationId=${locationId}, type=${movementType}`
+    );
 
     const where: string[] = [];
     const params: any[] = [];
 
     if (supplierProductId) {
       where.push(`sm.supplier_product_id = $${params.length + 1}`);
-      params.push(parseInt(supplierProductId));
+      params.push(supplierProductId);
     }
 
     if (locationId) {
       where.push(`sm.location_id = $${params.length + 1}`);
-      params.push(parseInt(locationId));
+      params.push(locationId);
     }
 
     if (movementType) {
@@ -62,7 +75,7 @@ export async function GET(request: NextRequest) {
       FROM core.stock_movement sm
       JOIN core.supplier_product sp ON sp.supplier_product_id = sm.supplier_product_id
       LEFT JOIN core.stock_location sl ON sl.location_id = sm.location_id
-      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY sm.movement_ts DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `;
@@ -95,16 +108,19 @@ export async function GET(request: NextRequest) {
         limit,
         offset,
         total: data.length,
-        hasMore: data.length === limit
-      }
+        hasMore: data.length === limit,
+      },
     });
   } catch (e: any) {
-    console.error('❌ Stock movements query failed:', e);
-    return NextResponse.json({
-      success: false,
-      error: 'STOCK_MOVEMENTS_LIST_FAILED',
-      detail: e?.message ?? String(e)
-    }, { status: 500 });
+    console.error("❌ Stock movements query failed:", e);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "STOCK_MOVEMENTS_LIST_FAILED",
+        detail: e?.message ?? String(e),
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -113,7 +129,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = CreateStockMovementSchema.parse(body);
 
-    console.log(`📦 Creating stock movement: ${validated.movementType} for product ${validated.supplierProductId}`);
+    console.log(
+      `📦 Creating stock movement: ${validated.movementType} for product ${validated.supplierProductId}`
+    );
 
     const mv = await withTransaction(async (client) => {
       // Using correct table: core.stock_movement (singular)
@@ -130,7 +148,7 @@ export async function POST(request: NextRequest) {
           validated.quantity,
           validated.referenceDoc || null,
           validated.notes || null,
-          validated.performedBy || 'system',
+          validated.performedBy || "system",
         ]
       );
 
@@ -138,34 +156,45 @@ export async function POST(request: NextRequest) {
       return ins.rows[0];
     });
 
-    CacheInvalidator.invalidateStockMovements(validated.supplierProductId.toString());
+    CacheInvalidator.invalidateStockMovements(
+      validated.supplierProductId.toString()
+    );
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: mv.id,
-        timestamp: serializeTimestamp(mv.timestamp)
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          id: mv.id,
+          timestamp: serializeTimestamp(mv.timestamp),
+        },
+        message: "Stock movement recorded successfully",
       },
-      message: 'Stock movement recorded successfully'
-    }, { status: 201 });
-
+      { status: 201 }
+    );
   } catch (e: any) {
-    console.error('❌ Stock movement creation failed:', e);
+    console.error("❌ Stock movement creation failed:", e);
 
     if (e instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'VALIDATION_FAILED',
-        details: e.errors.map(err => `${err.path.join('.')}: ${err.message}`)
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "VALIDATION_FAILED",
+          details: e.errors.map(
+            (err) => `${err.path.join(".")}: ${err.message}`
+          ),
+        },
+        { status: 400 }
+      );
     }
 
-    const status = e?.message === 'INSUFFICIENT_AVAILABLE' ? 400 : 500;
-    return NextResponse.json({
-      success: false,
-      error: 'STOCK_MOVEMENTS_CREATE_FAILED',
-      detail: e?.message ?? String(e)
-    }, { status });
+    const status = e?.message === "INSUFFICIENT_AVAILABLE" ? 400 : 500;
+    return NextResponse.json(
+      {
+        success: false,
+        error: "STOCK_MOVEMENTS_CREATE_FAILED",
+        detail: e?.message ?? String(e),
+      },
+      { status }
+    );
   }
 }
-

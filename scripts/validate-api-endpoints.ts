@@ -1,3 +1,47 @@
+import assert from 'node:assert';
+import http from 'node:http';
+
+function request(url: string, method = 'GET', headers: Record<string, string> = {}): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const req = http.request(url, { method, headers }, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => resolve({ status: res.statusCode || 0, body: data }));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function main() {
+  const base = process.env.VALIDATION_BASE_URL || 'http://localhost:3000';
+
+  const health = await request(`${base}/api/health`);
+  assert.strictEqual(health.status, 200, 'health should be 200');
+
+  const inv = await request(`${base}/api/inventory`);
+  assert.strictEqual(inv.status, 200, 'inventory should be 200');
+
+  const sup = await request(`${base}/api/suppliers`);
+  assert.strictEqual(sup.status, 200, 'suppliers should be 200');
+
+  // Parse inventory shape
+  try {
+    const invJson = JSON.parse(inv.body);
+    assert.ok(Array.isArray(invJson.items), 'inventory.items should be array');
+    assert.ok('nextCursor' in invJson, 'inventory should include nextCursor');
+  } catch (e) {
+    throw new Error('Inventory response is not valid JSON or invalid shape');
+  }
+
+  console.log('API endpoint validation passed.');
+}
+
+main().catch((err) => {
+  console.error('API endpoint validation failed:', err);
+  process.exit(1);
+});
+
 #!/usr/bin/env tsx
 
 /**

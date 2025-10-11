@@ -8,7 +8,7 @@
     "dev:status": "node scripts/dev-server-manager.js status",
     "dev:restart": "node scripts/dev-server-manager.js restart",
     "dev:raw": "next dev",
-    "build": "next build",
+    "build": "npm run type-check && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -44,7 +44,7 @@
     "db:seed:test": "node scripts/seed-test-data.js",
     "db:seed:e2e": "node scripts/seed-e2e-data.js",
     "db:seed:perf": "node scripts/seed-perf-data.js",
-    "db:validate": "node scripts/run-validation.js",
+    "db:validate": "tsx scripts/validate-database.ts",
     "db:validate:full": "node scripts/master-validation-runner.js",
     "db:validate:performance": "node scripts/performance-optimizer.js",
     "db:validate:flow": "node scripts/cross-module-tester.js",
@@ -57,6 +57,14 @@
     "validate:api:report": "bash scripts/run-validation.sh",
     "validate:endpoints": "npm run validate:api && npm run validate:api:report",
     "validate:browser": "echo 'Use Chrome DevTools MCP - see VALIDATION_WORKFLOW.md'",
+    "prepare": "husky install",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "validate:platform": "./scripts/validate-with-mcp.sh",
+    "validate:platform:full": "./scripts/validate-with-mcp.sh --full",
+    "perf:measure": "./node_modules/.bin/chrome-devtools-mcp performance --url http://localhost:3000",
+    "perf:lighthouse": "npx lighthouse http://localhost:3000 --output html --output-path ./validation-reports/lighthouse.html",
     "// Integration Scripts": "Commands for full inventory integration",
     "db:purge": "psql $NEON_SPP_DATABASE_URL -f database/scripts/purge_all_inventory_data.sql",
     "db:verify-schema": "psql $NEON_SPP_DATABASE_URL -f database/scripts/verify_schema_exists.sql",
@@ -162,6 +170,23 @@
     "redis": "^5.8.2",
     "supertest": "^7.0.0",
     "tsx": "^4.7.0",
-    "wait-on": "^7.2.0"
+    "wait-on": "^7.2.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "prettier-plugin-tailwindcss": "^0.5.9",
+    "chrome-devtools-mcp": "^0.4.0",
+    "fetch-mcp": "^0.3.0",
+    "prisma-postgres-mcp": "^0.2.0"
+  }
+  ,
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   }
 }
