@@ -70,6 +70,9 @@ import {
 } from 'lucide-react'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
+const ALL_SUPPLIERS_VALUE = '__all-suppliers__'
+const ALL_CATEGORIES_VALUE = '__all-categories__'
+
 // Enhanced Product Type with Complete Selection Data
 interface SelectionProduct {
   supplier_product_id: string
@@ -452,12 +455,17 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
             <div className="flex gap-2 flex-wrap">
               {/* Supplier Filter */}
               {suppliers.length > 0 && (
-                <Select value={filterSupplier} onValueChange={setFilterSupplier}>
+                <Select
+                  value={filterSupplier || ALL_SUPPLIERS_VALUE}
+                  onValueChange={(value) =>
+                    setFilterSupplier(value === ALL_SUPPLIERS_VALUE ? '' : value)
+                  }
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="All Suppliers" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Suppliers</SelectItem>
+                    <SelectItem value={ALL_SUPPLIERS_VALUE}>All Suppliers</SelectItem>
                     {suppliers.map((s: any) => (
                       <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
@@ -467,12 +475,17 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
 
               {/* Category Filter */}
               {categories.length > 0 && (
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <Select
+                  value={filterCategory || ALL_CATEGORIES_VALUE}
+                  onValueChange={(value) =>
+                    setFilterCategory(value === ALL_CATEGORIES_VALUE ? '' : value)
+                  }
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
                     {categories.map((c: any) => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}

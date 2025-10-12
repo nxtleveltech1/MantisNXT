@@ -117,6 +117,9 @@ const INITIAL_FILTERS: CatalogFilters = {
   sortOrder: 'asc'
 }
 
+const ALL_SUPPLIERS_VALUE = '__all-suppliers__'
+const ANY_PRICE_VALUE = '__any-price__'
+
 export default function RealProductCatalog() {
   const { toast } = useToast()
   const [products, setProducts] = useState<ProductCatalogItem[]>([])
@@ -376,12 +379,17 @@ export default function RealProductCatalog() {
               />
             </div>
             
-            <Select value={filters.supplier} onValueChange={(value) => handleFilterChange('supplier', value)}>
+            <Select
+              value={filters.supplier || ALL_SUPPLIERS_VALUE}
+              onValueChange={(value) =>
+                handleFilterChange('supplier', value === ALL_SUPPLIERS_VALUE ? '' : value)
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Suppliers</SelectItem>
+                <SelectItem value={ALL_SUPPLIERS_VALUE}>All Suppliers</SelectItem>
                 {suppliers.map(supplier => (
                   <SelectItem key={supplier.id} value={supplier.id}>
                     {supplier.name}
@@ -390,12 +398,17 @@ export default function RealProductCatalog() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.priceRange} onValueChange={(value) => handleFilterChange('priceRange', value)}>
+            <Select
+              value={filters.priceRange || ANY_PRICE_VALUE}
+              onValueChange={(value) =>
+                handleFilterChange('priceRange', value === ANY_PRICE_VALUE ? '' : value)
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Any Price" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any Price</SelectItem>
+                <SelectItem value={ANY_PRICE_VALUE}>Any Price</SelectItem>
                 {priceRangeOptions.map(range => (
                   <SelectItem key={range.value} value={range.value}>
                     {range.label}

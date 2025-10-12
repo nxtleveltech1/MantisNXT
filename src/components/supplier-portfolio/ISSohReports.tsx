@@ -60,6 +60,8 @@ interface ISSohReportsProps {
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+const ALL_SUPPLIERS_VALUE = '__all-suppliers__'
+const ALL_LOCATIONS_VALUE = '__all-locations__'
 
 export function ISSohReports({ onExport }: ISSohReportsProps) {
   // State
@@ -404,12 +406,17 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
 
               <div className="w-[200px] space-y-2">
                 <Label htmlFor="supplier-filter" className="text-sm">Supplier</Label>
-                <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                <Select
+                  value={supplierFilter || ALL_SUPPLIERS_VALUE}
+                  onValueChange={(value) =>
+                    setSupplierFilter(value === ALL_SUPPLIERS_VALUE ? '' : value)
+                  }
+                >
                   <SelectTrigger id="supplier-filter">
                     <SelectValue placeholder="All suppliers" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All suppliers</SelectItem>
+                    <SelectItem value={ALL_SUPPLIERS_VALUE}>All suppliers</SelectItem>
                     {uniqueSuppliers.map(s => (
                       <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
@@ -419,12 +426,17 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
 
               <div className="w-[200px] space-y-2">
                 <Label htmlFor="location-filter" className="text-sm">Location</Label>
-                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <Select
+                  value={locationFilter || ALL_LOCATIONS_VALUE}
+                  onValueChange={(value) =>
+                    setLocationFilter(value === ALL_LOCATIONS_VALUE ? '' : value)
+                  }
+                >
                   <SelectTrigger id="location-filter">
                     <SelectValue placeholder="All locations" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All locations</SelectItem>
+                    <SelectItem value={ALL_LOCATIONS_VALUE}>All locations</SelectItem>
                     {uniqueLocations.map(l => (
                       <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
                     ))}

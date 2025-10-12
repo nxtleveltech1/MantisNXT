@@ -174,12 +174,27 @@ function transformDatabaseSupplierToSupplierData(dbSupplier: any): SupplierData 
     }
   }
 
+  const rawStatus = dbSupplier.status
+  const normalizedStatus =
+    typeof rawStatus === 'string'
+      ? rawStatus.toLowerCase()
+      : rawStatus
+        ? 'active'
+        : 'inactive'
+  const status: SupplierData['status'] =
+    normalizedStatus === 'active' ||
+    normalizedStatus === 'inactive' ||
+    normalizedStatus === 'pending' ||
+    normalizedStatus === 'suspended'
+      ? normalizedStatus
+      : 'inactive'
+
   return {
     id: dbSupplier.id,
     code: dbSupplier.supplier_code || 'N/A',
     name: dbSupplier.name,
     companyName: dbSupplier.company_name || dbSupplier.name,
-    status: dbSupplier.status,
+    status,
     tier: dbSupplier.performance_tier === 'tier_1' ? 'strategic' :
           dbSupplier.performance_tier === 'tier_2' ? 'preferred' :
           dbSupplier.performance_tier === 'tier_3' ? 'approved' : 'conditional',
@@ -639,13 +654,16 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
 
   // Utility functions
   const getStatusColor = (status: string) => {
+    const normalized = typeof status === 'string'
+      ? status.toLowerCase()
+      : String(status ?? 'inactive').toLowerCase()
     const colors = {
       active: "bg-green-100 text-green-800 border-green-200",
       inactive: "bg-gray-100 text-gray-800 border-gray-200",
       pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
       suspended: "bg-red-100 text-red-800 border-red-200"
     }
-    return colors[status as keyof typeof colors] || colors.inactive
+    return colors[normalized as keyof typeof colors] || colors.inactive
   }
 
   const getTierColor = (tier: string) => {
@@ -1149,7 +1167,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getStatusColor(supplier.status)}>
-                            {supplier.status.toUpperCase()}
+                            {String(supplier.status ?? 'inactive').toUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell>

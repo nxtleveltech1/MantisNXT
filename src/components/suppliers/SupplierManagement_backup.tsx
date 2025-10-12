@@ -198,6 +198,12 @@ export default function SupplierManagement() {
   const categories = [...new Set(suppliers.map(s => s.primary_category).filter(Boolean))]
   const beeLevels = [...new Set(suppliers.map(s => s.bee_level).filter(Boolean))]
 
+  const ALL_STATUSES_VALUE = '__all-statuses__'
+  const ALL_TIERS_VALUE = '__all-tiers__'
+  const ALL_CATEGORIES_VALUE = '__all-categories__'
+  const ALL_REGIONS_VALUE = '__all-regions__'
+  const ALL_LEVELS_VALUE = '__all-levels__'
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -351,16 +357,18 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Status</label>
                     <Select
-                      value={filters.status?.[0] || ''}
+                      value={filters.status?.[0] || ALL_STATUSES_VALUE}
                       onValueChange={(value) =>
-                        setFilters({ status: value ? [value as any] : undefined })
+                        setFilters({
+                          status: value === ALL_STATUSES_VALUE ? undefined : [value as any],
+                        })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All statuses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All statuses</SelectItem>
+                        <SelectItem value={ALL_STATUSES_VALUE}>All statuses</SelectItem>
                         {statuses.map(status => (
                           <SelectItem key={status} value={status}>
                             {status.replace('_', ' ').toUpperCase()}
@@ -373,16 +381,19 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Performance Tier</label>
                     <Select
-                      value={filters.performance_tier?.[0] || ''}
+                      value={filters.performance_tier?.[0] || ALL_TIERS_VALUE}
                       onValueChange={(value) =>
-                        setFilters({ performance_tier: value ? [value as any] : undefined })
+                        setFilters({
+                          performance_tier:
+                            value === ALL_TIERS_VALUE ? undefined : [value as any],
+                        })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All tiers" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All tiers</SelectItem>
+                        <SelectItem value={ALL_TIERS_VALUE}>All tiers</SelectItem>
                         {performanceTiers.map(tier => (
                           <SelectItem key={tier} value={tier}>
                             {tier.toUpperCase()}
@@ -395,16 +406,18 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Category</label>
                     <Select
-                      value={filters.category?.[0] || ''}
+                      value={filters.category?.[0] || ALL_CATEGORIES_VALUE}
                       onValueChange={(value) =>
-                        setFilters({ category: value ? [value] : undefined })
+                        setFilters({
+                          category: value === ALL_CATEGORIES_VALUE ? undefined : [value],
+                        })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All categories" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All categories</SelectItem>
+                        <SelectItem value={ALL_CATEGORIES_VALUE}>All categories</SelectItem>
                         {categories.map(category => (
                           <SelectItem key={category} value={category}>
                             {category}
@@ -417,16 +430,18 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Region</label>
                     <Select
-                      value={filters.region?.[0] || ''}
+                      value={filters.region?.[0] || ALL_REGIONS_VALUE}
                       onValueChange={(value) =>
-                        setFilters({ region: value ? [value] : undefined })
+                        setFilters({
+                          region: value === ALL_REGIONS_VALUE ? undefined : [value],
+                        })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All regions" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All regions</SelectItem>
+                        <SelectItem value={ALL_REGIONS_VALUE}>All regions</SelectItem>
                         {regions.map(region => (
                           <SelectItem key={region} value={region}>
                             {region}
@@ -439,16 +454,18 @@ export default function SupplierManagement() {
                   <div>
                     <label className="text-sm font-medium mb-2 block">BEE Level</label>
                     <Select
-                      value={filters.bee_level?.[0] || ''}
+                      value={filters.bee_level?.[0] || ALL_LEVELS_VALUE}
                       onValueChange={(value) =>
-                        setFilters({ bee_level: value ? [value] : undefined })
+                        setFilters({
+                          bee_level: value === ALL_LEVELS_VALUE ? undefined : [value],
+                        })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All levels" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All levels</SelectItem>
+                        <SelectItem value={ALL_LEVELS_VALUE}>All levels</SelectItem>
                         {beeLevels.map(level => (
                           <SelectItem key={level} value={level}>
                             {level}
