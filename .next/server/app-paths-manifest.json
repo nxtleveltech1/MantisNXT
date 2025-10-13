@@ -1,7 +1,0 @@
-{
-  "/api/core/selections/active/route": "app/api/core/selections/active/route.js",
-  "/page": "app/page.js",
-  "/analytics/page": "app/analytics/page.js",
-  "/inventory/page": "app/inventory/page.js",
-  "/nxt-spp/page": "app/nxt-spp/page.js"
-}
