@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth, ProtectedComponent } from '@/lib/auth/auth-context';
-import { Organization, SouthAfricanBusinessInfo } from '@/types/auth';
+import { Organization } from '@/types/auth';
 import { formatZAR, SA_VAT_RATE } from '@/lib/utils/currency';
 import { mockAuthProvider } from '@/lib/auth/mock-provider';
 
@@ -267,7 +267,7 @@ export default function OrganizationSettingsPage() {
           <div className="flex items-center space-x-4">
             <Badge variant="outline" className="flex items-center">
               <Calendar className="mr-1 h-3 w-3" />
-              Created: {organization.createdAt.toLocaleDateString('en-ZA')}
+              Created: {new Date(organization.createdAt).toLocaleDateString('en-ZA')}
             </Badge>
             <Badge variant="outline">
               Status: {organization.status}
@@ -293,8 +293,17 @@ export default function OrganizationSettingsPage() {
               <Label htmlFor="regNumber">Company Registration Number</Label>
               <Input
                 id="regNumber"
-                value={organization.registrationNumber}
-                onChange={handleInputChange('registrationNumber')}
+                value={organization.registrationNumber || organization.registration_number || ''}
+                onChange={e => {
+                  if (!organization) return;
+                  setOrganization(prev => ({
+                    ...prev!,
+                    registrationNumber: e.target.value,
+                    registration_number: e.target.value,
+                    updatedAt: new Date(),
+                  }));
+                  setHasChanges(true);
+                }}
                 placeholder="CK2024/123456/07"
                 disabled={!hasPermission('organization.update')}
               />
@@ -305,8 +314,17 @@ export default function OrganizationSettingsPage() {
               <Label htmlFor="vatNumber">VAT Registration Number</Label>
               <Input
                 id="vatNumber"
-                value={organization.vatNumber}
-                onChange={handleInputChange('vatNumber')}
+                value={organization.vatNumber || organization.vat_number || ''}
+                onChange={e => {
+                  if (!organization) return;
+                  setOrganization(prev => ({
+                    ...prev!,
+                    vatNumber: e.target.value,
+                    vat_number: e.target.value,
+                    updatedAt: new Date(),
+                  }));
+                  setHasChanges(true);
+                }}
                 placeholder="4123456789"
                 disabled={!hasPermission('organization.update')}
               />
@@ -351,9 +369,9 @@ export default function OrganizationSettingsPage() {
                 min="0"
                 max="100"
                 step="0.01"
-                value={(organization.vatRate * 100).toFixed(2)}
+                value={((organization.vatRate ?? (SA_VAT_RATE ?? 0)) * 100).toFixed(2)}
                 onChange={(e) => {
-                  const rate = parseFloat(e.target.value) / 100;
+                  const rate = parseFloat(e.target.value || '0') / 100;
                   setOrganization(prev => ({
                     ...prev!,
                     vatRate: rate,
@@ -387,8 +405,17 @@ export default function OrganizationSettingsPage() {
               <Input
                 id="email"
                 type="email"
-                value={organization.email}
-                onChange={handleInputChange('email')}
+                value={organization.email || organization.contact_email || ''}
+                onChange={e => {
+                  if (!organization) return;
+                  setOrganization(prev => ({
+                    ...prev!,
+                    email: e.target.value,
+                    contact_email: e.target.value,
+                    updatedAt: new Date(),
+                  }));
+                  setHasChanges(true);
+                }}
                 placeholder="info@company.co.za"
                 disabled={!hasPermission('organization.update')}
               />
@@ -399,8 +426,17 @@ export default function OrganizationSettingsPage() {
               <Input
                 id="phone"
                 type="tel"
-                value={organization.phoneNumber}
-                onChange={handleInputChange('phoneNumber')}
+                value={organization.phoneNumber || organization.phone || ''}
+                onChange={e => {
+                  if (!organization) return;
+                  setOrganization(prev => ({
+                    ...prev!,
+                    phoneNumber: e.target.value,
+                    phone: e.target.value,
+                    updatedAt: new Date(),
+                  }));
+                  setHasChanges(true);
+                }}
                 placeholder="+27 11 123 4567"
                 disabled={!hasPermission('organization.update')}
               />
@@ -423,9 +459,9 @@ export default function OrganizationSettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="street1">Street Address 1</Label>
-            <Input
+              <Input
               id="street1"
-              value={organization.address.street1}
+                value={organization.address.street1 || organization.address.street || ''}
               onChange={handleAddressChange('street1')}
               placeholder="123 Business Park Drive"
               disabled={!hasPermission('organization.update')}
@@ -434,7 +470,7 @@ export default function OrganizationSettingsPage() {
 
           <div className="space-y-2">
             <Label htmlFor="street2">Street Address 2 (Optional)</Label>
-            <Input
+              <Input
               id="street2"
               value={organization.address.street2 || ''}
               onChange={handleAddressChange('street2')}
@@ -470,8 +506,20 @@ export default function OrganizationSettingsPage() {
               <Label htmlFor="postalCode">Postal Code</Label>
               <Input
                 id="postalCode"
-                value={organization.address.postalCode}
-                onChange={handleAddressChange('postalCode')}
+                value={organization.address.postalCode || organization.address.postal_code || ''}
+                onChange={e => {
+                  if (!organization) return;
+                  setOrganization(prev => ({
+                    ...prev!,
+                    address: {
+                      ...prev!.address,
+                      postalCode: e.target.value,
+                      postal_code: e.target.value,
+                    },
+                    updatedAt: new Date(),
+                  }));
+                  setHasChanges(true);
+                }}
                 placeholder="2196"
                 disabled={!hasPermission('organization.update')}
               />

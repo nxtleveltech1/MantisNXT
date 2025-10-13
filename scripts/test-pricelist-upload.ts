@@ -8,12 +8,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { neonDb } from '../lib/database/neon-connection';
 import { pricelistService } from '../src/lib/services/PricelistService';
+import type { PricelistRow, PricelistUploadRequest } from '../src/types/nxt-spp';
 
 interface CSVRow {
   'Supplier Name': string;
   'Supplier Code': string;
   'Produt Category': string; // Note: typo in CSV
-  'BRAND': string;
+  BRAND: string;
   'Brand Sub Tag': string;
   'SKU / MODEL': string;
   'PRODUCT DESCRIPTION': string;
@@ -21,8 +22,8 @@ interface CSVRow {
   'COST  EX VAT': string;
   'QTY ON ORDER': string;
   'NEXT SHIPMENT': string;
-  'Tags': string;
-  'LINKS': string;
+  Tags: string;
+  LINKS: string;
 }
 
 async function testPricelistUpload() {
@@ -31,7 +32,7 @@ async function testPricelistUpload() {
   try {
     // Step 1: Get supplier
     console.log('📋 Step 1: Getting supplier...');
-    const supplierResult = await neonDb.query(
+    const supplierResult = await neonDb.query<{ supplier_id: string; name: string; code: string }>(
       'SELECT supplier_id, name, code FROM core.supplier WHERE code = $1',
       ['AMD-001']
     );
@@ -45,7 +46,10 @@ async function testPricelistUpload() {
 
     // Step 2: Read CSV file
     console.log('📁 Step 2: Reading CSV file...');
-    const csvPath = path.join(__dirname, '../database/Uploads/New data/Active Music Distrabution - cleaned v2.csv');
+    const csvPath = path.join(
+      __dirname,
+      '../database/Uploads/New data/Active Music Distrabution - cleaned v2.csv'
+    );
 
     if (!fs.existsSync(csvPath)) {
       throw new Error(`CSV file not found at: ${csvPath}`);
@@ -60,18 +64,20 @@ async function testPricelistUpload() {
 
     // Step 3: Create upload record
     console.log('📝 Step 3: Creating upload record...');
-    const upload = await pricelistService.createUpload({
+    const uploadPayload: PricelistUploadRequest = {
       supplier_id: supplier.supplier_id,
+      file: Buffer.from(''),
       filename: 'Active Music Distrabution - cleaned v2.csv',
       currency: 'ZAR',
-      valid_from: new Date()
-    });
+      valid_from: new Date(),
+    };
+    const upload = await pricelistService.createUpload(uploadPayload);
 
     console.log(`✅ Upload created: ${upload.upload_id}\n`);
 
     // Step 4: Transform and insert rows
     console.log('🔄 Step 4: Transforming and inserting rows...');
-    const rows = data.map((row, index) => {
+    const rows: PricelistRow[] = data.map((row, index) => {
       // Clean and parse price
       const priceStr = String(row['COST  EX VAT'] || '0').replace(/[^\d.]/g, '');
       const price = parseFloat(priceStr) || 0;
@@ -89,7 +95,7 @@ async function testPricelistUpload() {
         category_raw: String(row['Produt Category'] || '').trim() || undefined,
         vat_code: undefined,
         barcode: undefined,
-        attrs_json: {}
+        attrs_json: {},
       };
     });
 
@@ -98,7 +104,9 @@ async function testPricelistUpload() {
       return row.supplier_sku && row.name && row.price > 0;
     });
 
-    console.log(`   Found ${validRows.length} valid rows (filtered ${rows.length - validRows.length} invalid)`);
+    console.log(
+      `   Found ${validRows.length} valid rows (filtered ${rows.length - validRows.length} invalid)`
+    );
 
     const insertedCount = await pricelistService.insertRows(upload.upload_id, validRows);
     console.log(`✅ Inserted ${insertedCount} rows\n`);
@@ -150,11 +158,11 @@ async function testPricelistUpload() {
 
     // Step 7: Verify data in CORE schema
     console.log('🔍 Step 7: Verifying data in CORE schema...');
-    const coreProductsResult = await neonDb.query(
+    const coreProductsResult = await neonDb.query<{ count: string }>(
       'SELECT COUNT(*) as count FROM core.supplier_product WHERE supplier_id = $1',
       [supplier.supplier_id]
     );
-    const corePricesResult = await neonDb.query(
+    const corePricesResult = await neonDb.query<{ count: string }>(
       `SELECT COUNT(*) as count FROM core.price_history ph
        JOIN core.supplier_product sp ON sp.supplier_product_id = ph.supplier_product_id
        WHERE sp.supplier_id = $1 AND ph.is_current = true`,
@@ -167,7 +175,13 @@ async function testPricelistUpload() {
 
     // Step 8: Sample data check
     console.log('📊 Step 8: Sample data from CORE schema:');
-    const sampleResult = await neonDb.query(
+    const sampleResult = await neonDb.query<{
+      supplier_sku: string;
+      name_from_supplier: string;
+      price: number;
+      currency: string;
+      created_at: string;
+    }>(
       `SELECT
         sp.supplier_sku,
         sp.name_from_supplier,
@@ -190,7 +204,6 @@ async function testPricelistUpload() {
     });
 
     console.log('✅ Pricelist upload test completed successfully!');
-
   } catch (error) {
     console.error('❌ Test failed:', error);
     if (error instanceof Error) {

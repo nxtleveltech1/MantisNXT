@@ -470,4 +470,5 @@ if (require.main === module) {
   });
 }
 
-export { APIValidator, ValidationResult, EndpointResult, PageResult };
+export type { ValidationResult, EndpointResult, PageResult };
+export { APIValidator };

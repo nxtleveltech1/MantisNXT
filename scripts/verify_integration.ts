@@ -9,11 +9,11 @@
  * Usage: npx tsx scripts/verify_integration.ts
  */
 
-import { neonDb } from "../lib/database/neon-connection";
+import { neonDb } from '../lib/database/neon-connection';
 
 interface VerificationResult {
   check: string;
-  status: "pass" | "fail" | "warning";
+  status: 'pass' | 'fail' | 'warning';
   message: string;
   details?: any;
 }
@@ -36,17 +36,17 @@ async function checkDatabaseConnectivity(): Promise<VerificationResult> {
     const latency = Date.now() - startTime;
 
     return {
-      check: "Database Connectivity",
-      status: "pass",
+      check: 'Database Connectivity',
+      status: 'pass',
       message: `Connected successfully (${latency}ms)`,
       details: { latency, currentTime: result[0].current_time },
     };
   } catch (error) {
     return {
-      check: "Database Connectivity",
-      status: "fail",
-      message: `Connection failed: ${error}`,
-      details: { error: error.message },
+      check: 'Database Connectivity',
+      status: 'fail',
+      message: `Connection failed: ${String(error)}`,
+      details: { error: error instanceof Error ? error.message : String(error) },
     };
   }
 }
@@ -63,33 +63,31 @@ async function checkSchemaExistence(): Promise<VerificationResult> {
       ORDER BY schema_name
     `;
 
-    const expectedSchemas = ["spp", "core", "serve"];
-    const foundSchemas = schemas.map((s) => s.schema_name);
-    const missingSchemas = expectedSchemas.filter(
-      (s) => !foundSchemas.includes(s)
-    );
+    const expectedSchemas = ['spp', 'core', 'serve'];
+    const foundSchemas = schemas.map(s => s.schema_name);
+    const missingSchemas = expectedSchemas.filter(s => !foundSchemas.includes(s));
 
     if (missingSchemas.length === 0) {
       return {
-        check: "Schema Existence",
-        status: "pass",
-        message: `All required schemas exist: ${foundSchemas.join(", ")}`,
+        check: 'Schema Existence',
+        status: 'pass',
+        message: `All required schemas exist: ${foundSchemas.join(', ')}`,
         details: { foundSchemas },
       };
     } else {
       return {
-        check: "Schema Existence",
-        status: "fail",
-        message: `Missing schemas: ${missingSchemas.join(", ")}`,
+        check: 'Schema Existence',
+        status: 'fail',
+        message: `Missing schemas: ${missingSchemas.join(', ')}`,
         details: { foundSchemas, missingSchemas },
       };
     }
   } catch (error) {
     return {
-      check: "Schema Existence",
-      status: "fail",
-      message: `Schema check failed: ${error}`,
-      details: { error: error.message },
+      check: 'Schema Existence',
+      status: 'fail',
+      message: `Schema check failed: ${String(error)}`,
+      details: { error: error instanceof Error ? error.message : String(error) },
     };
   }
 }
@@ -115,18 +113,21 @@ async function checkDataPresence(): Promise<VerificationResult> {
       ORDER BY table_name
     `;
 
-    const dataSummary = counts.reduce((acc, row) => {
-      acc[row.table_name] = parseInt(row.count);
-      return acc;
-    }, {} as Record<string, number>);
+    const dataSummary = counts.reduce(
+      (acc, row) => {
+        acc[row.table_name] = parseInt(row.count);
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
-    const hasData = Object.values(dataSummary).every((count) => count > 0);
+    const hasData = Object.values(dataSummary).every(count => count > 0);
 
     if (hasData) {
       return {
-        check: "Data Presence",
-        status: "pass",
-        message: "All tables contain data",
+        check: 'Data Presence',
+        status: 'pass',
+        message: 'All tables contain data',
         details: dataSummary,
       };
     } else {
@@ -135,18 +136,18 @@ async function checkDataPresence(): Promise<VerificationResult> {
         .map(([table, _]) => table);
 
       return {
-        check: "Data Presence",
-        status: "warning",
-        message: `Empty tables: ${emptyTables.join(", ")}`,
+        check: 'Data Presence',
+        status: 'warning',
+        message: `Empty tables: ${emptyTables.join(', ')}`,
         details: dataSummary,
       };
     }
   } catch (error) {
     return {
-      check: "Data Presence",
-      status: "fail",
-      message: `Data check failed: ${error}`,
-      details: { error: error.message },
+      check: 'Data Presence',
+      status: 'fail',
+      message: `Data check failed: ${String(error)}`,
+      details: { error: error instanceof Error ? error.message : String(error) },
     };
   }
 }
@@ -165,33 +166,33 @@ async function checkActiveSelection(): Promise<VerificationResult> {
 
     if (activeSelections.length === 0) {
       return {
-        check: "Active Selection",
-        status: "fail",
-        message: "No active selection found",
+        check: 'Active Selection',
+        status: 'fail',
+        message: 'No active selection found',
         details: { count: 0 },
       };
     } else if (activeSelections.length > 1) {
       return {
-        check: "Active Selection",
-        status: "warning",
+        check: 'Active Selection',
+        status: 'warning',
         message: `Multiple active selections found (${activeSelections.length})`,
         details: { selections: activeSelections },
       };
     } else {
       const selection = activeSelections[0];
       return {
-        check: "Active Selection",
-        status: "pass",
+        check: 'Active Selection',
+        status: 'pass',
         message: `Active selection: ${selection.selection_name} (${selection.item_count} items)`,
         details: { selection },
       };
     }
   } catch (error) {
     return {
-      check: "Active Selection",
-      status: "fail",
-      message: `Active selection check failed: ${error}`,
-      details: { error: error.message },
+      check: 'Active Selection',
+      status: 'fail',
+      message: `Active selection check failed: ${String(error)}`,
+      details: { error: error instanceof Error ? error.message : String(error) },
     };
   }
 }
@@ -215,25 +216,25 @@ async function checkDataConsistency(): Promise<VerificationResult> {
 
     if (missingPrices === 0) {
       return {
-        check: "Data Consistency",
-        status: "pass",
-        message: "All products have current prices",
+        check: 'Data Consistency',
+        status: 'pass',
+        message: 'All products have current prices',
         details: { productsWithoutPrices: 0 },
       };
     } else {
       return {
-        check: "Data Consistency",
-        status: "warning",
+        check: 'Data Consistency',
+        status: 'warning',
         message: `${missingPrices} products missing current prices`,
         details: { productsWithoutPrices: missingPrices },
       };
     }
   } catch (error) {
     return {
-      check: "Data Consistency",
-      status: "fail",
-      message: `Data consistency check failed: ${error}`,
-      details: { error: error.message },
+      check: 'Data Consistency',
+      status: 'fail',
+      message: `Data consistency check failed: ${String(error)}`,
+      details: { error: error instanceof Error ? error.message : String(error) },
     };
   }
 }
@@ -260,8 +261,8 @@ async function checkStockData(): Promise<VerificationResult> {
 
     if (totalRecords > 0) {
       return {
-        check: "Stock Data",
-        status: "pass",
+        check: 'Stock Data',
+        status: 'pass',
         message: `${totalRecords} stock records, ${totalQty} total qty, ${totalValue.toFixed(
           2
         )} total value`,
@@ -269,18 +270,18 @@ async function checkStockData(): Promise<VerificationResult> {
       };
     } else {
       return {
-        check: "Stock Data",
-        status: "warning",
-        message: "No stock records found",
+        check: 'Stock Data',
+        status: 'warning',
+        message: 'No stock records found',
         details: { totalRecords: 0 },
       };
     }
   } catch (error) {
     return {
-      check: "Stock Data",
-      status: "fail",
-      message: `Stock data check failed: ${error}`,
-      details: { error: error.message },
+      check: 'Stock Data',
+      status: 'fail',
+      message: `Stock data check failed: ${String(error)}`,
+      details: { error: error instanceof Error ? error.message : String(error) },
     };
   }
 }
@@ -290,11 +291,11 @@ async function checkStockData(): Promise<VerificationResult> {
  */
 async function checkApiEndpoints(): Promise<VerificationResult> {
   try {
-    const baseUrl = "http://localhost:3000";
-    const endpoints = ["/api/core/selections/active", "/api/serve/nxt-soh"];
+    const baseUrl = 'http://localhost:3000';
+    const endpoints = ['/api/core/selections/active', '/api/serve/nxt-soh'];
 
-    if (process.env.CHECK_SPP_METRICS === "1") {
-      endpoints.push("/api/spp/dashboard/metrics");
+    if (process.env.CHECK_SPP_METRICS === '1') {
+      endpoints.push('/api/spp/dashboard/metrics');
     }
 
     const results = [];
@@ -313,37 +314,37 @@ async function checkApiEndpoints(): Promise<VerificationResult> {
       } catch (error) {
         results.push({
           endpoint,
-          status: "error",
+          status: 'error',
           ok: false,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
 
-    const allOk = results.every((r) => r.ok);
-    const failedEndpoints = results.filter((r) => !r.ok);
+    const allOk = results.every(r => r.ok);
+    const failedEndpoints = results.filter(r => !r.ok);
 
     if (allOk) {
       return {
-        check: "API Endpoints",
-        status: "pass",
-        message: "All API endpoints responding",
+        check: 'API Endpoints',
+        status: 'pass',
+        message: 'All API endpoints responding',
         details: { results },
       };
     } else {
       return {
-        check: "API Endpoints",
-        status: "warning",
+        check: 'API Endpoints',
+        status: 'warning',
         message: `${failedEndpoints.length} endpoints not responding`,
         details: { results, failedEndpoints },
       };
     }
   } catch (error) {
     return {
-      check: "API Endpoints",
-      status: "fail",
-      message: `API check failed: ${error}`,
-      details: { error: error.message },
+      check: 'API Endpoints',
+      status: 'fail',
+      message: `API check failed: ${String(error)}`,
+      details: { error: error instanceof Error ? error.message : String(error) },
     };
   }
 }
@@ -355,8 +356,8 @@ async function verifyIntegration(): Promise<VerificationStats> {
   const startTime = Date.now();
   const results: VerificationResult[] = [];
 
-  console.log("🔍 Starting integration verification...");
-  console.log("=====================================");
+  console.log('🔍 Starting integration verification...');
+  console.log('=====================================');
 
   // Run all checks
   const checks = [
@@ -376,11 +377,7 @@ async function verifyIntegration(): Promise<VerificationStats> {
 
       // Display result
       const statusIcon =
-        result.status === "pass"
-          ? "✅"
-          : result.status === "warning"
-          ? "⚠️"
-          : "❌";
+        result.status === 'pass' ? '✅' : result.status === 'warning' ? '⚠️' : '❌';
       console.log(`${statusIcon} ${result.check}: ${result.message}`);
 
       if (result.details && process.env.DEBUG) {
@@ -389,9 +386,9 @@ async function verifyIntegration(): Promise<VerificationStats> {
     } catch (error) {
       const result: VerificationResult = {
         check: check.name,
-        status: "fail",
-        message: `Check failed: ${error}`,
-        details: { error: error.message },
+        status: 'fail',
+        message: `Check failed: ${String(error)}`,
+        details: { error: error instanceof Error ? error.message : String(error) },
       };
       results.push(result);
       console.log(`❌ ${result.check}: ${result.message}`);
@@ -401,15 +398,15 @@ async function verifyIntegration(): Promise<VerificationStats> {
   // Calculate statistics
   const stats: VerificationStats = {
     total: results.length,
-    passed: results.filter((r) => r.status === "pass").length,
-    failed: results.filter((r) => r.status === "fail").length,
-    warnings: results.filter((r) => r.status === "warning").length,
+    passed: results.filter(r => r.status === 'pass').length,
+    failed: results.filter(r => r.status === 'fail').length,
+    warnings: results.filter(r => r.status === 'warning').length,
     duration: Date.now() - startTime,
   };
 
   // Summary
-  console.log("\n📊 Verification Summary");
-  console.log("======================");
+  console.log('\n📊 Verification Summary');
+  console.log('======================');
   console.log(`Total checks: ${stats.total}`);
   console.log(`Passed: ${stats.passed}`);
   console.log(`Failed: ${stats.failed}`);
@@ -418,28 +415,28 @@ async function verifyIntegration(): Promise<VerificationStats> {
 
   // Detailed results
   if (stats.failed > 0) {
-    console.log("\n❌ Failed Checks:");
+    console.log('\n❌ Failed Checks:');
     results
-      .filter((r) => r.status === "fail")
-      .forEach((result) => {
+      .filter(r => r.status === 'fail')
+      .forEach(result => {
         console.log(`  • ${result.check}: ${result.message}`);
       });
   }
 
   if (stats.warnings > 0) {
-    console.log("\n⚠️  Warnings:");
+    console.log('\n⚠️  Warnings:');
     results
-      .filter((r) => r.status === "warning")
-      .forEach((result) => {
+      .filter(r => r.status === 'warning')
+      .forEach(result => {
         console.log(`  • ${result.check}: ${result.message}`);
       });
   }
 
   // Final status
   if (stats.failed === 0) {
-    console.log("\n🎉 All checks passed! Integration is successful.");
+    console.log('\n🎉 All checks passed! Integration is successful.');
   } else {
-    console.log("\n⚠️  Some checks failed. Please review the issues above.");
+    console.log('\n⚠️  Some checks failed. Please review the issues above.');
   }
 
   return stats;
@@ -448,17 +445,17 @@ async function verifyIntegration(): Promise<VerificationStats> {
 // Command-line execution
 if (require.main === module) {
   verifyIntegration()
-    .then((stats) => {
+    .then(stats => {
       if (stats.failed === 0) {
-        console.log("\n✅ Integration verification completed successfully!");
+        console.log('\n✅ Integration verification completed successfully!');
         process.exit(0);
       } else {
-        console.log("\n❌ Integration verification found issues.");
+        console.log('\n❌ Integration verification found issues.');
         process.exit(1);
       }
     })
-    .catch((error) => {
-      console.error("\n❌ Verification failed:", error);
+    .catch(error => {
+      console.error('\n❌ Verification failed:', error);
       process.exit(1);
     });
 }

@@ -178,7 +178,7 @@ export default function AuditPage() {
   const [filterAction, setFilterAction] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
   const [filterResource, setFilterResource] = useState("all")
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({})
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined })
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
 
   const filteredLogs = auditLogs.filter(log => {

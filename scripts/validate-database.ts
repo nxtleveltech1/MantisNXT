@@ -21,15 +21,13 @@ async function main() {
 
     console.log('core.tables:', tables.rows[0]?.count ?? '0');
     console.log('core.indexes:', indexes.rows[0]?.count ?? '0');
-    console.log('supplier.contact_person exists:', contactPerson.rowCount > 0);
+    console.log('supplier.contact_person exists:', (contactPerson.rowCount ?? 0) > 0);
   } finally {
     await client.end();
   }
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('Database validation failed:', err);
   process.exit(1);
 });
-
-

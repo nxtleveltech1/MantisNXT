@@ -1,102 +1,117 @@
 // Authentication and User Management Types
 
 export interface User {
-  id: string
-  email: string
-  name: string
-  role: 'super_admin' | 'admin' | 'manager' | 'user' | 'viewer'
-  org_id: string
-  department: string
-  permissions: Permission[]
-  created_at: Date
-  last_login: Date
-  is_active: boolean
-  profile_image?: string
+  id: string;
+  email: string;
+  name: string;
+  role: 'super_admin' | 'admin' | 'manager' | 'user' | 'viewer';
+  org_id: string;
+  department: string;
+  permissions: Permission[];
+  created_at: Date;
+  last_login: Date;
+  is_active: boolean;
+  profile_image?: string;
   // South African specific fields
-  id_number?: string
-  employment_equity?: 'african' | 'coloured' | 'indian' | 'white' | 'other'
-  bee_status?: BeeStatus
-  phone: string
-  mobile?: string
-  address?: Address
-  preferences: UserPreferences
-  two_factor_enabled: boolean
-  email_verified: boolean
-  password_changed_at: Date
+  id_number?: string;
+  employment_equity?: 'african' | 'coloured' | 'indian' | 'white' | 'other';
+  bee_status?: BeeStatus;
+  phone: string;
+  mobile?: string;
+  address?: Address;
+  preferences: UserPreferences;
+  two_factor_enabled: boolean;
+  email_verified: boolean;
+  password_changed_at: Date;
 }
 
 export interface Permission {
-  id: string
-  name: string
-  resource: string
-  action: 'create' | 'read' | 'update' | 'delete' | 'manage'
-  conditions?: PermissionCondition[]
+  id: string;
+  name: string;
+  resource: string;
+  action: 'create' | 'read' | 'update' | 'delete' | 'manage';
+  conditions?: PermissionCondition[];
 }
 
 export interface PermissionCondition {
-  field: string
-  operator: 'equals' | 'in' | 'contains' | 'starts_with'
-  value: any
+  field: string;
+  operator: 'equals' | 'in' | 'contains' | 'starts_with';
+  value: any;
 }
 
 export interface Organization {
-  id: string
-  name: string
-  legal_name: string
-  registration_number: string
-  vat_number?: string
-  bee_level: number
-  province: SouthAfricanProvince
-  industry: string
-  created_at: Date
-  is_active: boolean
-  contact_email: string
-  phone: string
-  address: Address
-  logo_url?: string
-  settings: OrganizationSettings
+  id: string;
+  name: string;
+  code?: string;
+  legal_name?: string;
+  registration_number?: string;
+  registrationNumber?: string;
+  vat_number?: string;
+  vatNumber?: string;
+  bee_level?: number;
+  beeLevel?: string;
+  website?: string;
+  status?: string;
+  province?: SouthAfricanProvince;
+  industry?: string;
+  created_at?: Date;
+  createdAt: Date;
+  updatedAt?: Date;
+  is_active?: boolean;
+  contact_email?: string;
+  email?: string;
+  phone?: string;
+  phoneNumber?: string;
+  address: Address;
+  logo_url?: string;
+  settings?: OrganizationSettings;
+  timezone?: string;
+  vatRate?: number;
 }
 
 export interface Address {
-  street: string
-  suburb: string
-  city: string
-  province: SouthAfricanProvince
-  postal_code: string
-  country: string
+  street?: string;
+  street1?: string;
+  street2?: string;
+  suburb: string;
+  city: string;
+  province: SouthAfricanProvince;
+  postal_code?: string;
+  postalCode?: string;
+  country?: string;
 }
 
 export interface UserPreferences {
-  language: 'en' | 'af' | 'zu' | 'xh'
-  timezone: string
-  date_format: 'dd/mm/yyyy' | 'mm/dd/yyyy' | 'yyyy-mm-dd'
-  currency: 'ZAR' | 'USD' | 'EUR' | 'GBP'
-  notifications: NotificationPreferences
+  language: 'en' | 'af' | 'zu' | 'xh';
+  timezone: string;
+  date_format: 'dd/mm/yyyy' | 'mm/dd/yyyy' | 'yyyy-mm-dd';
+  currency: 'ZAR' | 'USD' | 'EUR' | 'GBP';
+  notifications: NotificationPreferences;
 }
 
 export interface NotificationPreferences {
-  email_notifications: boolean
-  sms_notifications: boolean
-  push_notifications: boolean
-  digest_frequency: 'daily' | 'weekly' | 'monthly' | 'never'
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  push_notifications: boolean;
+  digest_frequency: 'daily' | 'weekly' | 'monthly' | 'never';
 }
 
 export interface OrganizationSettings {
-  allow_self_registration: boolean
-  require_email_verification: boolean
-  enforce_two_factor: boolean
-  password_policy: PasswordPolicy
-  session_timeout: number
-  allowed_domains: string[]
+  allow_self_registration: boolean;
+  require_email_verification: boolean;
+  enforce_two_factor: boolean;
+  password_policy: PasswordPolicy;
+  session_timeout: number;
+  allowed_domains: string[];
 }
 
 export interface PasswordPolicy {
-  min_length: number
-  require_uppercase: boolean
-  require_lowercase: boolean
-  require_numbers: boolean
-  require_symbols: boolean
-  expires_days?: number
+  min_length: number;
+  require_uppercase: boolean;
+  require_lowercase: boolean;
+  require_numbers: boolean;
+  require_symbols: boolean;
+  expires_days?: number;
 }
 
 export type SouthAfricanProvince =
@@ -108,7 +123,7 @@ export type SouthAfricanProvince =
   | 'mpumalanga'
   | 'northern_cape'
   | 'north_west'
-  | 'western_cape'
+  | 'western_cape';
 
 export type BeeStatus =
   | 'level_1'
@@ -119,169 +134,169 @@ export type BeeStatus =
   | 'level_6'
   | 'level_7'
   | 'level_8'
-  | 'non_compliant'
+  | 'non_compliant';
 
 // Authentication Provider Interface
 export interface AuthProvider {
   // Core authentication methods
-  login(credentials: LoginCredentials): Promise<AuthResult>
-  logout(): Promise<void>
-  register(data: RegistrationData): Promise<AuthResult>
-  resetPassword(email: string): Promise<void>
-  verifyEmail(token: string): Promise<boolean>
+  login(credentials: LoginCredentials): Promise<AuthResult>;
+  logout(): Promise<void>;
+  register(data: RegistrationData): Promise<AuthResult>;
+  resetPassword(email: string): Promise<void>;
+  verifyEmail(token: string): Promise<boolean>;
 
   // Two-factor authentication
-  setupTwoFactor(): Promise<TwoFactorSetup>
-  verifyTwoFactor(token: string, code: string): Promise<boolean>
-  disableTwoFactor(password: string): Promise<boolean>
+  setupTwoFactor(): Promise<TwoFactorSetup>;
+  verifyTwoFactor(token: string, code: string): Promise<boolean>;
+  disableTwoFactor(password: string): Promise<boolean>;
 
   // Session management
-  getCurrentUser(): Promise<User | null>
-  refreshToken(): Promise<string>
-  changePassword(oldPassword: string, newPassword: string): Promise<void>
-  updateProfile(data: Partial<User>): Promise<User>
+  getCurrentUser(): Promise<User | null>;
+  refreshToken(): Promise<string>;
+  changePassword(oldPassword: string, newPassword: string): Promise<void>;
+  updateProfile(data: Partial<User>): Promise<User>;
 
   // Administrative methods
-  createUser(data: CreateUserData): Promise<User>
-  updateUser(id: string, data: Partial<User>): Promise<User>
-  deleteUser(id: string): Promise<void>
-  getUsersByOrganization(orgId: string): Promise<User[]>
-  bulkImportUsers(csvData: string): Promise<BulkImportResult>
+  createUser(data: CreateUserData): Promise<User>;
+  updateUser(id: string, data: Partial<User>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
+  getUsersByOrganization(orgId: string): Promise<User[]>;
+  bulkImportUsers(csvData: string): Promise<BulkImportResult>;
 }
 
 export interface LoginCredentials {
-  email: string
-  password: string
-  remember_me?: boolean
-  two_factor_code?: string
+  email: string;
+  password: string;
+  remember_me?: boolean;
+  two_factor_code?: string;
 }
 
 export interface RegistrationData {
   // Organization details
-  organization_name: string
-  organization_legal_name: string
-  registration_number: string
-  vat_number?: string
-  bee_level: number
-  province: SouthAfricanProvince
-  industry: string
+  organization_name: string;
+  organization_legal_name: string;
+  registration_number: string;
+  vat_number?: string;
+  bee_level: number;
+  province: SouthAfricanProvince;
+  industry: string;
 
   // Admin user details
-  name: string
-  email: string
-  password: string
-  confirm_password: string
-  phone: string
-  id_number?: string
+  name: string;
+  email: string;
+  password: string;
+  confirm_password: string;
+  phone: string;
+  id_number?: string;
 
   // Address
-  address: Address
+  address: Address;
 
   // Legal agreements
-  terms_accepted: boolean
-  privacy_accepted: boolean
-  marketing_consent: boolean
+  terms_accepted: boolean;
+  privacy_accepted: boolean;
+  marketing_consent: boolean;
 }
 
 export interface CreateUserData {
-  name: string
-  email: string
-  role: User['role']
-  department: string
-  phone: string
-  password?: string
-  send_invitation?: boolean
-  permissions?: string[]
-  id_number?: string
-  employment_equity?: User['employment_equity']
+  name: string;
+  email: string;
+  role: User['role'];
+  department: string;
+  phone: string;
+  password?: string;
+  send_invitation?: boolean;
+  permissions?: string[];
+  id_number?: string;
+  employment_equity?: User['employment_equity'];
 }
 
 export interface AuthResult {
-  success: boolean
-  user?: User
-  token?: string
-  refresh_token?: string
-  requires_two_factor?: boolean
-  two_factor_token?: string
-  message?: string
-  errors?: string[]
+  success: boolean;
+  user?: User;
+  token?: string;
+  refresh_token?: string;
+  requires_two_factor?: boolean;
+  two_factor_token?: string;
+  message?: string;
+  errors?: string[];
 }
 
 export interface TwoFactorSetup {
-  secret: string
-  qr_code: string
-  backup_codes: string[]
+  secret: string;
+  qr_code: string;
+  backup_codes: string[];
 }
 
 export interface BulkImportResult {
-  total_processed: number
-  successful_imports: number
-  failed_imports: number
-  errors: BulkImportError[]
-  created_users: User[]
+  total_processed: number;
+  successful_imports: number;
+  failed_imports: number;
+  errors: BulkImportError[];
+  created_users: User[];
 }
 
 export interface BulkImportError {
-  row: number
-  email?: string
-  errors: string[]
+  row: number;
+  email?: string;
+  errors: string[];
 }
 
 // Form validation types
 export interface LoginFormData {
-  email: string
-  password: string
-  remember_me: boolean
+  email: string;
+  password: string;
+  remember_me: boolean;
 }
 
 export interface RegisterFormData extends RegistrationData {}
 
 export interface ForgotPasswordFormData {
-  email: string
+  email: string;
 }
 
 export interface ResetPasswordFormData {
-  token: string
-  password: string
-  confirm_password: string
+  token: string;
+  password: string;
+  confirm_password: string;
 }
 
 export interface TwoFactorFormData {
-  code: string
+  code: string;
 }
 
 export interface CreateUserFormData extends CreateUserData {}
 
 export interface UpdateUserFormData {
-  name: string
-  email: string
-  role: User['role']
-  department: string
-  phone: string
-  is_active: boolean
-  permissions: string[]
-  id_number?: string
-  employment_equity?: User['employment_equity']
+  name: string;
+  email: string;
+  role: User['role'];
+  department: string;
+  phone: string;
+  is_active: boolean;
+  permissions: string[];
+  id_number?: string;
+  employment_equity?: User['employment_equity'];
 }
 
 export interface ChangePasswordFormData {
-  current_password: string
-  new_password: string
-  confirm_password: string
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
 }
 
 export interface UserFilters {
-  search?: string
-  role?: User['role']
-  department?: string
-  is_active?: boolean
-  created_after?: Date
-  created_before?: Date
+  search?: string;
+  role?: User['role'];
+  department?: string;
+  is_active?: boolean;
+  created_after?: Date;
+  created_before?: Date;
 }
 
 export interface UserTableSort {
-  field: keyof User
-  direction: 'asc' | 'desc'
+  field: keyof User;
+  direction: 'asc' | 'desc';
 }
 
 // Constants
@@ -295,7 +310,7 @@ export const SOUTH_AFRICAN_PROVINCES = [
   { value: 'northern_cape', label: 'Northern Cape' },
   { value: 'north_west', label: 'North West' },
   { value: 'western_cape', label: 'Western Cape' },
-] as const
+] as const;
 
 export const BEE_LEVELS = [
   { value: 'level_1', label: 'Level 1', points: '≥100' },
@@ -307,15 +322,19 @@ export const BEE_LEVELS = [
   { value: 'level_7', label: 'Level 7', points: '55-69' },
   { value: 'level_8', label: 'Level 8', points: '40-54' },
   { value: 'non_compliant', label: 'Non-Compliant', points: '<40' },
-] as const
+] as const;
 
 export const USER_ROLES = [
-  { value: 'super_admin', label: 'Super Administrator', description: 'Full system access across all organizations' },
+  {
+    value: 'super_admin',
+    label: 'Super Administrator',
+    description: 'Full system access across all organizations',
+  },
   { value: 'admin', label: 'Administrator', description: 'Full access within organization' },
   { value: 'manager', label: 'Manager', description: 'Manage team and department resources' },
   { value: 'user', label: 'User', description: 'Standard user access' },
   { value: 'viewer', label: 'Viewer', description: 'Read-only access' },
-] as const
+] as const;
 
 export const EMPLOYMENT_EQUITY_OPTIONS = [
   { value: 'african', label: 'African' },
@@ -323,4 +342,4 @@ export const EMPLOYMENT_EQUITY_OPTIONS = [
   { value: 'indian', label: 'Indian' },
   { value: 'white', label: 'White' },
   { value: 'other', label: 'Other' },
-] as const
+] as const;
