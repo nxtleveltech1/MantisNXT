@@ -80,7 +80,14 @@ import {
 } from "lucide-react"
 import NextJsXlsxConverter from "@/components/inventory/NextJsXlsxConverter"
 import type { DataValidationResult } from "@/components/inventory/NextJsXlsxConverter"
-import AISupplierDiscovery from "@/components/suppliers/AISupplierDiscovery"
+import dynamic from 'next/dynamic'
+const AISupplierDiscovery = dynamic(
+  () => import('@/components/suppliers/AISupplierDiscovery'),
+  {
+    loading: () => <div className="animate-pulse h-96 bg-gray-100 rounded-lg" />,
+    ssr: false
+  }
+)
 import AIInsightCards from "@/components/ai/InsightCards"
 import AIChatInterface from "@/components/ai/ChatInterface"
 import { AIErrorBoundary } from "@/components/ai/AIErrorHandler"

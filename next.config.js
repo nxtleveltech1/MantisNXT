@@ -1,46 +1,45 @@
 /** @type {import('next').NextConfig} */
-const path = require("path");
+const path = require('path');
 
 const nextConfig = {
   eslint: {
     // Only ignore during development when explicitly allowed via env
     ignoreDuringBuilds:
-      process.env.NODE_ENV === "development" &&
-      process.env.IGNORE_LINT === "true",
+      process.env.NODE_ENV === 'development' && process.env.IGNORE_LINT === 'true',
   },
   typescript: {
     // Only ignore during development when explicitly allowed via env
-    ignoreBuildErrors:
-      process.env.NODE_ENV === "development" &&
-      process.env.IGNORE_TS === "true",
+    ignoreBuildErrors: process.env.NODE_ENV === 'development' && process.env.IGNORE_TS === 'true',
   },
   images: {
-    domains: ["localhost"],
+    domains: ['localhost', 'cdn.mantisnxt.com'],
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
   },
-  output: "standalone",
+  output: 'standalone',
   env: {
-    UPLOAD_MAX_SIZE: process.env.UPLOAD_MAX_SIZE || "10485760",
-    UPLOAD_DIR: process.env.UPLOAD_DIR || "/app/uploads",
+    UPLOAD_MAX_SIZE: process.env.UPLOAD_MAX_SIZE || '10485760',
+    UPLOAD_DIR: process.env.UPLOAD_DIR || '/app/uploads',
   },
 
   // Configure headers for better caching and security
   async headers() {
     return [
       {
-        source: "/api/health",
+        source: '/api/health',
         headers: [
           {
-            key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
           },
         ],
       },
       {
-        source: "/uploads/:path*",
+        source: '/uploads/:path*',
         headers: [
           {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
@@ -51,8 +50,8 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/metrics",
-        destination: "/api/monitoring/metrics",
+        source: '/api/metrics',
+        destination: '/api/monitoring/metrics',
       },
     ];
   },
@@ -62,24 +61,24 @@ const nextConfig = {
     // Optimize cache configuration
     if (!dev) {
       config.cache = {
-        type: "filesystem",
-        cacheDirectory: path.join(__dirname, ".next", "cache", "webpack"),
+        type: 'filesystem',
+        cacheDirectory: path.join(__dirname, '.next', 'cache', 'webpack'),
         buildDependencies: {
           config: [__filename],
         },
       };
     } else {
       config.cache = {
-        type: "memory",
+        type: 'memory',
       };
     }
 
     // Resolve module issues
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@": path.resolve(__dirname, "src"),
-      "@/lib": path.resolve(__dirname, "lib"),
-      "ai/react": path.resolve(__dirname, "src", "shims", "ai-react.ts"),
+      '@': path.resolve(__dirname, 'src'),
+      '@/lib': path.resolve(__dirname, 'lib'),
+      'ai/react': path.resolve(__dirname, 'src', 'shims', 'ai-react.ts'),
     };
 
     // Optimize module resolution
@@ -96,18 +95,18 @@ const nextConfig = {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
-          chunks: "all",
+          chunks: 'all',
           cacheGroups: {
             vendor: {
               test: /[\\/]node_modules[\\/]/,
-              name: "vendors",
-              chunks: "all",
+              name: 'vendors',
+              chunks: 'all',
               priority: 10,
             },
             common: {
-              name: "common",
+              name: 'common',
               minChunks: 2,
-              chunks: "all",
+              chunks: 'all',
               priority: 5,
               reuseExistingChunk: true,
             },
@@ -120,8 +119,8 @@ const nextConfig = {
     if (!isServer) {
       config.externals = config.externals || [];
       config.externals.push({
-        pg: "commonjs pg",
-        "pg-native": "commonjs pg-native",
+        pg: 'commonjs pg',
+        'pg-native': 'commonjs pg-native',
       });
     }
 
@@ -129,8 +128,20 @@ const nextConfig = {
     config.module.rules.push({
       test: /\.js$/,
       include: /node_modules/,
-      type: "javascript/auto",
+      type: 'javascript/auto',
     });
+
+    // Bundle analyzer (enable with ANALYZE=true)
+    if (process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'static',
+          reportFilename: './analyze/client.html',
+          openAnalyzer: false,
+        })
+      );
+    }
 
     return config;
   },
@@ -138,7 +149,7 @@ const nextConfig = {
   // Optimize compilation
   compiler: {
     // Remove console logs in production
-    removeConsole: process.env.NODE_ENV === "production",
+    removeConsole: process.env.NODE_ENV === 'production',
   },
 
   // Configure redirects if needed

@@ -141,7 +141,8 @@ const ProviderConfigSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['models', 'embedding'],
-        message: 'Anthropic provider does not support embeddings; remove the embedding model configuration.',
+        message:
+          'Anthropic provider does not support embeddings; remove the embedding model configuration.',
       });
     }
   });
@@ -220,20 +221,23 @@ const parseProviderList = (value: string | undefined): AIProviderId[] => {
   if (!value) return [];
   return value
     .split(',')
-    .map((item) => item.trim() as AIProviderId)
+    .map(item => item.trim() as AIProviderId)
     .filter((item): item is AIProviderId => PROVIDERS.includes(item));
 };
 
 const mergeProviderModels = (
   provider: AIProviderId,
-  overrides?: Partial<AIProviderModels>,
+  overrides?: Partial<AIProviderModels>
 ): AIProviderModels => ({
   ...DEFAULT_MODELS[provider],
   ...overrides,
   fallback: overrides?.fallback ?? DEFAULT_MODELS[provider].fallback,
 });
 
-const buildCredentials = (provider: AIProviderId, env: NodeJS.ProcessEnv): AIProviderCredentials => {
+const buildCredentials = (
+  provider: AIProviderId,
+  env: NodeJS.ProcessEnv
+): AIProviderCredentials => {
   switch (provider) {
     case 'openai':
       return {
@@ -263,7 +267,10 @@ const buildCredentials = (provider: AIProviderId, env: NodeJS.ProcessEnv): AIPro
   }
 };
 
-const isProviderConfigured = (provider: AIProviderId, credentials: AIProviderCredentials): boolean => {
+const isProviderConfigured = (
+  provider: AIProviderId,
+  credentials: AIProviderCredentials
+): boolean => {
   switch (provider) {
     case 'openai':
       return Boolean(credentials.apiKey);
@@ -282,10 +289,7 @@ const getProviderEnvKey = (provider: AIProviderId, suffix: string): string => {
   return 'AI_' + provider.toUpperCase().replace(/-/g, '_') + '_' + suffix;
 };
 
-const buildProviderConfig = (
-  provider: AIProviderId,
-  env: NodeJS.ProcessEnv,
-): AIProviderConfig => {
+const buildProviderConfig = (provider: AIProviderId, env: NodeJS.ProcessEnv): AIProviderConfig => {
   const credentials = buildCredentials(provider, env);
   const enabled = isProviderConfigured(provider, credentials);
 
@@ -295,13 +299,42 @@ const buildProviderConfig = (
 
   const modelOverrides = parseProviderList(env[fallbackKey]);
 
+  // Optional model overrides via environment variables, e.g.:
+  // AI_OPENAI_COMPATIBLE_MODEL_DEFAULT, AI_OPENAI_COMPATIBLE_MODEL_CHAT,
+  // AI_OPENAI_COMPATIBLE_MODEL_EMBEDDING, AI_OPENAI_COMPATIBLE_MODEL_STREAMING
+  const modelDefaultKey = getProviderEnvKey(provider, 'MODEL_DEFAULT');
+  const modelChatKey = getProviderEnvKey(provider, 'MODEL_CHAT');
+  const modelEmbeddingKey = getProviderEnvKey(provider, 'MODEL_EMBEDDING');
+  const modelStreamingKey = getProviderEnvKey(provider, 'MODEL_STREAMING');
+
+  const modelDefault = env[modelDefaultKey];
+  const modelChat = env[modelChatKey];
+  const modelEmbedding = env[modelEmbeddingKey];
+  const modelStreaming = env[modelStreamingKey];
+
+  const modelsOverride: Partial<AIProviderModels> | undefined =
+    modelDefault || modelChat || modelEmbedding || modelStreaming
+      ? {
+          ...(modelDefault ? { default: modelDefault } : {}),
+          ...(modelChat ? { chat: modelChat } : {}),
+          ...(modelEmbedding ? { embedding: modelEmbedding } : {}),
+          ...(modelStreaming ? { streaming: modelStreaming } : {}),
+        }
+      : undefined;
+
   return {
     id: provider,
-    label: provider.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' '),
+    label: provider
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' '),
     enabled,
     failoverPriority: Number.MAX_SAFE_INTEGER,
     credentials,
-    models: mergeProviderModels(provider, modelOverrides.length ? { fallback: modelOverrides } : undefined),
+    models: mergeProviderModels(provider, {
+      ...(modelOverrides.length ? { fallback: modelOverrides } : {}),
+      ...(modelsOverride ?? {}),
+    }),
     limits: { ...DEFAULT_LIMITS[provider] },
     requestTimeoutMs: parseNumber(env[timeoutKey], parseNumber(env.AI_REQUEST_TIMEOUT, 30000)),
     maxRetries: parseNumber(env[retriesKey], parseNumber(env.AI_MAX_RETRIES, 2)),
@@ -333,7 +366,10 @@ const applyFailoverPriority = (config: AIConfig): AIConfig => {
   return config;
 };
 
-const ensureFallbackOrder = (defaultProvider: AIProviderId, order: AIProviderId[]): AIProviderId[] => {
+const ensureFallbackOrder = (
+  defaultProvider: AIProviderId,
+  order: AIProviderId[]
+): AIProviderId[] => {
   const prioritized = [defaultProvider, ...order];
   const seen = new Set<AIProviderId>();
   const result: AIProviderId[] = [];
@@ -392,7 +428,10 @@ const emitConfigChange = (config: AIConfig) => {
 const createConfig = (overrides?: Partial<AIConfig>): AIConfig => {
   const env = process.env as NodeJS.ProcessEnv;
   const defaultProvider = (env.DEFAULT_AI_PROVIDER as AIProvider) || 'openai';
-  const fallbackOrder = ensureFallbackOrder(defaultProvider, parseProviderList(env.AI_FALLBACK_ORDER));
+  const fallbackOrder = ensureFallbackOrder(
+    defaultProvider,
+    parseProviderList(env.AI_FALLBACK_ORDER)
+  );
 
   const providers = PROVIDERS.reduce<Record<AIProviderId, AIProviderConfig>>((acc, provider) => {
     acc[provider] = buildProviderConfig(provider, env);
@@ -469,13 +508,15 @@ export const getProviderConfig = (provider: AIProviderId): AIProviderConfig => {
 
 export const getAvailableProviders = (onlyEnabled = true): AIProviderConfig[] => {
   const config = getAIConfig();
-  return Object.values(config.providers).filter((provider) => (onlyEnabled ? provider.enabled : true));
+  return Object.values(config.providers).filter(provider =>
+    onlyEnabled ? provider.enabled : true
+  );
 };
 
 export const getProviderFallbackChain = (preferred?: AIProviderId): AIProviderId[] => {
   const config = getAIConfig();
   const order = ensureFallbackOrder(preferred ?? config.defaultProvider, config.fallbackOrder);
-  return order.filter((id) => config.providers[id]?.enabled);
+  return order.filter(id => config.providers[id]?.enabled);
 };
 
 export const getDefaultProvider = (): AIProviderId => getAIConfig().defaultProvider;

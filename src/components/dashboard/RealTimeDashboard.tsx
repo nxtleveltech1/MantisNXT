@@ -5,13 +5,13 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { useRealTimeData } from '@/hooks/useRealTimeData';
+import { useDashboardData } from '@/hooks/useDashboardData';
 import { Activity, Users, Package, DollarSign, TrendingUp, TrendingDown, AlertTriangle, CheckCircle } from 'lucide-react';
 import ActivityFeed from './ActivityFeed';
 import DataErrorBoundary from '@/components/error-boundaries/DataErrorBoundary';
@@ -35,86 +35,7 @@ interface DashboardMetrics {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export default function RealTimeDashboard() {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Real-time data connections
-  const ordersData = useRealTimeData({
-    table: 'sales_orders',
-    autoReconnect: true
-  });
-
-  const inventoryData = useRealTimeData({
-    table: 'inventory_items',
-    autoReconnect: true
-  });
-
-  const customersData = useRealTimeData({
-    table: 'customers',
-    autoReconnect: true
-  });
-
-  const invoicesData = useRealTimeData({
-    table: 'invoices',
-    autoReconnect: true
-  });
-
-  /**
-   * Fetch dashboard metrics
-   */
-  const fetchMetrics = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch('/api/dashboard/metrics', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch metrics');
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        setMetrics(result.data);
-      } else {
-        throw new Error(result.error || 'Failed to load metrics');
-      }
-
-    } catch (err) {
-      console.error('❌ Error fetching dashboard metrics:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Update metrics when real-time data changes
-   */
-  useEffect(() => {
-    if (ordersData.lastUpdate || inventoryData.lastUpdate || customersData.lastUpdate || invoicesData.lastUpdate) {
-      // Debounce updates to prevent excessive API calls
-      const timeoutId = setTimeout(() => {
-        fetchMetrics();
-      }, 1000);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [ordersData.lastUpdate, inventoryData.lastUpdate, customersData.lastUpdate, invoicesData.lastUpdate]);
-
-  /**
-   * Initial data load
-   */
-  useEffect(() => {
-    fetchMetrics();
-  }, []);
+  const { metrics, loading, error, lastUpdate, connected } = useDashboardData();
 
   /**
    * Format currency
@@ -151,12 +72,7 @@ export default function RealTimeDashboard() {
           <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Dashboard Error</h3>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={fetchMetrics}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Retry
-          </button>
+          <div />
         </div>
       </div>
     );
@@ -174,16 +90,8 @@ export default function RealTimeDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">Real-Time Dashboard</h1>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className={`h-3 w-3 rounded-full ${ordersData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-sm text-gray-600">Orders</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className={`h-3 w-3 rounded-full ${inventoryData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-sm text-gray-600">Inventory</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className={`h-3 w-3 rounded-full ${customersData.connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-sm text-gray-600">Customers</span>
+              <div className={`h-3 w-3 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm text-gray-600">Live Connection</span>
             </div>
           </div>
         </div>
@@ -419,7 +327,7 @@ export default function RealTimeDashboard() {
       </Tabs>
 
       {/* Live Updates Indicator */}
-      {(ordersData.lastUpdate || inventoryData.lastUpdate) && (
+      {lastUpdate && (
         <div className="fixed bottom-4 right-4 bg-green-100 text-green-800 px-4 py-2 rounded-lg shadow-lg">
           <div className="flex items-center space-x-2">
             <div className="animate-pulse h-2 w-2 bg-green-500 rounded-full"></div>

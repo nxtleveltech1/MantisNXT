@@ -7,7 +7,8 @@
  * @module UnifiedDataService
  */
 
-import { query, pool } from "@/lib/database/unified-connection";
+import { query, pool } from '@/lib/database/unified-connection';
+import { CacheManager, cachedQuery } from '@/lib/cache/query-cache';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -58,7 +59,7 @@ export interface QueryOptions {
   search?: string;
   filters?: Record<string, any>;
   sortBy?: string;
-  sortOrder?: "asc" | "desc";
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -97,7 +98,7 @@ export interface InventoryItem {
   supplierId: string;
   supplierName?: string;
   brandId?: string;
-  status?: "in_stock" | "low_stock" | "out_of_stock" | "critical";
+  status?: 'in_stock' | 'low_stock' | 'out_of_stock' | 'critical';
 }
 
 // ============================================================================
@@ -113,10 +114,10 @@ function mapDatabaseRowToSupplier(row: any): Supplier {
     name: row.name,
     code: row.code,
     active: row.active,
-    email: row.email || row.contact_info?.email || "",
-    phone: row.phone || row.contact_info?.phone || "",
-    website: row.website || row.contact_info?.website || "",
-    currency: row.currency || row.default_currency || "ZAR",
+    email: row.email || row.contact_info?.email || '',
+    phone: row.phone || row.contact_info?.phone || '',
+    website: row.website || row.contact_info?.website || '',
+    currency: row.currency || row.default_currency || 'ZAR',
     paymentTerms: row.payment_terms || row.paymentTerms,
     taxNumber: row.tax_number || row.taxNumber,
     contactInfo: row.contact_info,
@@ -136,19 +137,19 @@ function mapDatabaseRowToInventoryItem(row: any): InventoryItem {
   const availableQty = stockQty - reservedQty;
 
   // Determine stock status
-  let status: InventoryItem["status"] = "in_stock";
+  let status: InventoryItem['status'] = 'in_stock';
   if (stockQty === 0) {
-    status = "out_of_stock";
+    status = 'out_of_stock';
   } else if (stockQty <= 5) {
-    status = "critical";
+    status = 'critical';
   } else if (stockQty <= 10) {
-    status = "low_stock";
+    status = 'low_stock';
   }
 
   return {
     id: row.id || row.soh_id,
     sku: row.sku || row.supplier_sku,
-    name: row.name || "",
+    name: row.name || '',
     category: row.category || row.category_id,
     currentStock: stockQty,
     reservedStock: reservedQty,
@@ -156,7 +157,7 @@ function mapDatabaseRowToInventoryItem(row: any): InventoryItem {
     costPerUnitZar: costPrice,
     salePerUnitZar: salePrice,
     totalValueZar: stockQty * costPrice,
-    supplierId: row.supplier_id || row.supplierId || "",
+    supplierId: row.supplier_id || row.supplierId || '',
     supplierName: row.supplier_name || row.supplierName,
     brandId: row.brand_id || row.brandId,
     status,
@@ -182,10 +183,7 @@ export function createSuccessResponse<T>(
 /**
  * Creates a standardized error response
  */
-export function createErrorResponse(
-  error: string,
-  details?: string
-): ApiResponse {
+export function createErrorResponse(error: string, details?: string): ApiResponse {
   return {
     success: false,
     error,
@@ -201,16 +199,14 @@ export class SupplierService {
   /**
    * Fetch suppliers with filtering and pagination
    */
-  static async getSuppliers(
-    options: QueryOptions = {}
-  ): Promise<ApiResponse<Supplier>> {
+  static async getSuppliers(options: QueryOptions = {}): Promise<ApiResponse<Supplier>> {
     const {
       page = 1,
       limit = 50,
       search,
       filters = {},
-      sortBy = "name",
-      sortOrder = "asc",
+      sortBy = 'name',
+      sortOrder = 'asc',
     } = options;
 
     const offset = (page - 1) * limit;
@@ -218,7 +214,7 @@ export class SupplierService {
 
     try {
       // Build WHERE conditions
-      const whereConditions: string[] = ["1=1"];
+      const whereConditions: string[] = ['1=1'];
       const queryParams: any[] = [];
       let paramIndex = 1;
 
@@ -243,17 +239,15 @@ export class SupplierService {
 
       // Status filter (active/inactive)
       if (filters.status && Array.isArray(filters.status)) {
-        const statusBooleans = filters.status.map(
-          (s: string) => s.toLowerCase() === "active"
-        );
+        const statusBooleans = filters.status.map((s: string) => s.toLowerCase() === 'active');
         whereConditions.push(`active = ANY($${paramIndex})`);
         queryParams.push(statusBooleans);
         paramIndex++;
       }
 
-      const whereClause = whereConditions.join(" AND ");
+      const whereClause = whereConditions.join(' AND ');
 
-      // Main query
+      // Main query with window function for total count
       const sql = `
         SELECT
           supplier_id as id,
@@ -268,7 +262,8 @@ export class SupplierService {
           payment_terms,
           tax_number,
           created_at,
-          updated_at
+          updated_at,
+          COUNT(*) OVER() as total_count
         FROM core.supplier
         WHERE ${whereClause}
         ORDER BY ${sortBy} ${sortOrder.toUpperCase()}
@@ -277,17 +272,15 @@ export class SupplierService {
 
       queryParams.push(limit, offset);
 
-      const result = await query(sql, queryParams);
+      const cacheKey = `suppliers:list:${JSON.stringify({ page, limit, search, filters, sortBy, sortOrder })}`;
+      const result = await cachedQuery(
+        CacheManager.hotCache,
+        cacheKey,
+        async () => await query(sql, queryParams),
+        60_000
+      );
 
-      // Get total count
-      const countSql = `
-        SELECT COUNT(*) as total
-        FROM core.supplier
-        WHERE ${whereClause}
-      `;
-
-      const countResult = await query(countSql, queryParams.slice(0, -2));
-      const total = parseInt(countResult.rows[0].total);
+      const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
       const totalPages = Math.ceil(total / limit);
 
       const queryTime = performance.now() - startTime;
@@ -308,14 +301,14 @@ export class SupplierService {
         {
           queryTime,
           filters,
-          queryFingerprint: "suppliers_list",
+          queryFingerprint: 'suppliers_list',
         }
       );
     } catch (error) {
-      console.error("Error fetching suppliers:", error);
+      console.error('Error fetching suppliers:', error);
       return createErrorResponse(
-        "Failed to fetch suppliers",
-        error instanceof Error ? error.message : "Unknown error"
+        'Failed to fetch suppliers',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }
@@ -347,17 +340,17 @@ export class SupplierService {
       const result = await query(sql, [id]);
 
       if (result.rows.length === 0) {
-        return createErrorResponse("Supplier not found", `No supplier with id: ${id}`);
+        return createErrorResponse('Supplier not found', `No supplier with id: ${id}`);
       }
 
       const supplier = mapDatabaseRowToSupplier(result.rows[0]);
 
       return createSuccessResponse(supplier);
     } catch (error) {
-      console.error("Error fetching supplier:", error);
+      console.error('Error fetching supplier:', error);
       return createErrorResponse(
-        "Failed to fetch supplier",
-        error instanceof Error ? error.message : "Unknown error"
+        'Failed to fetch supplier',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }
@@ -369,26 +362,32 @@ export class SupplierService {
     try {
       // Check for duplicate name
       const existingSupplier = await pool.query(
-        "SELECT supplier_id FROM core.supplier WHERE name = $1",
+        'SELECT supplier_id FROM core.supplier WHERE name = $1',
         [data.name]
       );
 
       if (existingSupplier.rows.length > 0) {
         return createErrorResponse(
-          "Supplier with this name already exists",
+          'Supplier with this name already exists',
           `Duplicate name: ${data.name}`
         );
       }
 
       // Build contact_info JSONB
       const contactInfo = {
-        email: data.email || "",
-        phone: data.phone || "",
-        website: data.website || "",
+        email: data.email || '',
+        phone: data.phone || '',
+        website: data.website || '',
       };
 
       // Generate code if not provided
-      const code = data.code || data.name?.substring(0, 10).toUpperCase().replace(/[^A-Z0-9]/g, "") || "";
+      const code =
+        data.code ||
+        data.name
+          ?.substring(0, 10)
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, '') ||
+        '';
 
       const insertSql = `
         INSERT INTO core.supplier (
@@ -411,8 +410,8 @@ export class SupplierService {
         code,
         JSON.stringify(contactInfo),
         data.active ?? true,
-        data.currency || "ZAR",
-        data.paymentTerms || "30 days",
+        data.currency || 'ZAR',
+        data.paymentTerms || '30 days',
         data.taxNumber,
       ]);
 
@@ -420,10 +419,10 @@ export class SupplierService {
 
       return createSuccessResponse(supplier);
     } catch (error) {
-      console.error("Error creating supplier:", error);
+      console.error('Error creating supplier:', error);
       return createErrorResponse(
-        "Failed to create supplier",
-        error instanceof Error ? error.message : "Unknown error"
+        'Failed to create supplier',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }
@@ -437,17 +436,15 @@ export class InventoryService {
   /**
    * Fetch inventory items with filtering and pagination
    */
-  static async getInventory(
-    options: QueryOptions = {}
-  ): Promise<ApiResponse<InventoryItem>> {
+  static async getInventory(options: QueryOptions = {}): Promise<ApiResponse<InventoryItem>> {
     const {
       page = 1,
       limit = 250,
       cursor,
       search,
       filters = {},
-      sortBy = "sku",
-      sortOrder = "asc",
+      sortBy = 'sku',
+      sortOrder = 'asc',
     } = options;
 
     const offset = (page - 1) * limit;
@@ -461,7 +458,7 @@ export class InventoryService {
 
       // Cursor-based pagination
       if (cursor) {
-        const [lastSku, lastId] = cursor.split("|");
+        const [lastSku, lastId] = cursor.split('|');
         if (lastSku && lastId) {
           whereConditions.push(
             `(sp.supplier_sku > $${paramIndex} OR (sp.supplier_sku = $${paramIndex + 1} AND soh.soh_id > $${paramIndex + 2}::uuid))`
@@ -480,9 +477,7 @@ export class InventoryService {
 
       // Category filter
       if (filters.category) {
-        const categories = Array.isArray(filters.category)
-          ? filters.category
-          : [filters.category];
+        const categories = Array.isArray(filters.category) ? filters.category : [filters.category];
         whereConditions.push(
           `COALESCE(p.category_id, sp.category_id) = ANY($${paramIndex}::uuid[])`
         );
@@ -502,26 +497,25 @@ export class InventoryService {
       // Stock status filter
       if (filters.status) {
         switch (filters.status) {
-          case "out_of_stock":
-            whereConditions.push("soh.qty = 0");
+          case 'out_of_stock':
+            whereConditions.push('soh.qty = 0');
             break;
-          case "low_stock":
-            whereConditions.push("soh.qty > 0 AND soh.qty <= 10");
+          case 'low_stock':
+            whereConditions.push('soh.qty > 0 AND soh.qty <= 10');
             break;
-          case "critical":
-            whereConditions.push("soh.qty > 0 AND soh.qty <= 5");
+          case 'critical':
+            whereConditions.push('soh.qty > 0 AND soh.qty <= 5');
             break;
-          case "in_stock":
-            whereConditions.push("soh.qty > 10");
+          case 'in_stock':
+            whereConditions.push('soh.qty > 10');
             break;
         }
       }
 
-      const whereClause = whereConditions.length > 0
-        ? `WHERE ${whereConditions.join(" AND ")}`
-        : "";
+      const whereClause =
+        whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-      // Main query
+      // Main query (adds window function for total only when not using cursor pagination)
       const sql = `
         SELECT
           soh.soh_id as id,
@@ -536,6 +530,7 @@ export class InventoryService {
           sp.supplier_id,
           s.name as supplier_name,
           p.brand_id
+          ${cursor ? '' : ', COUNT(*) OVER() as total_count'}
         FROM core.stock_on_hand AS soh
         JOIN core.supplier_product AS sp ON sp.supplier_product_id = soh.supplier_product_id
         JOIN core.supplier AS s ON s.supplier_id = sp.supplier_id
@@ -551,7 +546,13 @@ export class InventoryService {
         queryParams.push(limit, offset);
       }
 
-      const result = await query(sql, queryParams);
+      const invCacheKey = `inventory:list:${JSON.stringify({ page, limit, cursor: cursor || null, search, filters })}`;
+      const result = await cachedQuery(
+        CacheManager.realtimeCache,
+        invCacheKey,
+        async () => await query(sql, queryParams),
+        30_000
+      );
 
       // Generate next cursor
       let nextCursor: string | null = null;
@@ -581,22 +582,13 @@ export class InventoryService {
           {
             queryTime,
             filters,
-            queryFingerprint: "inventory_cursor",
+            queryFingerprint: 'inventory_cursor',
           }
         );
       }
 
-      // For offset pagination, get total count
-      const countSql = `
-        SELECT COUNT(*) as total
-        FROM core.stock_on_hand AS soh
-        JOIN core.supplier_product AS sp ON sp.supplier_product_id = soh.supplier_product_id
-        LEFT JOIN core.product AS p ON p.product_id = sp.product_id
-        ${whereClause}
-      `;
-
-      const countResult = await query(countSql, queryParams.slice(0, -2));
-      const total = parseInt(countResult.rows[0].total);
+      // For offset pagination, derive total from window function
+      const total = result.rows.length > 0 ? parseInt((result.rows[0] as any).total_count, 10) : 0;
       const totalPages = Math.ceil(total / limit);
 
       return createSuccessResponse(
@@ -612,14 +604,14 @@ export class InventoryService {
         {
           queryTime,
           filters,
-          queryFingerprint: "inventory_offset",
+          queryFingerprint: 'inventory_offset',
         }
       );
     } catch (error) {
-      console.error("Error fetching inventory:", error);
+      console.error('Error fetching inventory:', error);
       return createErrorResponse(
-        "Failed to fetch inventory",
-        error instanceof Error ? error.message : "Unknown error"
+        'Failed to fetch inventory',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }
@@ -642,25 +634,29 @@ export class InventoryService {
         JOIN core.supplier s ON s.supplier_id = sp.supplier_id
         WHERE s.active = true
       `;
-
-      const result = await query(sql);
-      const row = result.rows[0];
-
-      const analytics = {
-        totalItems: parseInt(row.total_items),
-        totalValue: parseFloat(row.total_value),
-        lowStockItems: parseInt(row.low_stock_items),
-        outOfStockItems: parseInt(row.out_of_stock_items),
-        criticalItems: parseInt(row.critical_items),
-        inStockItems: parseInt(row.in_stock_items),
-      };
-
+      const analytics = await cachedQuery(
+        CacheManager.dashboardCache,
+        'inventory:analytics',
+        async () => {
+          const result = await query(sql);
+          const row = result.rows[0];
+          return {
+            totalItems: parseInt(row.total_items),
+            totalValue: parseFloat(row.total_value),
+            lowStockItems: parseInt(row.low_stock_items),
+            outOfStockItems: parseInt(row.out_of_stock_items),
+            criticalItems: parseInt(row.critical_items),
+            inStockItems: parseInt(row.in_stock_items),
+          };
+        },
+        300_000
+      );
       return createSuccessResponse(analytics);
     } catch (error) {
-      console.error("Error fetching inventory analytics:", error);
+      console.error('Error fetching inventory analytics:', error);
       return createErrorResponse(
-        "Failed to fetch inventory analytics",
-        error instanceof Error ? error.message : "Unknown error"
+        'Failed to fetch inventory analytics',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }

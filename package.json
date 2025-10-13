@@ -67,6 +67,9 @@
     "validate:platform:full": "./scripts/validate-with-mcp.sh --full",
     "perf:measure": "./node_modules/.bin/chrome-devtools-mcp performance --url http://localhost:3000",
     "perf:lighthouse": "npx lighthouse http://localhost:3000 --output html --output-path ./validation-reports/lighthouse.html",
+    "analyze": "ANALYZE=true npm run build",
+    "analyze:server": "ANALYZE=true BUNDLE_ANALYZE=server npm run build",
+    "analyze:browser": "ANALYZE=true BUNDLE_ANALYZE=browser npm run build",
     "// Integration Scripts": "Commands for full inventory integration",
     "db:purge": "psql $NEON_SPP_DATABASE_URL -f database/scripts/purge_all_inventory_data.sql",
     "db:verify-schema": "psql $NEON_SPP_DATABASE_URL -f database/scripts/verify_schema_exists.sql",
@@ -180,7 +183,8 @@
     "supertest": "^7.0.0",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.7.0",
-    "wait-on": "^7.2.0"
+    "wait-on": "^7.2.0",
+    "webpack-bundle-analyzer": "^4.10.1"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

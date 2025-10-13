@@ -1,5 +1,5 @@
-import { Pool, PoolClient, PoolConfig, QueryResult, QueryResultRow } from "pg";
-import { randomUUID } from "crypto";
+import { Pool, PoolClient, PoolConfig, QueryResult, QueryResultRow } from 'pg';
+import { randomUUID } from 'crypto';
 
 interface QueryOptions {
   timeout?: number;
@@ -7,7 +7,7 @@ interface QueryOptions {
 }
 
 interface CircuitBreakerState {
-  state: "closed" | "half-open" | "open";
+  state: 'closed' | 'half-open' | 'open';
   failures: number;
   consecutiveSuccesses: number;
   threshold: number;
@@ -24,7 +24,7 @@ interface PoolStatus {
 }
 
 interface ConnectionManagerStatus {
-  state: CircuitBreakerState["state"];
+  state: CircuitBreakerState['state'];
   poolStatus: PoolStatus;
   totalConnections: number;
   activeConnections: number;
@@ -81,7 +81,7 @@ class EnterpriseConnectionManager {
     queryFingerprints: new Map<string, QueryFingerprintStats>(),
   };
   private readonly circuitBreaker: CircuitBreakerState = {
-    state: "closed",
+    state: 'closed',
     failures: 0,
     consecutiveSuccesses: 0,
     threshold: 3,
@@ -98,29 +98,26 @@ class EnterpriseConnectionManager {
   }
 
   private buildConfigFromEnv(): PoolConfig {
-    const connectionString =
-      process.env.ENTERPRISE_DATABASE_URL || process.env.DATABASE_URL;
+    const connectionString = process.env.ENTERPRISE_DATABASE_URL || process.env.DATABASE_URL;
 
     if (!connectionString) {
       throw new Error(
-        "ENTERPRISE_DATABASE_URL or DATABASE_URL must be set for EnterpriseConnectionManager"
+        'ENTERPRISE_DATABASE_URL or DATABASE_URL must be set for EnterpriseConnectionManager'
       );
     }
 
     // Determine if SSL is required from connection string or environment
-    const requiresSsl = connectionString.includes('sslmode=require') ||
-                       process.env.DB_SSL === 'true' ||
-                       process.env.NODE_ENV === 'production';
+    const requiresSsl =
+      connectionString.includes('sslmode=require') ||
+      process.env.DB_SSL === 'true' ||
+      process.env.NODE_ENV === 'production';
 
     return {
       connectionString,
-      max: this.parseIntEnv("ENTERPRISE_DB_POOL_MAX", DEFAULT_MAX_POOL),
-      idleTimeoutMillis: this.parseIntEnv(
-        "ENTERPRISE_DB_IDLE_TIMEOUT",
-        DEFAULT_IDLE_TIMEOUT
-      ),
+      max: this.parseIntEnv('ENTERPRISE_DB_POOL_MAX', DEFAULT_MAX_POOL),
+      idleTimeoutMillis: this.parseIntEnv('ENTERPRISE_DB_IDLE_TIMEOUT', DEFAULT_IDLE_TIMEOUT),
       connectionTimeoutMillis: this.parseIntEnv(
-        "ENTERPRISE_DB_CONNECTION_TIMEOUT",
+        'ENTERPRISE_DB_CONNECTION_TIMEOUT',
         DEFAULT_CONNECTION_TIMEOUT
       ),
       // SSL configuration for secure connections (required for Neon, Supabase, AWS RDS, etc.)
@@ -143,26 +140,26 @@ class EnterpriseConnectionManager {
     if (!value) {
       return fallback;
     }
-    return value.toLowerCase() === "true" || value === "1";
+    return value.toLowerCase() === 'true' || value === '1';
   }
 
   private buildQueryLogConfig(): QueryLogConfig {
-    const isDevelopment = process.env.NODE_ENV !== "production";
+    const isDevelopment = process.env.NODE_ENV !== 'production';
     return {
-      enabled: this.parseBoolEnv("QUERY_LOG_ENABLED", isDevelopment),
-      logSlowQueries: this.parseBoolEnv("LOG_SLOW_QUERIES", true),
-      slowQueryThresholdMs: this.parseIntEnv("SLOW_QUERY_THRESHOLD_MS", 1000),
-      logQueryText: this.parseBoolEnv("LOG_QUERY_TEXT", true),
-      logParameters: this.parseBoolEnv("LOG_PARAMETERS", isDevelopment),
-      logExecutionPlan: this.parseBoolEnv("LOG_EXECUTION_PLAN", false),
-      maxParameterLength: this.parseIntEnv("MAX_PARAMETER_LENGTH", 1000),
+      enabled: this.parseBoolEnv('QUERY_LOG_ENABLED', isDevelopment),
+      logSlowQueries: this.parseBoolEnv('LOG_SLOW_QUERIES', true),
+      slowQueryThresholdMs: this.parseIntEnv('SLOW_QUERY_THRESHOLD_MS', 1000),
+      logQueryText: this.parseBoolEnv('LOG_QUERY_TEXT', true),
+      logParameters: this.parseBoolEnv('LOG_PARAMETERS', isDevelopment),
+      logExecutionPlan: this.parseBoolEnv('LOG_EXECUTION_PLAN', false),
+      maxParameterLength: this.parseIntEnv('MAX_PARAMETER_LENGTH', 1000),
     };
   }
 
   private ensurePool(): Pool {
     if (!this.pool) {
-      console.log("🔌 Initializing Enterprise Connection Pool with config:", {
-        host: this.poolConfig.connectionString?.substring(0, 50) + "...",
+      console.log('🔌 Initializing Enterprise Connection Pool with config:', {
+        host: this.poolConfig.connectionString?.substring(0, 50) + '...',
         max: this.poolConfig.max,
         idleTimeoutMillis: this.poolConfig.idleTimeoutMillis,
         connectionTimeoutMillis: this.poolConfig.connectionTimeoutMillis,
@@ -171,17 +168,14 @@ class EnterpriseConnectionManager {
 
       this.pool = new Pool(this.poolConfig);
 
-      this.pool.on("error", (error) => {
-        console.error(
-          "❌ Unhandled pool error in EnterpriseConnectionManager:",
-          error
-        );
+      this.pool.on('error', error => {
+        console.error('❌ Unhandled pool error in EnterpriseConnectionManager:', error);
         this.metrics.failedConnections++;
         this.circuitBreaker.failures++;
         this.circuitBreaker.consecutiveSuccesses = 0;
         this.circuitBreaker.lastFailure = Date.now();
 
-        this.logCircuitBreakerState("Pool error occurred");
+        this.logCircuitBreakerState('Pool error occurred');
 
         if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
           console.warn(
@@ -191,8 +185,8 @@ class EnterpriseConnectionManager {
         }
       });
 
-      this.pool.on("connect", (client) => {
-        console.log("✅ New client connected to enterprise pool");
+      this.pool.on('connect', client => {
+        console.log('✅ New client connected to enterprise pool');
       });
 
       this.setupCleanupHandlers();
@@ -202,12 +196,12 @@ class EnterpriseConnectionManager {
   }
 
   private isCircuitOpen(): boolean {
-    if (this.circuitBreaker.state === "open") {
+    if (this.circuitBreaker.state === 'open') {
       const now = Date.now();
       if (now >= this.circuitBreaker.openUntil) {
-        console.log("🔄 Circuit breaker transitioning from OPEN to HALF-OPEN");
-        this.circuitBreaker.state = "half-open";
-        this.logCircuitBreakerState("Transitioned to HALF-OPEN");
+        console.log('🔄 Circuit breaker transitioning from OPEN to HALF-OPEN');
+        this.circuitBreaker.state = 'half-open';
+        this.logCircuitBreakerState('Transitioned to HALF-OPEN');
         return false;
       }
       const remainingMs = this.circuitBreaker.openUntil - now;
@@ -220,11 +214,10 @@ class EnterpriseConnectionManager {
 
   private openCircuitBreaker(): void {
     const previousState = this.circuitBreaker.state;
-    this.circuitBreaker.state = "open";
-    this.circuitBreaker.openUntil =
-      Date.now() + this.circuitBreaker.resetTimeout;
+    this.circuitBreaker.state = 'open';
+    this.circuitBreaker.openUntil = Date.now() + this.circuitBreaker.resetTimeout;
 
-    console.warn("🚨 CIRCUIT BREAKER OPENED:", {
+    console.warn('🚨 CIRCUIT BREAKER OPENED:', {
       previousState,
       failures: this.circuitBreaker.failures,
       threshold: this.circuitBreaker.threshold,
@@ -232,7 +225,7 @@ class EnterpriseConnectionManager {
       resetTimeoutMs: this.circuitBreaker.resetTimeout,
     });
 
-    this.logCircuitBreakerState("Circuit breaker OPENED");
+    this.logCircuitBreakerState('Circuit breaker OPENED');
   }
 
   private resetCircuitBreaker(): void {
@@ -240,34 +233,32 @@ class EnterpriseConnectionManager {
     const previousFailures = this.circuitBreaker.failures;
 
     // Only reset if we have enough consecutive successes
-    if (
-      this.circuitBreaker.consecutiveSuccesses < this.circuitBreaker.threshold
-    ) {
+    if (this.circuitBreaker.consecutiveSuccesses < this.circuitBreaker.threshold) {
       console.log(
         `⏳ Circuit breaker reset pending: ${this.circuitBreaker.consecutiveSuccesses}/${this.circuitBreaker.threshold} consecutive successes`
       );
       return;
     }
 
-    if (previousState !== "closed" || previousFailures > 0) {
-      console.log("✅ CIRCUIT BREAKER RESET:", {
+    if (previousState !== 'closed' || previousFailures > 0) {
+      console.log('✅ CIRCUIT BREAKER RESET:', {
         previousState,
         previousFailures,
         consecutiveSuccesses: this.circuitBreaker.consecutiveSuccesses,
       });
     }
 
-    this.circuitBreaker.state = "closed";
+    this.circuitBreaker.state = 'closed';
     this.circuitBreaker.failures = 0;
     this.circuitBreaker.consecutiveSuccesses = 0;
     this.circuitBreaker.lastFailure = null;
     this.circuitBreaker.openUntil = 0;
 
-    this.logCircuitBreakerState("Circuit breaker RESET");
+    this.logCircuitBreakerState('Circuit breaker RESET');
   }
 
   private logCircuitBreakerState(event: string, queryId?: string): void {
-    const prefix = queryId ? `[Query ${queryId}]` : "[Circuit Breaker]";
+    const prefix = queryId ? `[Query ${queryId}]` : '[Circuit Breaker]';
     console.log(`🔌 ${prefix} ${event}:`, {
       state: this.circuitBreaker.state,
       failures: this.circuitBreaker.failures,
@@ -293,11 +284,7 @@ class EnterpriseConnectionManager {
 
   private generateQueryFingerprint(text: string): string {
     // Normalize SQL by replacing parameter placeholders with ?
-    let normalized = text
-      .replace(/\$\d+/g, "?")
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
+    let normalized = text.replace(/\$\d+/g, '?').replace(/\s+/g, ' ').trim().toLowerCase();
 
     // Return first 100 characters as fingerprint
     return normalized.substring(0, 100);
@@ -306,25 +293,15 @@ class EnterpriseConnectionManager {
   private sanitizeParameters(params: any[]): any[] {
     if (!params || params.length === 0) return [];
 
-    const sensitivePatterns = [
-      /password/i,
-      /token/i,
-      /secret/i,
-      /api[_-]?key/i,
-      /auth/i,
-    ];
+    const sensitivePatterns = [/password/i, /token/i, /secret/i, /api[_-]?key/i, /auth/i];
 
-    return params.map((param) => {
-      if (typeof param === "string") {
-        const isSensitive = sensitivePatterns.some((pattern) =>
-          pattern.test(param)
-        );
-        if (isSensitive) return "[REDACTED]";
+    return params.map(param => {
+      if (typeof param === 'string') {
+        const isSensitive = sensitivePatterns.some(pattern => pattern.test(param));
+        if (isSensitive) return '[REDACTED]';
 
         if (param.length > this.queryLogConfig.maxParameterLength) {
-          return (
-            param.substring(0, this.queryLogConfig.maxParameterLength) + "..."
-          );
+          return param.substring(0, this.queryLogConfig.maxParameterLength) + '...';
         }
       }
       return param;
@@ -386,10 +363,7 @@ class EnterpriseConnectionManager {
         logData.error = error.message;
       }
 
-      console.warn(
-        `🐌 SLOW QUERY [${queryId}] ${duration.toFixed(2)}ms:`,
-        logData
-      );
+      console.warn(`🐌 SLOW QUERY [${queryId}] ${duration.toFixed(2)}ms:`, logData);
     }
   }
 
@@ -399,9 +373,9 @@ class EnterpriseConnectionManager {
     try {
       const explainQuery = `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${text}`;
       const result = await this.pool.query(explainQuery, params);
-      return result.rows[0]?.["QUERY PLAN"];
+      return result.rows[0]?.['QUERY PLAN'];
     } catch (error) {
-      console.error("Failed to execute EXPLAIN ANALYZE:", error);
+      console.error('Failed to execute EXPLAIN ANALYZE:', error);
       return null;
     }
   }
@@ -409,10 +383,10 @@ class EnterpriseConnectionManager {
   private logExecutionPlan(queryId: string, plan: any): void {
     if (!plan) return;
 
-    const executionTime = plan[0]?.["Execution Time"];
-    const planningTime = plan[0]?.["Planning Time"];
-    const totalCost = plan[0]?.Plan?.["Total Cost"];
-    const actualRows = plan[0]?.Plan?.["Actual Rows"];
+    const executionTime = plan[0]?.['Execution Time'];
+    const planningTime = plan[0]?.['Planning Time'];
+    const totalCost = plan[0]?.Plan?.['Total Cost'];
+    const actualRows = plan[0]?.Plan?.['Actual Rows'];
 
     console.log(`📊 EXECUTION PLAN [${queryId}]:`, {
       planningTime: `${planningTime?.toFixed(2)}ms`,
@@ -446,9 +420,7 @@ class EnterpriseConnectionManager {
     options: QueryOptions = {}
   ): Promise<{ rows: T[]; rowCount: number }> {
     if (this.isCircuitOpen()) {
-      throw new Error(
-        "Enterprise database circuit breaker is open. Please try again later."
-      );
+      throw new Error('Enterprise database circuit breaker is open. Please try again later.');
     }
 
     this.ensurePool();
@@ -458,7 +430,7 @@ class EnterpriseConnectionManager {
     const queryId = this.generateQueryId();
 
     // Log circuit breaker state before query
-    this.logCircuitBreakerState("Before query execution", queryId);
+    this.logCircuitBreakerState('Before query execution', queryId);
 
     let lastError: Error | null = null;
     let client: PoolClient | null = null;
@@ -472,50 +444,34 @@ class EnterpriseConnectionManager {
 
       const acquirePromise = this.pool!.connect();
       const acquireTimeout = new Promise<never>((_, reject) => {
-        setTimeout(
-          () => reject(new Error("Client acquisition timeout")),
-          CLIENT_ACQUIRE_TIMEOUT
-        );
+        setTimeout(() => reject(new Error('Client acquisition timeout')), CLIENT_ACQUIRE_TIMEOUT);
       });
 
       client = await Promise.race([acquirePromise, acquireTimeout]);
       clientAcquired = true;
 
       const acquireDuration = Date.now() - acquireStartTime;
-      console.log(
-        `✅ Client acquired for query ${queryId} in ${acquireDuration}ms`
-      );
+      console.log(`✅ Client acquired for query ${queryId} in ${acquireDuration}ms`);
 
       // Retry loop - reuse the same client
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const startTime = Date.now();
 
         try {
-          const attemptLog =
-            attempt > 0 ? ` (retry ${attempt}/${maxRetries})` : "";
-          console.log(
-            `🔍 Query ${queryId}${attemptLog}: ${text.substring(0, 80)}...`
-          );
+          const attemptLog = attempt > 0 ? ` (retry ${attempt}/${maxRetries})` : '';
+          console.log(`🔍 Query ${queryId}${attemptLog}: ${text.substring(0, 80)}...`);
 
           // Execute query with timeout using the SAME client
           const queryPromise = client.query(text, params);
           const queryTimeout = new Promise<never>((_, reject) => {
-            setTimeout(
-              () => reject(new Error("Query execution timeout")),
-              timeout
-            );
+            setTimeout(() => reject(new Error('Query execution timeout')), timeout);
           });
 
-          const result = (await Promise.race([
-            queryPromise,
-            queryTimeout,
-          ])) as QueryResult<T>;
+          const result = (await Promise.race([queryPromise, queryTimeout])) as QueryResult<T>;
 
           const duration = Date.now() - startTime;
           console.log(
-            `✅ Query ${queryId} completed in ${duration}ms, rows: ${
-              result.rowCount || 0
-            }`
+            `✅ Query ${queryId} completed in ${duration}ms, rows: ${result.rowCount || 0}`
           );
 
           // Increment consecutive successes
@@ -564,13 +520,11 @@ class EnterpriseConnectionManager {
 
           // Don't retry on certain types of errors
           if (
-            lastError.message.includes("syntax error") ||
-            lastError.message.includes("permission denied") ||
-            lastError.message.includes("does not exist")
+            lastError.message.includes('syntax error') ||
+            lastError.message.includes('permission denied') ||
+            lastError.message.includes('does not exist')
           ) {
-            console.log(
-              `🚫 Non-retryable error detected for query ${queryId}, aborting retries`
-            );
+            console.log(`🚫 Non-retryable error detected for query ${queryId}, aborting retries`);
             break; // Exit retry loop immediately
           }
 
@@ -581,10 +535,7 @@ class EnterpriseConnectionManager {
           // Log query failure details
           this.logQueryDetails(queryId, text, params, duration, lastError);
 
-          this.logCircuitBreakerState(
-            `Query attempt ${attempt + 1} failed`,
-            queryId
-          );
+          this.logCircuitBreakerState(`Query attempt ${attempt + 1} failed`, queryId);
 
           // Check threshold after EACH failure
           if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
@@ -600,16 +551,14 @@ class EnterpriseConnectionManager {
           if (attempt < maxRetries) {
             const backoffMs = Math.min(1000 * Math.pow(2, attempt), 10000);
             console.log(`⏳ Retrying query ${queryId} in ${backoffMs}ms...`);
-            await new Promise((resolve) => setTimeout(resolve, backoffMs));
+            await new Promise(resolve => setTimeout(resolve, backoffMs));
           }
         }
       }
 
       // If we exit the retry loop without returning, throw the last error
       throw new Error(
-        `Query failed after ${maxRetries + 1} attempts: ${
-          lastError?.message || "Unknown error"
-        }`
+        `Query failed after ${maxRetries + 1} attempts: ${lastError?.message || 'Unknown error'}`
       );
     } catch (error) {
       // Handle client acquisition failures or other errors
@@ -628,35 +577,28 @@ class EnterpriseConnectionManager {
           const shouldDestroy = lastError !== null; // Destroy on error
           client.release(shouldDestroy);
           clientReleased = true;
-          console.log(
-            `🔓 Client released for query ${queryId} (destroyed: ${shouldDestroy})`
-          );
+          console.log(`🔓 Client released for query ${queryId} (destroyed: ${shouldDestroy})`);
         } catch (releaseError) {
-          console.error(
-            `❌ Error releasing client for query ${queryId}:`,
-            releaseError
-          );
+          console.error(`❌ Error releasing client for query ${queryId}:`, releaseError);
         }
       }
     }
   }
 
-  async withTransaction<T>(
-    callback: (client: PoolClient) => Promise<T>
-  ): Promise<T> {
+  async withTransaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
     this.ensurePool();
 
     const client = await this.pool!.connect();
     let hadError = false;
 
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       const result = await callback(client);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
       return result;
     } catch (error) {
       hadError = true;
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
       throw error;
     } finally {
       client.release(hadError);
@@ -665,12 +607,12 @@ class EnterpriseConnectionManager {
 
   async testConnection(): Promise<{ success: boolean; error?: string }> {
     try {
-      await this.query("SELECT 1");
+      await this.query('SELECT 1');
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -693,9 +635,26 @@ class EnterpriseConnectionManager {
       lastFailure: this.circuitBreaker.lastFailure,
       circuitBreakerFailures: this.circuitBreaker.failures,
       circuitBreakerThreshold: this.circuitBreaker.threshold,
-      circuitBreakerConsecutiveSuccesses:
-        this.circuitBreaker.consecutiveSuccesses,
+      circuitBreakerConsecutiveSuccesses: this.circuitBreaker.consecutiveSuccesses,
     };
+  }
+
+  // Alert on high waiting connections and provide summarized health
+  getPoolHealth(): { status: 'healthy' | 'warning' | 'critical'; message: string } {
+    const poolStatus = this.getPoolStatus();
+    const utilizationPercent =
+      poolStatus.total > 0 ? (poolStatus.active / poolStatus.total) * 100 : 0;
+
+    if (poolStatus.waiting > 10) {
+      return { status: 'critical', message: `${poolStatus.waiting} connections waiting` };
+    }
+    if (poolStatus.waiting > 5 || utilizationPercent > 80) {
+      return {
+        status: 'warning',
+        message: `High pool utilization: ${utilizationPercent.toFixed(1)}%`,
+      };
+    }
+    return { status: 'healthy', message: 'Pool operating normally' };
   }
 
   getQueryMetrics(): any {
@@ -734,20 +693,18 @@ class EnterpriseConnectionManager {
 
     // Check if handlers are already registered (module-level flag)
     if (cleanupHandlersRegistered) {
-      console.log("🔄 Cleanup handlers already registered, skipping...");
+      console.log('🔄 Cleanup handlers already registered, skipping...');
       return;
     }
 
-    console.log("🛡️ Setting up database cleanup handlers...");
+    console.log('🛡️ Setting up database cleanup handlers...');
 
     // Remove any existing listeners before adding new ones
-    const signals = ["SIGTERM", "SIGINT", "exit"] as const;
-    signals.forEach((signal) => {
+    const signals = ['SIGTERM', 'SIGINT', 'exit'] as const;
+    signals.forEach(signal => {
       const existingListeners = process.listenerCount(signal);
       if (existingListeners > 0) {
-        console.log(
-          `🧹 Removing ${existingListeners} existing ${signal} listeners`
-        );
+        console.log(`🧹 Removing ${existingListeners} existing ${signal} listeners`);
         process.removeAllListeners(signal);
       }
     });
@@ -757,35 +714,33 @@ class EnterpriseConnectionManager {
       console.log(`\n🛑 Received ${signal}, closing database connections...`);
       try {
         await this.closePool();
-        console.log("✅ Database connections closed gracefully");
-        if (signal !== "exit") {
+        console.log('✅ Database connections closed gracefully');
+        if (signal !== 'exit') {
           process.exit(0);
         }
       } catch (error) {
-        console.error("❌ Error during database cleanup:", error);
-        if (signal !== "exit") {
+        console.error('❌ Error during database cleanup:', error);
+        if (signal !== 'exit') {
           process.exit(1);
         }
       }
     };
 
     // Register cleanup handlers
-    process.on("SIGTERM", () => cleanup("SIGTERM"));
-    process.on("SIGINT", () => cleanup("SIGINT"));
-    process.on("exit", () => {
+    process.on('SIGTERM', () => cleanup('SIGTERM'));
+    process.on('SIGINT', () => cleanup('SIGINT'));
+    process.on('exit', () => {
       // Synchronous cleanup for exit event
       if (this.pool) {
-        console.log("🛑 Process exiting, closing pool synchronously...");
+        console.log('🛑 Process exiting, closing pool synchronously...');
         // Note: exit event doesn't support async, so we just end the pool
-        this.pool
-          .end()
-          .catch((err) => console.error("Error ending pool:", err));
+        this.pool.end().catch(err => console.error('Error ending pool:', err));
       }
     });
 
     // Mark handlers as registered
     cleanupHandlersRegistered = true;
-    console.log("✅ Cleanup handlers registered successfully");
+    console.log('✅ Cleanup handlers registered successfully');
   }
 }
 
@@ -797,9 +752,8 @@ export const query = <T extends QueryResultRow = any>(
   options?: QueryOptions
 ) => dbManager.query<T>(text, params, options);
 
-export const withTransaction = <T>(
-  callback: (client: PoolClient) => Promise<T>
-) => dbManager.withTransaction(callback);
+export const withTransaction = <T>(callback: (client: PoolClient) => Promise<T>) =>
+  dbManager.withTransaction(callback);
 
 export const testConnection = () => dbManager.testConnection();
 export const getPoolStatus = () => dbManager.getStatus();

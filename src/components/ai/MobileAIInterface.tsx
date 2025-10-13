@@ -31,7 +31,14 @@ import {
 import AIChatInterface from "./ChatInterface"
 import AIInsightCards from "./InsightCards"
 import PredictiveCharts from "../analytics/PredictiveCharts"
-import AISupplierDiscovery from "../suppliers/AISupplierDiscovery"
+import dynamic from 'next/dynamic'
+const AISupplierDiscovery = dynamic(
+  () => import('../suppliers/AISupplierDiscovery'),
+  {
+    loading: () => <div className="animate-pulse h-96 bg-gray-100 rounded-lg" />,
+    ssr: false
+  }
+)
 
 interface MobileAIInterfaceProps {
   compactMode?: boolean

@@ -1,47 +1,6 @@
 import assert from 'node:assert';
 import http from 'node:http';
 
-function request(url: string, method = 'GET', headers: Record<string, string> = {}): Promise<{ status: number; body: string }> {
-  return new Promise((resolve, reject) => {
-    const req = http.request(url, { method, headers }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => (data += chunk));
-      res.on('end', () => resolve({ status: res.statusCode || 0, body: data }));
-    });
-    req.on('error', reject);
-    req.end();
-  });
-}
-
-async function main() {
-  const base = process.env.VALIDATION_BASE_URL || 'http://localhost:3000';
-
-  const health = await request(`${base}/api/health`);
-  assert.strictEqual(health.status, 200, 'health should be 200');
-
-  const inv = await request(`${base}/api/inventory`);
-  assert.strictEqual(inv.status, 200, 'inventory should be 200');
-
-  const sup = await request(`${base}/api/suppliers`);
-  assert.strictEqual(sup.status, 200, 'suppliers should be 200');
-
-  // Parse inventory shape
-  try {
-    const invJson = JSON.parse(inv.body);
-    assert.ok(Array.isArray(invJson.items), 'inventory.items should be array');
-    assert.ok('nextCursor' in invJson, 'inventory should include nextCursor');
-  } catch (e) {
-    throw new Error('Inventory response is not valid JSON or invalid shape');
-  }
-
-  console.log('API endpoint validation passed.');
-}
-
-main().catch((err) => {
-  console.error('API endpoint validation failed:', err);
-  process.exit(1);
-});
-
 /**
  * API Endpoint Validation Script
  *
@@ -56,6 +15,22 @@ main().catch((err) => {
  *   - Development server running on http://localhost:3000
  *   - Backend fixes deployed
  */
+
+function request(
+  url: string,
+  method = 'GET',
+  headers: Record<string, string> = {}
+): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const req = http.request(url, { method, headers }, res => {
+      let data = '';
+      res.on('data', chunk => (data += chunk));
+      res.on('end', () => resolve({ status: res.statusCode || 0, body: data }));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
 
 interface EndpointTest {
   name: string;
@@ -134,14 +109,14 @@ const ENDPOINTS_TO_TEST: EndpointTest[] = [
     url: '/api/analytics/dashboard',
     method: 'GET',
     expectedStatus: 200,
-    critical: true
+    critical: true,
   },
   {
     name: 'Dashboard Metrics',
     url: '/api/dashboard_metrics',
     method: 'GET',
     expectedStatus: 200,
-    critical: true
+    critical: true,
   },
 
   // Inventory endpoints
@@ -150,14 +125,14 @@ const ENDPOINTS_TO_TEST: EndpointTest[] = [
     url: '/api/inventory',
     method: 'GET',
     expectedStatus: 200,
-    critical: true
+    critical: true,
   },
   {
     name: 'Inventory Complete',
     url: '/api/inventory/complete',
     method: 'GET',
     expectedStatus: 200,
-    critical: true
+    critical: true,
   },
 
   // Supplier endpoints
@@ -166,14 +141,14 @@ const ENDPOINTS_TO_TEST: EndpointTest[] = [
     url: '/api/suppliers',
     method: 'GET',
     expectedStatus: 200,
-    critical: true
+    critical: true,
   },
   {
     name: 'Supplier Management',
     url: '/api/supplier-management',
     method: 'GET',
     expectedStatus: 200,
-    critical: false
+    critical: false,
   },
 
   // Health check endpoints
@@ -182,14 +157,14 @@ const ENDPOINTS_TO_TEST: EndpointTest[] = [
     url: '/api/health/database',
     method: 'GET',
     expectedStatus: 200,
-    critical: true
+    critical: true,
   },
   {
     name: 'Database Enterprise Health',
     url: '/api/health/database-enterprise',
     method: 'GET',
     expectedStatus: 200,
-    critical: false
+    critical: false,
   },
 
   // SPP endpoints
@@ -198,7 +173,7 @@ const ENDPOINTS_TO_TEST: EndpointTest[] = [
     url: '/api/spp/dashboard',
     method: 'GET',
     expectedStatus: 200,
-    critical: false
+    critical: false,
   },
 
   // Test endpoints
@@ -207,8 +182,8 @@ const ENDPOINTS_TO_TEST: EndpointTest[] = [
     url: '/api/test/live',
     method: 'GET',
     expectedStatus: 200,
-    critical: false
-  }
+    critical: false,
+  },
 ];
 
 // Define pages to test
@@ -217,26 +192,26 @@ const PAGES_TO_TEST: PageTest[] = [
     name: 'Dashboard',
     path: '/',
     criticalEndpoints: ['/api/analytics/dashboard', '/api/dashboard_metrics'],
-    expectedConsoleErrors: 0
+    expectedConsoleErrors: 0,
   },
   {
     name: 'Inventory',
     path: '/inventory',
     criticalEndpoints: ['/api/inventory', '/api/inventory/complete'],
-    expectedConsoleErrors: 0
+    expectedConsoleErrors: 0,
   },
   {
     name: 'Suppliers',
     path: '/suppliers',
     criticalEndpoints: ['/api/suppliers'],
-    expectedConsoleErrors: 0
+    expectedConsoleErrors: 0,
   },
   {
     name: 'Admin Dashboard',
     path: '/admin',
     criticalEndpoints: ['/api/analytics/dashboard'],
-    expectedConsoleErrors: 0
-  }
+    expectedConsoleErrors: 0,
+  },
 ];
 
 class APIValidator {
@@ -260,11 +235,11 @@ class APIValidator {
         successfulPages: 0,
         failedPages: 0,
         consoleErrorsBefore: 0,
-        consoleErrorsAfter: 0
+        consoleErrorsAfter: 0,
       },
       endpointResults: [],
       pageResults: [],
-      recommendations: []
+      recommendations: [],
     };
   }
 
@@ -274,7 +249,9 @@ class APIValidator {
   async validate(): Promise<ValidationResult> {
     console.log('🚀 Starting API Endpoint Validation');
     console.log(`📍 Server URL: ${this.serverUrl}`);
-    console.log(`🎯 Testing ${ENDPOINTS_TO_TEST.length} endpoints across ${PAGES_TO_TEST.length} pages\n`);
+    console.log(
+      `🎯 Testing ${ENDPOINTS_TO_TEST.length} endpoints across ${PAGES_TO_TEST.length} pages\n`
+    );
 
     try {
       // Step 1: Validate direct endpoint access
@@ -294,7 +271,6 @@ class APIValidator {
       await this.generateReport();
 
       console.log('\n✅ Validation complete!');
-
     } catch (error) {
       console.error('❌ Validation failed:', error);
       throw error;
@@ -314,8 +290,8 @@ class APIValidator {
         const response = await fetch(`${this.serverUrl}${endpoint.url}`, {
           method: endpoint.method,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         });
 
         const endTime = Date.now();
@@ -327,7 +303,7 @@ class APIValidator {
           status: response.status === endpoint.expectedStatus ? 'success' : 'failed',
           statusCode: response.status,
           responseTime,
-          critical: endpoint.critical
+          critical: endpoint.critical,
         };
 
         if (response.status !== endpoint.expectedStatus) {
@@ -340,7 +316,6 @@ class APIValidator {
         }
 
         this.results.endpointResults.push(result);
-
       } catch (error) {
         const endTime = Date.now();
         const responseTime = endTime - startTime;
@@ -353,7 +328,7 @@ class APIValidator {
           statusCode: 0,
           responseTime,
           errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          critical: endpoint.critical
+          critical: endpoint.critical,
         });
 
         console.log(`  ❌ ${endpoint.name}: TIMEOUT/ERROR (${responseTime}ms)`);
@@ -415,7 +390,9 @@ class APIValidator {
 
     // No issues found
     if (this.results.recommendations.length === 0) {
-      this.results.recommendations.push('✅ All endpoints responding correctly - no issues detected');
+      this.results.recommendations.push(
+        '✅ All endpoints responding correctly - no issues detected'
+      );
     }
   }
 
