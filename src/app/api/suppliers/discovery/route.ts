@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
         },
         { status: 400 }
       );
@@ -151,7 +151,7 @@ export async function PUT(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
         },
         { status: 400 }
       );
@@ -229,7 +229,7 @@ export async function PATCH(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
         },
         { status: 400 }
       );

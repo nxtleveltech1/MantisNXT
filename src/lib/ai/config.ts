@@ -87,7 +87,7 @@ const ProviderConfigSchema = z
     requestTimeoutMs: z.number().int().positive().optional(),
     maxRetries: z.number().int().nonnegative().optional(),
     compatibility: z.enum(['strict', 'compatible']).optional(),
-    metadata: z.record(z.any()).optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.enabled) {

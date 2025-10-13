@@ -5,9 +5,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { enterpriseDb } from '@/lib/database';
+import getDatabaseMetadata from '@/lib/database-info';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
+  const metadata = getDatabaseMetadata();
 
   try {
     console.log('🔍 Starting comprehensive database health check...');
@@ -89,7 +91,7 @@ export async function GET(request: NextRequest) {
         connectionManager: enterpriseDb.getStatus()
       },
       recommendations: [
-        'Check database server availability at 62.169.20.53:6600',
+        `Check database server availability at ${metadata.host}:${metadata.port}`,
         'Verify network connectivity and firewall rules',
         'Review database server logs for errors',
         'Consider scaling database resources'

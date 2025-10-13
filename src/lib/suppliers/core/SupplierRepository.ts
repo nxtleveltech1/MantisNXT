@@ -69,7 +69,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     const total = parseInt(countResult.rows[0]?.count ?? '0')
 
     const result = await query(queryText, params)
-    const suppliers = result.rows.map(row => this.mapRowToSupplier(row))
+    const suppliers = result.rows.map((row: any) => this.mapRowToSupplier(row))
 
     return {
       suppliers,
@@ -92,11 +92,24 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         ) RETURNING id
       `
 
+      const businessInfo = data.businessInfo
       const supplierParams = [
-        data.name, data.code, data.legalName, data.website, data.industry,
-        data.tier, data.status, data.category, data.subcategory, data.tags,
-        data.taxId, data.registrationNumber, data.foundedYear, data.employeeCount,
-        data.annualRevenue, data.currency
+        data.name,
+        data.code,
+        businessInfo.legalName,
+        businessInfo.website ?? null,
+        businessInfo.industry ?? null,
+        data.tier,
+        data.status,
+        data.category,
+        data.subcategory ?? null,
+        data.tags,
+        businessInfo.taxId,
+        businessInfo.registrationNumber,
+        businessInfo.foundedYear ?? null,
+        businessInfo.employeeCount ?? null,
+        businessInfo.annualRevenue ?? null,
+        businessInfo.currency
       ]
 
       const supplierResult = await client.query(supplierQuery, supplierParams)
@@ -110,8 +123,8 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
           acc.titles.push(contact.title)
           acc.emails.push(contact.email)
           acc.phones.push(contact.phone)
-          acc.mobiles.push(contact.mobile)
-          acc.departments.push(contact.department)
+          acc.mobiles.push(contact.mobile ?? null)
+          acc.departments.push(contact.department ?? null)
           acc.isPrimaries.push(contact.isPrimary)
           acc.isActives.push(contact.isActive)
           return acc
@@ -122,8 +135,8 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
           titles: [] as string[],
           emails: [] as string[],
           phones: [] as string[],
-          mobiles: [] as string[],
-          departments: [] as string[],
+          mobiles: [] as (string | null)[],
+          departments: [] as (string | null)[],
           isPrimaries: [] as boolean[],
           isActives: [] as boolean[]
         })
@@ -156,9 +169,9 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         const addressArrays = data.addresses.reduce((acc, address) => {
           acc.supplierIds.push(newSupplierId)
           acc.types.push(address.type)
-          acc.names.push(address.name)
+          acc.names.push(address.name ?? null)
           acc.addressLine1s.push(address.addressLine1)
-          acc.addressLine2s.push(address.addressLine2)
+          acc.addressLine2s.push(address.addressLine2 ?? null)
           acc.cities.push(address.city)
           acc.states.push(address.state)
           acc.postalCodes.push(address.postalCode)
@@ -169,9 +182,9 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         }, {
           supplierIds: [] as string[],
           types: [] as string[],
-          names: [] as string[],
+          names: [] as (string | null)[],
           addressLine1s: [] as string[],
-          addressLine2s: [] as string[],
+          addressLine2s: [] as (string | null)[],
           cities: [] as string[],
           states: [] as string[],
           postalCodes: [] as string[],
@@ -229,12 +242,68 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       const params: any[] = []
       let paramIndex = 1
 
-      if (data.name !== undefined) { updateFields.push(`name = $${paramIndex++}`); params.push(data.name) }
-      if (data.legalName !== undefined) { updateFields.push(`legal_name = $${paramIndex++}`); params.push(data.legalName) }
-      if (data.website !== undefined) { updateFields.push(`website = $${paramIndex++}`); params.push(data.website) }
-      if (data.status !== undefined) { updateFields.push(`status = $${paramIndex++}`); params.push(data.status) }
-      if (data.tier !== undefined) { updateFields.push(`tier = $${paramIndex++}`); params.push(data.tier) }
-      if (data.tags !== undefined) { updateFields.push(`tags = $${paramIndex++}`); params.push(data.tags) }
+      const updateBusinessInfo = data.businessInfo
+
+      if (data.name !== undefined) {
+        updateFields.push(`name = $${paramIndex++}`)
+        params.push(data.name)
+      }
+      if (updateBusinessInfo?.legalName !== undefined) {
+        updateFields.push(`legal_name = $${paramIndex++}`)
+        params.push(updateBusinessInfo.legalName)
+      }
+      if (updateBusinessInfo?.website !== undefined) {
+        updateFields.push(`website = $${paramIndex++}`)
+        params.push(updateBusinessInfo.website)
+      }
+      if (updateBusinessInfo?.industry !== undefined) {
+        updateFields.push(`industry = $${paramIndex++}`)
+        params.push(updateBusinessInfo.industry)
+      }
+      if (updateBusinessInfo?.taxId !== undefined) {
+        updateFields.push(`tax_id = $${paramIndex++}`)
+        params.push(updateBusinessInfo.taxId)
+      }
+      if (updateBusinessInfo?.registrationNumber !== undefined) {
+        updateFields.push(`registration_number = $${paramIndex++}`)
+        params.push(updateBusinessInfo.registrationNumber)
+      }
+      if (updateBusinessInfo?.foundedYear !== undefined) {
+        updateFields.push(`founded_year = $${paramIndex++}`)
+        params.push(updateBusinessInfo.foundedYear)
+      }
+      if (updateBusinessInfo?.employeeCount !== undefined) {
+        updateFields.push(`employee_count = $${paramIndex++}`)
+        params.push(updateBusinessInfo.employeeCount)
+      }
+      if (updateBusinessInfo?.annualRevenue !== undefined) {
+        updateFields.push(`annual_revenue = $${paramIndex++}`)
+        params.push(updateBusinessInfo.annualRevenue)
+      }
+      if (updateBusinessInfo?.currency !== undefined) {
+        updateFields.push(`currency = $${paramIndex++}`)
+        params.push(updateBusinessInfo.currency)
+      }
+      if (data.status !== undefined) {
+        updateFields.push(`status = $${paramIndex++}`)
+        params.push(data.status)
+      }
+      if (data.tier !== undefined) {
+        updateFields.push(`tier = $${paramIndex++}`)
+        params.push(data.tier)
+      }
+      if (data.category !== undefined) {
+        updateFields.push(`category = $${paramIndex++}`)
+        params.push(data.category)
+      }
+      if (data.subcategory !== undefined) {
+        updateFields.push(`subcategory = $${paramIndex++}`)
+        params.push(data.subcategory)
+      }
+      if (data.tags !== undefined) {
+        updateFields.push(`tags = $${paramIndex++}`)
+        params.push(data.tags)
+      }
 
       if (updateFields.length > 0) {
         updateFields.push(`updated_at = NOW()`)
@@ -252,8 +321,8 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
             acc.titles.push(contact.title)
             acc.emails.push(contact.email)
             acc.phones.push(contact.phone)
-            acc.mobiles.push(contact.mobile)
-            acc.departments.push(contact.department)
+            acc.mobiles.push(contact.mobile ?? null)
+            acc.departments.push(contact.department ?? null)
             acc.isPrimaries.push(contact.isPrimary)
             acc.isActives.push(contact.isActive)
             return acc
@@ -264,8 +333,8 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
             titles: [] as string[],
             emails: [] as string[],
             phones: [] as string[],
-            mobiles: [] as string[],
-            departments: [] as string[],
+            mobiles: [] as (string | null)[],
+            departments: [] as (string | null)[],
             isPrimaries: [] as boolean[],
             isActives: [] as boolean[]
           })
@@ -301,9 +370,9 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
           const addressArrays = data.addresses.reduce((acc, address) => {
             acc.supplierIds.push(id)
             acc.types.push(address.type)
-            acc.names.push(address.name)
+            acc.names.push(address.name ?? null)
             acc.addressLine1s.push(address.addressLine1)
-            acc.addressLine2s.push(address.addressLine2)
+            acc.addressLine2s.push(address.addressLine2 ?? null)
             acc.cities.push(address.city)
             acc.states.push(address.state)
             acc.postalCodes.push(address.postalCode)
@@ -314,9 +383,9 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
           }, {
             supplierIds: [] as string[],
             types: [] as string[],
-            names: [] as string[],
+            names: [] as (string | null)[],
             addressLine1s: [] as string[],
-            addressLine2s: [] as string[],
+            addressLine2s: [] as (string | null)[],
             cities: [] as string[],
             states: [] as string[],
             postalCodes: [] as string[],
@@ -379,27 +448,28 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       const supplierArrays = data.reduce((acc, supplier) => {
         acc.names.push(supplier.name)
         acc.codes.push(supplier.code)
-        acc.legalNames.push(supplier.legalName)
-        acc.websites.push(supplier.website || null)
-        acc.industries.push(supplier.industry)
+        const info = supplier.businessInfo
+        acc.legalNames.push(info.legalName)
+        acc.websites.push(info.website ?? null)
+        acc.industries.push(info.industry ?? null)
         acc.tiers.push(supplier.tier)
         acc.statuses.push(supplier.status)
         acc.categories.push(supplier.category)
         acc.subcategories.push(supplier.subcategory || null)
         acc.tags.push(supplier.tags)
-        acc.taxIds.push(supplier.taxId)
-        acc.registrationNumbers.push(supplier.registrationNumber)
-        acc.foundedYears.push(supplier.foundedYear || null)
-        acc.employeeCounts.push(supplier.employeeCount || null)
-        acc.annualRevenues.push(supplier.annualRevenue || null)
-        acc.currencies.push(supplier.currency)
+        acc.taxIds.push(info.taxId)
+        acc.registrationNumbers.push(info.registrationNumber)
+        acc.foundedYears.push(info.foundedYear ?? null)
+        acc.employeeCounts.push(info.employeeCount ?? null)
+        acc.annualRevenues.push(info.annualRevenue ?? null)
+        acc.currencies.push(info.currency)
         return acc
       }, {
         names: [] as string[],
         codes: [] as string[],
         legalNames: [] as string[],
         websites: [] as (string | null)[],
-        industries: [] as string[],
+        industries: [] as (string | null)[],
         tiers: [] as string[],
         statuses: [] as string[],
         categories: [] as string[],
@@ -468,8 +538,8 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
           acc.titles.push(contact.title)
           acc.emails.push(contact.email)
           acc.phones.push(contact.phone)
-          acc.mobiles.push(contact.mobile)
-          acc.departments.push(contact.department)
+          acc.mobiles.push(contact.mobile ?? null)
+          acc.departments.push(contact.department ?? null)
           acc.isPrimaries.push(contact.isPrimary)
           acc.isActives.push(contact.isActive)
           return acc
@@ -480,8 +550,8 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
           titles: [] as string[],
           emails: [] as string[],
           phones: [] as string[],
-          mobiles: [] as string[],
-          departments: [] as string[],
+          mobiles: [] as (string | null)[],
+          departments: [] as (string | null)[],
           isPrimaries: [] as boolean[],
           isActives: [] as boolean[]
         })
@@ -521,9 +591,9 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         const addressArrays = allAddresses.reduce((acc, address) => {
           acc.supplierIds.push(address.supplierId)
           acc.types.push(address.type)
-          acc.names.push(address.name)
+          acc.names.push(address.name ?? null)
           acc.addressLine1s.push(address.addressLine1)
-          acc.addressLine2s.push(address.addressLine2)
+          acc.addressLine2s.push(address.addressLine2 ?? null)
           acc.cities.push(address.city)
           acc.states.push(address.state)
           acc.postalCodes.push(address.postalCode)
@@ -534,9 +604,9 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         }, {
           supplierIds: [] as string[],
           types: [] as string[],
-          names: [] as string[],
+          names: [] as (string | null)[],
           addressLine1s: [] as string[],
-          addressLine2s: [] as string[],
+          addressLine2s: [] as (string | null)[],
           cities: [] as string[],
           states: [] as string[],
           postalCodes: [] as string[],

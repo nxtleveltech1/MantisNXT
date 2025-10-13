@@ -346,7 +346,7 @@ export async function PUT(
       return NextResponse.json({
         success: false,
         error: 'Invalid request data',
-        details: error.errors
+        details: error.issues
       }, { status: 400 })
     }
 
@@ -500,7 +500,7 @@ export async function POST(
       return NextResponse.json({
         success: false,
         error: 'Invalid request data',
-        details: error.errors
+        details: error.issues
       }, { status: 400 })
     }
 

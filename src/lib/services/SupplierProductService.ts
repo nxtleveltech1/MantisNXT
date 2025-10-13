@@ -9,12 +9,7 @@
  */
 
 import { neonDb } from '../../../lib/database/neon-connection';
-import {
-  SupplierProduct,
-  ProductTableBySupplier,
-  SupplierProductSchema,
-  BulkOperationResult
-} from '../../types/nxt-spp';
+import { SupplierProduct, ProductTableBySupplier, BulkOperationResult } from '../../types/nxt-spp';
 
 export class SupplierProductService {
   /**
@@ -38,7 +33,7 @@ export class SupplierProductService {
     limit?: number;
     offset?: number;
   }): Promise<{ products: SupplierProduct[]; total: number }> {
-    let conditions: string[] = ['1=1'];
+    const conditions: string[] = ['1=1'];
     const params: any[] = [];
     let paramIndex = 1;
 
@@ -58,9 +53,7 @@ export class SupplierProductService {
     }
 
     if (filters.is_mapped !== undefined) {
-      const condition = filters.is_mapped
-        ? `product_id IS NOT NULL`
-        : `product_id IS NULL`;
+      const condition = filters.is_mapped ? `product_id IS NOT NULL` : `product_id IS NULL`;
       conditions.push(condition);
     }
 
@@ -94,19 +87,22 @@ export class SupplierProductService {
 
     return {
       products: result.rows,
-      total
+      total,
     };
   }
 
   /**
    * Get product table view for a supplier (for selection UI)
    */
-  async getProductTable(supplierId: string, options?: {
-    include_inactive?: boolean;
-    include_unmapped?: boolean;
-    category_id?: string;
-    search?: string;
-  }): Promise<ProductTableBySupplier[]> {
+  async getProductTable(
+    supplierId: string,
+    options?: {
+      include_inactive?: boolean;
+      include_unmapped?: boolean;
+      category_id?: string;
+      search?: string;
+    }
+  ): Promise<ProductTableBySupplier[]> {
     const conditions: string[] = ['sp.supplier_id = $1'];
     const params: any[] = [supplierId];
     let paramIndex = 2;
@@ -196,10 +192,7 @@ export class SupplierProductService {
   /**
    * Map supplier product to internal product
    */
-  async mapToProduct(
-    supplierProductId: string,
-    productId: string
-  ): Promise<SupplierProduct> {
+  async mapToProduct(supplierProductId: string, productId: string): Promise<SupplierProduct> {
     const query = `
       UPDATE core.supplier_product
       SET product_id = $1, updated_at = NOW()
@@ -219,16 +212,18 @@ export class SupplierProductService {
   /**
    * Bulk map products
    */
-  async bulkMapProducts(mappings: Array<{
-    supplier_product_id: string;
-    product_id: string;
-  }>): Promise<BulkOperationResult<SupplierProduct>> {
+  async bulkMapProducts(
+    mappings: Array<{
+      supplier_product_id: string;
+      product_id: string;
+    }>
+  ): Promise<BulkOperationResult<SupplierProduct>> {
     const results: SupplierProduct[] = [];
     const errors: Array<{ item: any; error: string }> = [];
     let processed = 0;
     let failed = 0;
 
-    await neonDb.withTransaction(async (client) => {
+    await neonDb.withTransaction(async client => {
       for (const mapping of mappings) {
         try {
           const query = `
@@ -240,7 +235,7 @@ export class SupplierProductService {
 
           const result = await client.query(query, [
             mapping.product_id,
-            mapping.supplier_product_id
+            mapping.supplier_product_id,
           ]);
 
           if (result.rowCount && result.rowCount > 0) {
@@ -253,7 +248,7 @@ export class SupplierProductService {
           failed++;
           errors.push({
             item: mapping,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
         }
       }
@@ -264,17 +259,14 @@ export class SupplierProductService {
       processed,
       failed,
       results,
-      errors
+      errors,
     };
   }
 
   /**
    * Assign category to supplier product
    */
-  async assignCategory(
-    supplierProductId: string,
-    categoryId: string
-  ): Promise<SupplierProduct> {
+  async assignCategory(supplierProductId: string, categoryId: string): Promise<SupplierProduct> {
     const query = `
       UPDATE core.supplier_product
       SET category_id = $1, updated_at = NOW()
@@ -294,10 +286,7 @@ export class SupplierProductService {
   /**
    * Mark products as discontinued (not seen in recent uploads)
    */
-  async markDiscontinued(
-    supplierId: string,
-    daysThreshold = 90
-  ): Promise<number> {
+  async markDiscontinued(supplierId: string, daysThreshold = 90): Promise<number> {
     const query = `
       UPDATE core.supplier_product
       SET is_active = false, updated_at = NOW()
@@ -333,13 +322,15 @@ export class SupplierProductService {
   async getPriceHistory(
     supplierProductId: string,
     limit = 50
-  ): Promise<Array<{
-    price: number;
-    currency: string;
-    valid_from: Date;
-    valid_to: Date | null;
-    is_current: boolean;
-  }>> {
+  ): Promise<
+    Array<{
+      price: number;
+      currency: string;
+      valid_from: Date;
+      valid_to: Date | null;
+      is_current: boolean;
+    }>
+  > {
     const query = `
       SELECT price, currency, valid_from, valid_to, is_current
       FROM core.price_history

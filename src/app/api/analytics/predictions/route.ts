@@ -48,15 +48,35 @@ export async function GET(request: NextRequest) {
       const supplierPredictionQuery = `
         SELECT
           name as supplier_name,
-          payment_terms_days,
+          COALESCE(
+            CASE
+              WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+              ELSE 30
+            END, 30
+          ) as payment_terms_days,
           CASE
-            WHEN payment_terms_days > 60 THEN 'risk_high'
-            WHEN payment_terms_days > 30 THEN 'risk_medium'
+            WHEN COALESCE(
+              CASE
+                WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+                ELSE 30
+              END, 30
+            ) > 60 THEN 'risk_high'
+            WHEN COALESCE(
+              CASE
+                WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+                ELSE 30
+              END, 30
+            ) > 30 THEN 'risk_medium'
             ELSE 'risk_low'
           END as risk_prediction,
           'suppliers' as category
         FROM core.supplier
-        ORDER BY payment_terms_days DESC
+        ORDER BY COALESCE(
+          CASE
+            WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+            ELSE 30
+          END, 30
+        ) DESC
         LIMIT 5
       `;
 
@@ -77,7 +97,14 @@ export async function GET(request: NextRequest) {
       const financialQuery = `
         SELECT
           COUNT(*) as total_suppliers,
-          AVG(payment_terms_days) as avg_payment_terms
+          AVG(
+            COALESCE(
+              CASE
+                WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+                ELSE 30
+              END, 30
+            )
+          ) as avg_payment_terms
         FROM core.supplier
       `;
 

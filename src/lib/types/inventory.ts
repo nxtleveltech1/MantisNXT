@@ -394,7 +394,6 @@ export interface InventoryItem {
   fire_suppression_type: string | null
   security_camera_coverage: boolean
   motion_sensor_coverage: boolean
-  environmental_monitoring: boolean
   automated_handling: boolean
   robotic_picking: boolean
   voice_picking: boolean
@@ -435,7 +434,6 @@ export interface InventoryItem {
   electronic_data_interchange: string | null
   business_to_business_integration: string | null
   cloud_platform: string | null
-  edge_computing: boolean
   real_time_processing: boolean
   batch_processing: boolean
   stream_processing: boolean

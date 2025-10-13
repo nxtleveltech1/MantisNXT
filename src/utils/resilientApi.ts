@@ -19,6 +19,7 @@ export interface ApiConfig {
   headers?: Record<string, string>
   enableCaching?: boolean
   cacheDuration?: number
+  retryConfig?: Partial<RetryConfig>
 }
 
 export interface ApiResponse<T> {
@@ -93,7 +94,7 @@ class ApiCache {
 
   static has(key: string): boolean {
     const entry = this.cache.get(key)
-    return entry !== null && Date.now() <= entry.expiresAt
+    return !!entry && Date.now() <= entry.expiresAt
   }
 
   static size(): number {
@@ -260,7 +261,8 @@ export class ResilientApiClient {
         ...config.headers
       },
       enableCaching: config.enableCaching ?? true,
-      cacheDuration: config.cacheDuration || 300000 // 5 minutes
+      cacheDuration: config.cacheDuration || 300000, // 5 minutes
+      retryConfig: config.retryConfig
     }
   }
 
@@ -273,14 +275,31 @@ export class ResilientApiClient {
   private async makeRequest<T>(
     url: string,
     options: RequestInit,
-    retryConfig?: Partial<RetryConfig>
+    overrideConfig?: Partial<ApiConfig>
   ): Promise<ApiResponse<T>> {
-    const fullUrl = this.config.baseUrl + url
+    const effectiveConfig = {
+      ...this.config,
+      ...overrideConfig,
+      baseUrl: overrideConfig?.baseUrl ?? this.config.baseUrl,
+      timeout: overrideConfig?.timeout ?? this.config.timeout,
+      retries: overrideConfig?.retries ?? this.config.retries,
+      retryDelay: overrideConfig?.retryDelay ?? this.config.retryDelay,
+      retryMultiplier: overrideConfig?.retryMultiplier ?? this.config.retryMultiplier,
+      maxRetryDelay: overrideConfig?.maxRetryDelay ?? this.config.maxRetryDelay,
+      enableCaching: overrideConfig?.enableCaching ?? this.config.enableCaching,
+      cacheDuration: overrideConfig?.cacheDuration ?? this.config.cacheDuration,
+      headers: {
+        ...this.config.headers,
+        ...(overrideConfig?.headers ?? {})
+      }
+    } as Required<ApiConfig>
+
+    const fullUrl = `${effectiveConfig.baseUrl}${url}`
     const cacheKey = this.getCacheKey(fullUrl, options)
     const isGetRequest = !options.method || options.method.toUpperCase() === 'GET'
 
     // Check cache for GET requests
-    if (isGetRequest && this.config.enableCaching) {
+    if (isGetRequest && effectiveConfig.enableCaching) {
       const cached = ApiCache.get(cacheKey)
       if (cached) {
         return {
@@ -293,14 +312,15 @@ export class ResilientApiClient {
       }
     }
 
+    const retryOverrides = overrideConfig?.retryConfig ?? {}
     const retry: RetryConfig = {
-      maxRetries: this.config.retries,
-      baseDelay: this.config.retryDelay,
-      maxDelay: this.config.maxRetryDelay,
-      multiplier: this.config.retryMultiplier,
+      maxRetries: effectiveConfig.retries,
+      baseDelay: effectiveConfig.retryDelay,
+      maxDelay: effectiveConfig.maxRetryDelay,
+      multiplier: effectiveConfig.retryMultiplier,
       jitter: true,
       retryCondition: isRetryableError,
-      ...retryConfig
+      ...retryOverrides
     }
 
     let lastError: ApiError
@@ -328,18 +348,22 @@ export class ResilientApiClient {
           }
 
           // Prepare request options
+          const requestHeaders = new Headers(effectiveConfig.headers)
+          if (options.headers) {
+            new Headers(options.headers).forEach((value, key) => {
+              requestHeaders.set(key, value)
+            })
+          }
+
           const requestOptions: RequestInit = {
             ...options,
-            headers: {
-              ...this.config.headers,
-              ...options.headers
-            },
+            headers: requestHeaders,
             signal: abortController.signal
           }
 
           // Add timeout
           const timeoutController = new AbortController()
-          const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeout)
+          const timeoutId = setTimeout(() => timeoutController.abort(), effectiveConfig.timeout)
 
           const combinedSignal = AbortSignal.any([
             abortController.signal,
@@ -381,9 +405,9 @@ export class ResilientApiClient {
           }
 
           // Cache successful GET requests
-          if (isGetRequest && this.config.enableCaching && response.status === 200) {
+          if (isGetRequest && effectiveConfig.enableCaching && response.status === 200) {
             const etag = response.headers.get('etag')
-            ApiCache.set(cacheKey, data, this.config.cacheDuration, etag || undefined)
+            ApiCache.set(cacheKey, data, effectiveConfig.cacheDuration, etag || undefined)
           }
 
           return {

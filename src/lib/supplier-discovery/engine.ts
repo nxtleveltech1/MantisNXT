@@ -3,11 +3,7 @@
  * Orchestrates the entire discovery process
  */
 
-import {
-  SupplierDiscoveryRequest,
-  SupplierDiscoveryResponse,
-  DiscoveredSupplierData
-} from './types';
+import { SupplierDiscoveryRequest, SupplierDiscoveryResponse } from './types';
 import { dataExtractor } from './extractors';
 import { dataProcessor } from './processor';
 import { supplierCache } from './cache';
@@ -15,7 +11,11 @@ import { DISCOVERY_CONFIG } from './config';
 
 export class SupplierDiscoveryEngine {
   private isInitialized = false;
-  private requestQueue: Array<{ request: SupplierDiscoveryRequest; resolve: Function; reject: Function }> = [];
+  private requestQueue: Array<{
+    request: SupplierDiscoveryRequest;
+    resolve: (value: any) => void;
+    reject: (reason?: any) => void;
+  }> = [];
   private activeRequests = 0;
 
   /**
@@ -58,7 +58,7 @@ export class SupplierDiscoveryEngine {
           success: false,
           error: 'Invalid request: supplier name is required',
           processingTime: Date.now() - startTime,
-          sourcesUsed: []
+          sourcesUsed: [],
         };
       }
 
@@ -70,7 +70,7 @@ export class SupplierDiscoveryEngine {
           success: true,
           data: cached,
           processingTime: Date.now() - startTime,
-          sourcesUsed: cached.sources
+          sourcesUsed: cached.sources,
         };
       }
 
@@ -95,7 +95,7 @@ export class SupplierDiscoveryEngine {
             success: false,
             error: 'No data found for the specified supplier',
             processingTime: Date.now() - startTime,
-            sourcesUsed: []
+            sourcesUsed: [],
           };
         }
 
@@ -107,7 +107,7 @@ export class SupplierDiscoveryEngine {
             success: false,
             error: 'Unable to process supplier data - insufficient information or low confidence',
             processingTime: Date.now() - startTime,
-            sourcesUsed: [...new Set(extractionResults.map(r => r.source))]
+            sourcesUsed: [...new Set(extractionResults.map(r => r.source))],
           };
         }
 
@@ -119,21 +119,19 @@ export class SupplierDiscoveryEngine {
           success: true,
           data: discoveredData,
           processingTime: Date.now() - startTime,
-          sourcesUsed: discoveredData.sources
+          sourcesUsed: discoveredData.sources,
         };
-
       } finally {
         this.activeRequests--;
         this.processQueue();
       }
-
     } catch (error) {
       console.error('Supplier discovery failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
         processingTime: Date.now() - startTime,
-        sourcesUsed: []
+        sourcesUsed: [],
       };
     }
   }
@@ -155,12 +153,15 @@ export class SupplierDiscoveryEngine {
       const batch = requests.slice(i, i + batchSize);
 
       const batchPromises = batch.map(request =>
-        this.discoverSupplier(request).catch(error => ({
-          success: false,
-          error: error.message,
-          processingTime: 0,
-          sourcesUsed: []
-        } as SupplierDiscoveryResponse))
+        this.discoverSupplier(request).catch(
+          error =>
+            ({
+              success: false,
+              error: error.message,
+              processingTime: 0,
+              sourcesUsed: [],
+            }) as SupplierDiscoveryResponse
+        )
       );
 
       const batchResults = await Promise.all(batchPromises);
@@ -172,7 +173,9 @@ export class SupplierDiscoveryEngine {
       }
     }
 
-    console.log(`Bulk discovery completed: ${results.filter(r => r.success).length}/${requests.length} successful`);
+    console.log(
+      `Bulk discovery completed: ${results.filter(r => r.success).length}/${requests.length} successful`
+    );
     return results;
   }
 
@@ -186,7 +189,7 @@ export class SupplierDiscoveryEngine {
       cacheStats,
       activeRequests: this.activeRequests,
       queueLength: this.requestQueue.length,
-      isInitialized: this.isInitialized
+      isInitialized: this.isInitialized,
     };
   }
 
@@ -231,14 +234,12 @@ export class SupplierDiscoveryEngine {
    * Private helper methods
    */
   private validateRequest(request: SupplierDiscoveryRequest): boolean {
-    return !!(
-      request &&
-      request.supplierName &&
-      request.supplierName.trim().length >= 2
-    );
+    return !!(request && request.supplierName && request.supplierName.trim().length >= 2);
   }
 
-  private async queueRequest(request: SupplierDiscoveryRequest): Promise<SupplierDiscoveryResponse> {
+  private async queueRequest(
+    request: SupplierDiscoveryRequest
+  ): Promise<SupplierDiscoveryResponse> {
     return new Promise((resolve, reject) => {
       this.requestQueue.push({ request, resolve, reject });
 
@@ -254,7 +255,10 @@ export class SupplierDiscoveryEngine {
   }
 
   private async processQueue(): Promise<void> {
-    if (this.requestQueue.length > 0 && this.activeRequests < DISCOVERY_CONFIG.MAX_CONCURRENT_REQUESTS) {
+    if (
+      this.requestQueue.length > 0 &&
+      this.activeRequests < DISCOVERY_CONFIG.MAX_CONCURRENT_REQUESTS
+    ) {
       const { request, resolve, reject } = this.requestQueue.shift()!;
 
       try {
@@ -274,20 +278,21 @@ export class SupplierDiscoveryEngine {
       const stats = this.getStatistics();
 
       return {
-        healthy: this.isInitialized && this.activeRequests < DISCOVERY_CONFIG.MAX_CONCURRENT_REQUESTS,
+        healthy:
+          this.isInitialized && this.activeRequests < DISCOVERY_CONFIG.MAX_CONCURRENT_REQUESTS,
         details: {
           initialized: this.isInitialized,
           activeRequests: this.activeRequests,
           maxConcurrentRequests: DISCOVERY_CONFIG.MAX_CONCURRENT_REQUESTS,
           queueLength: this.requestQueue.length,
           cacheSize: stats.cacheStats.keys,
-          cacheHitRate: stats.cacheStats.hitRate
-        }
+          cacheHitRate: stats.cacheStats.hitRate,
+        },
       };
     } catch (error) {
       return {
         healthy: false,
-        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
       };
     }
   }

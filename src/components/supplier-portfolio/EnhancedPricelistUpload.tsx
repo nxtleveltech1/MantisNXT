@@ -84,7 +84,7 @@ export function EnhancedPricelistUpload({
   // State
   const [currentStep, setCurrentStep] = useState(1)
   const [file, setFile] = useState<File | null>(null)
-  const [supplierId, setSupplierId] = useState(defaultSupplierId || '')
+  const [supplierId, setSupplierId] = useState<string>(defaultSupplierId || '')
   const [uploadId, setUploadId] = useState<string | null>(null)
   const [validationResult, setValidationResult] = useState<PricelistValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -338,16 +338,25 @@ export function EnhancedPricelistUpload({
             {/* Supplier Selection */}
             <div className="space-y-2">
               <Label htmlFor="supplier">Supplier</Label>
-              <Select value={supplierId} onValueChange={setSupplierId}>
+              <Select value={supplierId || undefined} onValueChange={setSupplierId}>
                 <SelectTrigger id="supplier">
                   <SelectValue placeholder="Select supplier" />
                 </SelectTrigger>
                 <SelectContent>
-                  {suppliers.map(supplier => (
-                    <SelectItem key={supplier.supplier_id} value={supplier.supplier_id}>
-                      {supplier.name} {supplier.code && `(${supplier.code})`}
-                    </SelectItem>
-                  ))}
+                  {suppliers.length > 0 ? (
+                    suppliers.map((supplier) => (
+                      <SelectItem
+                        key={supplier.id}
+                        value={supplier.id}
+                      >
+                        {supplier.name} {supplier.code && `(${supplier.code})`}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground text-center">
+                      No suppliers found
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>

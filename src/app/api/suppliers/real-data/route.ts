@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Client } from 'pg'
-
-const client = new Client({
-  host: '62.169.20.53',
-  port: 6600,
-  database: 'nxtprod-db_001',
-  user: 'nxtdb_admin',
-  password: 'P@33w0rd-1',
-})
+import { query } from '@/lib/database'
 
 interface RealSupplierData {
   id: string
@@ -22,18 +14,42 @@ interface RealSupplierData {
   qualityRating?: number
 }
 
+type SupplierRow = {
+  id: string
+  name: string
+  status: string
+  total_products: string
+  total_value: string
+  active_contracts: string
+}
+
 export async function GET(request: NextRequest) {
   try {
-    await client.connect()
-
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limit = parseInt(searchParams.get('limit') || '50', 10)
+    const offset = parseInt(searchParams.get('offset') || '0', 10)
     const search = searchParams.get('search')
     const status = searchParams.get('status')
 
-    // Build dynamic query
-    let query = `
+    const whereClauses: string[] = ['1=1']
+    const filterParams: any[] = []
+    let paramIndex = 1
+
+    if (search) {
+      whereClauses.push(`LOWER(s.name) LIKE LOWER($${paramIndex})`)
+      filterParams.push(`%${search}%`)
+      paramIndex++
+    }
+
+    if (status) {
+      whereClauses.push(`s.status = $${paramIndex}`)
+      filterParams.push(status)
+      paramIndex++
+    }
+
+    const whereSql = `WHERE ${whereClauses.join(' AND ')}`
+
+    const suppliersQuery = `
       SELECT 
         s.id,
         s.name,
@@ -45,60 +61,33 @@ export async function GET(request: NextRequest) {
       FROM suppliers s
       LEFT JOIN "Pricelist" p ON p."supplierId" = s.id AND p.active = true
       LEFT JOIN "PricelistItem" pi ON pi."pricelistId" = p.id
-      WHERE 1=1
-    `
-
-    const queryParams: any[] = []
-    let paramIndex = 1
-
-    if (search) {
-      query += ` AND LOWER(s.name) LIKE LOWER($${paramIndex})`
-      queryParams.push(`%${search}%`)
-      paramIndex++
-    }
-
-    if (status) {
-      query += ` AND s.status = $${paramIndex}`
-      queryParams.push(status)
-      paramIndex++
-    }
-
-    query += `
+      ${whereSql}
       GROUP BY s.id, s.name, s.status
       ORDER BY s.name
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
-    queryParams.push(limit, offset)
 
-    const result = await client.query(query, queryParams)
+    const { rows } = await query<SupplierRow>(suppliersQuery, [...filterParams, limit, offset])
 
-    // Get total count for pagination
     const countQuery = `
       SELECT COUNT(DISTINCT s.id) as total
       FROM suppliers s
-      WHERE 1=1
-      ${search ? 'AND LOWER(s.name) LIKE LOWER($1)' : ''}
-      ${status ? `AND s.status = $${search ? 2 : 1}` : ''}
+      ${whereSql}
     `
-    
-    const countParams = []
-    if (search) countParams.push(`%${search}%`)
-    if (status) countParams.push(status)
-    
-    const countResult = await client.query(countQuery, countParams)
-    const totalCount = parseInt(countResult.rows[0].total)
+    const { rows: countRows } = await query<{ total: string }>(countQuery, filterParams)
+    const totalCount = parseInt(countRows[0]?.total || '0', 10)
 
-    const suppliers: RealSupplierData[] = result.rows.map(row => ({
+    const suppliers: RealSupplierData[] = rows.map((row) => ({
       id: row.id,
       name: row.name,
       status: row.status,
-      totalProducts: parseInt(row.total_products) || 0,
+      totalProducts: parseInt(row.total_products, 10) || 0,
       totalValue: parseFloat(row.total_value) || 0,
-      activeContracts: parseInt(row.active_contracts) || 0,
+      activeContracts: parseInt(row.active_contracts, 10) || 0,
       lastUpdate: new Date().toISOString(),
-      performanceScore: Math.round(75 + Math.random() * 25), // Calculated metric
+      performanceScore: Math.round(75 + Math.random() * 25),
       onTimeDelivery: Math.round(85 + Math.random() * 15),
-      qualityRating: Math.round(4 + Math.random()) / 10 * 10
+      qualityRating: Math.round((4 + Math.random()) * 10) / 10,
     }))
 
     return NextResponse.json({
@@ -107,25 +96,21 @@ export async function GET(request: NextRequest) {
         total: totalCount,
         limit,
         offset,
-        hasMore: offset + limit < totalCount
+        hasMore: offset + limit < totalCount,
       },
       metadata: {
         lastUpdated: new Date().toISOString(),
-        dataSource: 'live_database'
-      }
+        dataSource: 'neon_database',
+      },
     })
-
   } catch (error) {
     console.error('Real supplier data error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch real supplier data', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to fetch real supplier data',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     )
-  } finally {
-    try {
-      await client.end()
-    } catch (e) {
-      // Ignore connection cleanup errors
-    }
   }
 }

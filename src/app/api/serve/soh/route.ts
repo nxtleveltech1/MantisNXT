@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'Invalid request parameters',
-          details: error.errors
+          details: error.issues
         },
         { status: 400 }
       );

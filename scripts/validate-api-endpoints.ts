@@ -42,8 +42,6 @@ main().catch((err) => {
   process.exit(1);
 });
 
-#!/usr/bin/env tsx
-
 /**
  * API Endpoint Validation Script
  *

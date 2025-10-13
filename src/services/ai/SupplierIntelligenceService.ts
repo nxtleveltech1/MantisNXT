@@ -3,7 +3,7 @@
  * Core AI-powered supplier analysis and discovery engine
  */
 
-import { query, withTransaction } from '@/lib/database/unified-connection';
+import { pool, query, withTransaction } from '@/lib/database';
 import type { PoolClient } from 'pg';
 
 export interface SupplierCriteria {
@@ -75,12 +75,12 @@ export class SupplierIntelligenceService {
 
     try {
       // Build intelligent query based on criteria
-      const query = this.buildIntelligentQuery(criteria);
+      const queryText = this.buildIntelligentQuery(criteria);
       const params = this.extractQueryParameters(criteria);
 
-      console.log('🤖 AI Supplier Discovery Query:', query);
+      console.log('🤖 AI Supplier Discovery Query:', queryText);
 
-      const result = await pool.query(query, params);
+      const result = await pool.query(queryText, params);
       const suppliers = await this.enrichSupplierData(result.rows);
 
       const processingTime = Date.now() - startTime;
@@ -136,7 +136,7 @@ export class SupplierIntelligenceService {
       // Get reference supplier characteristics
       const referenceSupplier = await this.getSupplierCharacteristics(supplierId);
 
-      const query = `
+      const queryText = `
         WITH supplier_features AS (
           SELECT
             s.id,
@@ -176,7 +176,7 @@ export class SupplierIntelligenceService {
         LIMIT $7
       `;
 
-      const result = await pool.query(query, [
+      const result = await pool.query(queryText, [
         supplierId,
         referenceSupplier.category,
         referenceSupplier.region,
@@ -208,7 +208,7 @@ export class SupplierIntelligenceService {
     }>;
   }> {
     try {
-      const query = `
+      const queryText = `
         WITH recent_performance AS (
           SELECT
             supplier_id,
@@ -257,7 +257,7 @@ export class SupplierIntelligenceService {
         WHERE s.id = $1
       `;
 
-      const result = await pool.query(query, [supplierId]);
+      const result = await pool.query(queryText, [supplierId]);
 
       if (result.rows.length === 0) {
         throw new Error('Supplier not found');
@@ -292,7 +292,7 @@ export class SupplierIntelligenceService {
   // Private helper methods
 
   private buildIntelligentQuery(criteria: SupplierCriteria): string {
-    let query = `
+    let queryText = `
       SELECT
         s.id,
         COALESCE(s.name, s.supplier_name, s.company_name) as name,
@@ -318,17 +318,17 @@ export class SupplierIntelligenceService {
     }
 
     if (conditions.length > 0) {
-      query += ' AND ' + conditions.join(' AND ');
+      queryText += ' AND ' + conditions.join(' AND ');
     }
 
-    query += `
+    queryText += `
       ORDER BY
         COALESCE(s.rating, 0) DESC,
         COALESCE(s.spend_last_12_months, 0) DESC
       LIMIT 20
     `;
 
-    return query;
+    return queryText;
   }
 
   private extractQueryParameters(criteria: SupplierCriteria): any[] {

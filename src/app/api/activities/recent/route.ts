@@ -243,7 +243,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: "Invalid query parameters",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 }
       );

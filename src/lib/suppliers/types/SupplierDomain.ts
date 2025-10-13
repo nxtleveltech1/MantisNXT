@@ -38,6 +38,7 @@ export type AddressType = 'headquarters' | 'billing' | 'shipping' | 'warehouse' 
 export interface SupplierBusinessInfo {
   legalName: string
   tradingName?: string
+  industry?: string
   taxId: string
   registrationNumber: string
   website?: string

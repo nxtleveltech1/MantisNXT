@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { query, withTransaction } from '@/lib/database'
+import { withAuth } from '@/middleware/api-auth'
 
 // ============================================================================
 // ENHANCED INVENTORY API - REAL-TIME DATA MANAGEMENT
@@ -37,7 +38,7 @@ const CreateInventoryItemSchema = z.object({
   tags: z.array(z.string()).default([]),
   images: z.array(z.string().url()).default([]),
   taxRate: z.number().min(0).max(100).optional(),
-  customFields: z.record(z.any()).optional(),
+  customFields: z.record(z.string(), z.any()).optional(),
   notes: z.string().optional(),
   batchTracking: z.boolean().default(false),
   serialTracking: z.boolean().default(false),
@@ -61,7 +62,7 @@ const StockMovementSchema = z.object({
 const BulkUpdateSchema = z.object({
   items: z.array(z.object({
     id: z.string().uuid(),
-    updates: z.record(z.any()),
+    updates: z.record(z.string(), z.any()),
   })).min(1, 'At least one item is required'),
   reason: z.string().min(1, 'Update reason is required'),
   notes: z.string().optional(),
@@ -102,7 +103,7 @@ const AdvancedSearchSchema = z.object({
 /**
  * GET /api/inventory/enhanced - Advanced inventory search and analytics
  */
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
 
@@ -474,7 +475,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid query parameters',
-        details: error.errors
+        details: error.issues
       }, { status: 400 })
     }
 
@@ -484,7 +485,7 @@ export async function GET(request: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
-}
+})
 
 /**
  * POST /api/inventory/enhanced - Create inventory item with advanced features
@@ -605,7 +606,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid request data',
-        details: error.errors
+        details: error.issues
       }, { status: 400 })
     }
 
@@ -718,7 +719,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid request data',
-        details: error.errors
+        details: error.issues
       }, { status: 400 })
     }
 
@@ -836,7 +837,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid request data',
-        details: error.errors
+        details: error.issues
       }, { status: 400 })
     }
 

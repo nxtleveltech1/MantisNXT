@@ -83,7 +83,7 @@ const TranslationOptionsSchema = z.object({
 const FormattingOptionsSchema = z.object({
   text: z.string().min(5),
   format: z.enum(['json', 'markdown', 'html', 'bullet_points']).default('json'),
-  schema: z.record(z.any()).optional(),
+  schema: z.record(z.string(), z.any()).optional(),
   fields: z.array(z.string().min(1)).max(50).optional(),
   instructions: z.string().optional(),
 })
@@ -91,7 +91,7 @@ const FormattingOptionsSchema = z.object({
 const TemplateOptionsSchema = z.object({
   id: z.string().min(2),
   variables: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
-  context: z.record(z.any()).optional(),
+  context: z.record(z.string(), z.any()).optional(),
   variantId: z.string().optional(),
   sanitize: z.boolean().optional(),
 })
@@ -105,7 +105,7 @@ const BatchItemSchema = z.object({
   translation: TranslationOptionsSchema.optional(),
   formatting: FormattingOptionsSchema.optional(),
   template: TemplateOptionsSchema.optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 const RuntimeOptionsSchema = z.object({
@@ -139,7 +139,7 @@ const GenerationRequestSchema = z.object({
   stream: z.boolean().optional(),
   runtime: RuntimeOptionsSchema.optional(),
   cache: CacheOptionsSchema.optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   notifyChannel: z.string().optional(),
   tags: z.array(z.string().min(1)).max(10).optional(),
   requestId: z.string().optional(),

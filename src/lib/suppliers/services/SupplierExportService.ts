@@ -47,9 +47,10 @@ export class SupplierExportService {
 
     const data = Buffer.from(csvContent, 'utf-8')
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    const template = request.template ?? 'default'
 
     return {
-      filename: `suppliers-${request.template}-${timestamp}.csv`,
+      filename: `suppliers-${template}-${timestamp}.csv`,
       data,
       mimeType: 'text/csv',
       size: data.length,
@@ -71,9 +72,10 @@ export class SupplierExportService {
 
     const data = Buffer.from('\ufeff' + csvContent, 'utf-8') // Add BOM for Excel
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    const template = request.template ?? 'default'
 
     return {
-      filename: `suppliers-${request.template}-${timestamp}.xlsx`,
+      filename: `suppliers-${template}-${timestamp}.xlsx`,
       data,
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       size: data.length,
@@ -87,9 +89,10 @@ export class SupplierExportService {
     const html = this.generateHTMLReport(suppliers, request)
     const data = Buffer.from(html, 'utf-8')
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    const template = request.template ?? 'default'
 
     return {
-      filename: `suppliers-${request.template}-${timestamp}.html`,
+      filename: `suppliers-${template}-${timestamp}.html`,
       data,
       mimeType: 'text/html',
       size: data.length,
@@ -98,10 +101,11 @@ export class SupplierExportService {
   }
 
   private async exportToJSON(suppliers: Supplier[], request: ExportRequest): Promise<ExportResult> {
+    const template = request.template ?? 'default'
     const exportData = {
       metadata: {
         exportDate: new Date().toISOString(),
-        template: request.template,
+        template,
         recordCount: suppliers.length,
         filters: request.filters
       },
@@ -112,7 +116,7 @@ export class SupplierExportService {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
 
     return {
-      filename: `suppliers-${request.template}-${timestamp}.json`,
+      filename: `suppliers-${template}-${timestamp}.json`,
       data,
       mimeType: 'application/json',
       size: data.length,
@@ -318,7 +322,8 @@ export class SupplierExportService {
   }
 
   private generateHTMLReport(suppliers: Supplier[], request: ExportRequest): string {
-    const title = `Supplier ${request.template.charAt(0).toUpperCase() + request.template.slice(1)} Report`
+    const template = request.template ?? 'default'
+    const title = `Supplier ${template.charAt(0).toUpperCase() + template.slice(1)} Report`
     const date = new Date().toLocaleDateString()
 
     let html = `
@@ -345,7 +350,7 @@ export class SupplierExportService {
     <div class="metadata">
         <p><strong>Generated:</strong> ${date}</p>
         <p><strong>Record Count:</strong> ${suppliers.length}</p>
-        <p><strong>Template:</strong> ${request.template}</p>
+        <p><strong>Template:</strong> ${template}</p>
     </div>
     <table>
         <thead>

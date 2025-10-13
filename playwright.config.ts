@@ -56,8 +56,9 @@ export default defineConfig({
 
   expect: {
     timeout: 10000,
-    toHaveScreenshot: { mode: 'css', animations: 'disabled' },
-    toMatchScreenshot: { mode: 'css', animations: 'disabled' }
+    toHaveScreenshot: {
+      animations: 'disabled',
+    },
   },
 
   timeout: 30000,

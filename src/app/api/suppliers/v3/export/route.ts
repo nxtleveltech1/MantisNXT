@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const validationResult = ExportRequestSchema.safeParse(body)
     if (!validationResult.success) {
       return createErrorResponse(
-        `Validation failed: ${validationResult.error.errors.map(e => e.message).join(', ')}`
+        `Validation failed: ${validationResult.error.issues.map(e => e.message).join(', ')}`
       )
     }
 

@@ -1,33 +1,33 @@
 import { NextResponse } from "next/server";
-import { neonDb } from "@/lib/database/neon-connection";
+import { query } from "@/lib/database";
 
 export async function GET() {
   try {
     const [suppliers, supplierProducts, activeSelection, stockAgg] =
       await Promise.all([
-        neonDb`SELECT COUNT(*) AS cnt FROM core.supplier`,
-        neonDb`SELECT COUNT(*) AS cnt FROM core.supplier_product`,
-        neonDb`
-        SELECT sel.selection_id, sel.selection_name, COALESCE(items.cnt, 0) AS item_count
-        FROM core.inventory_selection sel
-        LEFT JOIN LATERAL (
-          SELECT COUNT(*) AS cnt
-          FROM core.inventory_selected_item isi
-          WHERE isi.selection_id = sel.selection_id AND isi.status = 'selected'
-        ) items ON true
-        WHERE sel.status = 'active'
-        LIMIT 1
-      `,
-        neonDb`SELECT COUNT(*) AS records, COALESCE(SUM(total_value), 0) AS total_value FROM core.stock_on_hand`,
+        query<{ cnt: string }>("SELECT COUNT(*) AS cnt FROM core.supplier"),
+        query<{ cnt: string }>("SELECT COUNT(*) AS cnt FROM core.supplier_product"),
+        query<{ selection_id: string; selection_name: string; item_count: string }>(`
+          SELECT sel.selection_id, sel.selection_name, COALESCE(items.cnt, 0) AS item_count
+          FROM core.inventory_selection sel
+          LEFT JOIN LATERAL (
+            SELECT COUNT(*) AS cnt
+            FROM core.inventory_selected_item isi
+            WHERE isi.selection_id = sel.selection_id AND isi.status = 'selected'
+          ) items ON true
+          WHERE sel.status = 'active'
+          LIMIT 1
+        `),
+        query<{ records: string; total_value: string }>("SELECT COUNT(*) AS records, COALESCE(SUM(total_value), 0) AS total_value FROM core.stock_on_hand"),
       ]);
 
-    const totalSuppliers = parseInt(suppliers[0]?.cnt || "0", 10);
-    const totalProducts = parseInt(supplierProducts[0]?.cnt || "0", 10);
-    const selectedProducts = activeSelection.length
-      ? parseInt(activeSelection[0].item_count || "0", 10)
+    const totalSuppliers = parseInt(suppliers.rows[0]?.cnt || "0", 10);
+    const totalProducts = parseInt(supplierProducts.rows[0]?.cnt || "0", 10);
+    const selectedProducts = activeSelection.rows.length
+      ? parseInt(activeSelection.rows[0].item_count || "0", 10)
       : 0;
-    const stockRecords = parseInt(stockAgg[0]?.records || "0", 10);
-    const totalValue = parseFloat(stockAgg[0]?.total_value || "0");
+    const stockRecords = parseInt(stockAgg.rows[0]?.records || "0", 10);
+    const totalValue = parseFloat(stockAgg.rows[0]?.total_value || "0");
 
     return NextResponse.json({
       success: true,
@@ -46,10 +46,10 @@ export async function GET() {
         supplier_products: totalProducts,
 
         // Current selection details
-        current_selection: activeSelection.length
+        current_selection: activeSelection.rows.length
           ? {
-              id: activeSelection[0].selection_id,
-              name: activeSelection[0].selection_name,
+              id: activeSelection.rows[0].selection_id,
+              name: activeSelection.rows[0].selection_name,
               items: selectedProducts,
             }
           : null,

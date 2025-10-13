@@ -5,8 +5,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/database";
+import getDatabaseMetadata from "@/lib/database-info";
 
 export async function GET(request: NextRequest) {
+  const metadata = getDatabaseMetadata();
   try {
     console.log("🔍 Testing database connection...");
 
@@ -143,9 +145,9 @@ export async function GET(request: NextRequest) {
         connection: {
           timestamp: dbInfo.current_time,
           version: dbInfo.pg_version,
-          host: process.env.DB_HOST || "62.169.20.53",
-          port: process.env.DB_PORT || "6600",
-          database: process.env.DB_NAME || "nxtprod-db_001",
+          host: metadata.host,
+          port: metadata.port,
+          database: metadata.database,
         },
         tables: {
           total: tables.length,
@@ -176,9 +178,9 @@ export async function GET(request: NextRequest) {
           error:
             error instanceof Error ? error.message : "Unknown database error",
           connection: {
-            host: process.env.DB_HOST || "62.169.20.53",
-            port: process.env.DB_PORT || "6600",
-            database: process.env.DB_NAME || "nxtprod-db_001",
+            host: metadata.host,
+            port: metadata.port,
+            database: metadata.database,
           },
         },
         recommendations: [

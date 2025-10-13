@@ -17,7 +17,7 @@ export const PaginationSchema = z.object({
 export const BulkOperationSchema = z.object({
   ids: z.array(z.string()).min(1, 'At least one ID is required').max(1000, 'Maximum 1000 items allowed'),
   operation: z.enum(['delete', 'update', 'activate', 'deactivate']),
-  data: z.record(z.any()).optional()
+  data: z.record(z.string(), z.any()).optional()
 })
 
 // Enhanced Inventory Schemas
@@ -124,7 +124,7 @@ export const EnhancedInventoryItemSchema = z.object({
   // Metadata
   tags: z.array(z.string()).default([]),
   notes: z.string().max(2000, 'Notes must be less than 2000 characters').optional(),
-  customFields: z.record(z.any()).default({}),
+  customFields: z.record(z.string(), z.any()).default({}),
 
   // Status and audit
   status: z.enum(['active', 'inactive', 'discontinued', 'out_of_stock', 'low_stock']).default('active'),
@@ -311,7 +311,7 @@ export const EnhancedSupplierSchema = z.object({
   // Metadata
   tags: z.array(z.string()).default([]),
   notes: z.string().max(2000, 'Notes must be less than 2000 characters').optional(),
-  customFields: z.record(z.any()).default({}),
+  customFields: z.record(z.string(), z.any()).default({}),
 
   // Status
   isActive: z.boolean().default(true),
@@ -376,7 +376,7 @@ export const FileUploadSchema = z.object({
 
 export const XlsxImportSchema = z.object({
   file: z.any(), // File object
-  mapping: z.record(z.string()), // Field mapping
+  mapping: z.record(z.string(), z.string()), // Field mapping
   options: z.object({
     hasHeaders: z.boolean().default(true),
     skipEmptyRows: z.boolean().default(true),

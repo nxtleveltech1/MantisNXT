@@ -2,11 +2,11 @@
  * Data Extraction Engine for Supplier Discovery
  */
 
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer, { Browser } from 'puppeteer';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
-import { ExtractionResult, DataSource, SupplierDiscoveryRequest } from './types';
-import { EXTRACTION_PATTERNS, USER_AGENTS, RETRY_CONFIG, DISCOVERY_CONFIG } from './config';
+import { ExtractionResult, SupplierDiscoveryRequest } from './types';
+import { EXTRACTION_PATTERNS, USER_AGENTS, DISCOVERY_CONFIG } from './config';
 
 export class DataExtractor {
   private browser: Browser | null = null;
@@ -28,8 +28,8 @@ export class DataExtractor {
           '--disable-dev-shm-usage',
           '--disable-accelerated-2d-canvas',
           '--disable-gpu',
-          '--window-size=1920x1080'
-        ]
+          '--window-size=1920x1080',
+        ],
       });
       this.isInitialized = true;
       console.log('Puppeteer browser initialized');
@@ -65,16 +65,19 @@ export class DataExtractor {
   /**
    * Extract data using static HTML scraping
    */
-  async extractWithCheerio(url: string, selectors: Record<string, string>): Promise<ExtractionResult[]> {
+  async extractWithCheerio(
+    url: string,
+    selectors: Record<string, string>
+  ): Promise<ExtractionResult[]> {
     try {
       const response = await axios.get(url, {
         headers: {
           'User-Agent': USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate'
+          'Accept-Encoding': 'gzip, deflate',
         },
-        timeout: DISCOVERY_CONFIG.TIMEOUT_MS
+        timeout: DISCOVERY_CONFIG.TIMEOUT_MS,
       });
 
       const $ = cheerio.load(response.data);
@@ -90,7 +93,7 @@ export class DataExtractor {
               value,
               confidence: 0.7, // Base confidence for cheerio extraction
               source: url,
-              timestamp: new Date()
+              timestamp: new Date(),
             });
           }
         }
@@ -106,7 +109,10 @@ export class DataExtractor {
   /**
    * Extract data using browser automation
    */
-  async extractWithPuppeteer(url: string, selectors: Record<string, string>): Promise<ExtractionResult[]> {
+  async extractWithPuppeteer(
+    url: string,
+    selectors: Record<string, string>
+  ): Promise<ExtractionResult[]> {
     if (!this.checkRateLimit()) {
       throw new Error('Rate limit exceeded');
     }
@@ -125,11 +131,12 @@ export class DataExtractor {
       await page.setViewport({ width: 1920, height: 1080 });
       await page.goto(url, {
         waitUntil: 'networkidle2',
-        timeout: DISCOVERY_CONFIG.TIMEOUT_MS
+        timeout: DISCOVERY_CONFIG.TIMEOUT_MS,
       });
 
-      // Wait for dynamic content
-      await page.waitForTimeout(2000);
+      // Wait for dynamic content to load
+      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      await sleep(2000);
 
       const results: ExtractionResult[] = [];
 
@@ -144,7 +151,7 @@ export class DataExtractor {
                 value,
                 confidence: 0.8, // Higher confidence for browser extraction
                 source: url,
-                timestamp: new Date()
+                timestamp: new Date(),
               });
             }
           }
@@ -172,7 +179,8 @@ export class DataExtractor {
     for (const [key, regex] of Object.entries(EXTRACTION_PATTERNS)) {
       const matches = text.match(regex) || [];
       if (matches.length > 0) {
-        patterns[key] = [...new Set(matches)]; // Remove duplicates
+        // Remove duplicates using Array.from instead of spread
+        patterns[key] = Array.from(new Set(matches));
       }
     }
 
@@ -209,7 +217,7 @@ export class DataExtractor {
             results.push({
               title: titleElement.textContent || '',
               snippet: snippetElement?.textContent || '',
-              url: linkElement.href
+              url: linkElement.href,
             });
           }
         });
@@ -221,7 +229,8 @@ export class DataExtractor {
 
       // Process search results
       const extractionResults: ExtractionResult[] = [];
-      for (const result of searchResults.slice(0, 5)) { // Top 5 results
+      for (const result of searchResults.slice(0, 5)) {
+        // Top 5 results
         const patterns = this.extractPatterns(result.title + ' ' + result.snippet);
 
         for (const [pattern, matches] of Object.entries(patterns)) {
@@ -231,7 +240,7 @@ export class DataExtractor {
               value: match,
               confidence: 0.6, // Moderate confidence for search results
               source: result.url,
-              timestamp: new Date()
+              timestamp: new Date(),
             });
           });
         }
@@ -256,12 +265,12 @@ export class DataExtractor {
         companyName: '.entity-result__title-text a span',
         industry: '.entity-result__primary-subtitle',
         location: '.entity-result__secondary-subtitle',
-        employees: '.entity-result__summary'
+        employees: '.entity-result__summary',
       });
 
       return results.map(result => ({
         ...result,
-        confidence: result.confidence * 0.9 // Adjust confidence for LinkedIn
+        confidence: result.confidence * 0.9, // Adjust confidence for LinkedIn
       }));
     } catch (error) {
       console.error('LinkedIn search failed:', error);
@@ -288,7 +297,7 @@ export class DataExtractor {
     const directories = [
       'https://www.yellowpages.co.za',
       'https://www.brabys.com',
-      'https://www.hotfrog.co.za'
+      'https://www.hotfrog.co.za',
     ];
 
     const allResults: ExtractionResult[] = [];
@@ -302,7 +311,7 @@ export class DataExtractor {
           name: '.listing-name, .business-name',
           address: '.listing-address, .business-address',
           phone: '.listing-phone, .business-phone',
-          website: '.listing-website, .business-website'
+          website: '.listing-website, .business-website',
         });
 
         allResults.push(...results);
@@ -329,7 +338,7 @@ export class DataExtractor {
         this.searchGoogle(supplierName),
         this.searchLinkedIn(supplierName),
         this.searchBusinessDirectory(supplierName),
-        this.searchCompanyRegistry(supplierName)
+        this.searchCompanyRegistry(supplierName),
       ]);
 
       // Collect all successful extractions

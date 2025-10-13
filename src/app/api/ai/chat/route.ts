@@ -14,7 +14,7 @@ const ChatMessageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant', 'tool']),
   content: z.string().min(1, 'Message content is required'),
   name: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 const ConversationOptionsSchema = z.object({
@@ -22,11 +22,11 @@ const ConversationOptionsSchema = z.object({
   systemPrompt: z.string().min(1).max(8000).optional(),
   templateId: z.string().optional(),
   variables: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
-  context: z.record(z.any()).optional(),
+  context: z.record(z.string(), z.any()).optional(),
   provider: z.string().optional(),
   variantId: z.string().optional(),
   sanitize: z.boolean().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   initialMessages: z.array(ChatMessageSchema).optional(),
   maxHistory: z.number().int().min(1).max(200).optional(),
 })
@@ -52,7 +52,7 @@ const ChatRequestSchema = z.object({
   maxHistory: z.number().int().min(1).max(200).optional(),
   runtime: RuntimeOptionsSchema.optional(),
   conversation: ConversationOptionsSchema.optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   notifyChannel: z.string().optional(),
   tags: z.array(z.string().min(1)).max(10).optional(),
   requestId: z.string().optional(),

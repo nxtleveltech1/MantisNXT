@@ -39,10 +39,16 @@ export const PricelistUploadSchema = z.object({
   filename: z.string().min(1).max(255),
   currency: z.string().length(3),
   valid_from: z.date().or(z.string().transform(str => new Date(str))),
-  valid_to: z.date().or(z.string().transform(str => new Date(str))).nullable().optional(),
-  status: z.enum(['received', 'validating', 'validated', 'merged', 'failed', 'rejected']).optional(),
-  errors_json: z.record(z.any()).nullable().optional(),
-  processed_by: z.string().optional()
+  valid_to: z
+    .date()
+    .or(z.string().transform(str => new Date(str)))
+    .nullable()
+    .optional(),
+  status: z
+    .enum(['received', 'validating', 'validated', 'merged', 'failed', 'rejected'])
+    .optional(),
+  errors_json: z.record(z.string(), z.any()).nullable().optional(),
+  processed_by: z.string().optional(),
 });
 
 /**
@@ -78,7 +84,7 @@ export const PricelistRowSchema = z.object({
   category_raw: z.string().max(200).optional(),
   vat_code: z.string().max(20).optional(),
   barcode: z.string().max(50).optional(),
-  attrs_json: z.record(z.any()).optional()
+  attrs_json: z.record(z.string(), z.any()).optional(),
 });
 
 // ============================================================================
@@ -112,12 +118,14 @@ export const SupplierSchema = z.object({
   active: z.boolean().default(true),
   default_currency: z.string().length(3),
   payment_terms: z.string().max(100).optional(),
-  contact_info: z.object({
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    address: z.string().optional()
-  }).optional(),
-  tax_number: z.string().max(50).optional()
+  contact_info: z
+    .object({
+      email: z.string().email().optional(),
+      phone: z.string().optional(),
+      address: z.string().optional(),
+    })
+    .optional(),
+  tax_number: z.string().max(50).optional(),
 });
 
 /**
@@ -145,8 +153,8 @@ export const ProductSchema = z.object({
   pack_size: z.string().max(50).optional(),
   barcode: z.string().max(50).optional(),
   category_id: z.string().uuid().optional(),
-  attrs_json: z.record(z.any()).optional(),
-  is_active: z.boolean().default(true)
+  attrs_json: z.record(z.string(), z.any()).optional(),
+  is_active: z.boolean().default(true),
 });
 
 /**
@@ -169,7 +177,7 @@ export const CategorySchema = z.object({
   parent_id: z.string().uuid().nullable().optional(),
   level: z.number().int().min(0).default(0),
   path: z.string().max(500),
-  is_active: z.boolean().default(true)
+  is_active: z.boolean().default(true),
 });
 
 /**
@@ -206,7 +214,7 @@ export const SupplierProductSchema = z.object({
   is_active: z.boolean().default(true),
   is_new: z.boolean().default(true),
   category_id: z.string().uuid().nullable().optional(),
-  attrs_json: z.record(z.any()).optional()
+  attrs_json: z.record(z.string(), z.any()).optional(),
 });
 
 /**
@@ -230,9 +238,13 @@ export const PriceHistorySchema = z.object({
   price: z.number().positive(),
   currency: z.string().length(3),
   valid_from: z.date().or(z.string().transform(str => new Date(str))),
-  valid_to: z.date().or(z.string().transform(str => new Date(str))).nullable().optional(),
+  valid_to: z
+    .date()
+    .or(z.string().transform(str => new Date(str)))
+    .nullable()
+    .optional(),
   is_current: z.boolean().default(true),
-  change_reason: z.string().max(500).optional()
+  change_reason: z.string().max(500).optional(),
 });
 
 /**
@@ -262,8 +274,15 @@ export const InventorySelectionSchema = z.object({
   description: z.string().max(1000).optional(),
   created_by: z.string().uuid(),
   status: z.enum(['draft', 'active', 'archived']).default('draft'),
-  valid_from: z.date().or(z.string().transform(str => new Date(str))).optional(),
-  valid_to: z.date().or(z.string().transform(str => new Date(str))).nullable().optional()
+  valid_from: z
+    .date()
+    .or(z.string().transform(str => new Date(str)))
+    .optional(),
+  valid_to: z
+    .date()
+    .or(z.string().transform(str => new Date(str)))
+    .nullable()
+    .optional(),
 });
 
 /**
@@ -292,7 +311,7 @@ export const InventorySelectedItemSchema = z.object({
   selected_by: z.string().uuid(),
   quantity_min: z.number().int().min(0).optional(),
   quantity_max: z.number().int().min(0).optional(),
-  reorder_point: z.number().int().min(0).optional()
+  reorder_point: z.number().int().min(0).optional(),
 });
 
 /**
@@ -315,7 +334,7 @@ export const StockLocationSchema = z.object({
   type: z.enum(['internal', 'supplier', 'consignment']),
   supplier_id: z.string().uuid().nullable().optional(),
   address: z.string().max(500).optional(),
-  is_active: z.boolean().default(true)
+  is_active: z.boolean().default(true),
 });
 
 /**
@@ -341,7 +360,7 @@ export const StockOnHandSchema = z.object({
   unit_cost: z.number().positive().optional(),
   total_value: z.number().min(0).optional(),
   as_of_ts: z.date().or(z.string().transform(str => new Date(str))),
-  source: z.enum(['manual', 'import', 'system']).default('system')
+  source: z.enum(['manual', 'import', 'system']).default('system'),
 });
 
 // ============================================================================
@@ -457,13 +476,21 @@ export const PricelistUploadRequestSchema = z.object({
   supplier_id: z.string().uuid(),
   filename: z.string().min(1),
   currency: z.string().length(3).optional(),
-  valid_from: z.date().or(z.string().transform(str => new Date(str))).optional(),
-  valid_to: z.date().or(z.string().transform(str => new Date(str))).optional(),
-  options: z.object({
-    auto_validate: z.boolean().optional(),
-    auto_merge: z.boolean().optional(),
-    skip_duplicates: z.boolean().optional()
-  }).optional()
+  valid_from: z
+    .date()
+    .or(z.string().transform(str => new Date(str)))
+    .optional(),
+  valid_to: z
+    .date()
+    .or(z.string().transform(str => new Date(str)))
+    .optional(),
+  options: z
+    .object({
+      auto_validate: z.boolean().optional(),
+      auto_merge: z.boolean().optional(),
+      skip_duplicates: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -511,7 +538,7 @@ export const SelectionWorkflowRequestSchema = z.object({
   supplier_product_ids: z.array(z.string().uuid()).min(1),
   action: z.enum(['select', 'deselect', 'approve']),
   notes: z.string().max(1000).optional(),
-  selected_by: z.string().uuid()
+  selected_by: z.string().uuid(),
 });
 
 /**
@@ -531,10 +558,13 @@ export const SohReportRequestSchema = z.object({
   supplier_ids: z.array(z.string().uuid()).optional(),
   location_ids: z.array(z.string().uuid()).optional(),
   product_ids: z.array(z.string().uuid()).optional(),
-  as_of_date: z.date().or(z.string().transform(str => new Date(str))).optional(),
+  as_of_date: z
+    .date()
+    .or(z.string().transform(str => new Date(str)))
+    .optional(),
   group_by: z.enum(['supplier', 'product', 'location']).optional(),
   include_zero_stock: z.boolean().default(false),
-  selected_only: z.boolean().default(false)
+  selected_only: z.boolean().default(false),
 });
 
 // ============================================================================
@@ -594,7 +624,7 @@ export interface NxtSoh {
   selection_name: string;
 }
 
-export const NxtSohSchema = z.object({
+export const _NxtSohSchema = z.object({
   supplier_id: z.string().uuid(),
   supplier_name: z.string(),
   supplier_product_id: z.string().uuid(),
@@ -608,7 +638,7 @@ export const NxtSohSchema = z.object({
   currency: z.string().length(3),
   as_of_ts: z.date().or(z.string().transform(str => new Date(str))),
   selection_id: z.string().uuid(),
-  selection_name: z.string()
+  selection_name: z.string(),
 });
 
 /**
@@ -627,7 +657,7 @@ export const MergeProcedureResultSchema = z.object({
   products_created: z.number().int().min(0),
   products_updated: z.number().int().min(0),
   prices_updated: z.number().int().min(0),
-  errors: z.array(z.string())
+  errors: z.array(z.string()),
 });
 
 /**
@@ -648,5 +678,5 @@ export const DashboardMetricsSchema = z.object({
   selected_products: z.number().int().min(0),
   selected_inventory_value: z.number().min(0),
   new_products_count: z.number().int().min(0),
-  recent_price_changes_count: z.number().int().min(0)
+  recent_price_changes_count: z.number().int().min(0),
 });

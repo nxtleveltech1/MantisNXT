@@ -13,7 +13,11 @@ import * as XLSX from "xlsx";
 import * as fs from "fs";
 import { neonDb } from "../lib/database/neon-connection";
 import { pricelistService } from "../src/lib/services/PricelistService";
-import type { PricelistRow, Supplier } from "../src/types/nxt-spp";
+import type {
+  PricelistRow,
+  Supplier,
+  PricelistUploadRequest
+} from "../src/types/nxt-spp";
 
 // Configuration constants
 const EXCEL_FILE_PATH =
@@ -268,14 +272,14 @@ async function importMasterDataset(): Promise<ImportStats> {
           stats.totalSuppliers++;
 
           // Step 2: Create pricelist upload
-          const uploadData = {
+          const uploadData: PricelistUploadRequest = {
             supplier_id: supplierId,
+            file: Buffer.from(""), // Placeholder - data is in rows
             filename: `master_import_${supplierName}_${
               new Date().toISOString().split("T")[0]
             }.xlsx`,
             currency: DEFAULT_CURRENCY,
             valid_from: new Date(),
-            status: "received" as const,
           };
 
           const upload = await pricelistService.createUpload(uploadData);
@@ -311,7 +315,7 @@ async function importMasterDataset(): Promise<ImportStats> {
           // Step 4: Insert rows in batches
           for (let i = 0; i < pricelistRows.length; i += BATCH_SIZE) {
             const batch = pricelistRows.slice(i, i + BATCH_SIZE);
-            await pricelistService.insertRows(batch);
+            await pricelistService.insertRows(upload.upload_id, batch);
 
             const progress = Math.round(
               ((i + batch.length) / pricelistRows.length) * 100

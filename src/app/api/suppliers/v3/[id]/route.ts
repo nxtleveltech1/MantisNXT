@@ -138,7 +138,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return createErrorResponse(
         'Validation failed',
         400,
-        validationResult.error.errors
+        validationResult.error.issues
       )
     }
 

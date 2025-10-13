@@ -39,3 +39,9 @@ esac
 
 echo "Migration ${MIG_NUM} completed."
 
+
+
+
+
+
+

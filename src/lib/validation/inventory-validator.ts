@@ -339,7 +339,7 @@ export class InventoryValidator {
       // Basic schema validation
       const baseValidation = InventoryItemValidationSchema.safeParse(data)
       if (!baseValidation.success) {
-        baseValidation.error.errors.forEach(error => {
+        baseValidation.error.issues.forEach(error => {
           issues.push({
             field: error.path.join('.'),
             value: data[error.path[0]],

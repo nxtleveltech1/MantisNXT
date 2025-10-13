@@ -168,6 +168,34 @@ npm run test:integration # Integration tests
 npm run test:e2e       # End-to-end tests
 ```
 
+## Docker Support
+
+You can run the platform inside containers for both production-style testing and local development.
+
+### Production-style image
+
+1. Build the multi-stage image (runs `npm run build` during the build step):
+   ```bash
+   docker compose build
+   ```
+2. Provide any required environment variables (e.g. `DATABASE_URL`) via your shell or a `.env` file, then start the container:
+   ```bash
+   docker compose up
+   ```
+   The application is exposed on `http://localhost:3000`.
+
+### Development container
+
+For a live-reloading dev server inside Docker, use the development compose file:
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+This mounts the repository into the container, installs dependencies, and runs `npm run dev`.
+
+### Cursor / VS Code Dev Containers
+
+A `.devcontainer/devcontainer.json` is included. In Cursor (or VS Code) choose **Dev Containers: Open Folder in Container...** and select the project; the editor will attach to the `docker-compose.dev.yml` service and run `npm install` automatically.
+
 ## Contributing
 
 1. Fork the repository

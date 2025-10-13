@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { neonDb } from "@/lib/database/neon-connection";
+import { query as dbQuery } from "@/lib/database";
 import { z } from "zod";
 
 // Zod validation schemas for type safety and security
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     `;
 
     sqlParams.push(pageSize, offset);
-    const result = await neonDb.query(query, sqlParams);
+    const result = await dbQuery(query, sqlParams);
 
     // Get total count
     const countQuery = `
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       FROM core.supplier_product sp
       WHERE ${whereClause}
     `;
-    const countResult = await neonDb.query<{ total: string }>(
+    const countResult = await dbQuery<{ total: string }>(
       countQuery,
       sqlParams.slice(0, -2)
     );

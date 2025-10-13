@@ -303,7 +303,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid query parameters',
-        details: error.errors
+        details: error.issues
       }, { status: 400 })
     }
 
@@ -373,7 +373,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid request data',
-        details: error.errors
+        details: error.issues
       }, { status: 400 })
     }
 
@@ -437,7 +437,7 @@ export async function PUT(request: NextRequest) {
       } catch (error) {
         errors.push({
           id: updateData.id,
-          error: error instanceof z.ZodError ? error.errors : 'Invalid data'
+          error: error instanceof z.ZodError ? error.issues : 'Invalid data'
         })
       }
     }

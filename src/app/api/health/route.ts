@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import getDatabaseMetadata from '@/lib/database-info';
 
 interface HealthCheck {
   service: string;
@@ -32,6 +33,7 @@ interface HealthStatus {
 // Check database connectivity using our enterprise connection manager
 async function checkDatabase(): Promise<HealthCheck> {
   const start = Date.now();
+  const metadata = getDatabaseMetadata();
 
   try {
     // Use our new enterprise database connection manager
@@ -47,8 +49,9 @@ async function checkDatabase(): Promise<HealthCheck> {
         details: {
           pool: result.details.pool,
           circuitBreaker: result.details.circuitBreaker,
-          database: result.details.database || 'nxtprod-db_001',
-          host: process.env.DB_HOST || '62.169.20.53',
+          database: result.details.database || metadata.database,
+          host: metadata.host,
+          port: metadata.port,
         },
       };
     } else {
@@ -60,6 +63,9 @@ async function checkDatabase(): Promise<HealthCheck> {
         details: {
           pool: result.details?.pool,
           circuitBreaker: result.details?.circuitBreaker,
+          database: metadata.database,
+          host: metadata.host,
+          port: metadata.port,
         },
       };
     }
@@ -69,6 +75,11 @@ async function checkDatabase(): Promise<HealthCheck> {
       status: 'unhealthy',
       error: error instanceof Error ? error.message : 'Database connection error',
       responseTime: Date.now() - start,
+      details: {
+        database: metadata.database,
+        host: metadata.host,
+        port: metadata.port,
+      },
     };
   }
 }

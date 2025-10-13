@@ -16,19 +16,19 @@ class SupplierDiscoveryCache {
       stdTTL: DISCOVERY_CONFIG.CACHE_TTL_HOURS * 3600, // Convert hours to seconds
       maxKeys: DISCOVERY_CONFIG.CACHE_MAX_ENTRIES,
       useClones: false, // Better performance
-      deleteOnExpire: true
+      deleteOnExpire: true,
     });
 
     // Set up cache event listeners
-    this.cache.on('set', (key, value) => {
+    this.cache.on('set', (key, _value) => {
       console.log(`Cache SET: ${key}`);
     });
 
-    this.cache.on('del', (key, value) => {
+    this.cache.on('del', (key, _value) => {
       console.log(`Cache DEL: ${key}`);
     });
 
-    this.cache.on('expired', (key, value) => {
+    this.cache.on('expired', (key, _value) => {
       console.log(`Cache EXPIRED: ${key}`);
     });
   }
@@ -37,9 +37,13 @@ class SupplierDiscoveryCache {
    * Generate cache key from supplier name
    */
   private generateKey(supplierName: string, additionalContext?: any): string {
-    const cleanName = supplierName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
-    const contextHash = additionalContext ?
-      Buffer.from(JSON.stringify(additionalContext)).toString('base64').slice(0, 8) : '';
+    const cleanName = supplierName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]/g, '_');
+    const contextHash = additionalContext
+      ? Buffer.from(JSON.stringify(additionalContext)).toString('base64').slice(0, 8)
+      : '';
 
     return `supplier_${cleanName}${contextHash ? `_${contextHash}` : ''}`;
   }
@@ -77,7 +81,7 @@ class SupplierDiscoveryCache {
     const cacheEntry: CacheEntry = {
       data,
       timestamp: new Date(),
-      ttl
+      ttl,
     };
 
     return this.cache.set(key, cacheEntry, ttl);
@@ -136,7 +140,7 @@ class SupplierDiscoveryCache {
       ...stats,
       hitCount: this.hitCount,
       missCount: this.missCount,
-      hitRate: this.hitCount > 0 ? (this.hitCount / (this.hitCount + this.missCount)) * 100 : 0
+      hitRate: this.hitCount > 0 ? (this.hitCount / (this.hitCount + this.missCount)) * 100 : 0,
     };
   }
 
@@ -145,7 +149,10 @@ class SupplierDiscoveryCache {
    */
   getCachedSuppliers(): string[] {
     return this.cache.keys().map(key =>
-      key.replace('supplier_', '').replace(/_[a-zA-Z0-9]{8}$/, '').replace(/_/g, ' ')
+      key
+        .replace('supplier_', '')
+        .replace(/_[a-zA-Z0-9]{8}$/, '')
+        .replace(/_/g, ' ')
     );
   }
 
@@ -190,12 +197,14 @@ class SupplierDiscoveryCache {
   /**
    * Bulk operations for cache warming
    */
-  bulkSet(entries: Array<{
-    supplierName: string;
-    data: DiscoveredSupplierData;
-    additionalContext?: any;
-    ttl?: number;
-  }>): number {
+  bulkSet(
+    entries: Array<{
+      supplierName: string;
+      data: DiscoveredSupplierData;
+      additionalContext?: any;
+      ttl?: number;
+    }>
+  ): number {
     let successCount = 0;
 
     entries.forEach(entry => {

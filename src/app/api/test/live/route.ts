@@ -5,8 +5,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/database'
+import getDatabaseMetadata from '@/lib/database-info'
 
 export async function GET(request: NextRequest) {
+  const metadata = getDatabaseMetadata()
   const results = {
     timestamp: new Date().toISOString(),
     tests: [] as any[],
@@ -202,9 +204,9 @@ export async function GET(request: NextRequest) {
               healthScore >= 80 ? 'good' :
               healthScore >= 60 ? 'fair' : 'poor',
       database: {
-        host: process.env.DB_HOST || '62.169.20.53',
-        port: process.env.DB_PORT || '6600',
-        database: process.env.DB_NAME || 'nxtprod-db_001'
+        host: metadata.host,
+        port: metadata.port,
+        database: metadata.database
       },
       ...results,
       recommendations: generateRecommendations(results.tests)

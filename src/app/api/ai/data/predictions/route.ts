@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid request',
-        details: error.errors,
+        details: error.issues,
       }, { status: 400 });
     }
 

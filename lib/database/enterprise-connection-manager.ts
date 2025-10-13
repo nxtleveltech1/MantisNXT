@@ -1,4 +1,4 @@
-import { Pool, PoolClient, PoolConfig, QueryResult } from "pg";
+import { Pool, PoolClient, PoolConfig, QueryResult, QueryResultRow } from "pg";
 import { randomUUID } from "crypto";
 
 interface QueryOptions {
@@ -440,7 +440,7 @@ class EnterpriseConnectionManager {
     return this.computePoolStatus();
   }
 
-  async query<T = any>(
+  async query<T extends QueryResultRow = any>(
     text: string,
     params: any[] = [],
     options: QueryOptions = {}
@@ -791,7 +791,7 @@ class EnterpriseConnectionManager {
 
 export const dbManager = new EnterpriseConnectionManager();
 
-export const query = <T = any>(
+export const query = <T extends QueryResultRow = any>(
   text: string,
   params?: any[],
   options?: QueryOptions

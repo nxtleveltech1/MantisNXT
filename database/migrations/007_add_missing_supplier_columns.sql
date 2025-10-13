@@ -35,3 +35,9 @@ WHERE table_schema = 'core'
   AND table_name = 'supplier'
   AND column_name = 'contact_person';
 
+
+
+
+
+
+

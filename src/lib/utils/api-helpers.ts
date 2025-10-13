@@ -138,7 +138,7 @@ export function createSuccessResponse<T>(
  * Handle Zod validation errors
  */
 export function handleValidationError(error: z.ZodError): NextResponse {
-  const details = error.errors.map(e => ({
+  const details = error.issues.map(e => ({
     field: e.path.join('.'),
     message: e.message,
     code: e.code
@@ -342,5 +342,3 @@ export function checkRateLimit(request: Request): boolean {
   // TODO: Implement rate limiting logic
   return true
 }
-
-export type { ApiError, ApiSuccess }

@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
       return createErrorResponse(
         'Invalid query parameters',
         400,
-        validationResult.error.errors
+        validationResult.error.issues
       )
     }
 
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
       return createErrorResponse(
         'Validation failed',
         400,
-        validationResult.error.errors
+        validationResult.error.issues
       )
     }
 

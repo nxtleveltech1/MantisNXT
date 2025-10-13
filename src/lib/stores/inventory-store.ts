@@ -115,19 +115,48 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       const res = await fetch('/api/inventory?format=display&limit=25000');
       if (!res.ok) throw new Error(`INVENTORY_FETCH_FAILED: ${res.status}`);
       const data = await res.json();
-      const rows = Array.isArray(data) ? data : (data?.data || []);
-      // Ensure shape with sensible defaults
+
+      // API returns { items: [...], nextCursor: ... } format
+      const rows = data?.items || [];
+
+      // Map API snake_case fields to component expectations
       const items = rows.map((r: any) => ({
         id: r.id,
-        sku: r.sku,
-        currentStock: Number(r.currentStock ?? 0),
-        reservedStock: Number(r.reservedStock ?? 0),
-        availableStock: Number(r.availableStock ?? (Number(r.currentStock ?? 0) - Number(r.reservedStock ?? 0))),
-        costPrice: r.costPrice ?? null,
-        salePrice: r.salePrice ?? null,
-        supplierId: r.supplierId ?? null,
-        brandId: r.brandId ?? null,
+        product_id: r.id,
+        sku: r.sku || r.supplier_sku || '',
+        name: r.name || r.sku || 'Unknown',
+        category: r.category || 'uncategorized',
+        current_stock: Number(r.stock_qty ?? r.currentStock ?? r.current_stock ?? 0),
+        reserved_stock: Number(r.reserved_qty ?? r.reservedStock ?? r.reserved_stock ?? 0),
+        available_stock: Number(r.available_qty ?? r.availableStock ?? r.available_stock ?? 0),
+        cost_per_unit_zar: Number(r.cost_price ?? r.unit_cost ?? r.costPrice ?? r.cost_per_unit_zar ?? 0),
+        total_value_zar: Number(r.cost_price ?? r.costPrice ?? 0) * Number(r.stock_qty ?? r.currentStock ?? 0),
+        reorder_point: Number(r.reorder_point ?? 10),
+        max_stock_level: Number(r.max_stock_level ?? 100),
+        location: r.location || 'Main Warehouse',
+        supplier_id: r.supplier_id ?? r.supplierId ?? null,
+        supplier_name: r.supplier_name || 'Unknown Supplier',
+        supplier_status: r.supplier_status || 'active',
+        stock_status: r.stock_status || (Number(r.stock_qty ?? 0) <= 0 ? 'out_of_stock' : (Number(r.stock_qty ?? 0) <= 10 ? 'low_stock' : 'in_stock')),
+        currency: 'ZAR',
+        // Add product reference for compatibility
+        product: {
+          id: r.id,
+          name: r.name || r.sku || 'Unknown',
+          sku: r.sku || '',
+          category: r.category || 'uncategorized',
+          unit_of_measure: 'each',
+          supplier_id: r.supplier_id ?? null,
+          unit_cost_zar: Number(r.cost_price ?? r.costPrice ?? 0),
+          status: 'active' as const
+        },
+        supplier: {
+          id: r.supplier_id ?? 'unknown',
+          name: r.supplier_name || 'Unknown Supplier',
+          status: r.supplier_status || 'active'
+        }
       }));
+
       set({ items, loading: false });
     } catch (e: any) {
       set({ error: e?.message || 'Failed to fetch items', loading: false });
@@ -138,8 +167,23 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await fetch('/api/inventory/products');
+      if (!res.ok) throw new Error(`PRODUCTS_FETCH_FAILED: ${res.status}`);
       const data = await res.json();
-      const products = Array.isArray(data) ? data : (data?.data || []);
+      const productRows = Array.isArray(data) ? data : (data?.data || data?.items || []);
+
+      // Map to consistent format
+      const products = productRows.map((p: any) => ({
+        id: p.id || p.product_id,
+        supplier_id: p.supplier_id || p.supplierId,
+        name: p.name || p.product_name || 'Unknown Product',
+        description: p.description || '',
+        category: p.category || 'uncategorized',
+        sku: p.sku || p.supplier_sku || '',
+        unit_of_measure: p.unit_of_measure || p.unit || 'each',
+        unit_cost_zar: Number(p.unit_cost_zar ?? p.unit_cost ?? p.cost_price ?? 0),
+        status: p.status || 'active'
+      }));
+
       set({ products, loading: false });
     } catch (e: any) {
       set({ error: e?.message || 'Failed to fetch products', loading: false });
@@ -149,9 +193,24 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   fetchSuppliers: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/suppliers');
+      const res = await fetch('/api/suppliers?limit=5000');
+      if (!res.ok) throw new Error(`SUPPLIERS_FETCH_FAILED: ${res.status}`);
       const data = await res.json();
-      const suppliers = Array.isArray(data) ? data : (data?.data || []);
+      const supplierRows = Array.isArray(data) ? data : (data?.data || data?.items || []);
+
+      // Map to consistent format
+      const suppliers = supplierRows.map((s: any) => ({
+        id: s.id || s.supplier_id,
+        name: s.name || s.supplier_name || 'Unknown Supplier',
+        email: s.email || null,
+        phone: s.phone || null,
+        address: s.address || null,
+        status: s.status || 'active',
+        performance_tier: s.performance_tier || 'unrated',
+        preferred_supplier: s.preferred_supplier || false,
+        contact_person: s.contact_person || null
+      }));
+
       set({ suppliers, loading: false });
     } catch (e: any) {
       set({ error: e?.message || 'Failed to fetch suppliers', loading: false });

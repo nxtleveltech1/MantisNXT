@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const validationResult = DiscoveryRequestSchema.safeParse(body)
     if (!validationResult.success) {
       return createErrorResponse(
-        `Validation failed: ${validationResult.error.errors.map(e => e.message).join(', ')}`
+        `Validation failed: ${validationResult.error.issues.map(e => e.message).join(', ')}`
       )
     }
 
@@ -125,7 +125,7 @@ export async function PUT(request: NextRequest) {
     const validationResult = EnrichmentRequestSchema.safeParse(body)
     if (!validationResult.success) {
       return createErrorResponse(
-        `Validation failed: ${validationResult.error.errors.map(e => e.message).join(', ')}`
+        `Validation failed: ${validationResult.error.issues.map(e => e.message).join(', ')}`
       )
     }
 

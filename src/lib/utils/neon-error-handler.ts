@@ -46,7 +46,7 @@ export function mapNeonQueryError(error: unknown): ErrorResponse {
     return {
       error: 'Validation Error',
       message: 'Input validation failed',
-      details: error.errors.map(e => ({
+      details: error.issues.map(e => ({
         field: e.path.join('.'),
         message: e.message
       })),

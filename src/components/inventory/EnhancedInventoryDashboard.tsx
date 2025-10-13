@@ -237,7 +237,34 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
 
       if (inventoryData?.success) setMetrics(inventoryData.data)
 
-      if (Array.isArray(itemsData)) {
+      // Handle {items: [...]} format from /api/inventory
+      if (itemsData?.items && Array.isArray(itemsData.items)) {
+        const mapped = itemsData.items.map((r: any) => ({
+          id: r.id,
+          sku: r.sku,
+          name: r.name || r.sku,
+          description: '',
+          category: r.category || 'uncategorized',
+          subcategory: '',
+          currentStock: Number(r.stock_qty ?? r.currentStock ?? 0),
+          reorderPoint: 0,
+          maxStock: 0,
+          unitCost: Number(r.cost_price ?? r.costPrice ?? 0),
+          unitPrice: Number(r.sale_price ?? r.salePrice ?? r.cost_price ?? r.costPrice ?? 0),
+          totalValue: Number(r.cost_price ?? r.costPrice ?? 0) * Number(r.stock_qty ?? r.currentStock ?? 0),
+          lastMovement: '',
+          daysInStock: 0,
+          velocity: 'medium',
+          status: (r.stock_qty ?? r.currentStock ?? 0) <= 0 ? 'out_of_stock' : ((r.stock_qty ?? r.currentStock ?? 0) <= 10 ? 'low_stock' : 'in_stock'),
+          supplier: { id: r.supplier_id ?? r.supplierId ?? '', name: '', leadTimeDays: 0, rating: 0 },
+          location: { warehouse: '', zone: '', aisle: '', shelf: '' },
+          alerts: [],
+          movements: []
+        }))
+        setItems(mapped)
+        const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)))
+        setCategoryOptions(cats)
+      } else if (Array.isArray(itemsData)) {
         const mapped = itemsData.map((r: any) => ({
           id: r.id,
           sku: r.sku,
@@ -254,11 +281,11 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           lastMovement: '',
           daysInStock: 0,
           velocity: 'medium',
-          status: r.currentStock <= 0 ? 'out_of_stock' : (r.currentStock <= 0 ? 'low_stock' : 'in_stock'),
+          status: r.currentStock <= 0 ? 'out_of_stock' : (r.currentStock <= 10 ? 'low_stock' : 'in_stock'),
           supplier: { id: r.supplierId ?? '', name: '', leadTimeDays: 0, rating: 0 },
-          unit: 'each',
-          location: '',
-          tags: []
+          location: { warehouse: '', zone: '', aisle: '', shelf: '' },
+          alerts: [],
+          movements: []
         }))
         setItems(mapped)
         const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)))
@@ -281,11 +308,11 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           lastMovement: '',
           daysInStock: 0,
           velocity: 'medium',
-          status: r.currentStock <= 0 ? 'out_of_stock' : (r.currentStock <= 0 ? 'low_stock' : 'in_stock'),
+          status: r.currentStock <= 0 ? 'out_of_stock' : (r.currentStock <= 10 ? 'low_stock' : 'in_stock'),
           supplier: { id: r.supplierId ?? '', name: '', leadTimeDays: 0, rating: 0 },
-          unit: 'each',
-          location: '',
-          tags: []
+          location: { warehouse: '', zone: '', aisle: '', shelf: '' },
+          alerts: [],
+          movements: []
         }))
         setItems(mapped)
         const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)))

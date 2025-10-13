@@ -90,9 +90,9 @@ const DataSourceSchema = z.object({
   description: z.string().optional(),
   metrics: z.array(z.string().min(2)).max(20).optional(),
   timeRange: TimeRangeSchema.optional(),
-  filters: z.record(z.any()).optional(),
+  filters: z.record(z.string(), z.any()).optional(),
   weight: z.number().min(0).max(1).optional(),
-  dataset: z.array(z.record(z.any())).max(500).optional(),
+  dataset: z.array(z.record(z.string(), z.any())).max(500).optional(),
 })
 
 const OutputSchema = z.object({
@@ -157,7 +157,7 @@ const AnalysisRequestSchema = z.object({
   stream: z.boolean().optional(),
   runtime: RuntimeOptionsSchema.optional(),
   cache: CacheOptionsSchema.optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   notifyChannel: z.string().optional(),
   tags: z.array(z.string().min(1)).max(10).optional(),
   requestId: z.string().optional(),

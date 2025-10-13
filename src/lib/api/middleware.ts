@@ -297,7 +297,7 @@ export class ApiMiddleware {
               'Validation error',
               400,
               {
-                validationErrors: error.errors,
+                validationErrors: error.issues,
                 message: 'Request data is invalid'
               }
             )

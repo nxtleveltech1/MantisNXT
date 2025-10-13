@@ -50,16 +50,36 @@ export async function GET(request: NextRequest) {
       const supplierQuery = `
         SELECT
           name as supplier_name,
-          COALESCE(payment_terms_days, 30) as payment_terms_days,
+          COALESCE(
+            CASE
+              WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+              ELSE 30
+            END, 30
+          ) as payment_terms_days,
           COALESCE(default_currency, 'USD') as currency,
           CASE
-            WHEN COALESCE(payment_terms_days, 30) > 60 THEN 'negotiate_terms'
-            WHEN COALESCE(payment_terms_days, 30) > 45 THEN 'review_terms'
+            WHEN COALESCE(
+              CASE
+                WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+                ELSE 30
+              END, 30
+            ) > 60 THEN 'negotiate_terms'
+            WHEN COALESCE(
+              CASE
+                WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+                ELSE 30
+              END, 30
+            ) > 45 THEN 'review_terms'
             ELSE 'maintain_relationship'
           END as recommendation_type
         FROM core.supplier
         WHERE active = true
-        ORDER BY COALESCE(payment_terms_days, 30) DESC
+        ORDER BY COALESCE(
+          CASE
+            WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+            ELSE 30
+          END, 30
+        ) DESC
         LIMIT 5
       `;
 
@@ -83,8 +103,24 @@ export async function GET(request: NextRequest) {
       const financialQuery = `
         SELECT
           COUNT(*) as total_suppliers,
-          AVG(COALESCE(payment_terms_days, 30)) as avg_payment_terms,
-          COUNT(CASE WHEN COALESCE(payment_terms_days, 30) > 60 THEN 1 END) as high_risk_suppliers
+          AVG(
+            COALESCE(
+              CASE
+                WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+                ELSE 30
+              END, 30
+            )
+          ) as avg_payment_terms,
+          COUNT(
+            CASE
+              WHEN COALESCE(
+                CASE
+                  WHEN payment_terms ~ '^[0-9]+' THEN CAST(SUBSTRING(payment_terms FROM '^[0-9]+') AS INTEGER)
+                  ELSE 30
+                END, 30
+              ) > 60 THEN 1
+            END
+          ) as high_risk_suppliers
         FROM core.supplier
         WHERE active = true
       `;

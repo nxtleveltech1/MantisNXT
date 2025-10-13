@@ -39,7 +39,7 @@ const inventoryItemSchema = z.object({
   images: z.array(z.string()).default([]),
   status: z.enum(['active', 'inactive', 'discontinued']).default('active'),
   tax_rate: z.number().min(0).max(1).default(0.15),
-  custom_fields: z.record(z.any()).default({}),
+  custom_fields: z.record(z.string(), z.any()).default({}),
   notes: z.string().optional()
 })
 
@@ -417,7 +417,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
         },
         { status: 400 }
       )

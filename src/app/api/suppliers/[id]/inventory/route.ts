@@ -3,8 +3,11 @@ import { withTransaction } from '@/lib/database';
 
 type Action = 'allocate_to_supplier' | 'deallocate_from_supplier' | 'transfer_allocation' | 'consignment_in' | 'consignment_out';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const supplierId = params.id;
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id: supplierId } = await context.params;
   try {
     const body = await req.json();
     const action: Action = body?.action;
@@ -73,4 +76,3 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ success: false, error: 'ALLOCATION_FAILED', detail: msg }, { status: 400 });
   }
 }
-

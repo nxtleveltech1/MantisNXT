@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/middleware/api-auth";
-import { query, pool } from "@/lib/database/unified-connection";
 import { z } from "zod";
 import { CacheInvalidator } from "@/lib/cache/invalidation";
-import { performance } from "perf_hooks";
-
-const SLOW_QUERY_THRESHOLD_MS = 1000;
+import { SupplierService, createErrorResponse } from "@/lib/services/UnifiedDataService";
 
 // Simple schema for basic supplier creation
 const supplierSchema = z.object({
@@ -72,246 +69,67 @@ export const GET = withAuth(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
 
-    // Extract query parameters
-    const search = searchParams.get("search");
+    // Extract and validate query parameters
+    const search = searchParams.get("search") || undefined;
     const status = searchParams.get("status")?.split(",");
-    const performanceTier = searchParams.get("performance_tier")?.split(",");
-    const category = searchParams.get("category")?.split(",");
-    const region = searchParams.get("region")?.split(",");
-    const beeLevel = searchParams.get("bee_level")?.split(",");
-    const preferredOnly = searchParams.get("preferred_only") === "true";
-    const minSpend = searchParams.get("min_spend");
-    const maxSpend = searchParams.get("max_spend");
     const page = parseInt(searchParams.get("page") || "1");
     const limitParam = parseInt(searchParams.get("limit") || "50");
     const limit = Math.min(Math.max(1, limitParam), 1000);
-    const offset = (page - 1) * limit;
-    const cursor = searchParams.get("cursor");
+    const cursor = searchParams.get("cursor") || undefined;
+    const sortBy = searchParams.get("sort_by") || "name";
+    const sortOrder = (searchParams.get("sort_order") || "asc") as "asc" | "desc";
 
     // Request validation
-    // limit is clamped to [1,1000] above
-
     if (page > 10000) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Page number too large",
-          detail: "Use cursor-based pagination for large offsets",
-        },
-        { status: 400 }
+      const errorResponse = createErrorResponse(
+        "Page number too large",
+        "Use cursor-based pagination for large offsets"
       );
+      return NextResponse.json(errorResponse, { status: 400 });
     }
 
     if (search && search.length < 2) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Search term too short",
-          detail: "Search term must be at least 2 characters",
-        },
-        { status: 400 }
+      const errorResponse = createErrorResponse(
+        "Search term too short",
+        "Search term must be at least 2 characters"
       );
+      return NextResponse.json(errorResponse, { status: 400 });
     }
 
-    // Build the query - using core.supplier table with ONLY existing columns
-    let sqlQuery = `
-      /* suppliers_list_query */
-      SELECT
-        supplier_id as id,
-        name,
-        code,
-        CASE WHEN active = true THEN 'active' ELSE 'inactive' END as status,
-        contact_info,
-        contact_info->>'email' as email,
-        contact_info->>'phone' as phone,
-        contact_info->>'website' as website,
-        payment_terms,
-        default_currency as currency,
-        tax_number,
-        created_at,
-        updated_at
-      FROM core.supplier
-      WHERE 1=1
-    `;
-
-    const queryParams: any[] = [];
-    let paramIndex = 1;
-
-    // Add status filter first for partial index usage
-    if (status?.length) {
-      // Map string values to boolean: 'active' -> true, 'inactive' -> false
-      const statusBooleans = status.map((s) => s.toLowerCase() === "active");
-
-      // If all values are the same, use simple equality instead of ANY
-      const allTrue = statusBooleans.every((b) => b === true);
-      const allFalse = statusBooleans.every((b) => b === false);
-
-      if (allTrue) {
-        sqlQuery += ` AND active = true`;
-      } else if (allFalse) {
-        sqlQuery += ` AND active = false`;
-      } else {
-        sqlQuery += ` AND active = ANY($${paramIndex})`;
-        queryParams.push(statusBooleans);
-        paramIndex++;
-      }
-    }
-
-    // Removed incorrect cursor-based pagination on UUIDs
-
-    // Add search filter - only search on existing columns
-    if (search) {
-      sqlQuery += ` AND (
-        name ILIKE $${paramIndex} OR
-        code ILIKE $${paramIndex} OR
-        contact_info->>'email' ILIKE $${paramIndex} OR
-        contact_info->>'phone' ILIKE $${paramIndex}
-      )`;
-      queryParams.push(`%${search}%`);
-      paramIndex++;
-    }
-
-    // REMOVED: Non-existent column filters
-    // - performanceTier (column doesn't exist)
-    // - category (column doesn't exist)
-    // - region (column doesn't exist)
-    // - beeLevel (column doesn't exist)
-    // - preferredOnly (column doesn't exist)
-    // - minSpend/maxSpend (column doesn't exist)
-
-    // Cursor-based pagination (name, id) for stable ordering
-    let usingCursor = false;
-    let cursorName: string | null = null;
-    let cursorId: string | null = null;
-    if (cursor) {
-      const parts = cursor.split("|");
-      if (parts.length === 2) {
-        cursorName = parts[0];
-        cursorId = parts[1];
-        // Apply keyset condition
-        sqlQuery += ` AND (name > $${paramIndex} OR (name = $${paramIndex} AND supplier_id > $${paramIndex + 1}::uuid))`;
-        queryParams.push(cursorName, cursorId);
-        paramIndex += 2;
-        usingCursor = true;
-      }
-    }
-
-    // Add ordering and pagination
-    if (usingCursor) {
-      sqlQuery += ` ORDER BY name ASC, supplier_id ASC LIMIT $${paramIndex}`;
-      queryParams.push(limit);
-    } else {
-      sqlQuery += ` ORDER BY name ASC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-      queryParams.push(limit, offset);
-    }
-
-    // Execute query with performance tracking
-    const queryStartTime = performance.now();
-    const result = await query(sqlQuery, queryParams);
-    const queryDuration = performance.now() - queryStartTime;
-
-    // Log slow queries
-    if (queryDuration > SLOW_QUERY_THRESHOLD_MS) {
-      console.warn(`🐌 SLOW SUPPLIERS QUERY: ${queryDuration.toFixed(2)}ms`, {
-        search,
-        status,
-        performanceTier,
-        category,
-        region,
-        beeLevel,
-        preferredOnly,
-        minSpend,
-        maxSpend,
-        page,
-        limit,
-        cursor,
-        rowCount: result.rows.length,
-      });
-    }
-
-    // Get total count for pagination - using core.supplier with ONLY existing columns
-    let countQuery = `
-      SELECT COUNT(*) as total
-      FROM core.supplier
-      WHERE 1=1
-    `;
-
-    // Apply same filters to count query (excluding pagination)
-    const countParams: any[] = [];
-    let countParamIndex = 1;
-
-    if (status?.length) {
-      // Map string values to boolean: 'active' -> true, 'inactive' -> false
-      const statusBooleans = status.map((s) => s.toLowerCase() === "active");
-
-      // If all values are the same, use simple equality instead of ANY
-      const allTrue = statusBooleans.every((b) => b === true);
-      const allFalse = statusBooleans.every((b) => b === false);
-
-      if (allTrue) {
-        countQuery += ` AND active = true`;
-      } else if (allFalse) {
-        countQuery += ` AND active = false`;
-      } else {
-        countQuery += ` AND active = ANY($${countParamIndex})`;
-        countParams.push(statusBooleans);
-        countParamIndex++;
-      }
-    }
-
-    if (search) {
-      countQuery += ` AND (
-        name ILIKE $${countParamIndex} OR
-        code ILIKE $${countParamIndex} OR
-        contact_info->>'email' ILIKE $${countParamIndex} OR
-        contact_info->>'phone' ILIKE $${countParamIndex}
-      )`;
-      countParams.push(`%${search}%`);
-      countParamIndex++;
-    }
-
-    // REMOVED: All filters on non-existent columns
-
-    const countResult = await query(countQuery, countParams);
-    const total = parseInt(countResult.rows[0].total);
-    const totalPages = Math.ceil(total / limit);
-
-    // Generate next cursor for cursor-based pagination
-    let nextCursor: string | null = null;
-    if (result.rows.length === limit && result.rows.length > 0) {
-      const lastRow = result.rows[result.rows.length - 1];
-      nextCursor = `${lastRow.name}|${lastRow.id}`;
-    }
-
-    const response = NextResponse.json({
-      success: true,
-      data: result.rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-        nextCursor,
-      },
+    // Use unified service
+    const result = await SupplierService.getSuppliers({
+      page,
+      limit,
+      cursor,
+      search,
+      filters: { status },
+      sortBy,
+      sortOrder,
     });
 
-    // Add performance headers
-    response.headers.set("X-Query-Duration-Ms", queryDuration.toFixed(2));
-    response.headers.set("X-Query-Fingerprint", "suppliers_list");
+    // Return error if service failed
+    if (!result.success) {
+      return NextResponse.json(result, { status: 500 });
+    }
+
+    // Create response with performance headers
+    const response = NextResponse.json(result);
+
+    if (result.meta?.queryTime) {
+      response.headers.set("X-Query-Duration-Ms", result.meta.queryTime.toFixed(2));
+    }
+    if (result.meta?.queryFingerprint) {
+      response.headers.set("X-Query-Fingerprint", result.meta.queryFingerprint);
+    }
 
     return response;
   } catch (error) {
     console.error("Error fetching suppliers:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to fetch suppliers",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+    const errorResponse = createErrorResponse(
+      "Failed to fetch suppliers",
+      error instanceof Error ? error.message : "Unknown error"
     );
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 });
 
@@ -330,120 +148,50 @@ export const POST = withAuth(async (request: NextRequest) => {
       validatedData = supplierSchema.parse(body);
     }
 
-    // Check for duplicate supplier name - using core.supplier
-    const existingSupplier = await pool.query(
-      "SELECT supplier_id as id FROM core.supplier WHERE name = $1",
-      [validatedData.name]
-    );
-
-    if (existingSupplier.rows.length > 0) {
-      return NextResponse.json(
-        { success: false, error: "Supplier with this name already exists" },
-        { status: 409 }
-      );
-    }
-
-    // Build contact_info JSONB based on schema type
-    let contactInfo: any = {};
-
-    if (isEnhanced) {
-      // Enhanced form data
-      contactInfo = {
-        email: validatedData.primaryContact?.email || "",
-        phone: validatedData.primaryContact?.phone || "",
-        website: validatedData.website || "",
-        contact_person: validatedData.primaryContact?.name || "",
-        job_title: validatedData.primaryContact?.title || "",
-        department: validatedData.primaryContact?.department || "",
-        address: validatedData.address
-          ? {
-              street: validatedData.address.street,
-              city: validatedData.address.city,
-              state: validatedData.address.state,
-              postalCode: validatedData.address.postalCode,
-              country: validatedData.address.country,
-            }
-          : null,
-      };
-    } else {
-      // Simple form data
-      contactInfo = {
-        email: validatedData.email || "",
-        phone: validatedData.phone || "",
-        website: validatedData.website || "",
-        address: validatedData.address,
-        contact_person: validatedData.contact_person || "",
-      };
-    }
-
-    // Generate code if not provided
-    const code =
-      isEnhanced && validatedData.code
-        ? validatedData.code
-        : validatedData.name
-            .substring(0, 10)
-            .toUpperCase()
-            .replace(/[^A-Z0-9]/g, "");
-
-    const insertQuery = `
-      INSERT INTO core.supplier (
-        name,
-        code,
-        contact_info,
-        active,
-        default_currency,
-        payment_terms,
-        tax_number,
-        created_at,
-        updated_at
-      ) VALUES (
-        $1, $2, $3::jsonb, true, $4, $5, $6, NOW(), NOW()
-      ) RETURNING supplier_id as id, *
-    `;
-
-    const insertResult = await pool.query(insertQuery, [
-      validatedData.name,
-      code,
-      JSON.stringify(contactInfo),
-      isEnhanced ? validatedData.currency || "USD" : "USD",
-      validatedData.paymentTerms || validatedData.payment_terms || "30 days",
-      isEnhanced
+    // Prepare supplier data for unified service
+    const supplierData = {
+      name: validatedData.name,
+      code: isEnhanced ? validatedData.code : undefined,
+      email: isEnhanced ? validatedData.primaryContact?.email : validatedData.email,
+      phone: isEnhanced ? validatedData.primaryContact?.phone : validatedData.phone,
+      website: validatedData.website,
+      currency: isEnhanced ? validatedData.currency : "ZAR",
+      paymentTerms: validatedData.paymentTerms || validatedData.payment_terms,
+      taxNumber: isEnhanced
         ? validatedData.taxId || validatedData.registrationNumber
         : validatedData.tax_id,
-    ]);
+      active: true,
+    };
+
+    // Use unified service
+    const result = await SupplierService.createSupplier(supplierData);
+
+    // Return error if service failed
+    if (!result.success) {
+      return NextResponse.json(result, { status: result.error?.includes("already exists") ? 409 : 500 });
+    }
 
     // Invalidate cache after successful creation
-    CacheInvalidator.invalidateSupplier(
-      insertResult.rows[0].id,
-      validatedData.name
-    );
+    if (result.data && typeof result.data === "object" && "id" in result.data) {
+      CacheInvalidator.invalidateSupplier(result.data.id, supplierData.name);
+    }
 
-    return NextResponse.json({
-      success: true,
-      data: insertResult.rows[0],
-      message: "Supplier created successfully",
-    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error creating supplier:", error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Validation failed",
-          details: error.errors.map((e) => `${e.path.join(".")}: ${e.message}`),
-        },
-        { status: 400 }
+      const errorResponse = createErrorResponse(
+        "Validation failed",
+        error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ")
       );
+      return NextResponse.json(errorResponse, { status: 400 });
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to create supplier",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+    const errorResponse = createErrorResponse(
+      "Failed to create supplier",
+      error instanceof Error ? error.message : "Unknown error"
     );
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 });
