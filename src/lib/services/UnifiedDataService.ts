@@ -86,8 +86,11 @@ export interface Supplier {
  */
 export interface InventoryItem {
   id: string;
+  productId?: string;
+  supplierProductId?: string;
   sku: string;
   name: string;
+  categoryId?: string;
   category?: string;
   currentStock: number;
   reservedStock: number;
@@ -98,6 +101,10 @@ export interface InventoryItem {
   supplierId: string;
   supplierName?: string;
   brandId?: string;
+  unitOfMeasure?: string;
+  currency?: string;
+  reorderPoint?: number;
+  maxStockLevel?: number;
   status?: 'in_stock' | 'low_stock' | 'out_of_stock' | 'critical';
 }
 
@@ -130,11 +137,21 @@ function mapDatabaseRowToSupplier(row: any): Supplier {
  * Maps database row to InventoryItem object with field name transformation
  */
 function mapDatabaseRowToInventoryItem(row: any): InventoryItem {
-  const stockQty = Number(row.stock_qty ?? row.qty ?? 0);
-  const costPrice = Number(row.cost_price ?? row.unit_cost ?? 0);
-  const salePrice = Number(row.sale_price ?? row.unit_cost ?? 0);
-  const reservedQty = Number(row.reserved_qty ?? 0);
-  const availableQty = stockQty - reservedQty;
+  const stockQty = Number(row.stock_qty ?? row.qty ?? row.current_stock ?? row.currentStock ?? 0);
+  const costPrice = Number(row.cost_price ?? row.unit_cost ?? row.costPerUnitZar ?? 0);
+  const salePrice = Number(row.sale_price ?? row.unit_cost ?? row.salePerUnitZar ?? costPrice);
+  const reservedQty = Number(row.reserved_qty ?? row.reservedQty ?? 0);
+  const availableQty = Number(row.available_qty ?? row.availableQty ?? stockQty - reservedQty);
+  const supplierProductId = row.supplier_product_id || row.supplierProductId || null;
+  const productId = row.product_id || row.productId || supplierProductId || null;
+  const categoryName = row.category_name || row.categoryName || row.category || row.category_id;
+  const categoryId = row.category_id || row.categoryId || null;
+  const unitOfMeasure = row.unit_of_measure || row.unit || row.uom || null;
+  const reorderPoint = Number(row.reorder_point ?? row.reorderPoint ?? 0);
+  const maxStockLevel = Number(row.max_stock_level ?? row.maxStockLevel ?? 0);
+  const currency = row.currency || row.currency_code || 'ZAR';
+  const supplierId = row.supplier_id || row.supplierId || '';
+  const supplierName = row.supplier_name || row.supplierName;
 
   // Determine stock status
   let status: InventoryItem['status'] = 'in_stock';
@@ -147,19 +164,26 @@ function mapDatabaseRowToInventoryItem(row: any): InventoryItem {
   }
 
   return {
-    id: row.id || row.soh_id,
-    sku: row.sku || row.supplier_sku,
+    id: row.id || row.soh_id || productId || supplierProductId || '',
+    productId: productId ?? undefined,
+    supplierProductId: supplierProductId ?? undefined,
+    sku: row.sku || row.supplier_sku || '',
     name: row.name || '',
-    category: row.category || row.category_id,
+    categoryId: categoryId ?? undefined,
+    category: typeof categoryName === 'string' ? categoryName : String(categoryName ?? ''),
     currentStock: stockQty,
     reservedStock: reservedQty,
     availableStock: availableQty,
     costPerUnitZar: costPrice,
     salePerUnitZar: salePrice,
     totalValueZar: stockQty * costPrice,
-    supplierId: row.supplier_id || row.supplierId || '',
-    supplierName: row.supplier_name || row.supplierName,
+    supplierId: String(supplierId || ''),
+    supplierName,
     brandId: row.brand_id || row.brandId,
+    unitOfMeasure: unitOfMeasure ?? undefined,
+    currency,
+    reorderPoint: reorderPoint || undefined,
+    maxStockLevel: maxStockLevel || undefined,
     status,
   };
 }
@@ -519,14 +543,18 @@ export class InventoryService {
       const sql = `
         SELECT
           soh.soh_id as id,
+          sp.supplier_product_id::text as supplier_product_id,
+          sp.product_id::text as product_id,
           sp.supplier_sku as sku,
           COALESCE(p.name, sp.name_from_supplier) as name,
-          COALESCE(p.category_id, sp.category_id) as category,
+          COALESCE(p.category_id, sp.category_id) as category_id,
+          COALESCE(c.name, 'uncategorized') as category_name,
           soh.qty as stock_qty,
           0 as reserved_qty,
           soh.qty as available_qty,
           soh.unit_cost as cost_price,
           soh.unit_cost as sale_price,
+          sp.uom as unit_of_measure,
           sp.supplier_id,
           s.name as supplier_name,
           p.brand_id
@@ -535,6 +563,7 @@ export class InventoryService {
         JOIN core.supplier_product AS sp ON sp.supplier_product_id = soh.supplier_product_id
         JOIN core.supplier AS s ON s.supplier_id = sp.supplier_id
         LEFT JOIN core.product AS p ON p.product_id = sp.product_id
+        LEFT JOIN core.category AS c ON c.category_id = COALESCE(p.category_id, sp.category_id)
         ${whereClause}
         ORDER BY sp.supplier_sku ${sortOrder.toUpperCase()}, soh.soh_id ${sortOrder.toUpperCase()}
         ${cursor ? `LIMIT $${paramIndex}` : `LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`}

@@ -43,22 +43,27 @@ export async function GET(request: NextRequest) {
     const query = `
       SELECT
         sp.supplier_product_id::text as id,
+        sp.supplier_product_id::text as supplier_product_id,
+        sp.supplier_id::text as supplier_id,
         sp.supplier_sku as sku,
-        sp.name_from_supplier as name,
-        '' as description,
-        '' as category,
-        '' as brand,
-        COALESCE(ph.price, 0) as price,
+        COALESCE(p.name, sp.name_from_supplier) as name,
+        COALESCE(p.attrs_json->>'description', sp.attrs_json->>'description', '') as description,
+        COALESCE(c.name, 'uncategorized') as category,
+        COALESCE(p.brand_id::text, '') as brand,
+        COALESCE(ph.price, 0) as unit_cost_zar,
         COALESCE(ph.price, 0) as sale_price,
         COALESCE(soh.qty, 0) as stock,
         10 as reorder_point,
         CASE WHEN sp.is_active THEN 'active' ELSE 'inactive' END as status,
-        sp.uom as unit,
+        sp.uom as unit_of_measure,
         s.name as supplier_name,
+        CASE WHEN s.active THEN 'active' ELSE 'inactive' END as supplier_status,
         sp.created_at,
         sp.updated_at
       FROM core.supplier_product sp
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
+      LEFT JOIN core.product p ON p.product_id = sp.product_id
+      LEFT JOIN core.category c ON c.category_id = COALESCE(p.category_id, sp.category_id)
       LEFT JOIN LATERAL (
         SELECT price FROM core.price_history
         WHERE supplier_product_id = sp.supplier_product_id
@@ -89,18 +94,21 @@ export async function GET(request: NextRequest) {
 
     const products = productsResult.rows.map(row => ({
       id: row.id,
+      supplier_product_id: row.supplier_product_id,
+      supplier_id: row.supplier_id,
       sku: row.sku,
       name: row.name,
       description: row.description,
       category: row.category,
       brand: row.brand,
-      price: parseFloat(row.price),
-      salePrice: parseFloat(row.sale_price || row.price),
+      unit_cost_zar: Number(row.unit_cost_zar ?? 0),
+      salePrice: Number(row.sale_price ?? row.unit_cost_zar ?? 0),
       stock: row.stock,
       reorderPoint: row.reorder_point,
       status: row.status,
-      unit: row.unit,
-      supplier: row.supplier_name,
+      unit_of_measure: row.unit_of_measure,
+      supplier_name: row.supplier_name,
+      supplier_status: row.supplier_status,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }))

@@ -86,6 +86,7 @@ import {
   Trash2,
   Copy,
   Check,
+  Star,
   ChevronsUpDown
 } from 'lucide-react'
 import { useInventoryStore } from '@/lib/stores/inventory-store'

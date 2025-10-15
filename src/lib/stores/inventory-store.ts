@@ -114,48 +114,96 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
     try {
       const res = await fetch('/api/inventory?format=display&limit=25000');
       if (!res.ok) throw new Error(`INVENTORY_FETCH_FAILED: ${res.status}`);
-      const data = await res.json();
+      const payload = await res.json();
 
-      // API returns { items: [...], nextCursor: ... } format
-      const rows = data?.items || [];
+      const rows = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.items)
+            ? payload.items
+            : Array.isArray(payload?.data?.items)
+              ? payload.data.items
+              : [];
 
-      // Map API snake_case fields to component expectations
-      const items = rows.map((r: any) => ({
-        id: r.id,
-        product_id: r.id,
-        sku: r.sku || r.supplier_sku || '',
-        name: r.name || r.sku || 'Unknown',
-        category: r.category || 'uncategorized',
-        current_stock: Number(r.stock_qty ?? r.currentStock ?? r.current_stock ?? 0),
-        reserved_stock: Number(r.reserved_qty ?? r.reservedStock ?? r.reserved_stock ?? 0),
-        available_stock: Number(r.available_qty ?? r.availableStock ?? r.available_stock ?? 0),
-        cost_per_unit_zar: Number(r.cost_price ?? r.unit_cost ?? r.costPrice ?? r.cost_per_unit_zar ?? 0),
-        total_value_zar: Number(r.cost_price ?? r.costPrice ?? 0) * Number(r.stock_qty ?? r.currentStock ?? 0),
-        reorder_point: Number(r.reorder_point ?? 10),
-        max_stock_level: Number(r.max_stock_level ?? 100),
-        location: r.location || 'Main Warehouse',
-        supplier_id: r.supplier_id ?? r.supplierId ?? null,
-        supplier_name: r.supplier_name || 'Unknown Supplier',
-        supplier_status: r.supplier_status || 'active',
-        stock_status: r.stock_status || (Number(r.stock_qty ?? 0) <= 0 ? 'out_of_stock' : (Number(r.stock_qty ?? 0) <= 10 ? 'low_stock' : 'in_stock')),
-        currency: 'ZAR',
-        // Add product reference for compatibility
-        product: {
-          id: r.id,
-          name: r.name || r.sku || 'Unknown',
-          sku: r.sku || '',
-          category: r.category || 'uncategorized',
-          unit_of_measure: 'each',
-          supplier_id: r.supplier_id ?? null,
-          unit_cost_zar: Number(r.cost_price ?? r.costPrice ?? 0),
-          status: 'active' as const
-        },
-        supplier: {
-          id: r.supplier_id ?? 'unknown',
-          name: r.supplier_name || 'Unknown Supplier',
-          status: r.supplier_status || 'active'
-        }
-      }));
+      // Map API fields (camelCase or snake_case) to component expectations
+      const items = rows.map((r: any) => {
+        const supplierId = r.supplier_id ?? r.supplierId ?? r.supplier_uuid ?? r.supplier?.id ?? null;
+        const supplierProductId =
+          r.supplier_product_id ?? r.supplierProductId ?? r.product?.id ?? r.inventory_item_id ?? null;
+        const productId =
+          r.product_id ?? r.productId ?? supplierProductId ?? r.product?.id ?? null;
+        const sku = r.sku ?? r.supplier_sku ?? r.product?.sku ?? '';
+        const categoryRaw =
+          r.category_name ?? r.categoryName ?? r.category ?? r.category_id ?? r.categoryId ?? r.product?.category ?? 'uncategorized';
+        const category =
+          typeof categoryRaw === 'string' ? categoryRaw : String(categoryRaw ?? 'uncategorized');
+        const currentStock = Number(
+          r.current_stock ?? r.currentStock ?? r.stock_qty ?? r.qty ?? 0
+        );
+        const reservedStock = Number(
+          r.reserved_stock ?? r.reservedStock ?? r.reserved_qty ?? 0
+        );
+        const availableStock = Number(
+          r.available_stock ?? r.availableStock ?? r.available_qty ?? currentStock - reservedStock
+        );
+        const unitCost = Number(
+          r.cost_per_unit_zar ?? r.costPerUnitZar ?? r.unit_cost_zar ?? r.unit_cost ?? r.cost_price ?? 0
+        );
+        const totalValue = Number(r.total_value_zar ?? unitCost * currentStock);
+        const stockStatus =
+          r.stock_status ?? r.stockStatus ?? (currentStock <= 0
+            ? 'out_of_stock'
+            : currentStock <= 10
+              ? 'low_stock'
+              : 'in_stock');
+        const location = r.location ?? r.location_name ?? 'Main Warehouse';
+        const currency = r.currency ?? r.currency_code ?? 'ZAR';
+        const reorderPoint = Number(r.reorder_point ?? r.reorderPoint ?? 10);
+        const maxStockLevel = Number(r.max_stock_level ?? r.maxStockLevel ?? 100);
+        const supplierName = r.supplier_name ?? r.supplierName ?? r.supplier?.name ?? 'Unknown Supplier';
+        const supplierStatus = r.supplier_status ?? r.supplierStatus ?? r.supplier?.status ?? 'active';
+
+        return {
+          id: r.id ?? r.soh_id ?? productId ?? sku,
+          product_id: productId,
+          supplier_product_id: supplierProductId,
+          sku,
+          name: r.name ?? r.product?.name ?? sku || 'Unknown',
+          category,
+          current_stock: currentStock,
+          reserved_stock: reservedStock,
+          available_stock: availableStock,
+          cost_per_unit_zar: unitCost,
+          total_value_zar: totalValue,
+          reorder_point: reorderPoint,
+          max_stock_level: maxStockLevel,
+          location,
+          supplier_id: supplierId,
+          supplier_name: supplierName,
+          supplier_status: supplierStatus,
+          stock_status: stockStatus,
+          currency,
+          // Add product reference for compatibility
+          product: {
+            id: productId,
+            supplier_product_id: supplierProductId,
+            name: r.product?.name ?? r.name ?? sku || 'Unknown',
+            sku,
+            category,
+            unit_of_measure: r.unit_of_measure ?? r.unit ?? r.uom ?? 'each',
+            supplier_id: supplierId,
+            unit_cost_zar: unitCost,
+            status: r.product?.status ?? (stockStatus === 'out_of_stock' ? 'inactive' : 'active')
+          },
+          supplier: {
+            id: supplierId ?? 'unknown',
+            name: supplierName,
+            status: supplierStatus,
+            preferred_supplier: r.supplier?.preferred_supplier ?? false
+          }
+        };
+      });
 
       set({ items, loading: false });
     } catch (e: any) {
@@ -168,21 +216,34 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
     try {
       const res = await fetch('/api/inventory/products');
       if (!res.ok) throw new Error(`PRODUCTS_FETCH_FAILED: ${res.status}`);
-      const data = await res.json();
-      const productRows = Array.isArray(data) ? data : (data?.data || data?.items || []);
+      const payload = await res.json();
+      const productRows = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.items)
+            ? payload.items
+            : [];
 
       // Map to consistent format
-      const products = productRows.map((p: any) => ({
-        id: p.id || p.product_id,
-        supplier_id: p.supplier_id || p.supplierId,
-        name: p.name || p.product_name || 'Unknown Product',
-        description: p.description || '',
-        category: p.category || 'uncategorized',
-        sku: p.sku || p.supplier_sku || '',
-        unit_of_measure: p.unit_of_measure || p.unit || 'each',
-        unit_cost_zar: Number(p.unit_cost_zar ?? p.unit_cost ?? p.cost_price ?? 0),
-        status: p.status || 'active'
-      }));
+      const products = productRows.map((p: any) => {
+        const supplierId = p.supplier_id ?? p.supplierId ?? p.supplier_uuid ?? p.supplier?.id ?? null;
+        const unitCost = Number(
+          p.unit_cost_zar ?? p.unit_cost ?? p.cost_price ?? p.price ?? p.salePrice ?? 0
+        );
+        const categoryRaw = p.category_name ?? p.category ?? 'uncategorized';
+        return {
+          id: p.id || p.product_id || p.supplier_product_id,
+          supplier_id: supplierId,
+          name: p.name || p.product_name || 'Unknown Product',
+          description: p.description || '',
+          category: typeof categoryRaw === 'string' ? categoryRaw : 'uncategorized',
+          sku: p.sku || p.supplier_sku || '',
+          unit_of_measure: p.unit_of_measure || p.unit || p.uom || 'each',
+          unit_cost_zar: unitCost,
+          status: p.status || 'active'
+        };
+      });
 
       set({ products, loading: false });
     } catch (e: any) {
