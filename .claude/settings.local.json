@@ -23,9 +23,27 @@
       "Bash(curl -s \"http://localhost:3000/api/analytics/predictions?horizon=30\")",
       "Bash(curl -s \"http://localhost:3000/api/inventory?limit=2\")",
       "Bash(curl -s \"http://localhost:3000/api/analytics/recommendations?limit=3\")",
-      "Bash(curl -s \"http://localhost:3000/api/analytics/predictions\")"
+      "Bash(curl -s \"http://localhost:3000/api/analytics/predictions\")",
+      "mcp__fs__directory_tree",
+      "Bash(cat:*)",
+      "Bash(git log:*)",
+      "Bash(git -C /K/00Project/MantisNXT check-ignore:*)",
+      "Bash(git -C /K/00Project/MantisNXT ls-files:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7",
+    "magic",
+    "playwright",
+    "shadcn",
+    "fetch",
+    "postgres",
+    "fs",
+    "git",
+    "chrome-devtools"
+  ]
 }
