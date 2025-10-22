@@ -12,9 +12,7 @@
 - backend/frontend-implementation/ - Implementation reports
 - database-migration/ - Migration reports
 - iterations/ - Sprint deliverables
-- incidents/ - Incident response
-- validation/ - Validation reports
-- miscellaneous/ - Other docs
+there a- miscellaneous/ - Other docs
 
 ### Database Artifacts
 - bulk-inserts/ - 26 SQL batch files
