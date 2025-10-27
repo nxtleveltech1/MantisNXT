@@ -36,7 +36,8 @@ import {
   HelpCircle,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Upload
 } from 'lucide-react'
 
 interface SelfContainedLayoutProps {
@@ -75,6 +76,11 @@ const navigationGroups: NavigationGroup[] = [
         url: "/analytics",
         icon: TrendingUp,
       },
+      {
+        title: "Test Auth",
+        url: "/test-auth",
+        icon: Settings,
+      },
     ],
   },
   {
@@ -90,6 +96,11 @@ const navigationGroups: NavigationGroup[] = [
         title: "Add Supplier",
         url: "/suppliers/new",
         icon: Users,
+      },
+      {
+        title: "Upload Pricelist",
+        url: "/suppliers/pricelist-upload",
+        icon: Upload,
       },
       {
         title: "Performance",
@@ -342,6 +353,7 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
                   type="search"
                   placeholder="Search..."
                   className="w-64 pl-9"
+                  defaultValue=""
                 />
               </div>
 

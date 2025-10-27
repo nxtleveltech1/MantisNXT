@@ -298,6 +298,12 @@ const AlertPanel: React.FC<{ alerts: AlertItem[] }> = ({ alerts }) => {
 const RealDataDashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState('30');
   const [refreshing, setRefreshing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatches by only rendering client-side content after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // PRIMARY DATA SOURCE: React Query cached dashboard metrics (FAST!)
   const dashboardQuery = useDashboardMetrics();
@@ -394,6 +400,23 @@ const RealDataDashboard: React.FC = () => {
   // Prefer React Query data when available (cached and faster)
   const loading = dashboardQuery.isLoading || dashboardLoading || suppliersLoading || inventoryLoading || alertsQuery.isLoading;
   const error = dashboardQuery.error || dashboardError || suppliersError || inventoryError || alertsQuery.error;
+
+  // Prevent hydration mismatches by showing loading state until mounted
+  if (!mounted) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

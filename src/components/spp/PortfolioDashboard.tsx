@@ -44,8 +44,11 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
 
   // React Query hooks
   const { data: metrics, isLoading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useDashboardMetrics();
-  const { data: uploads, isLoading: uploadsLoading, error: uploadsError, refetch: refetchUploads } = usePricelistUploads({ limit: 10 });
+  const { data: uploadsData, isLoading: uploadsLoading, error: uploadsError, refetch: refetchUploads } = usePricelistUploads({ limit: 10 });
   const { data: activeSelection, isLoading: selectionLoading } = useActiveSelection();
+
+  // Ensure uploads is always an array
+  const uploads = Array.isArray(uploadsData) ? uploadsData : [];
 
   const loading = metricsLoading || uploadsLoading || selectionLoading;
 
@@ -173,7 +176,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!uploads || uploads.length === 0 ? (
+            {uploads.length === 0 ? (
               <EmptyState
                 icon={FileUp}
                 title="No Uploads Yet"
@@ -284,7 +287,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
                   </div>
                 )}
 
-                {uploads && uploads.filter(u => u.status === 'merged').length > 0 && (
+                {uploads.filter(u => u.status === 'merged').length > 0 && (
                   <div className="flex items-start gap-3">
                     <div className="w-2 h-2 bg-green-600 rounded-full mt-1.5 flex-shrink-0" />
                     <div className="flex-1 text-sm">
@@ -314,7 +317,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
               </div>
               <div className="font-medium">Upload</div>
               <div className="text-2xl font-bold text-green-600 mt-1">
-                {uploads?.filter(u => u.status === 'merged').length || 0}
+                {uploads.filter(u => u.status === 'merged').length}
               </div>
               <div className="text-xs text-muted-foreground">Complete</div>
             </div>

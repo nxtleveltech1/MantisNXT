@@ -1,0 +1,26 @@
+{
+  "filesProcessed": 1,
+  "suppliersCreated": 1,
+  "suppliersUpdated": 0,
+  "productsCreated": 43,
+  "productsUpdated": 0,
+  "errors": [
+    {
+      "file": "ApexPro Distribution pricelist 25-04-2025 (1).xlsx",
+      "product": "EVOLVE30M-EU-BK",
+      "error": "null value in column \"cost_price\" of relation \"inventory_items\" violates not-null constraint"
+    },
+    {
+      "file": "ApexPro Distribution pricelist 25-04-2025 (1).xlsx",
+      "product": "RE320",
+      "error": "null value in column \"cost_price\" of relation \"inventory_items\" violates not-null constraint"
+    },
+    {
+      "file": "ApexPro Distribution pricelist 25-04-2025 (1).xlsx",
+      "product": "RE50B",
+      "error": "null value in column \"cost_price\" of relation \"inventory_items\" violates not-null constraint"
+    }
+  ],
+  "skippedFiles": [],
+  "processingTime": 0
+}

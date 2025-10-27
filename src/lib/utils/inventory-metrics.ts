@@ -1,43 +1,24 @@
-import { differenceInDays } from 'date-fns';
-
-export type Movement = {
-  quantity: number;
-  movement_type: 'inbound' | 'outbound' | 'transfer' | 'adjustment' | string;
-  created_at: string | Date;
-};
-
-export function deriveStockStatus(current: number, reorder: number, max: number): 'out_of_stock' | 'low_stock' | 'overstocked' | 'in_stock' {
-  if (current <= 0) return 'out_of_stock';
-  if (reorder > 0 && current <= reorder) return 'low_stock';
-  if (max > 0 && current > max) return 'overstocked';
-  return 'in_stock';
-}
-
-export function calculateTurnover(totalOutboundQty: number, avgInventoryQty: number): number {
-  if (!avgInventoryQty || avgInventoryQty <= 0) return 0;
-  return +(totalOutboundQty / avgInventoryQty).toFixed(4);
-}
-
-export function movingAverage(values: number[], windowSize = 7): number[] {
-  const out: number[] = [];
-  for (let i = 0; i < values.length; i++) {
-    const start = Math.max(0, i - windowSize + 1);
-    const slice = values.slice(start, i + 1);
-    out.push(+((slice.reduce((a, b) => a + b, 0)) / slice.length).toFixed(4));
-  }
-  return out;
+export function calculateTurnover(totalOutbound: number, averageInventory: number, windowDays = 30): number {
+  const outbound = Math.max(0, Number(totalOutbound) || 0)
+  const avgInv = Math.max(1, Number(averageInventory) || 1)
+  // Normalize to annualized turnover based on window days
+  const turnsInWindow = outbound / avgInv
+  const annualized = turnsInWindow * (365 / Math.max(1, windowDays))
+  return isFinite(annualized) ? annualized : 0
 }
 
 export function fillRate(fulfilled: number, requested: number): number {
-  if (requested <= 0) return 1;
-  return +(Math.max(0, Math.min(1, fulfilled / requested))).toFixed(4);
+  const req = Math.max(1, Number(requested) || 1)
+  const ful = Math.max(0, Number(fulfilled) || 0)
+  const rate = ful / req
+  return Math.max(0, Math.min(1, rate))
 }
 
-export function ageInDays(date: string | Date): number {
-  try {
-    return Math.max(0, differenceInDays(new Date(), new Date(date)));
-  } catch {
-    return 0;
-  }
+// Keep a copy here so components importing from this module continue to work
+export type StockStatus = 'out_of_stock' | 'low_stock' | 'overstocked' | 'in_stock'
+export function deriveStockStatus(current: number, reorder: number, max: number): StockStatus {
+  if (current <= 0) return 'out_of_stock'
+  if (reorder > 0 && current <= reorder) return 'low_stock'
+  if (max > 0 && current > max) return 'overstocked'
+  return 'in_stock'
 }
-

@@ -16,12 +16,30 @@ export default function RootLayout({
   return (
     <html lang="en-ZA">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @font-face {
+              font-family: 'Inter';
+              font-style: normal;
+              font-weight: 100 900;
+              font-display: swap;
+              src: local('Inter'), local('Inter-Regular'), 
+                   local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'), 
+                   local('Segoe UI'), local('Roboto'), local('Helvetica Neue'), local('Arial'), 
+                   local('sans-serif');
+            }
+            
+            /* Fallback font loading with error handling */
+            .font-inter {
+              font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            }
+            
+            /* Ensure proper font loading */
+            body {
+              font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            }
+          `
+        }} />
       </head>
       <body className="font-inter antialiased">
         <QueryProvider>
@@ -29,6 +47,16 @@ export default function RootLayout({
             {children}
           </AuthProvider>
         </QueryProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Initialize authentication state
+              if (typeof window !== 'undefined') {
+                window.__AUTH_INITIALIZED__ = true;
+              }
+            `
+          }}
+        />
       </body>
     </html>
   )

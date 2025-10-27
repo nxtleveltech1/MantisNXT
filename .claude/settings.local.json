@@ -32,7 +32,14 @@
       "Bash(git rm:*)",
       "Bash(awk:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Read(//c/Users/garet/Pictures/Feedback/**)",
+      "Bash(git clone:*)",
+      "Read(//k/tmp/**)",
+      "Bash(for skill in .claude/skills/*/SKILL.md)",
+      "Bash(head:*)",
+      "Bash(done)",
+      "Read(//c/Users/garet/.claude/**)"
     ],
     "deny": [],
     "ask": []

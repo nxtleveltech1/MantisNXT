@@ -142,19 +142,21 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await pricelistService.listUploads(filters);
+    const uploads = Array.isArray(result.uploads) ? result.uploads : [];
+    const total = Number.isFinite(result.total as any) ? (result.total as any as number) : 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        uploads: result.uploads,
-        total: result.total
+        uploads,
+        total
       },
       pagination: {
         limit,
         offset,
-        total: result.total,
+        total,
         page: Math.floor(offset / limit) + 1,
-        totalPages: Math.ceil(result.total / limit)
+        totalPages: Math.ceil(total / limit)
       },
       timestamp: new Date().toISOString()
     });

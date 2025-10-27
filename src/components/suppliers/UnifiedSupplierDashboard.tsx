@@ -53,6 +53,7 @@ import { useSuppliers } from "@/hooks/useSuppliers"
 import { cn, formatCurrency, formatDate, formatPercentage } from "@/lib/utils"
 import { getDisplayUrl } from "@/lib/utils/url-validation"
 import { SafeLink } from "@/components/ui/SafeLink"
+import SupplierPricelistUpload from "./SupplierPricelistUpload"
 import {
   Building2,
   TrendingUp,
@@ -546,6 +547,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   const [showFilters, setShowFilters] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [showAIDiscovery, setShowAIDiscovery] = useState(false)
+  const [showPricelistUpload, setShowPricelistUpload] = useState(false)
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("")
@@ -790,6 +792,10 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <Button onClick={() => setShowPricelistUpload(true)} size="sm" variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Pricelist
+            </Button>
             <Button onClick={navigateToNewSupplier} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add Supplier
@@ -1498,6 +1504,30 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                   </div>
                 )}
               </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Pricelist Upload Dialog */}
+        {showPricelistUpload && (
+          <Dialog open={showPricelistUpload} onOpenChange={setShowPricelistUpload}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Upload Supplier Pricelist</DialogTitle>
+                <DialogDescription>
+                  Upload a pricelist file or manually enter pricelist items for suppliers.
+                </DialogDescription>
+              </DialogHeader>
+              <SupplierPricelistUpload
+                supplierId={selectedSupplier?.id}
+                onUploadComplete={(pricelist) => {
+                  console.log('Pricelist uploaded:', pricelist)
+                  setShowPricelistUpload(false)
+                  // Refresh suppliers data
+                  window.location.reload()
+                }}
+                onCancel={() => setShowPricelistUpload(false)}
+              />
             </DialogContent>
           </Dialog>
         )}

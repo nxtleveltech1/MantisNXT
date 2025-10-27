@@ -535,18 +535,19 @@ export class PricelistService {
     }
 
     const whereClause = conditions.join(' AND ');
+    const whereSql = whereClause ? `WHERE ${whereClause}` : '';
     const limit = filters?.limit || 50;
     const offset = filters?.offset || 0;
 
     // Get total count
-    const countQuery = `SELECT COUNT(*) as total FROM spp.pricelist_upload WHERE ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) as total FROM spp.pricelist_upload ${whereSql}`;
     const countResult = await neonDb.query<{ total: string }>(countQuery, params);
-    const total = parseInt(countResult.rows[0].total);
+    const total = parseInt(countResult.rows?.[0]?.total ?? '0');
 
     // Get paginated results
     const query = `
       SELECT * FROM spp.pricelist_upload
-      WHERE ${whereClause}
+      ${whereSql}
       ORDER BY received_at DESC
       LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;

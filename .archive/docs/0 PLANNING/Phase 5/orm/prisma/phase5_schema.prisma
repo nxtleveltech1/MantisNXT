@@ -1,0 +1,69 @@
+
+// Phase 5 Prisma schema fragment — merge into your existing schema.prisma
+// Generator and datasource blocks are omitted; keep yours as-is.
+
+enum MovementType {
+  IN
+  OUT
+  ADJUST
+  TRANSFER
+  CONSIGNMENT_IN
+  CONSIGNMENT_OUT
+  WRITE_OFF
+}
+
+model InventoryItem {
+  id           String   @id @default(uuid())
+  stock_qty    Int      @default(0)
+  reserved_qty Int      @default(0)
+  deleted_at   DateTime?
+  // ... your existing fields
+
+  movements    StockMovement[]
+  allocations  InventoryAllocation[]
+
+  @@check(reserved_qty >= 0)
+  @@check(stock_qty >= 0)
+  @@check(reserved_qty <= stock_qty)
+}
+
+model Supplier {
+  id          String   @id @default(uuid())
+  name        String
+  allocations InventoryAllocation[]
+  // ... other fields
+}
+
+model StockMovement {
+  id                String       @id @default(uuid())
+  inventory_item_id String
+  inventory_item    InventoryItem @relation(fields: [inventory_item_id], references: [id])
+  movement_type     MovementType
+  quantity          Int
+  created_at        DateTime     @default(now())
+
+  @@index([inventory_item_id, created_at(sort: Desc)])
+  @@index([movement_type, created_at(sort: Desc)])
+  @@check(quantity > 0)
+}
+
+model InventoryAllocation {
+  id               String        @id @default(uuid())
+  inventory_item_id String
+  supplier_id       String
+  inventory_item    InventoryItem @relation(fields: [inventory_item_id], references: [id])
+  supplier          Supplier       @relation(fields: [supplier_id], references: [id])
+
+  quantity         Int
+  status           String         @default("active")
+  allocated_at     DateTime       @default(now())
+  expires_at       DateTime?
+  notes            String?
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @default(now())
+
+  @@index([inventory_item_id])
+  @@index([supplier_id])
+  @@index([status])
+  @@check(quantity >= 0)
+}

@@ -169,7 +169,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           product_id: productId,
           supplier_product_id: supplierProductId,
           sku,
-          name: r.name ?? r.product?.name ?? sku || 'Unknown',
+          name: r.name ?? r.product?.name ?? (sku || 'Unknown'),
           category,
           current_stock: currentStock,
           reserved_stock: reservedStock,
@@ -188,7 +188,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           product: {
             id: productId,
             supplier_product_id: supplierProductId,
-            name: r.product?.name ?? r.name ?? sku || 'Unknown',
+            name: r.product?.name ?? r.name ?? (sku || 'Unknown'),
             sku,
             category,
             unit_of_measure: r.unit_of_measure ?? r.unit ?? r.uom ?? 'each',

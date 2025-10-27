@@ -1,0 +1,126 @@
+{
+  "filesProcessed": 20,
+  "suppliersCreated": 13,
+  "suppliersUpdated": 8,
+  "productsCreated": 3562,
+  "productsUpdated": 956,
+  "errors": [
+    {
+      "file": "Music Power Pricelist (August 2025).xlsx",
+      "error": "Could not find header row"
+    },
+    {
+      "file": "Pro Audio platinum .xlsx",
+      "error": "Could not find header row"
+    },
+    {
+      "file": "SonicInformed_20250808_I.xlsx",
+      "error": "Could not find header row"
+    },
+    {
+      "file": "Stage Audio Works SOH info_20250826_0247.xlsx",
+      "error": "duplicate key value violates unique constraint \"inventory_items_sku_key\""
+    },
+    {
+      "file": "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+      "error": "Could not find header row"
+    }
+  ],
+  "skippedFiles": [
+    {
+      "file": "ACTIVE MUSIC DISTRIBUTION PRICELIST - AUGUST 2025.xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Alpha-Technologies-Pricelist-August-2025- (2).xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Audiolite PRICE LIST-WHOLESALE OUT.xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Audiosure StockFile 30072025.xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "AV Distribution Pricelist - May 2025 (1).xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "GLOBAL MUSIC SUGGESTED ONLINE ADVERTISED PRICELIST NOVEMBER 2024 SKU LIST FORMAT .xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Music Power Pricelist (August 2025).xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Planetworld SOH 20 June.xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Pro Audio platinum .xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Rockit Price_List_25.08.2025.01.xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Rolling Thunder July 2025 Pricelist .xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "SonicInformed_20250808_I.xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Stage one FullPL-DP (7).xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "Tuerk Tech General Price List JULY 2025.xls",
+      "reason": "No products found"
+    },
+    {
+      "file": "Viva Afrika Dealer Price List 07 May 2025.xlsx",
+      "reason": "No products found"
+    },
+    {
+      "file": "YAMAHA RETAIL PRICELIST NOV 2024 (2).xlsx",
+      "reason": "No products found"
+    }
+  ],
+  "processingTime": 477.421,
+  "progress": {
+    "processedFiles": [
+      "ACTIVE MUSIC DISTRIBUTION PRICELIST - AUGUST 2025.xlsx",
+      "Alpha-Technologies-Pricelist-August-2025- (2).xlsx",
+      "ApexPro Distribution pricelist 25-04-2025 (1).xlsx",
+      "Audiolite PRICE LIST-WHOLESALE OUT.xlsx",
+      "Audiosure StockFile 30072025.xlsx",
+      "AV Distribution Pricelist - May 2025 (1).xlsx",
+      "GLOBAL MUSIC SUGGESTED ONLINE ADVERTISED PRICELIST NOVEMBER 2024 SKU LIST FORMAT .xlsx",
+      "MD External Stock 2025-08-25.xlsx",
+      "Music Power Pricelist (August 2025).xlsx",
+      "Planetworld SOH 20 June.xlsx",
+      "Pro Audio platinum .xlsx",
+      "Rockit Price_List_25.08.2025.01.xlsx",
+      "Rolling Thunder July 2025 Pricelist .xlsx",
+      "Sennheiser 2025 (2).xlsx",
+      "SonicInformed_20250808_I.xlsx",
+      "Stage one FullPL-DP (7).xlsx",
+      "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+      "Tuerk Tech General Price List JULY 2025.xls",
+      "Viva Afrika Dealer Price List 07 May 2025.xlsx",
+      "YAMAHA RETAIL PRICELIST NOV 2024 (2).xlsx"
+    ],
+    "lastFile": null,
+    "totalProducts": 3268
+  }
+}
