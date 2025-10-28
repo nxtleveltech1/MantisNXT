@@ -39,7 +39,8 @@
       "Bash(for skill in .claude/skills/*/SKILL.md)",
       "Bash(head:*)",
       "Bash(done)",
-      "Read(//c/Users/garet/.claude/**)"
+      "Read(//c/Users/garet/.claude/**)",
+      "Bash(git fsck:*)"
     ],
     "deny": [],
     "ask": []

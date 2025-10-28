@@ -68,7 +68,11 @@ export class MultiTenantAuth extends EventEmitter {
 
   constructor() {
     super();
-    this.jwtSecret = process.env.JWT_SECRET || 'enterprise_jwt_secret_key_2024_production';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required for authentication');
+    }
+    this.jwtSecret = secret;
     this.tokenExpiry = '1h';
     this.refreshTokenExpiry = '30d';
   }

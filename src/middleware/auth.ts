@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+function getJwtSecret(): string {
+  const s = process.env.JWT_SECRET;
+  if (!s) {
+    throw new Error('JWT_SECRET environment variable is required for authentication');
+  }
+  return s;
+}
 
 export interface AuthenticatedUser {
   userId: string;
@@ -38,7 +44,7 @@ export function withAuth(
       const token = authHeader.substring(7);
 
       // Verify JWT token
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, getJwtSecret()) as any;
 
       // Create auth context
       const authContext: AuthContext = {
@@ -178,7 +184,7 @@ export function getUserFromRequest(request: NextRequest): AuthenticatedUser | nu
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, getJwtSecret()) as any;
 
     return {
       userId: decoded.userId,

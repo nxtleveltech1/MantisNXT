@@ -144,11 +144,11 @@
     "typescript": "^5.9.2",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5",
-    "zod": "^4.1.9",
+    "zod": "^3.22.4",
     "zustand": "^5.0.8"
   },
   "overrides": {
-    "zod": "^4.1.9"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@axe-core/cli": "^4.8.5",

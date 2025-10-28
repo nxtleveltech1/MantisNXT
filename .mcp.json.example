@@ -5,20 +5,8 @@
       "args": [
         "@upstash/context7-mcp",
         "--api-key",
-        "ctx7sk-63485f97-a194-4380-a721-55b3c5afee7b"
-      ]
-    },
-    "magic": {
-      "command": "npx",
-      "args": [
-        "@21st-dev/magic"
-      ]
-    },
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp"
-      ]
+        "ctx7sk-038e8977-a1ba-48df-9ba3-651fe6e85c5c"
+      ]  
     },
     "shadcn": {
       "command": "npx",
@@ -43,7 +31,7 @@
         "start"
       ],
       "env": {
-        "NEON_API_KEY": "YOUR_NEON_API_KEY_HERE"
+        "napi_78ar5t6y154b1wq4b572mwxkutziy5g9fb3hxuqcjztuiv4dqn6aztx51i1ysshp"
       }
     },
     "postgres": {
@@ -51,7 +39,7 @@
       "command": "npx",
       "args": [
         "@modelcontextprotocol/server-postgres",
-        "postgresql://USER:PASS@HOST:5432/DBNAME"
+        "REPLACE_WITH_YOUR_DATABASE_CONNECTION_STRING"
       ],
       "env": {}
     },
