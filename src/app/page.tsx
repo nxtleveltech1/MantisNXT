@@ -24,6 +24,7 @@ import {
 
 // Real data integration - replaced mock data with live API calls
 import RealDataDashboard from '@/components/dashboard/RealDataDashboard'
+import AsyncBoundary from '@/components/ui/AsyncBoundary'
 
 export default function Home() {
   const breadcrumbs = [
@@ -36,7 +37,9 @@ export default function Home() {
       breadcrumbs={breadcrumbs}
     >
       {/* Real Data Dashboard Component - No More Mock Data */}
-      <RealDataDashboard />
+      <AsyncBoundary>
+        <RealDataDashboard />
+      </AsyncBoundary>
 
       {/* Floating Action Button for Quick Actions */}
       <div className="fixed bottom-6 right-6 z-50">

@@ -8,3 +8,10 @@ export async function GET() {
     timestamp: new Date().toISOString(),
   });
 }
+import { NextResponse } from 'next/server'
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Deprecated. Use /api/health', deprecated: true, redirectTo: '/api/health' },
+    { status: 410 }
+  )
+}

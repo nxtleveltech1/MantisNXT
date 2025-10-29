@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
 import EnhancedInventoryDashboard from '@/components/inventory/EnhancedInventoryDashboard'
+import AsyncBoundary from '@/components/ui/AsyncBoundary'
 import InventoryManagement from '@/components/inventory/InventoryManagement'
 import { EnhancedPricelistUpload } from '@/components/supplier-portfolio/EnhancedPricelistUpload'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -51,7 +52,9 @@ export default function InventoryPage() {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
-            <EnhancedInventoryDashboard />
+            <AsyncBoundary>
+              <EnhancedInventoryDashboard />
+            </AsyncBoundary>
           </TabsContent>
 
           <TabsContent value="management" className="space-y-6">

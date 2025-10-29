@@ -40,18 +40,16 @@
       "args": [
         "-y",
         "@neondatabase/mcp-server-neon",
-        "start"
-      ],
-      "env": {
-        "NEON_API_KEY": "YOUR_NEON_API_KEY_HERE"
-      }
+        "start",
+        "napi_78ar5t6y154b1wq4b572mwxkutziy5g9fb3hxuqcjztuiv4dqn6aztx51i1ysshp"
+      ]
     },
     "postgres": {
       "type": "stdio",
       "command": "npx",
       "args": [
         "@modelcontextprotocol/server-postgres",
-        "postgresql://USER:PASS@HOST:5432/DBNAME"
+        "postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require"
       ],
       "env": {}
     },
@@ -79,6 +77,10 @@
         "chrome-devtools-mcp@latest"
       ],
       "env": {}
+    },
+    "factory": {
+      "type": "sse",
+      "url": "http://localhost:58952/sse"
     }
   }
 }

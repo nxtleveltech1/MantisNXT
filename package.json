@@ -80,7 +80,10 @@
     "integration:full": "./scripts/run_full_integration.sh",
     "integration:verify": "tsx scripts/verify_integration.ts",
     "arch:two-tier:setup": "tsx scripts/setup-two-tier.ts",
-    "arch:two-tier:bootstrap": "tsx scripts/bootstrap-neon-two-dbs.ts"
+    "arch:two-tier:bootstrap": "tsx scripts/bootstrap-neon-two-dbs.ts",
+    "mcp:phase-a:apply": "tsx scripts/neon-mcp-apply.ts --apply",
+    "mcp:phase-a:verify": "tsx scripts/neon-mcp-apply.ts --verify",
+    "mcp:phase-a:all": "tsx scripts/neon-mcp-apply.ts --apply --verify"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
@@ -163,6 +166,7 @@
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
+    "@modelcontextprotocol/sdk": "^0.6.1",
     "@types/bcryptjs": "^2.4.3",
     "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.3",

@@ -227,3 +227,10 @@ function generateRecommendations(missingTables: string[], functionalityTests: an
 
   return recommendations;
 }
+import { NextResponse } from 'next/server'
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Deprecated. Use /api/health', deprecated: true, redirectTo: '/api/health' },
+    { status: 410 }
+  )
+}

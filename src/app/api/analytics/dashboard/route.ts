@@ -1,3 +1,4 @@
+import { getOrSet, makeKey } from '@/lib/cache/responseCache'
 /**
  * Real-time Analytics Dashboard API Endpoint
  * Consolidated to use unified connection manager
@@ -7,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/middleware/api-auth';
 import { pool } from '@/lib/database/unified-connection';
 
-export const GET = withAuth(async (request: NextRequest) => {
+export const GET = withAuth(async (request: NextRequest) => {\n    const cacheKey = makeKey(request.url)\n
   try {
     const searchParams = request.nextUrl.searchParams;
     const organizationId = searchParams.get('organizationId') || '1';
@@ -82,7 +83,7 @@ export const GET = withAuth(async (request: NextRequest) => {
           },
           {
             metric: 'Stock Accuracy',
-            value: Math.max(85, 100 - (outOfStockCount / Math.max(1, parseInt(inventoryResult.rows[0]?.count || 1))) * 100),
+            value: Math.max(85, 100 - (outOfStockCount / Math.max(1, parseInt(inventoryCountResult.rows[0]?.count || 1))) * 100),
             change: '+0.3%',
             trend: 'up'
           }
@@ -92,17 +93,20 @@ export const GET = withAuth(async (request: NextRequest) => {
     };
 
     console.log('✅ Dashboard data retrieved successfully');
-    return NextResponse.json(dashboardData);
+    return NextResponse.json(await getOrSet(cacheKey, async () => (dashboardData)));
 
   } catch (error) {
     console.error('❌ Dashboard API error:', error);
-    return NextResponse.json(
+    return NextResponse.json(await getOrSet(cacheKey, async () => (
       {
         success: false,
         error: 'Failed to fetch dashboard data',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
-    );
+    )));
   }
 });
+
+
+

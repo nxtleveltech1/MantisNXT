@@ -1,3 +1,4 @@
+import { getOrSet, makeKey } from '@/lib/cache/responseCache'
 /**
  * Predictions API
  * EMERGENCY RECOVERY: Using stable pool connection
@@ -6,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest) {\n  const cacheKey = makeKey(request.url)\n
   try {
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type') || 'all';
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ Generated ${predictions.length} predictions`);
 
-    return NextResponse.json({
+    return NextResponse.json(await getOrSet(cacheKey, async () => ({
       success: true,
       data: {
         predictions,
@@ -134,15 +135,17 @@ export async function GET(request: NextRequest) {
         organizationId,
         type
       }
-    });
+    })));
 
   } catch (error) {
     console.error('❌ Predictions API error:', error);
 
-    return NextResponse.json({
+    return NextResponse.json(await getOrSet(cacheKey, async () => ({
       success: false,
       error: 'Failed to generate predictions',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { status: 500 })));
   }
 }
+
+
