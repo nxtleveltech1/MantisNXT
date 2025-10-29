@@ -1,10 +1,13 @@
-import { NextResponse } from 'next/server';
+/**
+ * @deprecated This endpoint is deprecated. Use /api/health instead.
+ */
+import { NextRequest } from 'next/server'
+import { createDeprecationResponse } from '@/lib/api/deprecation'
 
-export async function GET() {
-  // Keep this endpoint simple during build to avoid importing heavy scripts.
-  // Runtime health checks can be performed via a separate admin tool.
-  return NextResponse.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-  });
+export async function GET(request: NextRequest) {
+  return createDeprecationResponse(
+    '/api/health/system',
+    '/api/health',
+    'This endpoint is deprecated. Use /api/health instead.'
+  );
 }

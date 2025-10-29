@@ -29,8 +29,18 @@ NODE_ENV=production
 
 # === DATABASE ===
 DATABASE_URL=postgresql://user:password@host:5432/mantisnxt  # Primary database connection
+ENTERPRISE_DATABASE_URL=postgresql://user:password@host:5432/mantisnxt  # Enterprise database (if different)
 # OR
 NEON_SPP_DATABASE_URL=postgresql://...  # Legacy Neon connection (supported)
+
+# === AUTHENTICATION & AUTHORIZATION ===
+JWT_SECRET=<GENERATE_SECURE_32_CHAR_SECRET>  # REQUIRED: Use crypto.randomBytes(32).toString('hex')
+JWT_EXPIRES_IN=24h
+ALLOW_PUBLIC_GET_ENDPOINTS=/api/health,/api/core/selections  # Comma-separated list of public GET endpoints
+
+# === CACHING ===
+CACHE_TTL_SECONDS=300  # Cache TTL in seconds (default: 300)
+REDIS_URL=redis://localhost:6379  # Optional: for cross-instance caching
 
 # === APPLICATION ===
 NEXT_PUBLIC_API_URL=https://api.yourdomain.com
@@ -318,16 +328,15 @@ vercel --prod
 
 ```bash
 # Unified health check
-curl https://your-domain.com/api/v1/health
+curl https://your-domain.com/api/health
 
 # Expected Response:
 {
   "success": true,
-  "data": {
-    "status": "healthy",
-    "database": { "status": "healthy" },
-    "tables": { "status": "healthy" }
-  }
+  "message": "MantisNXT API is healthy",
+  "timestamp": "2025-10-28T12:00:00.000Z",
+  "version": "1.0.0",
+  "status": "operational"
 }
 ```
 
@@ -336,15 +345,15 @@ curl https://your-domain.com/api/v1/health
 ### 4.2 API Verification ✅
 
 ```bash
-# Test unified v1 APIs
-curl https://your-domain.com/api/v1/suppliers
-curl https://your-domain.com/api/v1/inventory
+# Test unified APIs
+curl https://your-domain.com/api/suppliers
+curl https://your-domain.com/api/inventory
 
 # Should return 401 (unauthorized) - proves auth is working!
 
 # Test with auth token
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  https://your-domain.com/api/v1/suppliers
+  https://your-domain.com/api/suppliers
 
 # Should return data
 ```

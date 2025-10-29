@@ -101,7 +101,7 @@ interface SystemAlert {
 const DEFAULT_HEALTH_CHECKS: HealthCheck[] = [
   {
     name: 'Database',
-    url: '/api/health/database',
+    url: '/api/health',
     timeout: 5000,
     criticalThreshold: 3000,
     warningThreshold: 1000,

@@ -10,8 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Public endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
   '/api/health',
-  '/api/health/database',
-  '/api/health/database-enterprise',
+  '/api/health',
   // Selection APIs are public for read operations (UI access without auth)
   '/api/core/selections',
   '/api/core/selections/active',

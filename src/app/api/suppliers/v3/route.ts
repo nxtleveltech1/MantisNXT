@@ -71,10 +71,13 @@ const CreateSupplierSchema = z.object({
 
 const UpdateSupplierSchema = CreateSupplierSchema.partial()
 
+const STATUS_VALUES = ['active', 'inactive', 'pending', 'suspended'] as const
+const TIER_VALUES = ['strategic', 'preferred', 'approved', 'conditional'] as const
+
 const SupplierFiltersSchema = z.object({
   search: z.string().optional(),
-  status: z.array(z.enum(['active', 'inactive', 'pending', 'suspended'])).optional(),
-  tier: z.array(z.enum(['strategic', 'preferred', 'approved', 'conditional'])).optional(),
+  status: z.array(z.enum(STATUS_VALUES)).optional(),
+  tier: z.array(z.enum(TIER_VALUES)).optional(),
   category: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
   country: z.array(z.string()).optional(),
@@ -134,11 +137,18 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
 
-    // Parse and validate query parameters
+    // Parse and normalize query parameters (tolerate tier values in status)
+    const rawStatus = (searchParams.get('status')?.split(',') || []).filter(Boolean)
+    const rawTier = (searchParams.get('tier')?.split(',') || []).filter(Boolean)
+    const statusOnly = rawStatus.filter((v) => (STATUS_VALUES as readonly string[]).includes(v)) as typeof STATUS_VALUES[number][]
+    const tierFromStatus = rawStatus.filter((v) => (TIER_VALUES as readonly string[]).includes(v)) as typeof TIER_VALUES[number][]
+    const tierOnly = rawTier.filter((v) => (TIER_VALUES as readonly string[]).includes(v)) as typeof TIER_VALUES[number][]
+    const tierNormalized = Array.from(new Set([...tierOnly, ...tierFromStatus])) as typeof TIER_VALUES[number][]
+
     const rawFilters = {
       search: searchParams.get('search') || undefined,
-      status: searchParams.get('status')?.split(',') || undefined,
-      tier: searchParams.get('tier')?.split(',') || undefined,
+      status: statusOnly.length ? statusOnly : undefined,
+      tier: tierNormalized.length ? tierNormalized : undefined,
       category: searchParams.get('category')?.split(',') || undefined,
       tags: searchParams.get('tags')?.split(',') || undefined,
       country: searchParams.get('country')?.split(',') || undefined,

@@ -1,6 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { pool } from '@/lib/database'
-import { z } from 'zod'
+/**
+ * @deprecated This endpoint is deprecated. Use /api/inventory instead.
+ */
+import { NextRequest } from 'next/server'
+import { createDeprecationResponse } from '@/lib/api/deprecation'
+
+export async function GET(request: NextRequest) {
+  return createDeprecationResponse(
+    '/api/inventory/products',
+    '/api/inventory',
+    'This endpoint is deprecated. Use /api/inventory instead.'
+  );
+}
+
+export async function POST(request: NextRequest) {
+  return createDeprecationResponse(
+    '/api/inventory/products',
+    '/api/inventory',
+    'This endpoint is deprecated. Use POST /api/inventory instead.'
+  );
+}
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),

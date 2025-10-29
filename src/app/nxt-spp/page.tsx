@@ -18,6 +18,7 @@ import { ISIWizard } from '@/components/supplier-portfolio/ISIWizard';
 import { ISSohReports } from '@/components/supplier-portfolio/ISSohReports';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { triggerConfetti } from '@/components/spp/AnimatedComponents';
+import AsyncBoundary from '@/components/ui/AsyncBoundary';
 import type { MergeResult, InventorySelection } from '@/types/nxt-spp';
 
 function NxtSppContent() {
@@ -142,7 +143,9 @@ function NxtSppContent() {
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
-            <PortfolioDashboard onNavigateToTab={handleTabChange} />
+            <AsyncBoundary>
+              <PortfolioDashboard onNavigateToTab={handleTabChange} />
+            </AsyncBoundary>
           </TabsContent>
 
           {/* Upload Tab */}

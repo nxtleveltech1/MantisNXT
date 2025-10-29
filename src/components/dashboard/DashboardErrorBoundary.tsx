@@ -195,7 +195,7 @@ const ErrorFallback: React.FC<ErrorInfo> = ({ error, resetErrorBoundary }) => {
             {errorInfo.type === 'database' && (
               <Button
                 variant="outline"
-                onClick={() => window.open('/api/health/database', '_blank')}
+                onClick={() => window.open('/api/health', '_blank')}
               >
                 Check System Status
               </Button>

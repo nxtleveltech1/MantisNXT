@@ -33,15 +33,20 @@ Create `.env.production` with:
 ```env
 # Database
 DATABASE_URL=postgresql://user:password@host:5432/database
-NEON_DATABASE_URL=postgresql://user:password@host:5432/database
+ENTERPRISE_DATABASE_URL=postgresql://user:password@host:5432/database
 
-# Authentication
+# Authentication & Authorization
 JWT_SECRET=your-production-secret-key-min-32-chars
 JWT_EXPIRES_IN=24h
+ALLOW_PUBLIC_GET_ENDPOINTS=/api/health,/api/core/selections
 
 # API Configuration
 API_BASE_URL=https://your-domain.com/api
 NEXT_PUBLIC_APP_URL=https://your-domain.com
+
+# Caching
+CACHE_TTL_SECONDS=300
+REDIS_URL=redis://localhost:6379  # Optional: for cross-instance caching
 
 # Security
 ENABLE_RATE_LIMITING=true
@@ -52,6 +57,10 @@ RATE_LIMIT_WINDOW=60000
 UPLOAD_DIR=/app/uploads
 UPLOAD_MAX_SIZE=10485760
 UPLOAD_ALLOWED_TYPES=image/jpeg,image/png,image/gif,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+# Dependencies
+# Note: puppeteer/chrome required for PDF generation and browser automation
+# Install system dependencies: apt-get install -y chromium-browser or equivalent
 
 # Environment
 NODE_ENV=production
@@ -95,11 +104,34 @@ npm start
 
 ### 5. Verify Deployment
 
-Check these endpoints:
-- ✅ https://your-domain.com/api/health
-- ✅ https://your-domain.com/api/auth/status
-- ✅ https://your-domain.com/api/suppliers
-- ✅ https://your-domain.com
+**Health Check:**
+```bash
+curl https://your-domain.com/api/health
+```
+
+**API Endpoints:**
+- ✅ `GET /api/health` - System health status
+- ✅ `GET /api/suppliers?status=active,preferred` - Supplier listing (normalizes tier)
+- ✅ `GET /api/inventory` - Unified inventory endpoint with query parameters
+- ✅ `GET /api/inventory?search=product&category=electronics` - Inventory search
+
+**UI Smoke Tests:**
+- Visit homepage and verify dashboard loads
+- Navigate to `/suppliers` and verify supplier list
+- Navigate to `/inventory` and verify inventory list
+- Check browser console for errors
+
+**Manual Validation:**
+```bash
+# Health check
+curl -H "Authorization: Bearer YOUR_TOKEN" https://your-domain.com/api/health
+
+# Suppliers API
+curl -H "Authorization: Bearer YOUR_TOKEN" https://your-domain.com/api/suppliers?status=active,preferred
+
+# Inventory API
+curl -H "Authorization: Bearer YOUR_TOKEN" https://your-domain.com/api/inventory?limit=10&page=1
+```
 
 ## 🔒 Security Configuration
 

@@ -63,7 +63,7 @@ const StatusPage = () => {
   const fetchHealthData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/health/frontend')
+      const response = await fetch('/api/health')
       const result = await response.json()
 
       if (result.success) {

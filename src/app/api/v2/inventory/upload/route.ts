@@ -747,3 +747,11 @@ export const GET = ApiMiddleware.withAuth(
 
 // Make mock data available for other modules
 export const mockInventoryData: EnhancedInventoryItem[] = []
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function POST(_req: NextRequest) {
+  return NextResponse.json(
+    { success: false, error: 'Deprecated. Use /api/inventory/products or /api/upload/xlsx', deprecated: true, redirectTo: '/api/upload/xlsx' },
+    { status: 410 }
+  )
+}

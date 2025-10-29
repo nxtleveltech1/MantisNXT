@@ -214,7 +214,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   fetchProducts: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/inventory/products');
+      const res = await fetch('/api/inventory');
       if (!res.ok) throw new Error(`PRODUCTS_FETCH_FAILED: ${res.status}`);
       const payload = await res.json();
       const productRows = Array.isArray(payload)
@@ -288,7 +288,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   addProduct: async (p: any) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/inventory/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+      const res = await fetch('/api/inventory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
       if (!res.ok) throw new Error(`ADD_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });
@@ -300,7 +300,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   updateProduct: async (id: string, p: any) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/inventory/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+      const res = await fetch(`/api/inventory/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
       if (!res.ok) throw new Error(`UPDATE_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });
@@ -312,7 +312,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   deleteProduct: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/inventory/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`DELETE_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });

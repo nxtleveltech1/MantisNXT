@@ -104,6 +104,115 @@ npm run integration:full     # Run complete integration
 npm run integration:verify   # Verify integration success
 ```
 
+## 🔐 API Authorization Requirements
+
+All API endpoints (except public endpoints) require authentication via Bearer token in the Authorization header:
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" https://your-domain.com/api/suppliers
+```
+
+**Public Endpoints** (no authentication required):
+- `GET /api/health` - System health check
+- `GET /api/core/selections` - Public selection data (read-only)
+
+**Authorization Headers:**
+- Format: `Authorization: Bearer <token>`
+- Token expiration: Configured via `JWT_EXPIRES_IN` (default: 24h)
+- Middleware: All API routes are protected by `src/middleware.ts`
+
+**Development Mode:**
+- Use `ALLOW_PUBLIC_GET_ENDPOINTS` environment variable to allowlist specific GET endpoints
+- Example: `ALLOW_PUBLIC_GET_ENDPOINTS=/api/health,/api/test`
+
+## 🚀 Unified APIs
+
+### Inventory API
+
+**Unified Endpoint:** `/api/inventory`
+
+- **GET** `/api/inventory` - List inventory items with filtering and pagination
+  - Query parameters: `search`, `category`, `supplierId`, `status`, `page`, `limit`, `cursor`
+  - Example: `GET /api/inventory?search=product&category=electronics&page=1&limit=50`
+
+- **POST** `/api/inventory` - Create new inventory item
+- **PUT** `/api/inventory/[id]` - Update inventory item
+- **DELETE** `/api/inventory/[id]` - Delete inventory item
+
+**Deprecated Endpoints** (return 410 Gone):
+- `/api/inventory/complete` → Use `/api/inventory`
+- `/api/inventory/enhanced` → Use `/api/inventory`
+- `/api/inventory/products` → Use `/api/inventory`
+
+### Suppliers API
+
+**Unified Endpoint:** `/api/suppliers`
+
+- **GET** `/api/suppliers` - List suppliers with status filtering
+  - Query parameters: `status` (comma-separated: `active,preferred`)
+  - Automatically normalizes supplier tiers
+  
+- **POST** `/api/suppliers` - Create new supplier
+- **PUT** `/api/suppliers/[id]` - Update supplier
+- **DELETE** `/api/suppliers/[id]` - Delete supplier
+
+### Health Check API
+
+**Unified Endpoint:** `/api/health`
+
+Returns system health status, version, and operational status.
+
+**Deprecated Endpoints** (return 410 Gone):
+- `/api/health/database` → Use `/api/health`
+- `/api/health/system` → Use `/api/health`
+- `/api/health/frontend` → Use `/api/health`
+- All other `/api/health/*` sub-endpoints → Use `/api/health`
+
+## 💾 Cache Behavior & Invalidation
+
+### Response Caching
+
+The application uses caching to improve performance:
+
+- **Cache Implementation:** `src/lib/cache/responseCache.ts`
+- **Default TTL:** Configurable via `CACHE_TTL_SECONDS` (default: 300 seconds)
+- **Storage:** NodeCache (in-memory) or Redis (if `REDIS_URL` configured)
+
+### Cache Invalidation
+
+Cache is automatically invalidated on:
+- Inventory item creation/update/deletion
+- Supplier creation/update/deletion
+- Stock movement operations
+
+**Manual Invalidation:**
+```typescript
+import { CacheInvalidator } from '@/lib/cache/invalidation';
+
+// Invalidate inventory cache
+CacheInvalidator.invalidateInventory(productId);
+
+// Invalidate supplier cache
+CacheInvalidator.invalidateSupplier(supplierId);
+```
+
+### AI Route Caching
+
+AI routes (`/api/ai/**`) support caching with configurable TTL:
+- Cache hit rate target: >70%
+- Memory limit: Configurable via `AI_CACHE_MAX_MEMORY_MB` (default: 512MB)
+- Performance improvement: ~42x faster for cached responses
+
+### Cache Configuration
+
+```env
+# In-memory caching (default)
+CACHE_TTL_SECONDS=300
+
+# Redis caching (for multi-instance deployments)
+REDIS_URL=redis://localhost:6379
+```
+
 ## Architecture
 
 The system follows a 3-layer architecture:

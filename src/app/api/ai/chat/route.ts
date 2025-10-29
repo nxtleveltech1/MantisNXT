@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'
 import { AIChatService, type ChatRequestOptions, type StreamingResult } from '@/lib/ai/services'
+import { withAICache } from '@/lib/cache/ai-cache'
 import type { AIChatMessage, AIStreamChunk } from '@/types/ai'
 
 const chatService = new AIChatService({
@@ -231,7 +232,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  return await getHandler(request);
+  return withAICache(
+    request,
+    'ai:chat',
+    async () => await getHandler(request),
+    300 // 5 minutes cache for conversation history
+  )
 }
 
 function conversationExists(conversationId: string): boolean {

@@ -1,183 +1,164 @@
 # MantisNXT Pre-Production Remediation Project Plan
 
-**Project Goal:** Achieve a stable, secure, and seamless platform experience for final pre-production readiness by resolving all identified critical flaws, technical debt, and misalignments.
+## Phase A — Stabilization Adjustments ✅
 
-**Reference Document:** MantisNXT Comprehensive Assessment and Readiness Report (October 27, 2025)
+### 1. Analytics Migration Decision Documentation
+- ✅ Documented analytics table migration strategy
+- ✅ Noted migration 005 superseded status
+- ✅ Documented BIGINT identity vs UUID usage patterns
 
----
-
-## Executive Summary: Project Timeline and Resource Allocation
-
-The remediation effort is structured into three sequential phases, estimated to take **24 working days** (approximately 5 weeks) with dedicated resources.
-
-| Phase | Goal | Duration (Working Days) | Key Resources |
-| :--- | :--- | :--- | :--- |
-| **A: Stabilization** | Resolve all critical, production-blocking security and data integrity issues. | 4 Days | SDE, DBA, SecOps |
-| **B: Consolidation** | Eliminate redundancy in UI components and API versions for a seamless experience. | 10 Days | SDE, FE |
-| **C: Architectural Hardening** | Optimize performance, harden security, and clean up architectural debt. | 10 Days | SDE, SecOps, DBA |
-| **Total Estimated Duration** | | **24 Working Days** | |
+**Deliverable:** Documentation updated in `.archive/MantisNXT Pre-Production Comprehensive Assessment and Readiness Report.md`
 
 ---
 
-## 1. Resource Allocation
+## Phase B — Consolidation & Unification
 
-The plan assumes the availability of three key roles, with the Senior Developer/Engineer (SDE) serving as the primary resource across all phases.
+### 1. Dashboards
+**Status:** In Progress
 
-| Role | Responsibility | Allocation (FTE) |
-| :--- | :--- | :--- |
-| **SDE (Senior Developer/Engineer)** | Primary owner of all code fixes, API unification, and architectural abstraction. | 1.0 |
-| **DBA (Database Engineer)** | Owner of all schema fixes, data integrity migrations, and RLS verification. | 0.5 |
-| **FE (Frontend Engineer)** | Owner of component consolidation, UI standardization, and error state cleanup. | 0.5 |
-| **SecOps (Security/DevOps Engineer)** | Owner of security fixes (JWT), deployment complexity, and performance monitoring. | 0.5 |
+**Actions:**
+- ✅ Verified no imports of deleted components (OptimizedDashboard, ViewportOptimizedDashboard, RealTimeDashboard, InventoryDashboard, SupplierDashboard)
+- ⏳ Verify remaining pages wrapped with AsyncBoundary
+- ⏳ Remove backup pages (e.g., `src/app/suppliers/page_backup.tsx`)
 
----
+### 2. Supplier Form Consolidation
+**Status:** In Progress
 
-## 2. Detailed Project Phases and Timeline
+**Actions:**
+- ✅ Verified barrel export (`src/components/suppliers/index.ts`) already exports `EnhancedSupplierForm` as `SupplierForm`
+- ✅ No direct imports of `@/components/suppliers/SupplierForm` found
+- ⏳ Delete unused `src/components/suppliers/SupplierForm.tsx`
+- ⏳ Update tests/stories if present
 
-### Phase A: Stabilization (Estimated Duration: 4 Days)
+### 3. Inventory API Unification
+**Status:** In Progress
 
-**Goal:** Resolve all critical, production-blocking security and data integrity issues.
+**Current State:**
+- Main route exists: `src/app/api/inventory/route.ts` (uses UnifiedDataService)
+- Old routes to deprecate:
+  - `src/app/api/inventory/complete/route.ts`
+  - `src/app/api/inventory/enhanced/route.ts`
+  - `src/app/api/inventory/products/route.ts`
+  - `src/app/api/inventory/trends/route.ts`
+  - `src/app/api/inventory/products/[id]/route.ts`
+  - `src/app/api/v2/inventory/**`
 
-| Step | Task Description | Priority | Primary Role | Est. Days |
-| :--- | :--- | :--- | :--- | :--- |
-| **A.1** | **Fix Critical JWT Secret Fallback (S-1):** Remove hardcoded fallback secret from `auth.ts` and `multi-tenant-auth.ts`. | CRITICAL | SecOps | 1 |
-| **A.2** | **Fix Schema Mismatch (D-1):** Add `contact_person` column to `core.supplier` table and update the affected `/api/inventory/complete` route. | HIGH | DBA / SDE | 2 |
-| **A.3** | **Deploy Analytics Migration (D-2):** Execute `005_fix_analytics_sequences.sql` to ensure data integrity for analytics tables. | HIGH | DBA | 0.5 |
-| **A.4** | **Resolve Zod Dependency Conflict (I-1):** Upgrade AI SDK or consolidate the Zod version to remove the fragile `legacy-peer-deps` workaround. | HIGH | SDE | 0.5 |
+**Actions:**
+- ⏳ Update main route to handle all operations (summary, detailed, upload)
+- ⏳ Add deprecation responses (410) to old routes
+- ⏳ Update client code referencing old endpoints
 
-### Phase B: Consolidation and Unification (Estimated Duration: 10 Days)
+### 4. Health Endpoint Consolidation
+**Status:** In Progress
 
-**Goal:** Eliminate redundancy and fragmentation to ensure a consistent, seamless user and developer experience.
+**Current State:**
+- Main route exists: `src/app/api/health/route.ts`
+- Old routes to deprecate:
+  - `src/app/api/health/database/route.ts`
+  - `src/app/api/health/database-connections/route.ts`
+  - `src/app/api/health/database-enterprise/route.ts`
+  - `src/app/api/health/frontend/route.ts`
+  - `src/app/api/health/pipeline/route.ts`
+  - `src/app/api/health/query-metrics/route.ts`
+  - `src/app/api/health/system/route.ts`
 
-| Step | Task Description | Priority | Primary Role | Est. Days |
-| :--- | :--- | :--- | :--- | :--- |
-| **B.1** | **Unify Dashboard Components (UI-1):** Consolidate all dashboard implementations into a single, optimized component. Deprecate and remove all others. | MEDIUM | FE / SDE | 3 |
-| **B.2** | **Unify Supplier Forms (UI-2):** Consolidate multiple supplier form versions into one final, robust form component. | MEDIUM | FE | 2 |
-| **B.3** | **Standardize Error/Loading States (UI-2):** Implement a single, unified error and loading state strategy across all components. | MEDIUM | FE | 2 |
-| **B.4** | **Unify Core APIs (API-1):** Merge logic from all versioned API routes (`/v2`, `/v3`, `enhanced`) into a single, stable API version. | MEDIUM | SDE | 2.5 |
-| **B.5** | **Consolidate Health Checks (API-2):** Consolidate all `/api/health/*` routes into a single, comprehensive health endpoint. | LOW | SDE | 0.5 |
-
-### Phase C: Architectural Hardening and Final Checks (Estimated Duration: 10 Days)
-
-**Goal:** Optimize performance, harden security, and clean up architectural debt for long-term maintainability.
-
-| Step | Task Description | Priority | Primary Role | Est. Days |
-| :--- | :--- | :--- | :--- | :--- |
-| **C.1** | **Implement AI Caching Strategy (P-1):** Implement aggressive caching and asynchronous processing for all AI-driven features (e.g., Redis caching for AI responses). | LOW | SDE / SecOps | 3 |
-| **C.2** | **Abstract Database Layer (A-1):** Refactor all explicit `Neon`-specific code references to use generic database service abstractions. | LOW | SDE | 2 |
-| **C.3** | **Enforce Global Authorization (A-2):** Implement a global authorization check in `src/middleware.ts` to enforce a default "deny all" policy for API routes. | LOW | SecOps | 1.5 |
-| **C.4** | **Verify RLS Implementation (C.4):** Audit and verify that Row-Level Security (RLS) is correctly configured and enforced for multi-tenancy. | LOW | DBA | 1.5 |
-| **C.5** | **Final Deployment Checklist Review (A-3):** Document all system dependencies (`puppeteer`) and finalize the production `.env` configuration template. | LOW | SecOps | 2 |
-
----
-
-## 3. Key Deliverables and Success Metrics
-
-| Deliverable | Success Metric | Phase |
-| :--- | :--- | :--- |
-| **Security Patch** | JWT Secret fallback removed; application fails to start without `JWT_SECRET`. | A |
-| **Data Integrity** | All core business processes (e.g., inventory completion) execute without database errors. | A |
-| **Code Consolidation** | All redundant UI components and API versions are removed from the codebase. | B |
-| **Seamless Experience** | User flows are consistent, and all error/loading states are standardized. | B |
-| **Performance Hardening** | AI-driven features do not block core user workflows (e.g., latency under 500ms for non-AI features). | C |
-| **Architectural Abstraction** | No explicit vendor-specific references in core service files. | C |
-| **Final Codebase** | All tests pass, and the application is ready for the final pre-production deployment. | C |
+**Actions:**
+- ⏳ Verify all consumers use `/api/health`
+- ⏳ Add deprecation responses (410) to old routes
+- ⏳ Update monitoring/CI scripts if needed
 
 ---
 
-## 4. Risks and Mitigation
+## Phase C — Architectural Hardening
 
-| Risk | Impact | Mitigation Strategy |
-| :--- | :--- | :--- |
-| **Scope Creep** | Project extends beyond the 24-day timeline. | Strict adherence to the prioritized list. New features are deferred to a post-production backlog. |
-| **Deep Dependency Issues** | Resolving the Zod conflict (A.4) requires a major refactor. | SDE allocates a dedicated half-day. If unresolved, temporarily revert to the stable dependency version and document for future resolution. |
-| **Regression** | Fixing one issue breaks existing, working functionality. | Mandatory unit and integration tests must pass for every commit. Dedicated FE/SDE time for post-consolidation testing (Phase B). |
-| **Resource Availability** | Key resources (DBA, SecOps) are not fully available. | SDE is cross-trained to handle most tasks; tasks are scheduled to minimize resource contention. |
+### 1. Global Authorization Enforcement
+**Status:** ✅ Implemented
 
----
+**Current State:**
+- Middleware implemented: `src/middleware.ts`
+- Checks Authorization header for API routes
+- Allows health endpoint and OPTIONS
+- Supports dev allowlist via `ALLOW_PUBLIC_GET_ENDPOINTS`
 
-## 5. Phase Exit Criteria
+**Actions:**
+- ⏳ Add tests for middleware (401 responses, allowlisted GETs)
+- ⏳ Document required headers in API docs
+- ⏳ Consider JWT signature verification (Edge-safe library)
 
-- Phase A — Stabilization
-  - A.1 JWT fallback removed from `src/middleware/auth.ts` and `src/lib/auth/multi-tenant-auth.ts`; app fails fast without `JWT_SECRET`.
-  - A.2 `core.supplier.contact_person` added; `/api/inventory/complete` runs without DB errors and returns 2xx.
-  - A.3 `database/migrations/005_fix_analytics_sequences.sql` applied; analytics inserts succeed; no sequence errors in logs.
-  - A.4 Build runs without `legacy-peer-deps`; single `zod` version resolved.
-- Phase B — Consolidation
-  - B.1 One dashboard component exported; all others removed; routes/pages use the unified component.
-  - B.2 One supplier form implementation; deprecated variants removed; form validation consistent.
-  - B.3 Unified loading/error UI across app; no custom ad‑hoc spinners/boundaries remain.
-  - B.4 One stable API for suppliers/inventory; older versions return 410 Gone with deprecation notice.
-  - B.5 Single `/api/health` aggregates DB/AI/Redis statuses.
-- Phase C — Hardening
-  - C.1 AI calls cached/async; non‑AI requests under 500ms P95 in staging.
-  - C.2 DB layer abstracted; no vendor‑specific imports in core services.
-  - C.3 Global authorization enforced; deny‑by‑default for API routes.
-  - C.4 RLS verified for multi‑tenant tables; negative tests confirm isolation.
-  - C.5 Deployment checklist approved; `.env` template complete; dependencies documented.
+### 2. AI Caching & Async Strategy
+**Status:** In Progress
 
----
+**Actions:**
+- ⏳ Extend caching to AI routes (`src/app/api/ai/**`) using `src/lib/cache/responseCache.ts`
+- ⏳ Introduce Redis-backed cache if cross-instance needed
+- ⏳ Refactor long-running AI calls to queue/worker if necessary
 
-## 6. Validation & Acceptance Checklist
+### 3. Database Abstraction Cleanup
+**Status:** In Progress
 
-- Security
-  - `JWT_SECRET` required in production; startup aborts if missing.
-  - No fallback secrets present in codebase.
-- Data integrity
-  - All migrations applied; schema matches application expectations.
-  - Inventory completion workflow fully green in staging.
-- UX consistency
-  - One dashboard; one supplier form; unified error/loading components.
-  - No orphaned/unused UI components remain after tree‑shaking.
-- API hygiene
-  - Unified routes documented; deprecated versions removed or return 410.
-- Performance
-  - Non‑AI endpoints P95 ≤ 500ms; AI endpoints non‑blocking with caching.
-- Observability
-  - Health endpoint covers DB/AI/Redis; error logs noise reduced ≤ 2% of requests.
-- Tests
-  - `npm run test:ci` passes; key e2e flows green.
+**Actions:**
+- ⏳ Search for Neon-specific imports (`rg -n "neon" src lib`)
+- ⏳ Ensure all DB access goes through:
+  - `lib/database/enterprise-connection-manager.ts`
+  - `lib/database/unified-connection.ts`
+- ⏳ Rename/remove `lib/database/neon-connection.ts` if obsolete
 
----
+### 4. RLS Verification
+**Status:** In Progress
 
-## 7. Communication & Governance
+**Actions:**
+- ⏳ Execute `database/scripts/verify-rls-implementation.sql` against Neon DB
+- ⏳ Fix/add RLS policies via migrations
+- ⏳ Document outcomes
 
-- Daily stand‑up (15m) focused on blockers across A/B/C phases.
-- Twice‑weekly stakeholder sync for scope control and demos.
-- Change control: any scope addition requires written approval and moves to post‑prod backlog unless risk‑reducing.
-- Code reviews: mandatory for all PRs; include test evidence and acceptance checks.
+### 5. Supplier Performance Data
+**Status:** In Progress
+
+**Actions:**
+- ⏳ Verify repository logic aligns with tables:
+  - `core.supplier_performance` (migration 013)
+  - `public.supplier_performance` (migration 014)
+- ⏳ Add seed or background job if needed
+
+### 6. Final Deployment Checklist
+**Status:** In Progress
+
+**Actions:**
+- ⏳ Update `DEPLOYMENT.md` and `DEPLOYMENT_CHECKLIST.md` with:
+  - Dependencies (puppeteer/chrome)
+  - Final `.env` example (JWT_SECRET, DATABASE_URL, ENTERPRISE_DATABASE_URL, ALLOW_PUBLIC_GET_ENDPOINTS, CACHE_TTL_SECONDS, REDIS_URL)
+  - Validation steps (curl endpoints, UI smoke)
 
 ---
 
-## 8. Environment & Deployment Prerequisites
+## Documentation Updates
 
-- Node 18+; PNPM/NPM aligned with project lockfile.
-- Required services: PostgreSQL (Neon), Redis, SMTP (for `nodemailer`), Chrome dependencies for `puppeteer`.
-- Required env vars (non‑exhaustive): `JWT_SECRET`, `NEON_SPP_DATABASE_URL`, `REDIS_URL`, SMTP credentials.
-- Migrations
-  - Apply all in `database/migrations/`; verify `005_fix_analytics_sequences.sql`.
-  - Run `npm run db:migrate` followed by `npm run db:validate`.
+### 1. Report & Plan
+- ✅ Updated assessment report
+- ✅ Updated remediation plan
 
----
+### 2. README/Developer Docs
+**Status:** In Progress
 
-## 9. Milestones & Sign‑off
-
-- M1: Phase A complete — sign‑off: SDE + SecOps + DBA
-- M2: Phase B complete — sign‑off: SDE + FE
-- M3: Phase C complete — sign‑off: SDE + SecOps
-- Final Go/No‑Go: All checklists green; `test:ci` + e2e pass in staging.
+**Actions:**
+- ⏳ Add sections on:
+  - Authorization requirements
+  - Unified inventory/suppliers APIs
+  - Cache behavior and invalidation
 
 ---
 
-## Appendix A — Quick Verification Commands
+## Verification & Testing
 
-- Search for fallback secret:
-  - `rg -n "your-secret-key" src/middleware/auth.ts src/lib/auth/multi-tenant-auth.ts`
-- Run migrations and validate:
-  - `npm run db:migrate && npm run db:validate`
-  - `psql $NEON_SPP_DATABASE_URL -f database/migrations/005_fix_analytics_sequences.sql`
-- Run tests:
-  - `npm run test:ci` or `npm run test:all`
-- Validate APIs and health:
-  - `npm run validate:api`
-  - `curl -s http://localhost:3000/api/health | jq`
+**Status:** Pending
+
+**Actions:**
+- ⏳ Run full suite: `npm run lint`, `npm run test:ci`
+- ⏳ Manual curls: `/api/health`, `/api/suppliers`, `/api/inventory`
+- ⏳ Verify middleware logs for auth denials
+- ⏳ Verify cache hits if instrumentation added
+- ⏳ Rerun RLS verification script after updates
+
+---
+
+*Last Updated: 2025-10-28*

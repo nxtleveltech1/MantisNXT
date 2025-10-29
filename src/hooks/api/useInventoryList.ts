@@ -131,7 +131,7 @@ async function fetchInventoryList(
     });
   }
 
-  const url = `/api/inventory/complete${params.toString() ? `?${params.toString()}` : ''}`;
+  const url = `/api/inventory${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await fetch(url);
 
   if (!response.ok) {
