@@ -38,6 +38,11 @@ NEON_DATABASE_URL=postgresql://user:password@host:5432/database
 # Authentication
 JWT_SECRET=your-production-secret-key-min-32-chars
 JWT_EXPIRES_IN=24h
+ALLOW_PUBLIC_GET_ENDPOINTS=/api/suppliers,/api/inventory,/api/health
+
+# Caching
+CACHE_TTL_SECONDS=60
+# REDIS_URL=redis://user:password@host:6379 (optional)
 
 # API Configuration
 API_BASE_URL=https://your-domain.com/api
@@ -45,6 +50,8 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com
 
 # Security
 ENABLE_RATE_LIMITING=true
+ALLOW_PUBLIC_GET_ENDPOINTS=/api/health
+CACHE_TTL_SECONDS=60
 RATE_LIMIT_REQUESTS=100
 RATE_LIMIT_WINDOW=60000
 
@@ -99,6 +106,8 @@ Check these endpoints:
 - ✅ https://your-domain.com/api/health
 - ✅ https://your-domain.com/api/auth/status
 - ✅ https://your-domain.com/api/suppliers
+- ✅ https://your-domain.com/api/inventory
+- ✅ https://your-domain.com/api/ai/tasks/{taskId}
 - ✅ https://your-domain.com
 
 ## 🔒 Security Configuration
@@ -111,6 +120,8 @@ JWT_SECRET=<strong-random-secret>
 DATABASE_URL=<production-database-url>
 NODE_ENV=production
 ENABLE_RATE_LIMITING=true
+ALLOW_PUBLIC_GET_ENDPOINTS=/api/health
+CACHE_TTL_SECONDS=60
 ```
 
 ### Recommended Security Headers

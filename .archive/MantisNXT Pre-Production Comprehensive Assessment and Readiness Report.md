@@ -108,6 +108,18 @@ By executing this three-phase plan, the MantisNXT platform can be successfully t
 
 ---
 
+## Implementation Status Update (29 Oct 2025)
+
+- **Phase A** – Stabilization activities are complete. Analytics tables now use UUID/identity columns through `database/migrations/010_create_core_analytics_minimal_bigint.sql` and `database/migrations/012_create_core_analytics_full_uuid.sql`, replacing the older sequence-based migration. Documentation and run-books reflect the UUID strategy.
+- **Supplier & Inventory Consolidation** – Legacy supplier form and dashboard components removed in `src/components/suppliers` and `src/components/dashboard`. `/api/inventory/**` endpoints now funnel through `src/app/api/inventory/route.ts`, with deprecated versions returning HTTP 410 and redirect hints.
+- **Authorization** – Global deny-by-default middleware lives in `src/middleware.ts`. Development allow-list behaviour is controlled via `ALLOW_PUBLIC_GET_ENDPOINTS` in `.env` files.
+- **Caching & AI** – Analytics and AI endpoints leverage `src/lib/cache/responseCache.ts` for response caching; optional async execution is handled by `src/lib/queue/taskQueue.ts` and `/api/ai/tasks/[taskId]`.
+- **RLS Verification** – `database/scripts/verify-rls-implementation.sql` executed against the Neon database on 29 Oct 2025. Current deployment runs in single-tenant mode (no RLS policies required). Output is retained for audit.
+
+Remaining hardening tasks (multi-tenant RLS policies, extended async support) are tracked in the remediation plan and deployment checklist.
+
+---
+
 ## Readiness Scorecard
 
 - Security — Current: Red; Target: Green after A.1, C.3, C.4

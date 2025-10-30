@@ -49,9 +49,9 @@ export async function PUT(req: NextRequest) {
 
           if (body.createMovementOnStockChange && item.stock_qty !== undefined && item.stock_qty !== before.stock_qty) {
             const delta = Math.abs(Number(item.stock_qty) - Number(before.stock_qty));
-            const type = Number(item.stock_qty) > Number(before.stock_qty) ? 'INBOUND' : 'OUTBOUND';
+            const type = Number(item.stock_qty) > Number(before.stock_qty) ? 'in' : 'out';
             await client.query(
-              `INSERT INTO stock_movements (item_id, movement_type, quantity, reason, created_at)
+              `INSERT INTO stock_movements (item_id, type, quantity, reason, created_at)
                VALUES ($1,$2,$3,'batch_update',NOW())`, [item.id, type, delta]
             );
           }
@@ -68,4 +68,3 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ success: false, error: e?.message ?? String(e) }, { status: 400 });
   }
 }
-

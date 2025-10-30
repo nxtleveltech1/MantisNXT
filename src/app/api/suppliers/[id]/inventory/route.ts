@@ -37,31 +37,31 @@ export async function POST(
           newReserved += qty;
           await client.query(`INSERT INTO inventory_allocations (org_id, inventory_item_id, supplier_id, allocation_type, allocated_qty, expires_at, notes)
                               VALUES ($1,$2,$3,'allocation',$4,$5,$6)`, [orgId, itemId, supplierId, qty, expiresAt || null, notes || null]);
-          await client.query(`INSERT INTO stock_movements (item_id, movement_type, quantity, reason, reference, timestamp)
+          await client.query(`INSERT INTO stock_movements (item_id, type, quantity, reason, reference, timestamp)
                               VALUES ($1,'adjustment',$2,'allocate_to_supplier',$3,NOW())`, [itemId, qty, supplierId]);
           break;
         case 'deallocate_from_supplier':
           newReserved = Math.max(0, newReserved - qty);
-          await client.query(`INSERT INTO stock_movements (item_id, movement_type, quantity, reason, reference, timestamp)
+          await client.query(`INSERT INTO stock_movements (item_id, type, quantity, reason, reference, timestamp)
                               VALUES ($1,'adjustment',-$2,'deallocate_from_supplier',$3,NOW())`, [itemId, qty, supplierId]);
           break;
         case 'transfer_allocation':
           // no stock change, audit only
-          await client.query(`INSERT INTO stock_movements (item_id, movement_type, quantity, reason, reference, timestamp)
+          await client.query(`INSERT INTO stock_movements (item_id, type, quantity, reason, reference, timestamp)
                               VALUES ($1,'transfer',0,'transfer_allocation',$2,NOW())`, [itemId, `${supplierId}->${body?.toSupplierId}`]);
           break;
         case 'consignment_in':
           newStock += qty;
           await client.query(`INSERT INTO inventory_allocations (org_id, inventory_item_id, supplier_id, allocation_type, allocated_qty, expires_at, notes)
                               VALUES ($1,$2,$3,'consignment',$4,$5,$6)`, [orgId, itemId, supplierId, qty, expiresAt || null, notes || null]);
-          await client.query(`INSERT INTO stock_movements (item_id, movement_type, quantity, reason, reference, timestamp)
-                              VALUES ($1,'inbound',$2,'consignment_in',$3,NOW())`, [itemId, qty, supplierId]);
+          await client.query(`INSERT INTO stock_movements (item_id, type, quantity, reason, reference, timestamp)
+                              VALUES ($1,'in',$2,'consignment_in',$3,NOW())`, [itemId, qty, supplierId]);
           break;
         case 'consignment_out':
           if (newStock - newReserved < qty) throw new Error('INSUFFICIENT_AVAILABLE');
           newStock -= qty;
-          await client.query(`INSERT INTO stock_movements (item_id, movement_type, quantity, reason, reference, timestamp)
-                              VALUES ($1,'outbound',$2,'consignment_out',$3,NOW())`, [itemId, qty, supplierId]);
+          await client.query(`INSERT INTO stock_movements (item_id, type, quantity, reason, reference, timestamp)
+                              VALUES ($1,'out',$2,'consignment_out',$3,NOW())`, [itemId, qty, supplierId]);
           break;
       }
 

@@ -5,64 +5,140 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PredictiveAnalyticsService } from '@/services/ai/PredictiveAnalyticsService';
+import { getOrSet, makeKey } from '@/lib/cache/responseCache';
+import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
 
 // Initialize the predictive analytics service
 const predictiveAnalytics = new PredictiveAnalyticsService();
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json()
 
-    // Validate request
-    const validationError = validatePredictiveRequest(body);
+    const validationError = validatePredictiveRequest(body)
     if (validationError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        details: validationError
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationError,
+        },
+        { status: 400 }
+      )
     }
 
-    console.log('🔮 Generating predictive analytics for:', body.metrics);
+    const executePrediction = async () => {
+      console.log('?? Generating predictive analytics for:', body.metrics)
 
-    // Generate predictions using AI
-    const result = await predictiveAnalytics.generatePredictions({
-      supplierId: body.supplierId,
-      category: body.category,
-      timeHorizon: body.timeHorizon,
-      metrics: body.metrics
-    });
+      const result = await predictiveAnalytics.generatePredictions({
+        supplierId: body.supplierId,
+        category: body.category,
+        timeHorizon: body.timeHorizon,
+        metrics: body.metrics,
+      })
 
-    console.log(`✅ Generated predictions for ${body.metrics.length} metrics`);
+      console.log(? Generated predictions for  metrics)
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        predictions: result.predictions,
-        modelInfo: result.modelInfo,
-        request: {
-          supplierId: body.supplierId,
-          category: body.category,
-          timeHorizon: body.timeHorizon,
-          metrics: body.metrics
+      return {
+        success: true,
+        data: {
+          predictions: result.predictions,
+          modelInfo: result.modelInfo,
+          request: {
+            supplierId: body.supplierId,
+            category: body.category,
+            timeHorizon: body.timeHorizon,
+            metrics: body.metrics,
+          },
+          timestamp: new Date().toISOString(),
         },
-        timestamp: new Date().toISOString()
       }
-    });
+    }
 
+    const execResult = await executeWithOptionalAsync(request, executePrediction)
+    if (execResult.queued) {
+      return NextResponse.json(
+        {
+          success: true,
+          status: 'queued',
+          taskId: execResult.taskId,
+        },
+        { status: 202 }
+      )
+    }
+
+    return NextResponse.json(execResult.result)
   } catch (error) {
-    console.error('❌ Predictive analytics generation failed:', error);
+    console.error('? Predictive analytics generation failed:', error)
 
-    return NextResponse.json({
-      success: false,
-      error: 'Predictive analytics generation failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      code: 'PREDICTIVE_ANALYTICS_ERROR'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Predictive analytics generation failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        code: 'PREDICTIVE_ANALYTICS_ERROR',
+      },
+      { status: 500 }
+    )
   }
-}
+}export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    const supplierId = searchParams.get('supplierId')
+    const months = parseInt(searchParams.get('months') || '6')
 
-export async function GET(request: NextRequest) {
+    if (!supplierId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Supplier ID is required for performance forecasting',
+        },
+        { status: 400 }
+      )
+    }
+
+    if (months < 1 || months > 24) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forecast period must be between 1 and 24 months',
+        },
+        { status: 400 }
+      )
+    }
+
+    console.log(?? Forecasting supplier performance for  months:, supplierId)
+
+    const cacheKey = makeKey(request.url)
+    const payload = await getOrSet(cacheKey, async () => {
+      const forecast = await predictiveAnalytics.forecastSupplierPerformance(supplierId, months)
+      return {
+        success: true,
+        data: {
+          supplierId,
+          forecastPeriod: months,
+          performanceForecast: forecast.performanceForecast,
+          riskTrend: forecast.riskTrend,
+          recommendations: forecast.recommendations,
+          timestamp: new Date().toISOString(),
+        },
+      }
+    })
+
+    return NextResponse.json(payload)
+  } catch (error) {
+    console.error('? Supplier performance forecasting failed:', error)
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Supplier performance forecasting failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
+  }
+}export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const supplierId = searchParams.get('supplierId');

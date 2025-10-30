@@ -14,6 +14,13 @@ This checklist ensures MantisNXT is properly configured and ready for production
 **Recommended Items:** 12
 **Optional Items:** 5
 
+### Update — 29 Oct 2025
+
+- Added global API middleware (`src/middleware.ts`). Ensure production environment sets `ALLOW_PUBLIC_GET_ENDPOINTS` and `CACHE_TTL_SECONDS`.
+- Inventory APIs consolidated under `/api/inventory`; legacy `/api/inventory/*` and `/api/v2/inventory/*` now return HTTP 410 with redirect hints.
+- AI endpoints support asynchronous execution with polling via `/api/ai/tasks/{taskId}`. When running smoke tests, validate both `/api/inventory` and `/api/ai/tasks/{taskId}`.
+- `.env.production` should include the new caching variables and optional Redis URL when using distributed caching.
+
 ---
 
 ## 1. CRITICAL Pre-Deployment Requirements
@@ -630,6 +637,8 @@ DATABASE_URL=                        # PostgreSQL connection string
 # === APPLICATION ===
 NEXT_PUBLIC_API_URL=
 NEXT_PUBLIC_APP_URL=
+ALLOW_PUBLIC_GET_ENDPOINTS=/api/inventory,/api/health
+CACHE_TTL_SECONDS=60
 
 # === AI SERVICES (Optional) ===
 ANTHROPIC_API_KEY=

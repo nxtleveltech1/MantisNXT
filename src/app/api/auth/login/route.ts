@@ -51,9 +51,13 @@ const mockUsers = [
   },
 ];
 
-// JWT secret - in production, use environment variable
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// JWT secret - abort immediately if not provided to avoid insecure fallbacks
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required for authentication');
+}
 
 export async function POST(request: NextRequest) {
   try {

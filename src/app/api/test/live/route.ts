@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
 
       // Test stock movement
       await pool.query(`
-        INSERT INTO stock_movements (item_id, movement_type, quantity, reason)
+        INSERT INTO stock_movements (item_id, type, quantity, reason)
         VALUES ($1, 'in', 5, 'API Test Movement')
       `, [inventoryId])
 

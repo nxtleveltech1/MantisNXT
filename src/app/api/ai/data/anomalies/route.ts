@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { aiDatabase } from '@/lib/ai/database-integration';
+import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
 import { z } from 'zod';
 
 const AnomalyRequestSchema = z.object({
@@ -25,72 +26,84 @@ const AnomalyRequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-
   try {
-    // Parse request body
-    const body = await request.json();
-    const validatedInput = AnomalyRequestSchema.parse(body);
+    const body = await request.json()
+    const validatedInput = AnomalyRequestSchema.parse(body)
 
-    // Detect anomalies
-    const detection = await aiDatabase.detectAnomalies({
-      table: validatedInput.table,
-      query: validatedInput.query,
-      checks: validatedInput.checks,
-    });
+    const execResult = await executeWithOptionalAsync(request, async () => {
+      const startTime = Date.now()
+      const detection = await aiDatabase.detectAnomalies({
+        table: validatedInput.table,
+        query: validatedInput.query,
+        checks: validatedInput.checks,
+      })
 
-    // Categorize by severity
-    const categorized = {
-      critical: detection.anomalies.filter(a => a.severity === 'critical'),
-      high: detection.anomalies.filter(a => a.severity === 'high'),
-      medium: detection.anomalies.filter(a => a.severity === 'medium'),
-      low: detection.anomalies.filter(a => a.severity === 'low'),
-    };
+      const categorized = {
+        critical: detection.anomalies.filter(a => a.severity === 'critical'),
+        high: detection.anomalies.filter(a => a.severity === 'high'),
+        medium: detection.anomalies.filter(a => a.severity === 'medium'),
+        low: detection.anomalies.filter(a => a.severity === 'low'),
+      }
 
-    return NextResponse.json({
-      success: true,
-      detection: {
-        overall_health_score: detection.overall_health_score,
-        total_anomalies: detection.anomalies.length,
-        by_severity: {
-          critical: categorized.critical.length,
-          high: categorized.high.length,
-          medium: categorized.medium.length,
-          low: categorized.low.length,
+      return {
+        success: true,
+        detection: {
+          overall_health_score: detection.overall_health_score,
+          total_anomalies: detection.anomalies.length,
+          by_severity: {
+            critical: categorized.critical.length,
+            high: categorized.high.length,
+            medium: categorized.medium.length,
+            low: categorized.low.length,
+          },
+          anomalies: detection.anomalies,
+          recommendations: detection.recommendations,
         },
-        anomalies: detection.anomalies,
-        recommendations: detection.recommendations,
-      },
-      meta: {
-        execution_time_ms: Date.now() - startTime,
-        data_source: validatedInput.table || 'custom_query',
-        checks_performed: validatedInput.checks || ['all'],
-      },
-      timestamp: new Date().toISOString(),
-    });
+        meta: {
+          execution_time_ms: Date.now() - startTime,
+          data_source: validatedInput.table || 'custom_query',
+          checks_performed: validatedInput.checks || ['all'],
+        },
+        timestamp: new Date().toISOString(),
+      }
+    })
 
-  } catch (error) {
-    console.error('Anomaly detection error:', error);
-
-    // Validation error
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request',
-        details: error.issues,
-      }, { status: 400 });
+    if (execResult.queued) {
+      return NextResponse.json(
+        {
+          success: true,
+          status: 'queued',
+          taskId: execResult.taskId,
+        },
+        { status: 202 }
+      )
     }
 
-    // General error
-    return NextResponse.json({
-      success: false,
-      error: 'Anomaly detection failed',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
-  }
-}
+    return NextResponse.json(execResult.result)
+  } catch (error) {
+    console.error('Anomaly detection error:', error)
 
-export async function GET(request: NextRequest) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request',
+          details: error.issues,
+        },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Anomaly detection failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
+  }
+}export async function GET(request: NextRequest) {
   return NextResponse.json({
     endpoint: '/api/ai/data/anomalies',
     method: 'POST',

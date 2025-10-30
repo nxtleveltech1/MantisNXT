@@ -79,7 +79,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         created_at,
         created_by
       FROM stock_movements
-      WHERE inventory_item_id = $1
+      WHERE item_id = $1
       ORDER BY created_at DESC
       LIMIT 10
     `
@@ -208,7 +208,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (difference !== 0) {
           await client.query(`
             INSERT INTO stock_movements (
-              inventory_item_id,
+              item_id,
               type,
               quantity,
               reason,
@@ -217,7 +217,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             ) VALUES ($1, $2, $3, $4, $5, $6)
           `, [
             id,
-            difference > 0 ? 'adjustment_in' : 'adjustment_out',
+            difference > 0 ? 'in' : 'out',
             Math.abs(difference),
             'Manual adjustment via API',
             `Stock adjusted from ${oldStock} to ${newStock}`,
@@ -299,7 +299,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       // Check if there are any pending orders or movements
       const dependenciesQuery = `
         SELECT
-          (SELECT COUNT(*) FROM stock_movements WHERE inventory_item_id = $1) as movements_count
+          (SELECT COUNT(*) FROM stock_movements WHERE item_id = $1) as movements_count
       `
 
       const dependenciesResult = await client.query(dependenciesQuery, [id])

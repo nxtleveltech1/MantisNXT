@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth/auth-context'
 import { QueryProvider } from '@/lib/query-provider'
+import AsyncBoundary from '@/components/ui/AsyncBoundary'
 
 export const metadata: Metadata = {
   title: 'MantisNXT - Procurement Management System',
@@ -44,7 +45,9 @@ export default function RootLayout({
       <body className="font-inter antialiased">
         <QueryProvider>
           <AuthProvider>
-            {children}
+            <AsyncBoundary>
+              {children}
+            </AsyncBoundary>
           </AuthProvider>
         </QueryProvider>
         <script

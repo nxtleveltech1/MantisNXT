@@ -387,13 +387,13 @@ async function getMovementAnalytics(timeBounds: any, groupBy?: string) {
   const baseQuery = `
     SELECT
       COUNT(*) as total_movements,
-      COUNT(*) FILTER (WHERE movement_type = 'in') as inbound_movements,
-      COUNT(*) FILTER (WHERE movement_type = 'out') as outbound_movements,
-      COUNT(*) FILTER (WHERE movement_type = 'adjustment') as adjustment_movements,
-      COUNT(*) FILTER (WHERE movement_type = 'transfer') as transfer_movements,
-      SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_inbound_quantity,
-      SUM(CASE WHEN movement_type = 'out' THEN ABS(quantity) ELSE 0 END) as total_outbound_quantity,
-      SUM(CASE WHEN movement_type = 'in' AND unit_cost IS NOT NULL THEN quantity * unit_cost ELSE 0 END) as inbound_value,
+      COUNT(*) FILTER (WHERE type = 'in') as inbound_movements,
+      COUNT(*) FILTER (WHERE type = 'out') as outbound_movements,
+      COUNT(*) FILTER (WHERE type = 'adjustment') as adjustment_movements,
+      COUNT(*) FILTER (WHERE type = 'transfer') as transfer_movements,
+      SUM(CASE WHEN type = 'in' THEN quantity ELSE 0 END) as total_inbound_quantity,
+      SUM(CASE WHEN type = 'out' THEN ABS(quantity) ELSE 0 END) as total_outbound_quantity,
+      SUM(CASE WHEN type = 'in' AND unit_cost IS NOT NULL THEN quantity * unit_cost ELSE 0 END) as inbound_value,
       COUNT(DISTINCT item_id) as items_with_movements,
       COUNT(DISTINCT DATE(created_at)) as active_days
     FROM stock_movements
@@ -422,10 +422,10 @@ async function getMovementAnalytics(timeBounds: any, groupBy?: string) {
     SELECT
       DATE(created_at) as movement_date,
       COUNT(*) as total_movements,
-      COUNT(*) FILTER (WHERE movement_type = 'in') as inbound,
-      COUNT(*) FILTER (WHERE movement_type = 'out') as outbound,
-      SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as inbound_quantity,
-      SUM(CASE WHEN movement_type = 'out' THEN ABS(quantity) ELSE 0 END) as outbound_quantity
+      COUNT(*) FILTER (WHERE type = 'in') as inbound,
+      COUNT(*) FILTER (WHERE type = 'out') as outbound,
+      SUM(CASE WHEN type = 'in' THEN quantity ELSE 0 END) as inbound_quantity,
+      SUM(CASE WHEN type = 'out' THEN ABS(quantity) ELSE 0 END) as outbound_quantity
     FROM stock_movements
     WHERE created_at BETWEEN $1 AND $2
     GROUP BY DATE(created_at)

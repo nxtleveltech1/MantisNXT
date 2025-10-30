@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 
 // Public endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
@@ -30,25 +31,24 @@ const ALLOW_PUBLIC_GET_ENDPOINTS = (process.env.ALLOW_PUBLIC_GET_ENDPOINTS || ''
  * @param token - JWT token string
  * @returns true if valid, false otherwise
  */
-function validateToken(token: string): boolean {
-  // TODO: Implement proper JWT validation
-  // For now, accept any non-empty token
-  // In production, use jose or jsonwebtoken library
+const JWT_SECRET = process.env.JWT_SECRET;
 
-  if (!token || token.length === 0) {
+function validateToken(token: string): boolean {
+  if (!token) return false;
+  if (!JWT_SECRET) {
+    console.error('JWT_SECRET is not configured. Rejecting token validation.');
     return false;
   }
 
-  // Example JWT validation (placeholder)
-  // const secret = process.env.JWT_SECRET || 'your-secret-key';
-  // try {
-  //   const payload = verify(token, secret);
-  //   return true;
-  // } catch (error) {
-  //   return false;
-  // }
-
-  return true; // Temporarily accept all tokens for backward compatibility
+  try {
+    jwt.verify(token, JWT_SECRET);
+    return true;
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('JWT verification failed:', error);
+    }
+    return false;
+  }
 }
 
 /**

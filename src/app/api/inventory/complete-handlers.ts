@@ -64,7 +64,7 @@ const stockMovementSchema = z.object({
 })
 
 // GET /api/inventory/complete - Enhanced inventory listing with analytics
-export async function GET(request: NextRequest) {
+export async function getCompleteInventory(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
 
@@ -268,6 +268,7 @@ export async function GET(request: NextRequest) {
       const movementsQuery = `
         SELECT
           sm.*,
+          sm.type as movement_type,
           i.sku,
           i.name as item_name
         FROM stock_movements sm
@@ -321,7 +322,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/inventory/complete - Create new inventory item
-export async function POST(request: NextRequest) {
+export async function createInventoryItems(request: NextRequest) {
   try {
     const body = await request.json()
 
@@ -394,7 +395,7 @@ export async function POST(request: NextRequest) {
     // Create initial stock movement record
     await pool.query(`
       INSERT INTO stock_movements (
-        item_id, movement_type, quantity, cost, reason, reference, created_at
+        item_id, type, quantity, unit_cost, reason, reference, created_at
       ) VALUES ($1, 'in', $2, $3, 'Initial stock', $4, NOW())
     `, [
       insertResult.rows[0].id,
@@ -435,7 +436,7 @@ export async function POST(request: NextRequest) {
 }
 
 // PUT /api/inventory/complete - Bulk update operations
-export async function PUT(request: NextRequest) {
+export async function updateInventoryItems(request: NextRequest) {
   try {
     const body = await request.json()
 
@@ -456,6 +457,42 @@ export async function PUT(request: NextRequest) {
     console.error('Error in inventory update:', error)
     return NextResponse.json(
       { success: false, error: 'Update operation failed' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function deleteInventoryItems(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const ids = Array.isArray(body?.ids)
+      ? body.ids.filter((value: unknown) => typeof value === 'string')
+      : []
+
+    if (ids.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Must provide array of inventory item IDs to delete' },
+        { status: 400 }
+      )
+    }
+
+    const deletedIds = await TransactionHelper.withTransaction(async (client) => {
+      const result = await client.query(
+        `DELETE FROM inventory_items WHERE id = ANY($1::uuid[]) RETURNING id`,
+        [ids]
+      )
+      return result.rows.map(row => row.id)
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: { deletedIds },
+      message: `Deleted ${deletedIds.length} inventory items`
+    })
+  } catch (error) {
+    console.error('Error deleting inventory items:', error)
+    return NextResponse.json(
+      { success: false, error: 'Delete operation failed' },
       { status: 500 }
     )
   }
@@ -595,7 +632,7 @@ async function handleStockMovement(body: any) {
     // Record stock movement
     const movementResult = await client.query(`
       INSERT INTO stock_movements (
-        item_id, movement_type, quantity, cost, reason, reference,
+        item_id, type, quantity, unit_cost, reason, reference,
         location_from, location_to, notes, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
       RETURNING *

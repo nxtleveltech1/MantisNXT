@@ -164,8 +164,8 @@ The plan assumes the availability of three key roles, with the Senior Developer/
 
 - M1: Phase A complete — sign‑off: SDE + SecOps + DBA
 - M2: Phase B complete — sign‑off: SDE + FE
-- M3: Phase C complete — sign‑off: SDE + SecOps
-- Final Go/No‑Go: All checklists green; `test:ci` + e2e pass in staging.
+- M3: Phase C complete — sign-off: SDE + SecOps
+- Final Go/No-Go: All checklists green; `test:ci` + e2e pass in staging.
 
 ---
 
@@ -181,3 +181,15 @@ The plan assumes the availability of three key roles, with the Senior Developer/
 - Validate APIs and health:
   - `npm run validate:api`
   - `curl -s http://localhost:3000/api/health | jq`
+
+---
+
+## Delivery Notes (29 Oct 2025)
+
+- **Supplier & Inventory APIs** – Unified supplier endpoints through `/api/suppliers` (v3), with `/api/suppliers/enhanced` and `/api/v2/suppliers/**` returning 410 redirects. Inventory APIs consolidated under `src/app/api/inventory/route.ts`; deprecated routes in `/api/inventory/**` and `/api/v2/inventory/**` also respond with 410.
+- **Frontend Consolidation** – `src/components/suppliers/SupplierForm.tsx` and legacy dashboard components are removed. Enhanced components exported via `src/components/suppliers/index.ts` and `src/components/dashboard/index.ts`.
+- **Caching & Async AI** – Response caching applied to analytics and AI endpoints via `src/lib/cache/responseCache.ts`. Optional async processing and job polling available through `src/lib/queue/taskQueue.ts` and `/api/ai/tasks/[taskId]`.
+- **Authorization Middleware** – `src/middleware.ts` enforces deny-by-default on APIs while honouring dev GET allow-list. Documentation updated with new env variables (`CACHE_TTL_SECONDS`, `ALLOW_PUBLIC_GET_ENDPOINTS`).
+- **RLS Verification** – Script `database/scripts/verify-rls-implementation.sql` executed; environment confirmed single-tenant (no RLS policies currently required). Future multi-tenant deployments should enable policies on core tables noted in the verification output.
+
+Remaining Phase C follow-ups (Redis-backed caching, extended async coverage, optional RLS policies for multi-tenant scenarios) are tracked separately in DEPLOYMENT.md and engineering TODOs.

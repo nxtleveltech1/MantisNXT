@@ -24,73 +24,85 @@ const PredictionRequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-
   try {
-    // Parse request body
-    const body = await request.json();
-    const validatedInput = PredictionRequestSchema.parse(body);
+    const body = await request.json()
+    const validatedInput = PredictionRequestSchema.parse(body)
 
-    // Generate predictions
-    const prediction = await aiDatabase.generatePredictions({
-      type: validatedInput.type,
-      target_id: validatedInput.target_id,
-      forecast_days: validatedInput.forecast_days,
-    });
-
-    // Calculate summary statistics
-    const values = prediction.predictions.map(p => p.value);
-    const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
-    const maxValue = Math.max(...values);
-    const minValue = Math.min(...values);
-    const trend = values[values.length - 1] > values[0] ? 'increasing' : 'decreasing';
-
-    return NextResponse.json({
-      success: true,
-      prediction: {
-        type: prediction.prediction_type,
-        forecast_period_days: validatedInput.forecast_days,
-        confidence: prediction.confidence,
-        predictions: prediction.predictions,
-        factors: prediction.factors,
-        recommendations: prediction.recommendations,
-        summary: {
-          avg_value: avgValue,
-          max_value: maxValue,
-          min_value: minValue,
-          trend: trend,
-        },
-      },
-      meta: {
-        execution_time_ms: Date.now() - startTime,
+    const execResult = await executeWithOptionalAsync(request, async () => {
+      const startTime = Date.now()
+      const prediction = await aiDatabase.generatePredictions({
+        type: validatedInput.type,
         target_id: validatedInput.target_id,
-        generated_at: new Date().toISOString(),
-      },
-      timestamp: new Date().toISOString(),
-    });
+        forecast_days: validatedInput.forecast_days,
+      })
 
-  } catch (error) {
-    console.error('Prediction error:', error);
+      const values = prediction.predictions.map(p => p.value)
+      const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length
+      const maxValue = Math.max(...values)
+      const minValue = Math.min(...values)
+      const trend = values[values.length - 1] > values[0] ? 'increasing' : 'decreasing'
 
-    // Validation error
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request',
-        details: error.issues,
-      }, { status: 400 });
+      return {
+        success: true,
+        prediction: {
+          type: prediction.prediction_type,
+          forecast_period_days: validatedInput.forecast_days,
+          confidence: prediction.confidence,
+          predictions: prediction.predictions,
+          factors: prediction.factors,
+          recommendations: prediction.recommendations,
+          summary: {
+            avg_value: avgValue,
+            max_value: maxValue,
+            min_value: minValue,
+            trend,
+          },
+        },
+        meta: {
+          execution_time_ms: Date.now() - startTime,
+          target_id: validatedInput.target_id,
+          generated_at: new Date().toISOString(),
+        },
+        timestamp: new Date().toISOString(),
+      }
+    })
+
+    if (execResult.queued) {
+      return NextResponse.json(
+        {
+          success: true,
+          status: 'queued',
+          taskId: execResult.taskId,
+        },
+        { status: 202 }
+      )
     }
 
-    // General error
-    return NextResponse.json({
-      success: false,
-      error: 'Prediction generation failed',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
-  }
-}
+    return NextResponse.json(execResult.result)
+  } catch (error) {
+    console.error('Prediction error:', error)
 
-export async function GET(request: NextRequest) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request',
+          details: error.issues,
+        },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Prediction generation failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
+  }
+}export async function GET(request: NextRequest) {
   return NextResponse.json({
     endpoint: '/api/ai/data/predictions',
     method: 'POST',

@@ -20,6 +20,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { aiDatabase } from '@/lib/ai/database-integration';
+import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
 import { z } from 'zod';
 
 const AnalyzeRequestSchema = z.object({
@@ -31,58 +32,71 @@ const AnalyzeRequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-
   try {
-    // Parse request body
-    const body = await request.json();
-    const validatedInput = AnalyzeRequestSchema.parse(body);
+    const body = await request.json()
+    const validatedInput = AnalyzeRequestSchema.parse(body)
 
-    // Execute analysis
-    const analysis = await aiDatabase.analyzeData({
-      table: validatedInput.table,
-      query: validatedInput.query,
-      focus: validatedInput.focus,
-    });
+    const execResult = await executeWithOptionalAsync(request, async () => {
+      const started = Date.now()
+      const analysis = await aiDatabase.analyzeData({
+        table: validatedInput.table,
+        query: validatedInput.query,
+        focus: validatedInput.focus,
+      })
 
-    return NextResponse.json({
-      success: true,
-      analysis: {
-        summary: analysis.summary,
-        insights: analysis.insights,
-        metrics: analysis.metrics,
-        visualizations: analysis.visualizations,
-      },
-      meta: {
-        execution_time_ms: Date.now() - startTime,
-        focus_area: validatedInput.focus,
-        data_source: validatedInput.table || 'custom_query',
-      },
-      timestamp: new Date().toISOString(),
-    });
+      return {
+        success: true,
+        analysis: {
+          summary: analysis.summary,
+          insights: analysis.insights,
+          metrics: analysis.metrics,
+          visualizations: analysis.visualizations,
+        },
+        meta: {
+          execution_time_ms: Date.now() - started,
+          focus_area: validatedInput.focus,
+          data_source: validatedInput.table || 'custom_query',
+        },
+        timestamp: new Date().toISOString(),
+      }
+    })
 
-  } catch (error) {
-    console.error('Data analysis error:', error);
-
-    // Validation error
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request',
-        details: error.issues,
-      }, { status: 400 });
+    if (execResult.queued) {
+      return NextResponse.json(
+        {
+          success: true,
+          status: 'queued',
+          taskId: execResult.taskId,
+        },
+        { status: 202 }
+      )
     }
 
-    // General error
-    return NextResponse.json({
-      success: false,
-      error: 'Analysis failed',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    }, { status: 500 });
-  }
-}
+    return NextResponse.json(execResult.result)
+  } catch (error) {
+    console.error('Data analysis error:', error)
 
-export async function GET(request: NextRequest) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request',
+          details: error.issues,
+        },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Analysis failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
+  }
+}export async function GET(request: NextRequest) {
   return NextResponse.json({
     endpoint: '/api/ai/data/analyze',
     method: 'POST',

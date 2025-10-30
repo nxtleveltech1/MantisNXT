@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierIntelligenceService } from '@/services/ai/SupplierIntelligenceService';
 import { PredictiveAnalyticsService } from '@/services/ai/PredictiveAnalyticsService';
+import { getOrSet, makeKey } from '@/lib/cache/responseCache';
+import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
 
 // Initialize AI services
 const supplierIntelligence = new SupplierIntelligenceService();
@@ -13,89 +15,111 @@ const predictiveAnalytics = new PredictiveAnalyticsService();
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json()
 
-    // Validate request
-    const validationError = validateInsightsRequest(body);
+    const validationError = validateInsightsRequest(body)
     if (validationError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        details: validationError
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationError,
+        },
+        { status: 400 }
+      )
     }
 
-    console.log('💡 Generating AI insights for:', body.context.type);
+    const runInsights = async () => {
+      console.log('?? Generating AI insights for:', body.context.type)
 
-    // Generate insights based on context type
-    const insights = await generateContextualInsights(body);
+      const insights = await generateContextualInsights(body)
 
-    console.log(`✨ Generated ${insights.insights.length} insights`);
+      console.log(? Generated  insights)
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        insights: insights.insights,
-        summary: insights.summary,
-        context: body.context,
-        focusAreas: body.focusAreas,
-        timestamp: new Date().toISOString()
+      return {
+        success: true,
+        data: {
+          insights: insights.insights,
+          summary: insights.summary,
+          context: body.context,
+          focusAreas: body.focusAreas,
+          timestamp: new Date().toISOString(),
+        },
       }
-    });
+    }
 
+    const execResult = await executeWithOptionalAsync(request, runInsights)
+    if (execResult.queued) {
+      return NextResponse.json(
+        {
+          success: true,
+          status: 'queued',
+          taskId: execResult.taskId,
+        },
+        { status: 202 }
+      )
+    }
+
+    return NextResponse.json(execResult.result)
   } catch (error) {
-    console.error('❌ AI insights generation failed:', error);
+    console.error('? AI insights generation failed:', error)
 
-    return NextResponse.json({
-      success: false,
-      error: 'AI insights generation failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      code: 'INSIGHTS_GENERATION_ERROR'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'AI insights generation failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        code: 'INSIGHTS_GENERATION_ERROR',
+      },
+      { status: 500 }
+    )
   }
-}
-
-export async function GET(request: NextRequest) {
+}export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const category = searchParams.get('category');
+    const searchParams = request.nextUrl.searchParams
+    const category = searchParams.get('category')
 
     if (!category) {
-      return NextResponse.json({
-        success: false,
-        error: 'Category is required for market intelligence'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Category is required for market intelligence',
+        },
+        { status: 400 }
+      )
     }
 
-    console.log('📈 Generating market intelligence for:', category);
+    console.log('?? Generating market intelligence for:', category)
 
-    // Generate market intelligence
-    const marketIntel = await predictiveAnalytics.generateMarketIntelligence(category);
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        category,
-        marketTrends: marketIntel.marketTrends,
-        competitiveAnalysis: marketIntel.competitiveAnalysis,
-        recommendations: marketIntel.recommendations,
-        timestamp: new Date().toISOString()
+    const cacheKey = makeKey(request.url)
+    const payload = await getOrSet(cacheKey, async () => {
+      const marketIntel = await predictiveAnalytics.generateMarketIntelligence(category)
+      return {
+        success: true,
+        data: {
+          category,
+          marketTrends: marketIntel.marketTrends,
+          competitiveAnalysis: marketIntel.competitiveAnalysis,
+          recommendations: marketIntel.recommendations,
+          timestamp: new Date().toISOString(),
+        },
       }
-    });
+    })
 
+    return NextResponse.json(payload)
   } catch (error) {
-    console.error('❌ Market intelligence generation failed:', error);
+    console.error('? Market intelligence generation failed:', error)
 
-    return NextResponse.json({
-      success: false,
-      error: 'Market intelligence generation failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Market intelligence generation failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
   }
-}
-
-// Generate contextual insights based on request
-async function generateContextualInsights(request: any): Promise<{
+}async function generateContextualInsights(request: any): Promise<{
   insights: any[];
   summary: any;
 }> {
