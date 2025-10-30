@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS public.stock_movements (
 );
 
 CREATE INDEX IF NOT EXISTS idx_stock_movements_item_id ON public.stock_movements (item_id);
-CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON public.stock_movements (movement_type);
+CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON public.stock_movements (type);
 CREATE INDEX IF NOT EXISTS idx_stock_movements_timestamp ON public.stock_movements ("timestamp" DESC);
 
 -- Backfill historic movements if data exists
@@ -176,5 +176,22 @@ JOIN core.stock_on_hand soh
 JOIN public.inventory_items ii ON ii.id = soh.soh_id
 WHERE NOT EXISTS (SELECT 1 FROM public.stock_movements)
 ON CONFLICT (id) DO NOTHING;
+
+CREATE OR REPLACE VIEW public.suppliers AS
+SELECT
+  supplier_id AS id,
+  name,
+  CASE
+    WHEN active THEN 'active'::text
+    ELSE 'inactive'::text
+  END AS status,
+  (contact_info ->> 'email')::varchar(255) AS email,
+  (contact_info ->> 'phone')::varchar(50) AS phone,
+  default_currency AS currency,
+  payment_terms AS terms,
+  contact_person,
+  created_at,
+  updated_at
+FROM core.supplier;
 
 COMMIT;
