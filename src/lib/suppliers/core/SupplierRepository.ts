@@ -776,28 +776,27 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       paramIndex++
     }
 
+    // Status & tier are text, category is text
     if (filters.status && filters.status.length > 0) {
-      const statusCondition = ` AND s.status = ANY($${paramIndex})`
-      query += statusCondition
-      countQuery += statusCondition
-      params.push(filters.status)
-      paramIndex++
+      const statusCondition = ` AND s.status = ANY($${paramIndex}::text[])`;
+      query += statusCondition;
+      countQuery += statusCondition;
+      params.push(filters.status);
+      paramIndex++;
     }
-
     if (filters.tier && filters.tier.length > 0) {
-      const tierCondition = ` AND s.tier = ANY($${paramIndex})`
-      query += tierCondition
-      countQuery += tierCondition
-      params.push(filters.tier)
-      paramIndex++
+      const tierCondition = ` AND s.tier = ANY($${paramIndex}::text[])`;
+      query += tierCondition;
+      countQuery += tierCondition;
+      params.push(filters.tier);
+      paramIndex++;
     }
-
     if (filters.category && filters.category.length > 0) {
-      const categoryCondition = ` AND s.category = ANY($${paramIndex})`
-      query += categoryCondition
-      countQuery += categoryCondition
-      params.push(filters.category)
-      paramIndex++
+      const categoryCondition = ` AND s.primary_category = ANY($${paramIndex}::text[])`;
+      query += categoryCondition;
+      countQuery += categoryCondition;
+      params.push(filters.category);
+      paramIndex++;
     }
 
     query += ` GROUP BY s.id ORDER BY s.name ASC`

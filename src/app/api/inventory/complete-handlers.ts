@@ -148,9 +148,15 @@ export async function getCompleteInventory(request: NextRequest) {
 
     // Apply supplier filter
     if (supplier?.length) {
-      baseQuery += ` AND i.supplier_id = ANY($${paramIndex})`
-      queryParams.push(supplier)
-      paramIndex++
+      if (supplier.length === 1) {
+        baseQuery += ` AND i.supplier_id = $${paramIndex}::uuid`
+        queryParams.push(supplier[0])
+        paramIndex++
+      } else {
+        baseQuery += ` AND i.supplier_id = ANY($${paramIndex}::uuid[])`
+        queryParams.push(supplier)
+        paramIndex++
+      }
     }
 
     // Apply status filter (skipped: status column may not exist in current DB)

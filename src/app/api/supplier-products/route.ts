@@ -59,8 +59,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (supplierId) {
-      whereConditions.push(`sp.supplier_id = $${paramIndex++}`);
+      whereConditions.push(`sp.supplier_id = $${paramIndex}::uuid`);
       sqlParams.push(supplierId);
+      paramIndex++;
     }
 
     if (search) {

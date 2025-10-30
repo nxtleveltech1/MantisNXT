@@ -336,8 +336,9 @@ export class InventorySelectionService {
     }
 
     if (filters?.supplier_id) {
-      conditions.push(`sp.supplier_id = $${paramIndex++}`);
+      conditions.push(`sp.supplier_id = $${paramIndex}::uuid`);
       params.push(filters.supplier_id);
+      paramIndex++;
     }
 
     if (filters?.search) {
@@ -377,8 +378,9 @@ export class InventorySelectionService {
     let paramIndex = 3;
 
     if (filters?.supplier_id) {
-      conditions.push(`sp.supplier_id = $${paramIndex++}`);
+      conditions.push(`sp.supplier_id = $${paramIndex}::uuid`);
       params.push(filters.supplier_id);
+      paramIndex++;
     }
 
     if (filters?.category_id) {
