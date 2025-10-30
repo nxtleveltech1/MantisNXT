@@ -45,7 +45,25 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   async findById(id: string): Promise<Supplier | null> {
     const queryText = `
       SELECT
-        s.*,
+        s.id,
+        s.name,
+        s.code,
+        s.status,
+        s.tier,
+        s.category,
+        s.subcategory,
+        s.tags,
+        s.legal_name,
+        s.website,
+        s.industry,
+        s.tax_id,
+        s.registration_number,
+        s.founded_year,
+        s.employee_count,
+        s.annual_revenue,
+        s.currency,
+        s.created_at,
+        s.updated_at,
         json_agg(DISTINCT sc.*) FILTER (WHERE sc.id IS NOT NULL) as contacts,
         json_agg(DISTINCT sa.*) FILTER (WHERE sa.id IS NOT NULL) as addresses,
         json_agg(DISTINCT sp.*) FILTER (WHERE sp.id IS NOT NULL) as performance_data
@@ -54,7 +72,11 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       LEFT JOIN supplier_addresses sa ON s.id = sa.supplier_id AND sa.is_active = true
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
       WHERE s.id = $1
-      GROUP BY s.id
+      GROUP BY
+        s.id, s.name, s.code, s.status, s.tier, s.category, s.subcategory, s.tags,
+        s.legal_name, s.website, s.industry, s.tax_id, s.registration_number,
+        s.founded_year, s.employee_count, s.annual_revenue, s.currency,
+        s.created_at, s.updated_at
     `
 
     const result = await query(queryText, [id])
@@ -746,7 +768,25 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   private buildFilterQuery(filters: SupplierFilters): { query: string, countQuery: string, params: any[] } {
     let query = `
       SELECT
-        s.*,
+        s.id,
+        s.name,
+        s.code,
+        s.status,
+        s.tier,
+        s.category,
+        s.subcategory,
+        s.tags,
+        s.legal_name,
+        s.website,
+        s.industry,
+        s.tax_id,
+        s.registration_number,
+        s.founded_year,
+        s.employee_count,
+        s.annual_revenue,
+        s.currency,
+        s.created_at,
+        s.updated_at,
         json_agg(DISTINCT sc.*) FILTER (WHERE sc.id IS NOT NULL) as contacts,
         json_agg(DISTINCT sa.*) FILTER (WHERE sa.id IS NOT NULL) as addresses,
         json_agg(DISTINCT sp.*) FILTER (WHERE sp.id IS NOT NULL) as performance_data
@@ -799,7 +839,12 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       paramIndex++;
     }
 
-    query += ` GROUP BY s.id ORDER BY s.name ASC`
+    query += ` GROUP BY
+      s.id, s.name, s.code, s.status, s.tier, s.category, s.subcategory, s.tags,
+      s.legal_name, s.website, s.industry, s.tax_id, s.registration_number,
+      s.founded_year, s.employee_count, s.annual_revenue, s.currency,
+      s.created_at, s.updated_at
+    ORDER BY s.name ASC`
 
     // Add pagination
     const limit = filters.limit || 50
