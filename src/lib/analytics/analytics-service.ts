@@ -104,8 +104,8 @@ export class AnalyticsService {
     try {
       // Get supplier data
       const suppliersQuery = supplierId
-        ? 'SELECT * FROM suppliers WHERE id = $1'
-        : 'SELECT * FROM suppliers WHERE organization_id = $1';
+        ? 'SELECT * FROM public.suppliers WHERE id = $1'
+        : 'SELECT * FROM public.suppliers WHERE organization_id = $1';
 
       const suppliersResult = await this.db.query(
         suppliersQuery,
@@ -194,8 +194,8 @@ export class AnalyticsService {
     try {
       // Get inventory items
       const itemsQuery = itemId
-        ? 'SELECT * FROM inventory_items WHERE id = $1'
-        : 'SELECT * FROM inventory_items WHERE organization_id = $1';
+        ? 'SELECT * FROM public.inventory_items WHERE id = $1'
+        : 'SELECT * FROM public.inventory_items WHERE organization_id = $1';
 
       const itemsResult = await this.db.query(itemsQuery, [itemId || organizationId]);
 
@@ -252,7 +252,7 @@ export class AnalyticsService {
       // Get inventory items with supplier pricing
       const itemsQuery = `
         SELECT ii.*, spl.unit_price as supplier_price
-        FROM inventory_items ii
+        FROM public.inventory_items ii
         LEFT JOIN supplier_price_lists spl ON ii.sku = spl.sku
         WHERE ${itemId ? 'ii.id = $1' : 'ii.organization_id = $1'}
       `;
@@ -319,7 +319,7 @@ export class AnalyticsService {
       // Get recent supplier performance data
       const suppliersQuery = `
         SELECT s.*, sp.on_time_delivery_rate, sp.quality_acceptance_rate, sp.response_time_hours
-        FROM suppliers s
+        FROM public.suppliers s
         LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
         WHERE s.organization_id = $1
         AND (sp.evaluation_date IS NULL OR sp.evaluation_date >= NOW() - INTERVAL '30 days')
@@ -330,7 +330,7 @@ export class AnalyticsService {
       // Get inventory items and recent movements
       const inventoryQuery = `
         SELECT ii.*, sm.quantity, sm.timestamp, sm.type as movement_type
-        FROM inventory_items ii
+        FROM public.inventory_items ii
         LEFT JOIN stock_movements sm ON ii.id = sm.item_id
         WHERE ii.organization_id = $1
         AND (sm.timestamp IS NULL OR sm.timestamp >= NOW() - INTERVAL '7 days')
@@ -381,8 +381,8 @@ export class AnalyticsService {
         predictionsCount,
         optimizationsCount
       ] = await Promise.all([
-        this.db.query('SELECT COUNT(*) FROM suppliers WHERE organization_id = $1', [organizationId]),
-        this.db.query('SELECT COUNT(*) FROM inventory_items WHERE organization_id = $1', [organizationId]),
+        this.db.query('SELECT COUNT(*) FROM public.suppliers WHERE organization_id = $1', [organizationId]),
+        this.db.query('SELECT COUNT(*) FROM public.inventory_items WHERE organization_id = $1', [organizationId]),
         this.db.query('SELECT COUNT(*) FROM analytics_anomalies WHERE organization_id = $1 AND detected_at >= NOW() - INTERVAL \'24 hours\'', [organizationId]),
         this.db.query('SELECT COUNT(*) FROM analytics_predictions WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL \'24 hours\'', [organizationId]),
         this.db.query('SELECT COUNT(*) FROM analytics_optimizations WHERE organization_id = $1 AND created_at >= NOW() - INTERVAL \'24 hours\'', [organizationId])

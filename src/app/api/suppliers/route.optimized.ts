@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         s.created_at,
         s.updated_at
         ${includeMetrics ? `, COUNT(i.id) as item_count, SUM(i.stock_qty * i.cost_price) as total_inventory_value` : ''}
-      FROM suppliers s
+      FROM public.suppliers s
       ${includeMetrics ? `LEFT JOIN inventory_items i ON s.id = i.supplier_id` : ''}
       WHERE 1=1
     `
@@ -300,7 +300,7 @@ export async function POST(request: NextRequest) {
 
           // Check for duplicate - use index scan
           const existingSupplier = await client.query(
-            'SELECT id FROM suppliers WHERE LOWER(name) = LOWER($1)',
+            'SELECT id FROM public.suppliers WHERE LOWER(name) = LOWER($1)',
             [validatedData.name]
           )
 

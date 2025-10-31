@@ -359,7 +359,7 @@ export class ErrorReportGenerator {
 
     return csvRows.map(row =>
       row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')
-    ).join('\n')
+    ).join('\n');
   }
 
   static exportToJson(report: ErrorReport): string {

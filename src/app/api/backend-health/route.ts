@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
 
     // Test critical table access with fallbacks
     const checks = await Promise.allSettled([
-      db.query('SELECT COUNT(*) as count FROM suppliers LIMIT 1'),
-      db.query('SELECT COUNT(*) as count FROM inventory_items LIMIT 1'),
+      db.query('SELECT COUNT(*) as count FROM public.suppliers LIMIT 1'),
+      db.query('SELECT COUNT(*) as count FROM public.inventory_items LIMIT 1'),
       db.query('SELECT COUNT(*) as count FROM purchase_orders LIMIT 1')
     ]);
 

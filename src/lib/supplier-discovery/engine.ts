@@ -155,12 +155,12 @@ export class SupplierDiscoveryEngine {
       const batchPromises = batch.map(request =>
         this.discoverSupplier(request).catch(
           error =>
-            ({
+            (({
               success: false,
               error: error.message,
               processingTime: 0,
-              sourcesUsed: [],
-            }) as SupplierDiscoveryResponse
+              sourcesUsed: []
+            }) as SupplierDiscoveryResponse)
         )
       );
 

@@ -404,7 +404,7 @@ export class SupplierExportService {
 
   private escapeCSVCell(value: string): string {
     if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-      return `"${value.replace(/"/g, '""')}"`
+      return `"${value.replace(/"/g, '""')}"`;
     }
     return value
   }

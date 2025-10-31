@@ -381,7 +381,7 @@ Calculate overall health score (1.0 = perfect).`,
       case 'stock_levels':
         historicalQuery = `
           SELECT date_trunc('day', created_at) as date, AVG(quantity) as value
-          FROM inventory_items
+          FROM public.inventory_items
           ${options.target_id ? `AND product_id = ${options.target_id}` : ''}
           GROUP BY date_trunc('day', created_at)
           ORDER BY date DESC

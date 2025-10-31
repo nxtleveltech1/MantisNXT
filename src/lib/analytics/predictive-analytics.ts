@@ -472,7 +472,7 @@ export class PredictiveAnalyticsEngine {
         ii.*,
         COALESCE(recent_demand.avg_daily_demand, 0) as avg_daily_demand,
         COALESCE(recent_demand.demand_volatility, 0) as demand_volatility
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       LEFT JOIN (
         SELECT
           item_id,
@@ -619,7 +619,7 @@ export class PredictiveAnalyticsEngine {
         AVG(sm.unit_cost) as avg_price,
         COUNT(*) as price_points,
         STDDEV(sm.unit_cost) / AVG(sm.unit_cost) as price_volatility
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       JOIN stock_movements sm ON ii.id = sm.item_id
       WHERE ii.organization_id = $1
       AND sm.unit_cost IS NOT NULL
@@ -685,7 +685,7 @@ export class PredictiveAnalyticsEngine {
         ii.sku,
         EXTRACT(MONTH FROM sm.timestamp) as month,
         AVG(sm.quantity) as avg_demand
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       JOIN stock_movements sm ON ii.id = sm.item_id
       WHERE ii.organization_id = $1
       AND sm.type = 'outbound'
@@ -730,7 +730,7 @@ export class PredictiveAnalyticsEngine {
         sp.on_time_delivery_rate,
         sp.quality_acceptance_rate,
         sp.response_time_hours
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
       WHERE s.organization_id = $1
       AND s.status = 'active'

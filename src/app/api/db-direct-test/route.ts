@@ -25,8 +25,8 @@ export async function GET() {
 
     // Test critical table access
     const tableTests = await Promise.allSettled([
-      pool.query('SELECT COUNT(*) as count FROM suppliers LIMIT 1'),
-      pool.query('SELECT COUNT(*) as count FROM inventory_items LIMIT 1'),
+      pool.query('SELECT COUNT(*) as count FROM public.suppliers LIMIT 1'),
+      pool.query('SELECT COUNT(*) as count FROM public.inventory_items LIMIT 1'),
       pool.query('SELECT COUNT(*) as count FROM purchase_orders LIMIT 1')
     ]);
 

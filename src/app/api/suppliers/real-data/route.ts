@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         COALESCE(SUM(pi.price), 0) as total_value,
         COALESCE(AVG(pi.price), 0) as avg_price,
         COUNT(DISTINCT p.id) as active_contracts
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN "Pricelist" p ON p."supplierId" = s.id AND p.active = true
       LEFT JOIN "PricelistItem" pi ON pi."pricelistId" = p.id
       ${whereSql}
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     const countQuery = `
       SELECT COUNT(DISTINCT s.id) as total
-      FROM suppliers s
+      FROM public.suppliers s
       ${whereSql}
     `
     const { rows: countRows } = await query<{ total: string }>(countQuery, filterParams)

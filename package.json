@@ -66,6 +66,7 @@
     "validate:platform": "./scripts/validate-with-mcp.sh",
     "validate:platform:full": "./scripts/validate-with-mcp.sh --full",
     "perf:measure": "./node_modules/.bin/chrome-devtools-mcp performance --url http://localhost:3000",
+    "e2e:devtools:ssot": "tsx scripts/e2e-devtools-ssot.ts",
     "perf:lighthouse": "npx lighthouse http://localhost:3000 --output html --output-path ./validation-reports/lighthouse.html",
     "analyze": "ANALYZE=true npm run build",
     "analyze:server": "ANALYZE=true BUNDLE_ANALYZE=server npm run build",

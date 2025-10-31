@@ -76,7 +76,7 @@ async function generateRealTimeAlertsOptimized() {
         END as priority,
         NOW() - (random() * INTERVAL '24 hours') as created_at,
         NOW() as updated_at
-      FROM inventory_items i
+      FROM public.inventory_items i
       LEFT JOIN suppliers s ON i.supplier_id = s.id
       WHERE i.stock_qty <= i.reorder_point AND i.stock_qty > 0
 
@@ -101,7 +101,7 @@ async function generateRealTimeAlertsOptimized() {
         95 as priority,
         NOW() - (random() * INTERVAL '12 hours') as created_at,
         NOW() as updated_at
-      FROM inventory_items i
+      FROM public.inventory_items i
       LEFT JOIN suppliers s ON i.supplier_id = s.id
       WHERE i.stock_qty = 0
 

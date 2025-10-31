@@ -1,6 +1,8 @@
+/* eslint-disable ssot/no-legacy-supplier-inventory */ // TODO(SSOT): Migrate writes to core.supplier_product/core.stock_on_hand
 import { NextRequest, NextResponse } from 'next/server'
 import { query, withTransaction } from '@/lib/database'
 import { z } from 'zod'
+import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
 
 // Schema for promoting pricelist items to Product table
 const PromoteItemsSchema = z.object({
@@ -205,24 +207,8 @@ export async function POST(request: NextRequest) {
 
             results.updated++
 
-            // Update inventory_items if exists
-            const inventoryUpdateQuery = `
-              UPDATE inventory_items
-              SET
-                name = $1,
-                description = $2,
-                category = $3,
-                cost_price = $4,
-                updated_at = NOW()
-              WHERE sku = $5
-            `
-            await client.query(inventoryUpdateQuery, [
-              item.name,
-              item.description,
-              item.category,
-              item.unitPrice,
-              item.sku
-            ])
+            await upsertSupplierProduct({ supplierId: validatedData.supplierId, sku: item.sku, name: item.name })
+            await setStock({ supplierId: validatedData.supplierId, sku: item.sku, quantity: 0, unitCost: item.unitPrice, reason: 'pricelist promote update' })
 
           } else {
             results.skipped++
@@ -252,28 +238,8 @@ export async function POST(request: NextRequest) {
 
           results.created++
 
-          // Create corresponding inventory_items entry
-          const inventoryQuery = `
-            INSERT INTO inventory_items (
-              sku, name, description, category, cost_price, stock_qty,
-              reserved_qty, reorder_point, status, location, created_at, updated_at
-            ) VALUES (
-              $1, $2, $3, $4, $5, 0, 0, 10, 'active', 'Main Warehouse', NOW(), NOW()
-            )
-            ON CONFLICT (sku) DO UPDATE SET
-              name = EXCLUDED.name,
-              description = EXCLUDED.description,
-              category = EXCLUDED.category,
-              cost_price = EXCLUDED.cost_price,
-              updated_at = NOW()
-          `
-          await client.query(inventoryQuery, [
-            item.sku,
-            item.name,
-            item.description,
-            item.category,
-            item.unitPrice
-          ])
+          await upsertSupplierProduct({ supplierId: validatedData.supplierId, sku: item.sku, name: item.name })
+          await setStock({ supplierId: validatedData.supplierId, sku: item.sku, quantity: 0, unitCost: item.unitPrice, reason: 'pricelist promote create' })
         }
 
       } catch (itemError) {

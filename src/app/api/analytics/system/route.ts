@@ -209,7 +209,7 @@ async function getInventoryAnalytics(timeBounds: any, groupBy?: string) {
       COUNT(DISTINCT supplier_id) as suppliers_with_products,
       MIN(created_at) as oldest_item_date,
       MAX(updated_at) as latest_update
-    FROM inventory_items
+    FROM public.inventory_items
     WHERE created_at BETWEEN $1 AND $2
   `
 
@@ -244,7 +244,7 @@ async function getInventoryAnalytics(timeBounds: any, groupBy?: string) {
         SUM(stock_qty * cost_price) as total_value,
         COUNT(*) FILTER (WHERE stock_qty = 0) as out_of_stock,
         COUNT(*) FILTER (WHERE stock_qty <= reorder_point AND stock_qty > 0) as low_stock
-      FROM inventory_items
+      FROM public.inventory_items
       WHERE created_at BETWEEN $1 AND $2 AND ${groupBy} IS NOT NULL
       GROUP BY ${groupBy}
       ORDER BY total_value DESC
@@ -273,7 +273,7 @@ async function getInventoryAnalytics(timeBounds: any, groupBy?: string) {
       END as stock_level,
       COUNT(*) as count,
       SUM(stock_qty * cost_price) as value
-    FROM inventory_items
+    FROM public.inventory_items
     WHERE created_at BETWEEN $1 AND $2
     GROUP BY stock_level
   `
@@ -300,7 +300,7 @@ async function getSupplierAnalytics(timeBounds: any, groupBy?: string) {
       AVG(CASE WHEN sp.performance_score IS NOT NULL THEN sp.performance_score ELSE 0 END) as avg_performance_score,
       COUNT(DISTINCT ii.category) as categories_covered,
       SUM(COALESCE(ii.stock_qty * ii.cost_price, 0)) as total_inventory_value
-    FROM suppliers s
+    FROM public.suppliers s
     LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
     LEFT JOIN inventory_items ii ON s.id = ii.supplier_id
     WHERE s.created_at BETWEEN $1 AND $2
@@ -331,7 +331,7 @@ async function getSupplierAnalytics(timeBounds: any, groupBy?: string) {
       sp.performance_score,
       sp.delivery_rating,
       sp.quality_rating
-    FROM suppliers s
+    FROM public.suppliers s
     LEFT JOIN inventory_items ii ON s.id = ii.supplier_id
     LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
     WHERE s.created_at BETWEEN $1 AND $2
@@ -365,7 +365,7 @@ async function getSupplierAnalytics(timeBounds: any, groupBy?: string) {
         ELSE 'unrated'
       END as performance_tier,
       COUNT(*) as count
-    FROM suppliers s
+    FROM public.suppliers s
     LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
     WHERE s.created_at BETWEEN $1 AND $2
     GROUP BY performance_tier
@@ -572,11 +572,11 @@ async function getInventoryComparisons(timeBounds: any) {
 
   const currentQuery = `
     SELECT COUNT(*) as count, SUM(stock_qty * cost_price) as value
-    FROM inventory_items WHERE created_at BETWEEN $1 AND $2
+    FROM public.inventory_items WHERE created_at BETWEEN $1 AND $2
   `
   const previousQuery = `
     SELECT COUNT(*) as count, SUM(stock_qty * cost_price) as value
-    FROM inventory_items WHERE created_at BETWEEN $1 AND $2
+    FROM public.inventory_items WHERE created_at BETWEEN $1 AND $2
   `
 
   const [currentResult, previousResult] = await Promise.all([
@@ -613,8 +613,8 @@ async function getInventoryComparisons(timeBounds: any) {
 async function getSupplierComparisons(timeBounds: any) {
   const previousBounds = calculatePreviousPeriod(timeBounds)
 
-  const currentQuery = `SELECT COUNT(*) as count FROM suppliers WHERE created_at BETWEEN $1 AND $2`
-  const previousQuery = `SELECT COUNT(*) as count FROM suppliers WHERE created_at BETWEEN $1 AND $2`
+  const currentQuery = `SELECT COUNT(*) as count FROM public.suppliers WHERE created_at BETWEEN $1 AND $2`
+  const previousQuery = `SELECT COUNT(*) as count FROM public.suppliers WHERE created_at BETWEEN $1 AND $2`
 
   const [currentResult, previousResult] = await Promise.all([
     query(currentQuery, [timeBounds.start, timeBounds.end]),

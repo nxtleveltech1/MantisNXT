@@ -5,6 +5,7 @@ import * as path from 'path'
 import { createHash } from 'crypto'
 import { z } from 'zod'
 import { pool } from '@/lib/database'
+import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
 
 // ============================================================================
 // COMPREHENSIVE PRICE LIST PROCESSING SERVICE
@@ -287,7 +288,7 @@ export class PriceListProcessor {
       return line.split(delimiter).map(cell => {
         const cleaned = cell.trim().replace(/['"]/g, '')
         return cleaned === '' ? null : cleaned
-      })
+      });
     })
 
     return {
@@ -684,7 +685,7 @@ export class PriceListProcessor {
 
     switch (fieldName) {
       case 'sku':
-        return stringValue.toUpperCase().replace(/[^\w\-_.]/g, '')
+        return stringValue.toUpperCase().replace(/[^\w\-_.]/g, '');
 
       case 'cost_price':
       case 'sale_price':
@@ -714,7 +715,7 @@ export class PriceListProcessor {
 
       case 'tags':
         if (Array.isArray(value)) return value
-        return stringValue.split(/[,;|]/).map(tag => tag.trim()).filter(Boolean)
+        return stringValue.split(/[,;|]/).map(tag => tag.trim()).filter(Boolean);
 
       default:
         return stringValue
@@ -725,7 +726,7 @@ export class PriceListProcessor {
     if (skus.length === 0) return new Set()
 
     try {
-      const query = 'SELECT sku FROM inventory_items WHERE sku = ANY($1)'
+      const query = 'SELECT sku FROM public.inventory_items WHERE sku = ANY($1)'
       const result = await this.pool.query(query, [skus])
       return new Set(result.rows.map(row => row.sku))
     } catch (error) {
@@ -810,92 +811,28 @@ export class PriceListProcessor {
   }
 
   private async createInventoryItem(entry: any, supplierId: string): Promise<void> {
-    const query = `
-      INSERT INTO inventory_items (
-        sku, name, description, category, brand, supplier_id, supplier_sku,
-        cost_price, sale_price, currency, stock_qty, reserved_qty, available_qty,
-        reorder_point, max_stock, unit, weight, barcode, location, tags, notes,
-        status, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), NOW()
-      )
-    `
-
-    const values = [
-      entry.sku,
-      entry.name,
-      entry.description,
-      entry.category,
-      entry.brand,
+    const spSku = entry.supplier_sku || entry.sku
+    await upsertSupplierProduct({ supplierId, sku: spSku, name: entry.name })
+    await setStock({
       supplierId,
-      entry.supplier_sku,
-      entry.cost_price,
-      entry.sale_price,
-      entry.currency || 'ZAR',
-      entry.stock_qty || 0,
-      0, // reserved_qty
-      entry.stock_qty || 0, // available_qty
-      entry.reorder_point || 10,
-      entry.max_stock,
-      entry.unit || 'pcs',
-      entry.weight,
-      entry.barcode,
-      null, // location
-      entry.tags || [],
-      entry.notes,
-      entry.stock_qty > 0 ? 'active' : 'out_of_stock',
-    ]
-
-    await this.pool.query(query, values)
+      sku: spSku,
+      quantity: entry.stock_qty || 0,
+      unitCost: entry.cost_price,
+      reason: 'Pricelist import'
+    })
   }
 
   private async updateInventoryItem(entry: any): Promise<void> {
-    const query = `
-      UPDATE inventory_items SET
-        name = $2,
-        description = $3,
-        category = $4,
-        brand = $5,
-        supplier_sku = $6,
-        cost_price = $7,
-        sale_price = $8,
-        currency = $9,
-        stock_qty = $10,
-        available_qty = $10,
-        reorder_point = $11,
-        max_stock = $12,
-        unit = $13,
-        weight = $14,
-        barcode = $15,
-        tags = $16,
-        notes = $17,
-        status = $18,
-        updated_at = NOW()
-      WHERE sku = $1
-    `
-
-    const values = [
-      entry.sku,
-      entry.name,
-      entry.description,
-      entry.category,
-      entry.brand,
-      entry.supplier_sku,
-      entry.cost_price,
-      entry.sale_price,
-      entry.currency || 'ZAR',
-      entry.stock_qty || 0,
-      entry.reorder_point || 10,
-      entry.max_stock,
-      entry.unit || 'pcs',
-      entry.weight,
-      entry.barcode,
-      entry.tags || [],
-      entry.notes,
-      entry.stock_qty > 0 ? 'active' : 'out_of_stock',
-    ]
-
-    await this.pool.query(query, values)
+    const spSku = entry.supplier_sku || entry.sku
+    if (entry.stock_qty !== undefined) {
+      await setStock({
+        supplierId: entry.supplier_id,
+        sku: spSku,
+        quantity: entry.stock_qty,
+        unitCost: entry.cost_price,
+        reason: 'Pricelist update'
+      })
+    }
   }
 
   private async createBackup(supplierId: string, entries: any[]): Promise<string> {

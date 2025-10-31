@@ -1145,7 +1145,7 @@ export default function InventoryDetailView({ itemId, onClose }: InventoryDetail
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function Label({ children, className }: { children: React.ReactNode, className?: string }) {

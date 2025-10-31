@@ -40,9 +40,11 @@
       "args": [
         "-y",
         "@neondatabase/mcp-server-neon",
-        "start",
-        "napi_78ar5t6y154b1wq4b572mwxkutziy5g9fb3hxuqcjztuiv4dqn6aztx51i1ysshp"
-      ]
+        "start"
+      ],
+      "env": {
+        "NEON_API_KEY": "napi_78ar5t6y154b1wq4b572mwxkutziy5g9fb3hxuqcjztuiv4dqn6aztx51i1ysshp"
+      }
     },
     "postgres": {
       "type": "stdio",

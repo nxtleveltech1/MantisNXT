@@ -387,7 +387,7 @@ export default function ProductToInventoryWizard({
             {/* Step Content */}
             <div className="min-h-[400px]">
               {currentStep === 0 && ( // Product Selection
-                <Card>
+                (<Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Package className="h-5 w-5" />
@@ -457,11 +457,11 @@ export default function ProductToInventoryWizard({
                       </TableBody>
                     </Table>
                   </CardContent>
-                </Card>
+                </Card>)
               )}
 
               {currentStep === 1 && ( // Inventory Setup
-                <div className="space-y-4">
+                (<div className="space-y-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -569,7 +569,6 @@ export default function ProductToInventoryWizard({
                       </div>
                     </CardContent>
                   </Card>
-
                   {/* Summary */}
                   <Card>
                     <CardHeader>
@@ -597,11 +596,11 @@ export default function ProductToInventoryWizard({
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </div>)
               )}
 
               {currentStep === 2 && ( // Location Assignment
-                <div className="space-y-4">
+                (<div className="space-y-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -635,7 +634,6 @@ export default function ProductToInventoryWizard({
                       </div>
                     </CardContent>
                   </Card>
-
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -677,11 +675,11 @@ export default function ProductToInventoryWizard({
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </div>)
               )}
 
               {currentStep === 3 && ( // Supplier Settings
-                <Card>
+                (<Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Building2 className="h-5 w-5" />
@@ -789,11 +787,11 @@ export default function ProductToInventoryWizard({
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                </Card>)
               )}
 
               {currentStep === 4 && ( // Review & Confirm
-                <div className="space-y-4">
+                (<div className="space-y-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -896,7 +894,7 @@ export default function ProductToInventoryWizard({
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </div>)
               )}
             </div>
 
@@ -950,5 +948,5 @@ export default function ProductToInventoryWizard({
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

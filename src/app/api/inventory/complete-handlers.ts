@@ -4,7 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { pool } from '@/lib/database'
+/* eslint-disable ssot/no-legacy-supplier-inventory */ // TODO(SSOT): Replace all legacy reads/writes with core.* access
+import { query, withTransaction } from '@/lib/database/unified-connection'
+import { setStock, upsertSupplierProduct } from '@/services/ssot/inventoryService'
 import { TransactionHelper } from '@/lib/database/transaction-helper'
 import { z } from 'zod'
 
@@ -98,7 +100,7 @@ export async function getCompleteInventory(request: NextRequest) {
         i.*,
         s.name as supplier_name,
         s.email as supplier_email,
-        s.contact_person as supplier_contact,
+        s.phone as supplier_phone,
         (i.stock_qty - i.reserved_qty) as available_qty,
         CASE
           WHEN i.stock_qty <= i.reorder_point THEN 'low'
@@ -111,8 +113,8 @@ export async function getCompleteInventory(request: NextRequest) {
           WHEN i.cost_price > 0 THEN ((i.sale_price - i.cost_price) / i.cost_price * 100)
           ELSE 0
         END as margin_percentage
-      FROM inventory_items i
-      LEFT JOIN suppliers s ON i.supplier_id = s.id
+      FROM public.inventory_items i
+      LEFT JOIN public.suppliers s ON i.supplier_id::text = s.id
       WHERE 1=1
     `
 
@@ -231,7 +233,7 @@ export async function getCompleteInventory(request: NextRequest) {
     queryParams.push(limit, offset)
 
     // Execute main query
-    const result = await pool.query(baseQuery, queryParams)
+    const result = await query(baseQuery, queryParams)
 
     // Get total count for pagination
     let countQuery = baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(*) as total FROM')
@@ -239,7 +241,7 @@ export async function getCompleteInventory(request: NextRequest) {
     countQuery = countQuery.replace(/LIMIT[\s\S]*$/, '')
 
     const countParams = queryParams.slice(0, -2) // Remove limit and offset
-    const countResult = await pool.query(countQuery, countParams)
+    const countResult = await query(countQuery, countParams)
     const total = parseInt(countResult.rows[0].total)
     const totalPages = Math.ceil(total / limit)
 
@@ -261,11 +263,11 @@ export async function getCompleteInventory(request: NextRequest) {
           AVG(cost_price) as avg_cost_price,
           AVG(sale_price) as avg_sale_price,
           AVG(CASE WHEN cost_price > 0 THEN ((sale_price - cost_price) / cost_price * 100) ELSE 0 END) as avg_margin_percentage
-        FROM inventory_items
+        FROM public.inventory_items
         WHERE status = 'active'
       `
 
-      const analyticsResult = await pool.query(analyticsQuery)
+      const analyticsResult = await query(analyticsQuery)
       analytics = analyticsResult.rows[0]
     }
 
@@ -277,13 +279,13 @@ export async function getCompleteInventory(request: NextRequest) {
           sm.type as movement_type,
           i.sku,
           i.name as item_name
-        FROM stock_movements sm
-        LEFT JOIN inventory_items i ON sm.item_id = i.id
+        FROM public.stock_movements sm
+        LEFT JOIN public.inventory_items i ON sm.item_id = i.id
         ORDER BY sm.created_at DESC
         LIMIT 50
       `
 
-      const movementsResult = await pool.query(movementsQuery)
+      const movementsResult = await query(movementsQuery)
       movements = movementsResult.rows
     }
 
@@ -341,9 +343,9 @@ export async function createInventoryItems(request: NextRequest) {
     const validatedData = inventoryItemSchema.parse(body)
 
     // Check for duplicate SKU
-    const existingItem = await pool.query(
-      'SELECT id FROM inventory_items WHERE sku = $1',
-      [validatedData.sku]
+    const existingItem = await query(
+      'SELECT sku FROM public.inventory_items WHERE sku = $1 AND supplier_id::text = COALESCE($2, supplier_id::text)',
+      [validatedData.sku, validatedData.supplier_id ?? null]
     )
 
     if (existingItem.rows.length > 0) {
@@ -357,63 +359,32 @@ export async function createInventoryItems(request: NextRequest) {
     const availableQty = validatedData.stock_qty - validatedData.reserved_qty
 
     // Insert new inventory item
-    const insertQuery = `
-      INSERT INTO inventory_items (
-        sku, name, description, category, brand, supplier_id, supplier_sku,
-        cost_price, sale_price, currency, stock_qty, reserved_qty, available_qty,
-        reorder_point, max_stock, unit, weight, dimensions, barcode, location,
-        tags, images, status, tax_rate, custom_fields, notes, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-        $21, $22, $23, $24, $25, $26, NOW(), NOW()
-      ) RETURNING *
-    `
-
-    const insertResult = await pool.query(insertQuery, [
-      validatedData.sku,
-      validatedData.name,
-      validatedData.description,
-      validatedData.category,
-      validatedData.brand,
-      validatedData.supplier_id,
-      validatedData.supplier_sku,
-      validatedData.cost_price,
-      validatedData.sale_price,
-      validatedData.currency,
-      validatedData.stock_qty,
-      validatedData.reserved_qty,
-      availableQty,
-      validatedData.reorder_point,
-      validatedData.max_stock,
-      validatedData.unit,
-      validatedData.weight,
-      validatedData.dimensions ? JSON.stringify(validatedData.dimensions) : null,
-      validatedData.barcode,
-      validatedData.location,
-      validatedData.tags,
-      validatedData.images,
-      validatedData.status,
-      validatedData.tax_rate,
-      JSON.stringify(validatedData.custom_fields),
-      validatedData.notes
-    ])
-
-    // Create initial stock movement record
-    await pool.query(`
-      INSERT INTO stock_movements (
-        item_id, type, quantity, unit_cost, reason, reference, created_at
-      ) VALUES ($1, 'in', $2, $3, 'Initial stock', $4, NOW())
-    `, [
-      insertResult.rows[0].id,
-      validatedData.stock_qty,
-      validatedData.cost_price,
-      `Initial stock for ${validatedData.sku}`
-    ])
+    // SSOT: Ensure supplier product mapping and set initial stock in core tables
+    if (!validatedData.supplier_id || !validatedData.supplier_sku) {
+      return NextResponse.json({ success: false, error: 'supplier_id and supplier_sku required for SSOT inventory creation' }, { status: 400 })
+    }
+    await upsertSupplierProduct({
+      supplierId: validatedData.supplier_id,
+      sku: validatedData.supplier_sku,
+      name: validatedData.name
+    })
+    await setStock({
+      supplierId: validatedData.supplier_id,
+      sku: validatedData.supplier_sku,
+      quantity: validatedData.stock_qty,
+      unitCost: validatedData.cost_price,
+      reason: `Initial stock for ${validatedData.sku}`
+    })
 
     return NextResponse.json({
       success: true,
-      data: insertResult.rows[0],
-      message: 'Inventory item created successfully'
+      data: {
+        sku: validatedData.sku,
+        supplier_id: validatedData.supplier_id,
+        supplier_sku: validatedData.supplier_sku,
+        stock_qty: validatedData.stock_qty
+      },
+      message: 'Inventory item created successfully (SSOT)'
     })
 
   } catch (error) {
@@ -482,19 +453,7 @@ export async function deleteInventoryItems(request: NextRequest) {
       )
     }
 
-    const deletedIds = await TransactionHelper.withTransaction(async (client) => {
-      const result = await client.query(
-        `DELETE FROM inventory_items WHERE id = ANY($1::uuid[]) RETURNING id`,
-        [ids]
-      )
-      return result.rows.map(row => row.id)
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: { deletedIds },
-      message: `Deleted ${deletedIds.length} inventory items`
-    })
+    return NextResponse.json({ success: false, error: 'SSOT: deleting inventory items is not allowed. Use deactivation policies in core.', code: 'SSOT_BLOCKED' }, { status: 405 })
   } catch (error) {
     console.error('Error deleting inventory items:', error)
     return NextResponse.json(
@@ -513,7 +472,7 @@ async function handleBulkCreate(items: any[]) {
 
     for (const item of validatedItems) {
       // Check for duplicate SKU
-      const existing = await client.query('SELECT id FROM inventory_items WHERE sku = $1', [item.sku])
+      const existing = await client.query('SELECT id FROM public.inventory_items WHERE sku = $1', [item.sku])
       if (existing.rows.length > 0) {
         throw new Error(`SKU ${item.sku} already exists`)
       }
@@ -521,24 +480,11 @@ async function handleBulkCreate(items: any[]) {
       // Insert item (same logic as single create)
       const availableQty = item.stock_qty - item.reserved_qty
 
-      const insertResult = await client.query(`
-        INSERT INTO inventory_items (
-          sku, name, description, category, brand, supplier_id, supplier_sku,
-          cost_price, sale_price, currency, stock_qty, reserved_qty, available_qty,
-          reorder_point, max_stock, unit, weight, barcode, location,
-          tags, status, created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, NOW(), NOW()
-        ) RETURNING *
-      `, [
-        item.sku, item.name, item.description, item.category, item.brand,
-        item.supplier_id, item.supplier_sku, item.cost_price, item.sale_price,
-        item.currency, item.stock_qty, item.reserved_qty, availableQty,
-        item.reorder_point, item.max_stock, item.unit, item.weight,
-        item.barcode, item.location, item.tags, item.status
-      ])
-
-      results.push(insertResult.rows[0])
+      // SSOT: create supplier_product and set initial stock
+      const spSku = item.supplier_sku || item.sku
+      await upsertSupplierProduct({ supplierId: item.supplier_id, sku: spSku, name: item.name })
+      await setStock({ supplierId: item.supplier_id, sku: spSku, quantity: item.stock_qty || 0, unitCost: item.cost_price, reason: 'bulk_create' })
+      results.push({ sku: item.sku, supplier_id: item.supplier_id })
     }
 
     return NextResponse.json({
@@ -546,7 +492,7 @@ async function handleBulkCreate(items: any[]) {
       data: results,
       message: `${results.length} inventory items created successfully`
     })
-  })
+  });
 }
 
 async function handleBulkUpdate(body: any) {
@@ -573,18 +519,10 @@ async function handleBulkUpdate(body: any) {
 
       updateFields.push(`updated_at = NOW()`)
 
-      const updateQuery = `
-        UPDATE inventory_items
-        SET ${updateFields.join(', ')}
-        WHERE id = $${paramIndex}
-        RETURNING *
-      `
-
-      updateValues.push(item.id)
-
-      const updateResult = await client.query(updateQuery, updateValues)
-      if (updateResult.rows.length > 0) {
-        results.push(updateResult.rows[0])
+      // SSOT: only support stock set via SSOT when stock_qty provided
+      if (item.updates.stock_qty !== undefined && item.updates.supplier_id && item.updates.supplier_sku) {
+        await setStock({ supplierId: String(item.updates.supplier_id), sku: String(item.updates.supplier_sku), quantity: Number(item.updates.stock_qty), unitCost: item.updates.cost_price, reason: 'bulk_update' })
+        results.push({ id: item.id, stock_qty: item.updates.stock_qty })
       }
     }
 
@@ -602,7 +540,7 @@ async function handleStockMovement(body: any) {
   return TransactionHelper.withTransaction(async (client) => {
     // Get current stock
     const currentStock = await client.query(
-      'SELECT stock_qty, reserved_qty FROM inventory_items WHERE id = $1',
+      'SELECT stock_qty, reserved_qty, supplier_id, supplier_sku FROM public.inventory_items WHERE id = $1',
       [validatedData.item_id]
     )
 
@@ -629,11 +567,8 @@ async function handleStockMovement(body: any) {
         break
     }
 
-    // Update inventory item
-    await client.query(
-      'UPDATE inventory_items SET stock_qty = $1, available_qty = $2, updated_at = NOW() WHERE id = $3',
-      [newStockQty, newStockQty - current.reserved_qty, validatedData.item_id]
-    )
+    // SSOT stock set
+    await setStock({ supplierId: String(current.supplier_id), sku: String(current.supplier_sku), quantity: newStockQty, unitCost: validatedData.cost, reason: validatedData.reason })
 
     // Record stock movement
     const movementResult = await client.query(`
@@ -663,5 +598,5 @@ async function handleStockMovement(body: any) {
       },
       message: 'Stock movement recorded successfully'
     })
-  })
+  });
 }

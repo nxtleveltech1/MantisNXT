@@ -1,0 +1,10 @@
+# Require platform review for supplier/inventory SSOT areas
+src/domain/supplier.ts @platform
+src/domain/inventory.ts @platform
+src/services/ssot/** @platform
+src/app/api/suppliers/** @platform
+src/app/api/inventory/** @platform
+database/migrations/ssot/** @platform
+codemods/replace-supplier-inventory-imports.ts @platform
+tools/eslint-plugin-ssot/** @platform
+

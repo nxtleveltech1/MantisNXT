@@ -394,12 +394,12 @@ export class SupplierService {
 
   private isValidSupplierCode(code: string): boolean {
     // Supplier code must be 3-10 uppercase alphanumeric characters
-    return /^[A-Z0-9]{3,10}$/.test(code)
+    return /^[A-Z0-9]{3,10}$/.test(code);
   }
 
   private isValidTaxId(taxId: string): boolean {
     // Basic validation - could be enhanced for specific country formats
-    return taxId.length >= 5 && /^[A-Z0-9\-\/]+$/i.test(taxId)
+    return taxId.length >= 5 && /^[A-Z0-9\-\/]+$/i.test(taxId);
   }
 
   private ensurePrimaryContactAndAddress(data: CreateSupplierData): void {

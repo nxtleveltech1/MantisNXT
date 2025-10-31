@@ -18,7 +18,7 @@ import { z } from 'zod'
 //   i.reorder_point as threshold,
 //   s.name as supplier_name,
 //   i.updated_at
-// FROM inventory_items i
+// FROM public.inventory_items i
 // LEFT JOIN suppliers s ON i.supplier_id = s.id
 // WHERE i.stock_qty <= i.reorder_point AND i.status = 'active';
 
@@ -54,7 +54,7 @@ async function fetchAlertsOptimized(filters: any = {}) {
         i.stock_qty as currentstock,
         i.reorder_point,
         s.name as supplier_name
-      FROM inventory_items i
+      FROM public.inventory_items i
       LEFT JOIN suppliers s ON i.supplier_id = s.id
       WHERE i.stock_qty > 0
         AND i.stock_qty <= i.reorder_point
@@ -69,7 +69,7 @@ async function fetchAlertsOptimized(filters: any = {}) {
         i.stock_qty as currentstock,
         i.reorder_point,
         s.name as supplier_name
-      FROM inventory_items i
+      FROM public.inventory_items i
       LEFT JOIN suppliers s ON i.supplier_id = s.id
       WHERE i.stock_qty = 0
         AND i.status = 'active'

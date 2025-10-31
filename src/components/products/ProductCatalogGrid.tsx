@@ -402,7 +402,6 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
           </Button>
         </div>
       </div>
-
       {/* Filters Panel */}
       <AnimatePresence>
         {showFilters && (
@@ -505,7 +504,6 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-
       {/* Results Summary */}
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-4">
@@ -536,7 +534,6 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
           </div>
         )}
       </div>
-
       {/* Products Display */}
       {paginatedProducts.length === 0 ? (
         <motion.div
@@ -567,7 +564,7 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
 
               return viewMode === 'grid' ? (
                 // Grid View Card
-                <motion.div
+                (<motion.div
                   key={product.id}
                   layout
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -752,10 +749,10 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </motion.div>)
               ) : (
                 // List View Row
-                <motion.div
+                (<motion.div
                   key={product.id}
                   layout
                   initial={{ opacity: 0, x: -20 }}
@@ -882,13 +879,12 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
-              )
+                </motion.div>)
+              );
             })}
           </AnimatePresence>
         </div>
       )}
-
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-6">
@@ -938,7 +934,7 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default ProductCatalogGrid

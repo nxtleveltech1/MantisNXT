@@ -148,7 +148,7 @@ export class UploadErrorHandler {
       // Check if supplier exists in database
       const exists = await withTransaction(async (client) => {
         const result = await client.query(
-          'SELECT id FROM suppliers WHERE id = $1 AND status = $2',
+          'SELECT id FROM public.suppliers WHERE id = $1 AND status = $2',
           [supplierId, 'active']
         );
         return result.rows.length > 0;

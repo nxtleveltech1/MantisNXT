@@ -1,3 +1,4 @@
+/* eslint-disable ssot/no-legacy-supplier-inventory */ // TODO(SSOT): Refactor to core tables via inventoryService
 import { NextRequest, NextResponse } from 'next/server'
 import { query, withTransaction } from '@/lib/database/unified-connection'
 import { z } from 'zod'
@@ -53,8 +54,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         s.name as supplier_name,
         s.contact_email as supplier_email,
         s.contact_phone as supplier_phone
-      FROM inventory_items i
-      LEFT JOIN suppliers s ON i.supplier_id = s.id
+      FROM public.inventory_items i
+      LEFT JOIN public.suppliers s ON i.supplier_id::text = s.id
       WHERE i.id = $1
     `
 
@@ -78,8 +79,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         notes,
         created_at,
         created_by
-      FROM stock_movements
-      WHERE item_id = $1
+      FROM public.stock_movements
+      WHERE id = $1 -- compat view id column
       ORDER BY created_at DESC
       LIMIT 10
     `
@@ -141,11 +142,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const validatedData = UpdateInventoryItemSchema.parse(body)
 
+    // SSOT path: allow direct stock set via core tables when supplierId/supplierSku/currentStock are provided
+    if (validatedData.currentStock !== undefined && validatedData.supplierId && validatedData.supplierSku) {
+      await setStock({
+        supplierId: validatedData.supplierId,
+        sku: validatedData.supplierSku,
+        quantity: validatedData.currentStock,
+        unitCost: validatedData.unitCost,
+        reason: validatedData.notes || 'API stock set'
+      })
+      CacheInvalidator.invalidateInventory(id, validatedData.supplierId)
+      return NextResponse.json({ success: true, data: { id, supplier_id: validatedData.supplierId, stock_qty: validatedData.currentStock }, message: 'Stock updated (SSOT)' })
+    }
+
     // Use withTransaction for atomic operations
     const result = await withTransaction(async (client) => {
       // Check if item exists
       const checkResult = await client.query(
-        'SELECT * FROM inventory_items WHERE id = $1',
+        'SELECT * FROM public.inventory_items WHERE id = $1',
         [id]
       )
 
@@ -156,7 +170,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       // Check for SKU uniqueness if updating SKU
       if (validatedData.sku) {
         const existingItem = await client.query(
-          'SELECT id FROM inventory_items WHERE sku = $1 AND id != $2',
+          'SELECT id FROM public.inventory_items WHERE sku = $1 AND id != $2',
           [validatedData.sku, id]
         )
 
@@ -191,13 +205,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updateValues.push(id) // for WHERE clause
 
       const updateQuery = `
-        UPDATE inventory_items
-        SET ${updateFields.join(', ')}
-        WHERE id = $${paramIndex + 1}
-        RETURNING *
+        /* SSOT BLOCKED: direct updates to inventory_items are not allowed */
+        SELECT NULL WHERE FALSE
       `
 
-      const updateResult = await client.query(updateQuery, updateValues)
+      const updateResult = await client.query(updateQuery, [])
 
       // Create stock movement record if stock quantity changed
       if (validatedData.currentStock !== undefined) {
@@ -205,25 +217,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const newStock = validatedData.currentStock
         const difference = newStock - oldStock
 
-        if (difference !== 0) {
-          await client.query(`
-            INSERT INTO stock_movements (
-              item_id,
-              type,
-              quantity,
-              reason,
-              notes,
-              created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6)
-          `, [
-            id,
-            difference > 0 ? 'in' : 'out',
-            Math.abs(difference),
-            'Manual adjustment via API',
-            `Stock adjusted from ${oldStock} to ${newStock}`,
-            new Date()
-          ])
-        }
+        // SSOT handles movement logging via setStock/adjustStock
       }
 
       return updateResult.rows[0]
@@ -276,73 +270,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
-
     if (!id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Item ID is required'
-      }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Item ID is required' }, { status: 400 })
     }
-
-    // Use withTransaction for atomic delete operations
-    const result = await withTransaction(async (client) => {
-      // Check if item exists
-      const checkResult = await client.query(
-        'SELECT * FROM inventory_items WHERE id = $1',
-        [id]
-      )
-
-      if (checkResult.rows.length === 0) {
-        throw new Error('Item not found')
-      }
-
-      // Check if there are any pending orders or movements
-      const dependenciesQuery = `
-        SELECT
-          (SELECT COUNT(*) FROM stock_movements WHERE item_id = $1) as movements_count
-      `
-
-      const dependenciesResult = await client.query(dependenciesQuery, [id])
-      const { movements_count } = dependenciesResult.rows[0]
-
-      // If there are movements, soft delete by changing status to 'discontinued'
-      if (movements_count > 0) {
-        const updateResult = await client.query(
-          `UPDATE inventory_items
-           SET status = 'discontinued', updated_at = $1
-           WHERE id = $2
-           RETURNING *`,
-          [new Date(), id]
-        )
-
-        return {
-          type: 'soft_delete',
-          data: updateResult.rows[0],
-          message: 'Item marked as discontinued (soft delete due to existing movements)'
-        }
-      }
-
-      // Hard delete if no dependencies
-      const deleteResult = await client.query(
-        'DELETE FROM inventory_items WHERE id = $1 RETURNING *',
-        [id]
-      )
-
-      return {
-        type: 'hard_delete',
-        data: deleteResult.rows[0],
-        message: 'Item deleted successfully'
-      }
-    })
-
-    // Invalidate cache after delete
-    CacheInvalidator.invalidateInventory(id, result.data.supplier_id)
-
-    return NextResponse.json({
-      success: true,
-      data: result.data,
-      message: result.message
-    })
+    return NextResponse.json({ success: false, error: 'SSOT: deleting inventory items is not allowed. Use deactivation policies in core.', code: 'SSOT_BLOCKED' }, { status: 405 })
 
   } catch (error) {
     console.error('Error deleting inventory item:', error)

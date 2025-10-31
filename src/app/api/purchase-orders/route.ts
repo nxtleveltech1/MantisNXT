@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
 
     // Check if supplier exists and is active
     const supplierCheck = await pool.query(
-      'SELECT id, status FROM suppliers WHERE id = $1',
+      'SELECT id, status FROM public.suppliers WHERE id = $1',
       [validatedData.supplier_id]
     )
 

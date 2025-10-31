@@ -838,7 +838,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
                     </CardContent>
                   </Card>
                 </motion.div>
-              )
+              );
             })}
           </AnimatePresence>
         </div>
@@ -867,7 +867,7 @@ const AIInsightCards: React.FC<AIInsightCardsProps> = ({
         )}
       </div>
     </TooltipProvider>
-  )
+  );
 }
 
 export default AIInsightCards

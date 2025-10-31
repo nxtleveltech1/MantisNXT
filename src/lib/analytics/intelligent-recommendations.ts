@@ -191,7 +191,7 @@ export class MultiCriteriaDecisionEngine {
         COALESCE(sustainability.score, 50) as sustainability_score,
         COALESCE(innovation.score, 50) as innovation_score,
         COALESCE(financial.risk_score, 50) as financial_risk
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
       LEFT JOIN supplier_sustainability sustainability ON s.id = sustainability.supplier_id
       LEFT JOIN supplier_innovation innovation ON s.id = innovation.supplier_id
@@ -450,7 +450,7 @@ export class IntelligentRecommendationEngine {
     // Get underperforming suppliers
     const underperformingQuery = `
       SELECT s.*, sp.overall_rating, sp.on_time_delivery_rate, sp.quality_acceptance_rate
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
       WHERE s.organization_id = $1
       AND s.status = 'active'
@@ -576,7 +576,7 @@ export class IntelligentRecommendationEngine {
         ii.*,
         COALESCE(movement_stats.outbound_30d, 0) as demand_30d,
         COALESCE(movement_stats.avg_daily_demand, 0) as avg_daily_demand
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       LEFT JOIN (
         SELECT
           item_id,
@@ -691,7 +691,7 @@ export class IntelligentRecommendationEngine {
         AVG(spl.unit_price) as avg_price,
         SUM(po.total_amount) as total_spend,
         COUNT(po.id) as order_count
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       JOIN supplier_price_lists spl ON ii.sku = spl.sku
       JOIN suppliers s ON spl.supplier_id = s.id
       LEFT JOIN purchase_orders po ON s.id = po.supplier_id

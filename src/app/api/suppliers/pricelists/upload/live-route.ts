@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import * as XLSX from 'xlsx'
 import { query, withTransaction } from '@/lib/database'
+import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
 
 // Enhanced validation schemas
 const UploadSessionSchema = z.object({
@@ -243,7 +244,7 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
   try {
     // Get supplier information
     const supplierResult = await query(
-      'SELECT name, email FROM suppliers WHERE id = $1',
+      'SELECT name, email FROM public.suppliers WHERE id = $1',
       [supplierId]
     )
 
@@ -539,7 +540,7 @@ async function processAndValidateData(
 
   // Get existing inventory for conflict detection
   const existingInventoryResult = await client.query(`
-    SELECT sku, id, name, cost_price, stock_qty FROM inventory_items
+    SELECT sku, id, name, cost_price, stock_qty FROM public.inventory_items
   `)
   const existingInventory = new Map(
     existingInventoryResult.rows.map(item => [item.sku, item])
@@ -721,7 +722,7 @@ function transformAndValidateField(
     default:
       const stringValue = value.toString().trim()
       if (validationOptions.normalizeText) {
-        return stringValue.toLowerCase().replace(/\s+/g, ' ')
+        return stringValue.toLowerCase().replace(/\s+/g, ' ');
       }
       return stringValue
   }
@@ -767,7 +768,7 @@ async function createBackup(client: any, sessionId: string, processedRows: Proce
 
   if (affectedSkus.length > 0) {
     const affectedRecordsResult = await client.query(`
-      SELECT * FROM inventory_items WHERE sku = ANY($1)
+      SELECT * FROM public.inventory_items WHERE sku = ANY($1)
     `, [affectedSkus])
 
     // Store backup
@@ -801,8 +802,8 @@ async function importToInventory(
   const newBrands = new Set<string>()
 
   // Get existing categories and brands
-  const existingCategoriesResult = await client.query('SELECT DISTINCT category FROM inventory_items')
-  const existingBrandsResult = await client.query('SELECT DISTINCT brand FROM inventory_items WHERE brand IS NOT NULL')
+  const existingCategoriesResult = await client.query('SELECT DISTINCT category FROM public.inventory_items')
+  const existingBrandsResult = await client.query('SELECT DISTINCT brand FROM public.inventory_items WHERE brand IS NOT NULL')
 
   const existingCategories = new Set(existingCategoriesResult.rows.map(r => r.category))
   const existingBrands = new Set(existingBrandsResult.rows.map(r => r.brand))
@@ -817,46 +818,15 @@ async function importToInventory(
       switch (row.action) {
         case 'create':
           // Create new inventory item
-          const createResult = await client.query(`
-            INSERT INTO inventory_items (
-              sku, name, description, category, brand, supplier_id, supplier_sku,
-              cost_price, sale_price, currency, stock_qty, reorder_point, max_stock,
-              unit, weight, barcode, location, tags, status, created_at, updated_at
-            ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 'active', NOW(), NOW()
-            ) RETURNING *
-          `, [
-            row.mappedData.sku,
-            row.mappedData.name,
-            row.mappedData.description,
-            row.mappedData.category,
-            row.mappedData.brand,
+          const spSku = row.mappedData.supplier_sku || row.mappedData.sku
+          await upsertSupplierProduct({ supplierId, sku: spSku, name: row.mappedData.name })
+          await setStock({
             supplierId,
-            row.mappedData.supplier_sku,
-            row.mappedData.cost_price,
-            row.mappedData.sale_price,
-            row.mappedData.currency || 'ZAR',
-            row.mappedData.stock_qty,
-            row.mappedData.reorder_point || 0,
-            row.mappedData.max_stock,
-            row.mappedData.unit,
-            row.mappedData.weight,
-            row.mappedData.barcode,
-            row.mappedData.location,
-            row.mappedData.tags ? JSON.stringify(row.mappedData.tags.split(',')) : '[]'
-          ])
-
-          // Record initial stock movement
-          await client.query(`
-            INSERT INTO stock_movements (
-              item_id, movement_type, quantity, cost, reason, reference, created_at
-            ) VALUES ($1, 'in', $2, $3, 'Initial stock from upload', $4, NOW())
-          `, [
-            createResult.rows[0].id,
-            row.mappedData.stock_qty,
-            row.mappedData.cost_price,
-            `Upload session: ${row.id}`
-          ])
+            sku: spSku,
+            quantity: row.mappedData.stock_qty || 0,
+            unitCost: row.mappedData.cost_price,
+            reason: `Upload session: ${row.id}`
+          })
 
           created++
           totalValue += (row.mappedData.cost_price || 0) * (row.mappedData.stock_qty || 0)
@@ -871,33 +841,17 @@ async function importToInventory(
           break
 
         case 'update':
-          // Update existing inventory item
-          const updateFields = []
-          const updateValues = []
-          let paramIndex = 1
-
-          const fieldsToUpdate = row.resolvedConflicts || Object.keys(row.mappedData)
-          for (const field of fieldsToUpdate) {
-            if (row.mappedData[field] !== null && row.mappedData[field] !== undefined) {
-              updateFields.push(`${field} = $${paramIndex}`)
-              updateValues.push(row.mappedData[field])
-              paramIndex++
-            }
+          const spSkuUpd = row.mappedData.supplier_sku || row.mappedData.sku
+          if (row.mappedData.stock_qty !== undefined) {
+            await setStock({
+              supplierId,
+              sku: spSkuUpd,
+              quantity: row.mappedData.stock_qty,
+              unitCost: row.mappedData.cost_price,
+              reason: `Upload session update: ${row.id}`
+            })
           }
-
-          if (updateFields.length > 0) {
-            updateFields.push(`updated_at = NOW()`)
-            const updateQuery = `
-              UPDATE inventory_items
-              SET ${updateFields.join(', ')}
-              WHERE sku = $${paramIndex}
-              RETURNING *
-            `
-            updateValues.push(row.mappedData.sku)
-
-            await client.query(updateQuery, updateValues)
-            updated++
-          }
+          updated++
           break
 
         case 'skip':

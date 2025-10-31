@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { pool } from '@/lib/database'
+import { query } from '@/lib/database/unified-connection'
 
 export async function GET() {
   try {
@@ -18,46 +18,46 @@ export async function GET() {
         i.cost_price,
         s.name as supplier_name
       FROM "Product" p
-      LEFT JOIN inventory_items i ON p.sku = i.sku
-      LEFT JOIN suppliers s ON p."supplierId"::text = s.id
+      LEFT JOIN public.inventory_items i ON p.sku = i.sku
+      LEFT JOIN public.suppliers s ON p."supplierId"::text = s.id
       ORDER BY p."createdAt" DESC
       LIMIT 10
     `
 
-    const result = await pool.query(productInventoryQuery)
+    const result = await query(productInventoryQuery)
 
     // Get counts
     const countsQuery = `
       SELECT
         (SELECT COUNT(*) FROM "Product" WHERE active = true) as total_products,
-        (SELECT COUNT(*) FROM inventory_items) as total_inventory,
+        (SELECT COUNT(*) FROM public.inventory_items) as total_inventory,
         (SELECT COUNT(*)
          FROM "Product" p
-         INNER JOIN inventory_items i ON p.sku = i.sku
+         INNER JOIN public.inventory_items i ON p.sku = i.sku
          WHERE p.active = true) as linked_items
     `
 
-    const countsResult = await pool.query(countsQuery)
+    const countsResult = await query(countsQuery)
     const counts = countsResult.rows[0]
 
     // Check for orphaned records
     const orphanedProductsQuery = `
       SELECT COUNT(*) as count
       FROM "Product" p
-      LEFT JOIN inventory_items i ON p.sku = i.sku
+      LEFT JOIN public.inventory_items i ON p.sku = i.sku
       WHERE i.sku IS NULL AND p.active = true
     `
 
     const orphanedInventoryQuery = `
       SELECT COUNT(*) as count
-      FROM inventory_items i
+      FROM public.inventory_items i
       LEFT JOIN "Product" p ON i.sku = p.sku
       WHERE p.sku IS NULL
     `
 
     const [orphanedProductsResult, orphanedInventoryResult] = await Promise.all([
-      pool.query(orphanedProductsQuery),
-      pool.query(orphanedInventoryQuery)
+      query(orphanedProductsQuery),
+      query(orphanedInventoryQuery)
     ])
 
     const analysis = {

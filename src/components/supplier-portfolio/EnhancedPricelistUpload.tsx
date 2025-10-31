@@ -147,7 +147,7 @@ export function EnhancedPricelistUpload({
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'text/csv',
     ]
-    return validTypes.includes(file.type) || file.name.match(/\.(xlsx|xls|csv)$/i)
+    return validTypes.includes(file.type) || file.name.match(/\.(xlsx|xls|csv)$/i);
   }
 
   // Step 1: Upload file

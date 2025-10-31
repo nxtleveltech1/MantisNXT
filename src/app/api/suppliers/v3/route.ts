@@ -5,20 +5,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { pool } from '@/lib/database'
-import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
-import { SupplierService } from '@/lib/suppliers/services/SupplierService'
 import type {
-  CreateSupplierData,
-  UpdateSupplierData,
-  SupplierFilters,
   APIResponse,
   PaginatedAPIResponse
 } from '@/lib/suppliers/types/SupplierDomain'
+import { listSuppliers, upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService'
 
-// Initialize services
-const repository = new PostgreSQLSupplierRepository()
-const supplierService = new SupplierService(repository)
+// SSOT services used directly
 
 // Validation Schemas
 const CreateSupplierSchema = z.object({
@@ -173,29 +166,28 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const filters: SupplierFilters = validationResult.data
-
-    // Convert date strings to Date objects
-    if (filters.createdAfter) {
-      filters.createdAfter = new Date(filters.createdAfter)
-    }
-    if (filters.createdBefore) {
-      filters.createdBefore = new Date(filters.createdBefore)
-    }
-
-    const result = await supplierService.getSuppliers(filters)
+    const page = validationResult.data.page
+    const limit = validationResult.data.limit
+    const result = await listSuppliers({
+      search: validationResult.data.search,
+      status: validationResult.data.status as any,
+      page,
+      limit,
+      sortBy: validationResult.data.sortBy as any,
+      sortOrder: validationResult.data.sortOrder,
+    })
 
     return createPaginatedResponse(
-      result.suppliers,
+      result.data,
       {
-        page: result.page,
-        limit: result.limit,
+        page,
+        limit,
         total: result.total,
-        totalPages: result.totalPages,
-        hasNext: result.page < result.totalPages,
-        hasPrev: result.page > 1
+        totalPages: Math.ceil(result.total / limit),
+        hasNext: page * limit < result.total,
+        hasPrev: page > 1
       },
-      `Retrieved ${result.suppliers.length} suppliers`
+      `Retrieved ${result.data.length} suppliers`
     )
   } catch (error) {
     console.error('Error fetching suppliers:', error)
@@ -221,21 +213,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supplierData: CreateSupplierData = validationResult.data
+    const created = await upsertSupplier({
+      name: validationResult.data.name,
+      code: validationResult.data.code,
+      status: validationResult.data.status,
+      currency: validationResult.data.businessInfo?.currency,
+      contact: validationResult.data.contacts?.[0]
+        ? {
+            email: validationResult.data.contacts[0].email,
+            phone: validationResult.data.contacts[0].phone,
+            website: validationResult.data.businessInfo?.website,
+          }
+        : undefined,
+    })
 
-    // Business logic validation
-    const validation = await supplierService.validateSupplierData(supplierData)
-    if (!validation.isValid) {
-      return createErrorResponse(
-        'Business validation failed',
-        400,
-        validation.errors
-      )
-    }
-
-    const supplier = await supplierService.createSupplier(supplierData)
-
-    return createSuccessResponse(supplier, 'Supplier created successfully')
+    return createSuccessResponse(created, 'Supplier created in canonical layer')
   } catch (error) {
     console.error('Error creating supplier:', error)
 
@@ -270,8 +262,12 @@ export async function PUT(request: NextRequest) {
         return createErrorResponse('Updates must be an array')
       }
 
-      const results = await supplierService.updateManySuppliers(updates)
-      return createSuccessResponse(results, `Updated ${results.length} suppliers`)
+      const updated: any[] = []
+      for (const u of updates) {
+        const res = await upsertSupplier({ id: u.id, name: u.data?.name, status: u.data?.status })
+        updated.push(res)
+      }
+      return createSuccessResponse(updated, `Updated ${updated.length} suppliers`)
     }
 
     if (body.operation === 'bulk_delete') {
@@ -281,8 +277,10 @@ export async function PUT(request: NextRequest) {
         return createErrorResponse('IDs must be an array')
       }
 
-      await supplierService.deleteManySuppliers(ids)
-      return createSuccessResponse(null, `Deleted ${ids.length} suppliers`)
+      for (const id of ids) {
+        await deactivateSupplier(id)
+      }
+      return createSuccessResponse(null, `Deactivated ${ids.length} suppliers`)
     }
 
     return createErrorResponse('Unknown batch operation')
@@ -306,8 +304,10 @@ export async function DELETE(request: NextRequest) {
       return createErrorResponse('Must provide array of supplier IDs to delete')
     }
 
-    await supplierService.deleteManySuppliers(ids)
-    return createSuccessResponse(null, `Deleted ${ids.length} suppliers`)
+    for (const id of ids) {
+      await deactivateSupplier(id)
+    }
+    return createSuccessResponse(null, `Deactivated ${ids.length} suppliers`)
   } catch (error) {
     console.error('Error deleting suppliers:', error)
     return createErrorResponse(

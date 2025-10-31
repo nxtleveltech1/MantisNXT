@@ -1,6 +1,7 @@
 import { query, withTransaction } from '@/lib/database/unified-connection'
 import type { Supplier, SupplierSearchFilters, DashboardMetrics } from '@/types/supplier'
 import { sanitizeUrl } from '@/lib/utils/url-validation'
+import { listSuppliers as ssotList, getSupplierById as ssotGet, upsertSupplier as ssotUpsert, deactivateSupplier as ssotDeactivate } from '@/services/ssot/supplierService'
 
 export interface CreateSupplierData {
   name: string
@@ -52,179 +53,65 @@ export interface CreateSupplierData {
 export class SupplierAPI {
   // Get all suppliers with optional filtering
   static async getSuppliers(filters?: SupplierSearchFilters): Promise<Supplier[]> {
-    try {
-      let query = `
-        SELECT s.*
-        FROM suppliers s
-        WHERE 1=1
-      `
-      const params: any[] = []
-      let paramIndex = 1
-
-      if (filters?.query) {
-        query += ` AND (s.name ILIKE $${paramIndex} OR s.supplier_code ILIKE $${paramIndex} OR s.company_name ILIKE $${paramIndex})`
-        params.push(`%${filters.query}%`)
-        paramIndex++
-      }
-
-      if (filters?.status && filters.status.length > 0) {
-        query += ` AND s.status = ANY($${paramIndex})`
-        params.push(filters.status)
-        paramIndex++
-      }
-
-      if (filters?.tier && filters.tier.length > 0) {
-        query += ` AND s.performance_tier = ANY($${paramIndex})`
-        params.push(filters.tier)
-        paramIndex++
-      }
-
-      if (filters?.category && filters.category.length > 0) {
-        query += ` AND s.primary_category = ANY($${paramIndex})`
-        params.push(filters.category)
-        paramIndex++
-      }
-
-      query += ` ORDER BY s.name ASC`
-
-      const result = await pool.query(query, params)
-
-      return result.rows.map(row => this.mapRowToSupplier(row))
-    } catch (error) {
-      console.error('Error fetching suppliers:', error)
-      throw new Error('Failed to fetch suppliers')
-    }
+    const res = await ssotList({
+      search: filters?.query,
+      status: filters?.status as any,
+      page: 1,
+      limit: 1000,
+      sortBy: 'name',
+      sortOrder: 'asc'
+    })
+    return res.data.map(row => this.mapRowToSupplier({
+      id: row.id,
+      name: row.name,
+      supplier_code: row.code,
+      company_name: row.name,
+      status: row.status,
+      performance_tier: 'approved',
+      primary_category: '',
+      created_at: row.createdAt,
+      updated_at: row.updatedAt
+    } as any))
   }
 
   // Get supplier by ID
   static async getSupplierById(id: string): Promise<Supplier | null> {
-    try {
-      const result = await pool.query(`
-        SELECT s.*
-        FROM suppliers s
-        WHERE s.id = $1
-      `, [id])
-
-      if (result.rows.length === 0) {
-        return null
-      }
-
-      return this.mapRowToSupplier(result.rows[0])
-    } catch (error) {
-      console.error('Error fetching supplier by ID:', error)
-      throw new Error('Failed to fetch supplier')
-    }
+    const s = await ssotGet(id)
+    if (!s) return null
+    return this.mapRowToSupplier({
+      id: s.id,
+      name: s.name,
+      supplier_code: s.code,
+      company_name: s.name,
+      status: s.status,
+      performance_tier: 'approved',
+      primary_category: '',
+      created_at: s.createdAt,
+      updated_at: s.updatedAt
+    } as any)
   }
 
   // Create new supplier
   static async createSupplier(data: CreateSupplierData): Promise<Supplier> {
     // Use withTransaction for atomic supplier creation
-    const supplierId = await withTransaction(async (client) => {
-      // Sanitize website URL before storing
-      const safeWebsite = data.website ? sanitizeUrl(data.website) : null;
-
-      // Insert supplier
-      const supplierResult = await client.query(`
-        INSERT INTO suppliers (
-          name, supplier_code, company_name, website, primary_category, performance_tier, status,
-          tax_id, contact_person, contact_email, phone, payment_terms, notes, created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
-        ) RETURNING id
-      `, [
-        data.name, data.code, data.legalName, safeWebsite, data.category,
-        data.tier, data.status, data.taxId, data.primaryContact.name,
-        data.primaryContact.email, data.primaryContact.phone, data.paymentTerms,
-        JSON.stringify(data)
-      ])
-
-      return supplierResult.rows[0].id
-
-      // Note: supplier_contacts table references 'supplier' table (with 0 records)
-      // but we're using 'suppliers' table. Skip contact insertion for now.
-
-      // Note: supplier_addresses table also references 'supplier' table
-      // Skip address insertion for now.
-    })
-
-    // Fetch and return the created supplier
-    const createdSupplier = await this.getSupplierById(supplierId)
-    if (!createdSupplier) {
-      throw new Error('Failed to retrieve created supplier')
-    }
-
-    return createdSupplier
+    const created = await ssotUpsert({ name: data.name, code: data.code, status: data.status, contact: { email: data.primaryContact.email, phone: data.primaryContact.phone, website: data.website } })
+    const s = await this.getSupplierById(created.id)
+    if (!s) throw new Error('Failed to retrieve created supplier')
+    return s
   }
 
   // Update supplier
   static async updateSupplier(id: string, data: Partial<CreateSupplierData>): Promise<Supplier> {
     // Use withTransaction for atomic supplier update
-    await withTransaction(async (client) => {
-      // Build dynamic update query for supplier
-      const updateFields: string[] = []
-      const params: any[] = []
-      let paramIndex = 1
-
-      if (data.name) {
-        updateFields.push(`name = $${paramIndex++}`)
-        params.push(data.name)
-      }
-      if (data.legalName) {
-        updateFields.push(`company_name = $${paramIndex++}`)
-        params.push(data.legalName)
-      }
-      if (data.website !== undefined) {
-        updateFields.push(`website = $${paramIndex++}`)
-        params.push(data.website ? sanitizeUrl(data.website) : null)
-      }
-      if (data.industry) {
-        updateFields.push(`primary_category = $${paramIndex++}`)
-        params.push(data.industry)
-      }
-      if (data.tier) {
-        updateFields.push(`performance_tier = $${paramIndex++}`)
-        params.push(data.tier)
-      }
-      if (data.status) {
-        updateFields.push(`status = $${paramIndex++}`)
-        params.push(data.status)
-      }
-
-      if (updateFields.length > 0) {
-        updateFields.push(`updated_at = NOW()`)
-        params.push(id) // Add ID as last parameter
-
-        await client.query(
-          `UPDATE suppliers SET ${updateFields.join(', ')} WHERE id = $${paramIndex}`,
-          params
-        )
-      }
-    })
-
-    // Fetch and return updated supplier
-    const updatedSupplier = await this.getSupplierById(id)
-    if (!updatedSupplier) {
-      throw new Error('Failed to retrieve updated supplier')
-    }
-
-    return updatedSupplier
+    await ssotUpsert({ id, name: data.name, code: data.code, status: data.status })
+    const s = await this.getSupplierById(id)
+    if (!s) throw new Error('Failed to retrieve updated supplier')
+    return s
   }
 
   // Delete supplier
   static async deleteSupplier(id: string): Promise<void> {
-    // Use withTransaction for atomic supplier deletion
-    await withTransaction(async (client) => {
-      // Note: Related tables reference different supplier table structure
-      // Delete only from tables that actually reference 'suppliers'
-      // Skip supplier_contacts, supplier_addresses (they reference 'supplier' table)
-
-      // Delete supplier
-      const result = await client.query('DELETE FROM suppliers WHERE id = $1', [id])
-
-      if (result.rowCount === 0) {
-        throw new Error('Supplier not found')
-      }
-    })
+    await ssotDeactivate(id)
   }
 
   // OPTIMIZED: Get dashboard metrics - Combined from 4 queries to 1 CTE (60-70% faster)
@@ -236,7 +123,7 @@ export class SupplierAPI {
             COUNT(*) as total_suppliers,
             COUNT(*) FILTER (WHERE status = 'active') as active_suppliers,
             COUNT(*) FILTER (WHERE status = 'pending') as pending_approvals
-          FROM suppliers
+          FROM public.suppliers
         ),
         performance_metrics AS (
           SELECT

@@ -243,7 +243,7 @@ class SemanticMapper {
       .toLowerCase()
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
+      .join(' ');
   }
 
   static extractBrandFromDescription(description: string, knownBrands: string[]): string {
@@ -987,7 +987,7 @@ const NextJsXlsxConverter: React.FC<NextJsXlsxConverterProps> = ({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 export default NextJsXlsxConverter

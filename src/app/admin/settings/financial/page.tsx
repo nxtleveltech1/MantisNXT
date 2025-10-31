@@ -517,7 +517,7 @@ export default function FinancialSettingsPage() {
                           />
                           <Progress value={percentage} className="h-1" />
                         </div>
-                      )
+                      );
                     })}
                   </CardContent>
                 </Card>
@@ -1014,5 +1014,5 @@ export default function FinancialSettingsPage() {
         </Tabs>
       </div>
     </AdminLayout>
-  )
+  );
 }

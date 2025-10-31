@@ -339,7 +339,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
               </div>
             ) : (
               // Insights Tab
-              <ScrollArea className="h-full px-4 py-3">
+              (<ScrollArea className="h-full px-4 py-3">
                 <div className="space-y-3">
                   {insights.length === 0 ? (
                     <div className="text-center py-8">
@@ -389,12 +389,11 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                     ))
                   )}
                 </div>
-              </ScrollArea>
+              </ScrollArea>)
             )}
           </div>
         </motion.div>
       )}
-
       {/* Minimized FAB */}
       {isMinimized && (
         <motion.button
@@ -411,7 +410,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
         </motion.button>
       )}
     </AnimatePresence>
-  )
+  );
 }
 
 export default MobileAIInterfaceV5

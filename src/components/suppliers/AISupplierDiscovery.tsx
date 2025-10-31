@@ -446,7 +446,6 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
           </div>
         </div>
       </motion.div>
-
       {/* AI Search Interface */}
       <Card className="border-0 shadow-xl">
         <CardHeader>
@@ -575,7 +574,6 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
           </div>
         </CardContent>
       </Card>
-
       {/* Error State */}
       {error && (
         <Alert className="border-red-200 bg-red-50">
@@ -594,7 +592,6 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
           </AlertDescription>
         </Alert>
       )}
-
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
@@ -916,7 +913,6 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
           </Card>
         </TabsContent>
       </Tabs>
-
       {/* Supplier Detail Dialog */}
       {selectedSupplier && (
         <Dialog open={!!selectedSupplier} onOpenChange={() => setSelectedSupplier(null)}>
@@ -1089,7 +1085,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
         </Dialog>
       )}
     </div>
-  )
+  );
 }
 
 export default AISupplierDiscovery

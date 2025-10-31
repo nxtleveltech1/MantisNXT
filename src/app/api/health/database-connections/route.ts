@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
 
     // Test table access
     const supplierTest = await query(
-      'SELECT COUNT(*) as supplier_count FROM suppliers LIMIT 1'
+      'SELECT COUNT(*) as supplier_count FROM public.suppliers LIMIT 1'
     );
 
     const inventoryTest = await query(
-      'SELECT COUNT(*) as inventory_count FROM inventory_items LIMIT 1'
+      'SELECT COUNT(*) as inventory_count FROM public.inventory_items LIMIT 1'
     );
 
     const totalLatency = Date.now() - startTime;

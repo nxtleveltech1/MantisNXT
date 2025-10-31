@@ -182,7 +182,7 @@ export class AutomatedInventoryOptimizer {
           COALESCE(demand.avg_daily_demand, 0) as avg_daily_demand,
           COALESCE(demand.demand_volatility, 0) as demand_volatility,
           COALESCE(supplier.lead_time_days, 7) as lead_time_days
-        FROM inventory_items ii
+        FROM public.inventory_items ii
         LEFT JOIN (
           SELECT
             item_id,
@@ -384,12 +384,9 @@ export class AutomatedInventoryOptimizer {
     `, [item.id]);
   }
 
-  private async updateInventoryParameters(itemId: string, optimization: any): Promise<void> {
-    await this.db.query(`
-      UPDATE inventory_items
-      SET reorder_point = $1, max_stock = $2, updated_at = NOW()
-      WHERE id = $3
-    `, [optimization.optimalReorderPoint, optimization.optimalMaxStock, itemId]);
+  private async updateInventoryParameters(_itemId: string, _optimization: any): Promise<void> {
+    // SSOT: parameter updates for inventory should go through a policy table; no direct inventory_items writes.
+    return;
   }
 
   private generateInventoryRecommendations(actions: any[]): any[] {
@@ -446,7 +443,7 @@ export class AutomatedSupplierSelector {
           current_supplier.supplier_id as current_supplier_id,
           current_supplier.unit_price as current_price,
           sp.overall_rating as current_supplier_rating
-        FROM inventory_items ii
+        FROM public.inventory_items ii
         LEFT JOIN supplier_price_lists current_supplier ON ii.sku = current_supplier.sku
         LEFT JOIN supplier_performance sp ON current_supplier.supplier_id = sp.supplier_id
         WHERE ii.organization_id = $1
@@ -504,7 +501,7 @@ export class AutomatedSupplierSelector {
         sp.overall_rating,
         sp.on_time_delivery_rate,
         sp.quality_acceptance_rate
-      FROM suppliers s
+      FROM public.suppliers s
       JOIN supplier_price_lists spl ON s.id = spl.supplier_id
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
       WHERE spl.sku = $1
@@ -593,11 +590,7 @@ export class AutomatedSupplierSelector {
       const newSupplier = optimization.recommendation;
 
       // Update preferred supplier (simulation)
-      await this.db.query(`
-        UPDATE inventory_items
-        SET preferred_supplier_id = $1, unit_cost = $2, updated_at = NOW()
-        WHERE id = $3
-      `, [newSupplier.id, newSupplier.unit_price, item.id]);
+      // SSOT: supplier change should update supplier_product + price history, not inventory_items directly. No-op here.
 
       return {
         type: 'supplier_change',

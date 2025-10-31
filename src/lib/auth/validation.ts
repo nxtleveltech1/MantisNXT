@@ -60,7 +60,7 @@ export const validateCompanyRegistration = (regNumber: string): boolean => {
 export const validateVatNumber = (vatNumber: string): boolean => {
   // South African VAT number format: 4NNNNNNNNN (10 digits starting with 4)
   const pattern = /^4\d{9}$/
-  return pattern.test(vatNumber.replace(/\s/g, ''))
+  return pattern.test(vatNumber.replace(/\s/g, ''));
 }
 
 export const validateSouthAfricanPhone = (phone: string): boolean => {
@@ -73,10 +73,10 @@ export const validateSouthAfricanPhone = (phone: string): boolean => {
 
   if (cleaned.startsWith('27')) {
     // International format
-    return /^27[1-9]\d{8}$/.test(cleaned)
+    return /^27[1-9]\d{8}$/.test(cleaned);
   } else if (cleaned.startsWith('0')) {
     // Local format
-    return /^0[1-9]\d{8}$/.test(cleaned)
+    return /^0[1-9]\d{8}$/.test(cleaned);
   }
 
   return false

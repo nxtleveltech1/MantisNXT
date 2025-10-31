@@ -277,7 +277,7 @@ export class AIInsightsGenerator {
             ELSE 0
           END
         ) as avg_turnover
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       WHERE ii.organization_id = $1
       GROUP BY ii.category
       HAVING COUNT(*) >= 5
@@ -343,7 +343,7 @@ export class AIInsightsGenerator {
         recent_prices.current_price,
         historical_prices.avg_price,
         historical_prices.price_volatility
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       JOIN (
         SELECT
           item_id,
@@ -441,7 +441,7 @@ export class AIInsightsGenerator {
         COUNT(DISTINCT po.id) as order_count,
         SUM(po.total_amount) as total_spend,
         AVG(po.total_amount) as avg_order_value
-      FROM suppliers s
+      FROM public.suppliers s
       JOIN purchase_orders po ON s.id = po.supplier_id
       WHERE s.organization_id = $1
       AND po.order_date >= NOW() - INTERVAL '6 months'
@@ -515,7 +515,7 @@ export class AIInsightsGenerator {
         COUNT(*) as total_items,
         COUNT(DISTINCT preferred_supplier_id) as supplier_count,
         SUM(ii.current_stock * ii.unit_cost) as category_value
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       WHERE ii.organization_id = $1
       AND ii.preferred_supplier_id IS NOT NULL
       GROUP BY ii.category
@@ -589,7 +589,7 @@ export class AIInsightsGenerator {
         ii.reorder_point,
         demand_forecast.daily_demand,
         lead_time.avg_lead_time
-      FROM inventory_items ii
+      FROM public.inventory_items ii
       JOIN (
         SELECT
           item_id,
@@ -721,7 +721,7 @@ export class SmartDashboardManager {
         breakpoints: { sm: 576, md: 768, lg: 992, xl: 1200 }
       },
 
-      widgets: config.widgets || await this.generateDefaultWidgets(organizationId),
+      widgets: config.widgets || (await this.generateDefaultWidgets(organizationId)),
 
       intelligence: config.intelligence || {
         autoInsights: true,
@@ -1071,7 +1071,7 @@ export class SmartDashboardManager {
           WHEN AVG(sp.overall_rating) >= 75 THEN 'Medium'
           ELSE 'High'
         END as risk_level
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN purchase_orders po ON s.id = po.supplier_id
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
       WHERE s.organization_id = $1

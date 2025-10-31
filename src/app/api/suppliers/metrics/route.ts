@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         COALESCE(AVG(on_time_delivery_rate), 0) as on_time_delivery_rate,
         COALESCE(AVG(quality_rating), 0) as quality_acceptance_rate,
         0 as total_purchase_value
-      FROM suppliers
+      FROM public.suppliers
     `)
 
     const data = result.rows[0]

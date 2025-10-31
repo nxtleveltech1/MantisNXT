@@ -764,11 +764,11 @@ function toAnalysisCsv(records: AnalysisHistoryRecord[]): string {
       .map((value) => {
         const str = String(value ?? '')
         if (str.includes(',') || str.includes('"')) {
-          return '"' + str.replace(/"/g, '""') + '"'
+          return '"' + str.replace(/"/g, '""') + '"';
         }
         return str
       })
-      .join(',')
+      .join(',');
   })
   return [header, ...rows].join('\n')
 }

@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Verify supplier exists
     const supplierCheck = await query(
-      'SELECT id, name, status FROM suppliers WHERE id = $1',
+      'SELECT id, name, status FROM public.suppliers WHERE id = $1',
       [validatedData.supplierId]
     )
 
@@ -434,7 +434,7 @@ async function determineSupplierId(
 
   // Get all suppliers and try to match
   const suppliersResult = await query(
-    'SELECT id, name FROM suppliers WHERE status = $1',
+    'SELECT id, name FROM public.suppliers WHERE status = $1',
     ['active']
   )
 

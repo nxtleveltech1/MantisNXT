@@ -67,7 +67,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         json_agg(DISTINCT sc.*) FILTER (WHERE sc.id IS NOT NULL) as contacts,
         json_agg(DISTINCT sa.*) FILTER (WHERE sa.id IS NOT NULL) as addresses,
         json_agg(DISTINCT sp.*) FILTER (WHERE sp.id IS NOT NULL) as performance_data
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN supplier_contacts sc ON s.id = sc.supplier_id AND sc.is_active = true
       LEFT JOIN supplier_addresses sa ON s.id = sa.supplier_id AND sa.is_active = true
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
@@ -455,7 +455,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       await client.query('DELETE FROM supplier_performance WHERE supplier_id = $1', [id])
       await client.query('DELETE FROM supplier_contacts WHERE supplier_id = $1', [id])
       await client.query('DELETE FROM supplier_addresses WHERE supplier_id = $1', [id])
-      const result = await client.query('DELETE FROM suppliers WHERE id = $1', [id])
+      const result = await client.query('DELETE FROM public.suppliers WHERE id = $1', [id])
       if (result.rowCount === 0) {
         throw new Error('Supplier not found')
       }
@@ -705,7 +705,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         COUNT(CASE WHEN tier = 'strategic' THEN 1 END) as strategic_suppliers,
         AVG(sp.overall_rating) as avg_rating,
         AVG(sp.on_time_delivery_rate) as avg_delivery_rate
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
     `
     const result = await query(metricsQuery)
@@ -790,7 +790,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         json_agg(DISTINCT sc.*) FILTER (WHERE sc.id IS NOT NULL) as contacts,
         json_agg(DISTINCT sa.*) FILTER (WHERE sa.id IS NOT NULL) as addresses,
         json_agg(DISTINCT sp.*) FILTER (WHERE sp.id IS NOT NULL) as performance_data
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN supplier_contacts sc ON s.id = sc.supplier_id AND sc.is_active = true
       LEFT JOIN supplier_addresses sa ON s.id = sa.supplier_id AND sa.is_active = true
       LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
@@ -799,7 +799,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
 
     let countQuery = `
       SELECT COUNT(DISTINCT s.id) as count
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN supplier_contacts sc ON s.id = sc.supplier_id AND sc.is_active = true
       LEFT JOIN supplier_addresses sa ON s.id = sa.supplier_id AND sa.is_active = true
       WHERE 1=1

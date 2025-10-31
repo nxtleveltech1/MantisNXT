@@ -416,7 +416,7 @@ export class MockAuthProvider implements AuthProvider {
   async verifyTwoFactor(token: string, code: string): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 500))
     // Mock verification - accept any 6-digit code
-    return /^\d{6}$/.test(code)
+    return /^\d{6}$/.test(code);
   }
 
   async disableTwoFactor(password: string): Promise<boolean> {

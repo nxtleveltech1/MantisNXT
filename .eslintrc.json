@@ -10,7 +10,8 @@
     "@typescript-eslint",
     "react",
     "react-hooks",
-    "jsx-a11y"
+    "jsx-a11y",
+    "ssot"
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",
@@ -26,6 +27,30 @@
     "jsx-a11y/click-events-have-key-events": "warn",
     "react/no-unescaped-entities": "warn",
     "react/jsx-no-undef": "warn",
-    "prefer-const": "warn"
+    "prefer-const": "warn",
+    "ssot/no-legacy-supplier-inventory": "error",
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Literal[value=/\\bFROM\\s+suppliers\\b/i]",
+        "message": "Use public.suppliers view or SSOT services"
+      },
+      {
+        "selector": "Literal[value=/\\bJOIN\\s+suppliers\\b/i]",
+        "message": "Use public.suppliers view or SSOT services"
+      },
+      {
+        "selector": "Literal[value=/\\bINSERT\\s+INTO\\s+inventory_items\\b/i]",
+        "message": "Write via SSOT inventoryService to core.stock_on_hand"
+      },
+      {
+        "selector": "Literal[value=/\\bUPDATE\\s+inventory_items\\b/i]",
+        "message": "Write via SSOT inventoryService to core.stock_on_hand"
+      },
+      {
+        "selector": "Literal[value=/\\bDELETE\\s+FROM\\s+inventory_items\\b/i]",
+        "message": "Write via SSOT inventoryService to core.stock_on_hand"
+      }
+    ]
   }
 }

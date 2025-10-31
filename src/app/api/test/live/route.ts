@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/database'
+import { upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService'
+import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
 import getDatabaseMetadata from '@/lib/database-info'
 
 export async function GET(request: NextRequest) {
@@ -73,22 +75,14 @@ export async function GET(request: NextRequest) {
     // Test 3: Suppliers CRUD Operations
     try {
       // Create test supplier
-      const createResult = await pool.query(`
-        INSERT INTO suppliers (name, email, contact_person, primary_category, status)
-        VALUES ('API Test Supplier', 'apitest@supplier.com', 'Test Contact', 'Testing', 'active')
-        RETURNING id, name
-      `)
+      const created = await upsertSupplier({ name: 'API Test Supplier', code: 'APITEST', status: 'active', contact: { email: 'apitest@supplier.com', phone: '+27123456789' } })
+      const supplierId = created.id
 
-      const supplierId = createResult.rows[0].id
+      // Read supplier via public view
+      const readResult = await pool.query('SELECT * FROM public.suppliers WHERE id = $1', [supplierId])
 
-      // Read supplier
-      const readResult = await pool.query('SELECT * FROM suppliers WHERE id = $1', [supplierId])
-
-      // Update supplier
-      await pool.query('UPDATE suppliers SET phone = $1 WHERE id = $2', ['+27123456789', supplierId])
-
-      // Clean up
-      await pool.query('DELETE FROM suppliers WHERE id = $1', [supplierId])
+      // Clean up (deactivate)
+      await deactivateSupplier(supplierId)
 
       addTest('Suppliers CRUD', true, {
         created: createResult.rows[0].name,
@@ -110,29 +104,17 @@ export async function GET(request: NextRequest) {
         ORDER BY ordinal_position
       `)
 
-      // Test insert with sample data
       const testSKU = `TEST-${Date.now()}`
-      const inventoryResult = await pool.query(`
-        INSERT INTO inventory_items (sku, name, category, cost_price, stock_qty, status)
-        VALUES ($1, 'Test Product', 'Test Category', 100.00, 10, 'active')
-        RETURNING id, sku, name
-      `, [testSKU])
-
-      const inventoryId = inventoryResult.rows[0].id
-
-      // Test stock movement
-      await pool.query(`
-        INSERT INTO stock_movements (item_id, type, quantity, reason)
-        VALUES ($1, 'in', 5, 'API Test Movement')
-      `, [inventoryId])
+      await upsertSupplierProduct({ supplierId: '00000000-0000-0000-0000-000000000000', sku: testSKU, name: 'Test Product' })
+      await setStock({ supplierId: '00000000-0000-0000-0000-000000000000', sku: testSKU, quantity: 10, unitCost: 100, reason: 'API Test Movement' })
 
       // Clean up
       await pool.query('DELETE FROM stock_movements WHERE item_id = $1', [inventoryId])
-      await pool.query('DELETE FROM inventory_items WHERE id = $1', [inventoryId])
+      await pool.query('DELETE FROM public.inventory_items WHERE id = $1', [inventoryId])
 
       addTest('Inventory Operations', true, {
         schemaColumns: inventorySchema.rows.length,
-        itemCreated: inventoryResult.rows[0].name,
+        itemCreated: testSKU,
         movementRecorded: true
       })
     } catch (error) {
@@ -177,8 +159,8 @@ export async function GET(request: NextRequest) {
       // Run a complex query to test performance
       const perfResult = await pool.query(`
         SELECT
-          (SELECT COUNT(*) FROM suppliers) as supplier_count,
-          (SELECT COUNT(*) FROM inventory_items) as inventory_count,
+          (SELECT COUNT(*) FROM public.suppliers) as supplier_count,
+          (SELECT COUNT(*) FROM public.inventory_items) as inventory_count,
           (SELECT COUNT(*) FROM stock_movements) as movement_count,
           (SELECT COUNT(*) FROM upload_sessions) as upload_count
       `)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SupplierAPI } from '@/lib/api/suppliers'
+import { getSupplierById as ssotGet, upsertSupplier as ssotUpsert, deactivateSupplier as ssotDeactivate } from '@/services/ssot/supplierService'
 import { CacheInvalidator } from '@/lib/cache/invalidation'
 
 
@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supplier = await SupplierAPI.getSupplierById(id)
+    const supplier = await ssotGet(id)
 
     if (!supplier) {
       return NextResponse.json(
@@ -47,7 +47,7 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    const supplier = await SupplierAPI.updateSupplier(id, body)
+    const supplier = await ssotUpsert({ id, name: body?.name, status: body?.status })
 
     // Invalidate cache after successful update
     CacheInvalidator.invalidateSupplier(id, supplier.name)
@@ -78,10 +78,10 @@ export async function DELETE(
     const { id } = await params
 
     // Get supplier name before deletion (for cache invalidation)
-    const supplier = await SupplierAPI.getSupplierById(id)
+    const supplier = await ssotGet(id)
     const supplierName = supplier?.name
 
-    await SupplierAPI.deleteSupplier(id)
+    await ssotDeactivate(id)
 
     // Invalidate cache after successful deletion
     CacheInvalidator.invalidateSupplier(id, supplierName)
@@ -102,4 +102,3 @@ export async function DELETE(
     )
   }
 }
-

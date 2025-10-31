@@ -660,5 +660,5 @@ export default function RegionalSettingsPage() {
         </Tabs>
       </div>
     </AdminLayout>
-  )
+  );
 }

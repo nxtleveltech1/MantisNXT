@@ -342,7 +342,7 @@ export async function POST(request: NextRequest) {
 
     // Validate supplier exists
     const supplierCheck = await pool.query(
-      'SELECT id, name FROM suppliers WHERE id = $1',
+      'SELECT id, name FROM public.suppliers WHERE id = $1',
       [validatedData.supplierId]
     )
 
