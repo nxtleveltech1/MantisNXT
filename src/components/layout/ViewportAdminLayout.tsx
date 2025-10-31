@@ -55,7 +55,9 @@ import {
   Users,
   User,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  BookOpen,
+  UserCheck
 } from "lucide-react"
 
 interface ViewportAdminLayoutProps {
@@ -81,6 +83,23 @@ const sidebarNavigation = [
         title: "Analytics",
         url: "/analytics",
         icon: TrendingUp,
+        isActive: false,
+      },
+    ],
+  },
+  {
+    title: "Business Directories",
+    items: [
+      {
+        title: "Suppliers",
+        url: "/directories/suppliers",
+        icon: Building2,
+        isActive: false,
+      },
+      {
+        title: "Customers",
+        url: "/directories/customers",
+        icon: UserCheck,
         isActive: false,
       },
     ],

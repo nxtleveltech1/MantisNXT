@@ -73,11 +73,11 @@ import {
 // Enhanced validation schemas with better accessibility
 const contactSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(["primary", "billing", "technical", "sales", "support"]),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  title: z.string().min(2, "Title is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Phone number must be at least 10 characters"),
+  type: z.enum(["primary", "billing", "technical", "sales", "support"]).optional(),
+  name: z.string().optional(),
+  title: z.string().optional(),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  phone: z.string().optional(),
   mobile: z.string().optional(),
   department: z.string().optional(),
   isPrimary: z.boolean().default(false),
@@ -86,59 +86,60 @@ const contactSchema = z.object({
 
 const addressSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(["headquarters", "billing", "shipping", "warehouse", "manufacturing"]),
+  type: z.enum(["headquarters", "billing", "shipping", "warehouse", "manufacturing"]).optional(),
   name: z.string().optional(),
-  addressLine1: z.string().min(5, "Address line 1 is required"),
+  addressLine1: z.string().optional(),
   addressLine2: z.string().optional(),
-  city: z.string().min(2, "City is required"),
-  state: z.string().min(2, "State is required"),
-  postalCode: z.string().min(3, "Postal code is required"),
-  country: z.string().min(2, "Country is required"),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
   isPrimary: z.boolean().default(false),
   isActive: z.boolean().default(true),
 })
 
 const supplierSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(2, "Supplier name is required"),
-  code: z.string().min(3, "Supplier code must be at least 3 characters"),
-  status: z.enum(["active", "inactive", "pending", "suspended"]),
-  tier: z.enum(["strategic", "preferred", "approved", "conditional"]),
-  category: z.string().min(2, "Category is required"),
+  name: z.string().optional(),
+  code: z.string().optional(),
+  status: z.enum(["active", "inactive", "pending", "suspended"]).optional(),
+  tier: z.enum(["strategic", "preferred", "approved", "conditional"]).optional(),
+  category: z.string().optional(),
   subcategory: z.string().optional(),
   tags: z.array(z.string()).default([]),
+  brands: z.array(z.string()).default([]),
 
   // Business Information
   businessInfo: z.object({
-    legalName: z.string().min(2, "Legal name is required"),
+    legalName: z.string().optional(),
     tradingName: z.string().optional(),
-    taxId: z.string().min(5, "Tax ID is required"),
-    registrationNumber: z.string().min(3, "Registration number is required"),
+    taxId: z.string().optional().or(z.literal("")),
+    registrationNumber: z.string().optional().or(z.literal("")),
     website: z.string().url("Invalid website URL").optional().or(z.literal("")),
     foundedYear: z.number().min(1800).max(new Date().getFullYear()).optional(),
     employeeCount: z.number().min(1).optional(),
     annualRevenue: z.number().min(0).optional(),
-    currency: z.string().length(3, "Currency must be 3 characters"),
-  }),
+    currency: z.string().optional(),
+  }).optional(),
 
   // Capabilities
   capabilities: z.object({
     products: z.array(z.string()).default([]),
     services: z.array(z.string()).default([]),
-    leadTime: z.number().min(1, "Lead time must be at least 1 day"),
-    paymentTerms: z.string().min(3, "Payment terms are required"),
-  }),
+    leadTime: z.number().optional(),
+    paymentTerms: z.string().optional(),
+  }).optional(),
 
   // Financial
   financial: z.object({
     creditRating: z.string().optional(),
-    paymentTerms: z.string().min(3, "Payment terms are required"),
-    currency: z.string().length(3, "Currency must be 3 characters"),
-  }),
+    paymentTerms: z.string().optional(),
+    currency: z.string().optional(),
+  }).optional(),
 
   // Contacts and Addresses
-  contacts: z.array(contactSchema).min(1, "At least one contact is required"),
-  addresses: z.array(addressSchema).min(1, "At least one address is required"),
+  contacts: z.array(contactSchema).optional(),
+  addresses: z.array(addressSchema).optional(),
 
   // Notes
   notes: z.string().optional(),
@@ -146,71 +147,45 @@ const supplierSchema = z.object({
 
 type SupplierFormData = z.infer<typeof supplierSchema>
 
-// AI Supplier Discovery Hook
+// AI Supplier Discovery Hook - Now uses real web search
 const useAISupplierDiscovery = () => {
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const searchSupplier = async (supplierName: string): Promise<Partial<SupplierFormData> | null> => {
+  const searchSupplier = async (supplierName: string, supplierCode?: string): Promise<Partial<SupplierFormData> | null> => {
     if (!supplierName.trim()) return null
 
     setIsSearching(true)
     setError(null)
 
     try {
-      // Simulate AI API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Call the web search API to get real supplier information
+      const response = await fetch('/api/ai/suppliers/web-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supplierName,
+          supplierCode,
+        }),
+      })
 
-      // Mock intelligent data discovery
-      const mockData: Partial<SupplierFormData> = {
-        name: supplierName,
-        businessInfo: {
-          legalName: `${supplierName} (Pty) Ltd`,
-          tradingName: supplierName,
-          website: `https://www.${supplierName.toLowerCase().replace(/\s+/g, '')}.co.za`,
-          currency: "ZAR",
-          foundedYear: 2010,
-          employeeCount: 50,
-        },
-        category: "Technology",
-        status: "pending",
-        tier: "approved",
-        addresses: [{
-          type: "headquarters",
-          addressLine1: "123 Business Park",
-          city: "Johannesburg",
-          state: "Gauteng",
-          postalCode: "2000",
-          country: "South Africa",
-          isPrimary: true,
-          isActive: true,
-        }],
-        contacts: [{
-          type: "primary",
-          name: "John Smith",
-          title: "Sales Manager",
-          email: `info@${supplierName.toLowerCase().replace(/\s+/g, '')}.co.za`,
-          phone: "+27 11 123 4567",
-          isPrimary: true,
-          isActive: true,
-        }],
-        capabilities: {
-          products: ["Software Solutions", "Consulting"],
-          services: ["Implementation", "Support"],
-          leadTime: 30,
-          paymentTerms: "Net 30",
-        },
-        financial: {
-          paymentTerms: "Net 30",
-          currency: "ZAR",
-          creditRating: "B+",
-        },
-        tags: ["technology", "software", "local"],
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
       }
 
-      return mockData
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to search supplier')
+      }
+
+      // Return the populated data from web search
+      return result.data as Partial<SupplierFormData>
     } catch (err) {
-      setError("Failed to discover supplier information. Please try again.")
+      console.error('Web search error:', err)
+      setError(err instanceof Error ? err.message : "Failed to discover supplier information. Please try again.")
       return null
     } finally {
       setIsSearching(false)
@@ -234,7 +209,11 @@ const AIDiscoveryPanel: React.FC<AIDiscoveryPanelProps> = ({
   const { searchSupplier, isSearching, error } = useAISupplierDiscovery()
 
   const handleSearch = async () => {
-    const data = await searchSupplier(query)
+    // Get the supplier code from the form if available
+    const codeInput = document.querySelector('input[placeholder*="Supplier Code"]') as HTMLInputElement
+    const supplierCode = codeInput?.value || undefined
+    
+    const data = await searchSupplier(query, supplierCode)
     if (data) {
       onDataFound(data)
     }
@@ -325,8 +304,10 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("basic")
   const [tagInput, setTagInput] = useState("")
+  const [brandInput, setBrandInput] = useState("")
   const [productInput, setProductInput] = useState("")
   const [serviceInput, setServiceInput] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [showAIDiscovery, setShowAIDiscovery] = useState(false)
@@ -357,9 +338,10 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
       code: "",
       status: "pending",
       tier: "approved",
-      category: "",
+      category: undefined,
       subcategory: "",
       tags: [],
+      brands: [],
       businessInfo: {
         legalName: "",
         tradingName: "",
@@ -382,29 +364,8 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
         paymentTerms: "Net 30",
         currency: "ZAR",
       },
-      contacts: [{
-        type: "primary",
-        name: "",
-        title: "",
-        email: "",
-        phone: "",
-        mobile: "",
-        department: "",
-        isPrimary: true,
-        isActive: true,
-      }],
-      addresses: [{
-        type: "headquarters",
-        name: "",
-        addressLine1: "",
-        addressLine2: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        country: "South Africa",
-        isPrimary: true,
-        isActive: true,
-      }],
+      contacts: [],
+      addresses: [],
       notes: "",
     }
   })
@@ -420,17 +381,35 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
   })
 
   const watchedTags = form.watch("tags")
+  const watchedBrands = form.watch("brands")
   const watchedProducts = form.watch("capabilities.products")
   const watchedServices = form.watch("capabilities.services")
 
   // Handle AI data population
   const handleAIDataFound = (data: Partial<SupplierFormData>) => {
     Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined) {
-        form.setValue(key as keyof SupplierFormData, value)
+      if (value !== undefined && value !== null) {
+        if (key === 'businessInfo' && typeof value === 'object') {
+          // Handle nested businessInfo object
+          form.setValue('businessInfo', value as any, { shouldValidate: true })
+        } else if (key === 'contacts' && Array.isArray(value)) {
+          form.setValue('contacts', value as any, { shouldValidate: true })
+        } else if (key === 'addresses' && Array.isArray(value)) {
+          form.setValue('addresses', value as any, { shouldValidate: true })
+        } else if (key === 'capabilities' && typeof value === 'object') {
+          form.setValue('capabilities', value as any, { shouldValidate: true })
+        } else if (key === 'financial' && typeof value === 'object') {
+          form.setValue('financial', value as any, { shouldValidate: true })
+        } else {
+          form.setValue(key as keyof SupplierFormData, value as any, { shouldValidate: true })
+        }
       }
     })
     setShowAIDiscovery(false)
+    // Trigger validation to show any errors
+    setTimeout(() => {
+      form.trigger()
+    }, 100)
   }
 
   // Generate supplier code based on name
@@ -446,12 +425,20 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
   }, [form.watch("name")])
 
   const handleSubmit = async (data: SupplierFormData) => {
+    console.log('🟢 Form submit handler called with data:', data)
     try {
       setSubmitError(null)
       setSubmitSuccess(false)
+      setIsSubmitting(true)
 
       if (onSubmit) {
         await onSubmit(data)
+        // Set success and redirect after onSubmit succeeds
+        setSubmitSuccess(true)
+        setTimeout(() => {
+          router.push(`/suppliers?refresh=${Date.now()}`)
+          router.refresh()
+        }, 1500)
       } else {
         // Default submission logic - actually call the API
         const response = await fetch('/api/suppliers', {
@@ -487,6 +474,8 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to save supplier')
       console.error("Form submission error:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -500,6 +489,18 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
 
   const removeTag = (tagToRemove: string) => {
     form.setValue("tags", watchedTags.filter(tag => tag !== tagToRemove))
+  }
+
+  // Brand management
+  const addBrand = () => {
+    if (brandInput.trim() && !watchedBrands.includes(brandInput.trim())) {
+      form.setValue("brands", [...watchedBrands, brandInput.trim()])
+      setBrandInput("")
+    }
+  }
+
+  const removeBrand = (brandToRemove: string) => {
+    form.setValue("brands", watchedBrands.filter(brand => brand !== brandToRemove))
   }
 
   // Product management
@@ -603,11 +604,25 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
             </Button>
 
             <Button
-              onClick={form.handleSubmit(handleSubmit)}
-              disabled={isLoading}
+              type="submit"
+              onClick={(e) => {
+                e.preventDefault()
+                console.log('🟡 Button clicked, triggering form submit')
+                const formElement = e.currentTarget.closest('form')
+                if (formElement) {
+                  formElement.requestSubmit()
+                } else {
+                  // Fallback: manually trigger validation and submit
+                  form.handleSubmit(handleSubmit, (errors) => {
+                    console.error('🔴 Form validation errors:', errors)
+                    setSubmitError('Please check the form for validation errors')
+                  })()
+                }
+              }}
+              disabled={isLoading || isSubmitting}
               className="min-w-[120px]"
             >
-              {isLoading ? (
+              {(isLoading || isSubmitting) ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   {supplier ? "Updating..." : "Creating..."}
@@ -649,7 +664,13 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
 
         {/* Form */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            form.handleSubmit(handleSubmit, (errors) => {
+              console.error('🔴 Form validation errors:', errors)
+              setSubmitError('Please check the form for validation errors')
+            })(e)
+          }} className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -677,7 +698,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="The primary name used to identify this supplier">
-                                Supplier Name *
+                                Supplier Name
                               </FieldTooltip>
                             </FormLabel>
                             <FormControl>
@@ -702,7 +723,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Unique code automatically generated from supplier name">
-                                Supplier Code *
+                                Supplier Code
                               </FieldTooltip>
                             </FormLabel>
                             <FormControl>
@@ -727,7 +748,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Current operational status of the supplier">
-                                Status *
+                                Status
                               </FieldTooltip>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ""}>
@@ -758,7 +779,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Business relationship tier indicating partnership level">
-                                Tier *
+                                Tier
                               </FieldTooltip>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ""}>
@@ -789,7 +810,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Primary business category for this supplier">
-                                Category *
+                                Category
                               </FieldTooltip>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ""}>
@@ -886,6 +907,49 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                       </div>
                     </div>
 
+                    {/* Brands */}
+                    <div className="space-y-3">
+                      <FormLabel>
+                        <FieldTooltip content="Brands or product lines associated with this supplier">
+                          Supplier Brands
+                        </FieldTooltip>
+                      </FormLabel>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add a brand"
+                          value={brandInput}
+                          onChange={(e) => setBrandInput(e.target.value)}
+                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addBrand())}
+                          aria-label="Add new brand"
+                        />
+                        <Button
+                          type="button"
+                          onClick={addBrand}
+                          variant="outline"
+                          aria-label="Add brand"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {watchedBrands.map((brand, index) => (
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            {brand}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto p-0.5 hover:bg-transparent"
+                              onClick={() => removeBrand(brand)}
+                              aria-label={`Remove brand ${brand}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Notes */}
                     <FormField
                       control={form.control}
@@ -935,7 +999,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Official registered business name">
-                                Legal Name *
+                                Legal Name
                               </FieldTooltip>
                             </FormLabel>
                             <FormControl>
@@ -986,7 +1050,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Tax identification number">
-                                Tax ID *
+                                Tax ID
                               </FieldTooltip>
                             </FormLabel>
                             <FormControl>
@@ -1011,7 +1075,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Official business registration number">
-                                Registration Number *
+                                Registration Number
                               </FieldTooltip>
                             </FormLabel>
                             <FormControl>
@@ -1115,7 +1179,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Primary currency for transactions">
-                                Currency *
+                                Currency
                               </FieldTooltip>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ""}>
@@ -1166,21 +1230,24 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {contactFields.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No contacts added. Click "Add Contact" to add one, or submit without contacts.</p>
+                      </div>
+                    )}
                     {contactFields.map((contact, index) => (
                       <div key={contact.id} className="p-4 border rounded-lg space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">Contact {index + 1}</h4>
-                          {contactFields.length > 1 && (
-                            <Button
-                              type="button"
-                              onClick={() => removeContact(index)}
-                              variant="outline"
-                              size="sm"
-                              aria-label={`Remove contact ${index + 1}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                          <Button
+                            type="button"
+                            onClick={() => removeContact(index)}
+                            variant="outline"
+                            size="sm"
+                            aria-label={`Remove contact ${index + 1}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1189,7 +1256,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`contacts.${index}.type`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Contact Type *</FormLabel>
+                                <FormLabel>Contact Type</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                   <FormControl>
                                     <SelectTrigger>
@@ -1214,7 +1281,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`contacts.${index}.name`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Full Name *</FormLabel>
+                                <FormLabel>Full Name</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Enter full name"
@@ -1232,7 +1299,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`contacts.${index}.title`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Job Title *</FormLabel>
+                                <FormLabel>Job Title</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Enter job title"
@@ -1269,7 +1336,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`contacts.${index}.email`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Email *</FormLabel>
+                                <FormLabel>Email</FormLabel>
                                 <FormControl>
                                   <Input
                                     type="email"
@@ -1288,7 +1355,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`contacts.${index}.phone`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Phone *</FormLabel>
+                                <FormLabel>Phone</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Enter phone number"
@@ -1388,21 +1455,24 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {addressFields.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No addresses added. Click "Add Address" to add one, or submit without addresses.</p>
+                      </div>
+                    )}
                     {addressFields.map((address, index) => (
                       <div key={address.id} className="p-4 border rounded-lg space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">Address {index + 1}</h4>
-                          {addressFields.length > 1 && (
-                            <Button
-                              type="button"
-                              onClick={() => removeAddress(index)}
-                              variant="outline"
-                              size="sm"
-                              aria-label={`Remove address ${index + 1}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                          <Button
+                            type="button"
+                            onClick={() => removeAddress(index)}
+                            variant="outline"
+                            size="sm"
+                            aria-label={`Remove address ${index + 1}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1411,7 +1481,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`addresses.${index}.type`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Address Type *</FormLabel>
+                                <FormLabel>Address Type</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                   <FormControl>
                                     <SelectTrigger>
@@ -1455,7 +1525,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`addresses.${index}.addressLine1`}
                             render={({ field }) => (
                               <FormItem className="md:col-span-2">
-                                <FormLabel>Address Line 1 *</FormLabel>
+                                <FormLabel>Address Line 1</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Enter street address"
@@ -1492,7 +1562,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`addresses.${index}.city`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>City *</FormLabel>
+                                <FormLabel>City</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Enter city"
@@ -1510,7 +1580,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`addresses.${index}.state`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>State/Province *</FormLabel>
+                                <FormLabel>State/Province</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Enter state or province"
@@ -1528,7 +1598,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`addresses.${index}.postalCode`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Postal Code *</FormLabel>
+                                <FormLabel>Postal Code</FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="Enter postal code"
@@ -1546,7 +1616,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             name={`addresses.${index}.country`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Country *</FormLabel>
+                                <FormLabel>Country</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                   <FormControl>
                                     <SelectTrigger>
@@ -1719,7 +1789,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Expected delivery time in days">
-                                Lead Time (days) *
+                                Lead Time (days)
                               </FieldTooltip>
                             </FormLabel>
                             <FormControl>
@@ -1746,7 +1816,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Payment terms for transactions">
-                                Payment Terms *
+                                Payment Terms
                               </FieldTooltip>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ""}>
@@ -1814,7 +1884,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           <FormItem>
                             <FormLabel>
                               <FieldTooltip content="Primary transaction currency">
-                                Financial Currency *
+                                Financial Currency
                               </FieldTooltip>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ""}>

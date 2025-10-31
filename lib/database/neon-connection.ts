@@ -61,16 +61,28 @@ neonDbInternal.query = async function <T = any>(
   try {
     const processedParams: any[] = params || [];
     
+    // Check if query contains parameter placeholders ($1, $2, etc.)
+    const placeholderRegex = /\$(\d+)/g;
+    const hasPlaceholders = placeholderRegex.test(queryText);
+    
+    // Reset regex for later use
+    placeholderRegex.lastIndex = 0;
+    
+    // If query has placeholders but no params provided, that's an error
+    if (hasPlaceholders && processedParams.length === 0) {
+      throw new Error(
+        `Query contains parameter placeholders ($1, $2, etc.) but no parameters provided. ` +
+        `Query: ${queryText.substring(0, 200)}`
+      );
+    }
+    
     // Convert parameterized query to template literal format
-    if (processedParams.length > 0) {
-      
+    if (hasPlaceholders && processedParams.length > 0) {
       // Fallback: Convert parameterized query to template literal
       // Split by $N placeholders and rebuild as template literal parts
       const parts: string[] = [];
       const values: any[] = [];
       
-      // Find all $N placeholders
-      const placeholderRegex = /\$(\d+)/g;
       let lastIndex = 0;
       let match;
       
@@ -146,7 +158,8 @@ neonDbInternal.query = async function <T = any>(
         rowCount: rows.length
       };
     } else {
-      // No parameters - use template literal for simple queries
+      // No placeholders - use template literal for simple queries
+      // Use template literal syntax: sql`query text`
       const result = await sql`${queryText}`;
       const duration = Date.now() - start;
       
@@ -181,43 +194,184 @@ neonDbInternal.withTransaction = async function <T>(
   
   // Helper function to convert parameterized query to template literal
   const executeQuery = async (queryText: string, params?: any[]): Promise<any> => {
-    if (params && params.length > 0) {
+    // Always check if params are provided - if they are, treat as parameterized query
+    // This handles both explicit params and queries with $1, $2 placeholders
+    // CRITICAL: Empty array [] means no params, but undefined/null also means no params
+    const hasParams = params !== undefined && params !== null && Array.isArray(params) && params.length > 0;
+    
+    // CRITICAL: Log ALL queries to understand what's happening
+    console.log('🚀 [withTransaction.executeQuery] ENTRY:', {
+      queryPreview: queryText.substring(0, 200),
+      hasParams,
+      paramsType: typeof params,
+      paramsIsArray: Array.isArray(params),
+      paramsIsNull: params === null,
+      paramsIsUndefined: params === undefined,
+      paramsLength: params?.length,
+      paramsPreview: params?.slice(0, 3),
+      queryContainsDollar: queryText.includes('$'),
+      firstChars: queryText.substring(0, 50),
+      fullQueryFirst300: queryText.substring(0, 300)
+    });
+    
+    // CRITICAL SAFEGUARD: If query contains $ and we have params, MUST convert
+    // This is the ultimate check - if query has $1, $2 and params are provided, convert!
+    if (queryText.includes('$') && params && Array.isArray(params) && params.length > 0) {
+      console.log('🔴 FORCING CONVERSION: Query has $ and params provided!', {
+        queryPreview: queryText.substring(0, 150),
+        paramsCount: params.length
+      });
+    }
+    
+    // Check if query contains placeholders - use a fresh regex each time
+    // Test for $1, $2, etc. placeholders (must match $ followed by digits)
+    // Create a new regex instance to avoid state issues
+    const placeholderTestRegex = new RegExp('\\$\\d+');
+    const hasPlaceholderPattern = placeholderTestRegex.test(queryText);
+    
+    // More robust placeholder detection - check if query contains $ followed by digits
+    // Also check if params are provided and query contains dollar signs
+    const queryContainsDollar = queryText.includes('$');
+    
+    // CRITICAL: If params are provided, we MUST convert - params always mean parameterized query
+    // Only skip conversion if query is a simple transaction command (BEGIN, COMMIT, ROLLBACK)
+    const isTransactionCommand = /^\s*(BEGIN|COMMIT|ROLLBACK|START\s+TRANSACTION)\s*;?\s*$/i.test(queryText.trim());
+    
+    // CRITICAL: If params are provided AND query contains $, ALWAYS treat as having placeholders
+    // This is the most important check - params + $ means parameterized query
+    // ONLY skip if it's a transaction command (BEGIN/COMMIT/ROLLBACK)
+    const hasPlaceholdersByParams = hasParams && queryContainsDollar && !isTransactionCommand;
+    
+    // If params are provided and query contains $, MUST have placeholders (unless transaction command)
+    // This is the critical fallback - if params exist and $ exists, it MUST be parameterized
+    const hasPlaceholders = hasPlaceholdersByParams || (!isTransactionCommand && hasPlaceholderPattern);
+    
+    // CRITICAL: If params provided but no placeholders found, that's a programming error
+    // Params ALWAYS mean the query should have $1, $2 placeholders
+    if (hasParams && !isTransactionCommand && !queryContainsDollar) {
+      console.error('🚨 PROGRAMMING ERROR: Params provided but query has no $ placeholders!', {
+        query: queryText.substring(0, 200),
+        paramsCount: params?.length,
+        params: params?.slice(0, 5) // First 5 params for debugging
+      });
+      throw new Error(
+        `Params provided (${params?.length}) but query has no $1, $2 placeholders. ` +
+        `This is a programming error. Query: ${queryText.substring(0, 150)}`
+      );
+    }
+    
+    // Debug logging for ALL queries to diagnose issues
+    if (hasParams || queryContainsDollar || hasPlaceholderPattern) {
+      console.log('🔍 [withTransaction.executeQuery]', {
+        query: queryText.substring(0, 200),
+        hasParams,
+        paramsCount: params?.length,
+        hasPlaceholderPattern,
+        queryContainsDollar,
+        isTransactionCommand,
+        hasPlaceholdersByParams,
+        hasPlaceholders,
+        willConvert: hasPlaceholders && hasParams,
+        firstChars: queryText.substring(0, 100)
+      });
+    }
+    
+    // CRITICAL SAFEGUARD: If params are provided and query contains $, we MUST convert
+    // hasPlaceholdersByParams is the ultimate check - if params + $ exist, MUST convert
+    // This prevents queries with placeholders from falling through to the else branch
+    if (hasPlaceholders || hasPlaceholdersByParams) {
+      if (!hasParams) {
+        console.error('❌ Query has placeholders but no params:', {
+          query: queryText.substring(0, 200),
+          params: params,
+          paramsType: typeof params,
+          paramsLength: params?.length,
+          hasPlaceholderPattern,
+          queryContainsDollar
+        });
+        throw new Error(`Query contains placeholders ($1, $2, etc.) but no parameters provided: ${queryText.substring(0, 100)}`);
+      }
+      
       // Convert $1, $2 placeholders to template literal format
       const parts: string[] = [];
       const values: any[] = [];
-      const placeholderRegex = /\$(\d+)/g;
-      let lastIndex = 0;
-      let match;
       
-      while ((match = placeholderRegex.exec(queryText)) !== null) {
-        if (match.index > lastIndex) {
-          parts.push(queryText.substring(lastIndex, match.index));
+      // Find all $N placeholders in the query
+      // Pattern: $ followed by one or more digits
+      const placeholderPattern = /\$(\d+)/g;
+      const matches: Array<{ index: number; length: number; paramNum: number }> = [];
+      
+      // Reset regex and find all matches
+      placeholderPattern.lastIndex = 0;
+      let match;
+      while ((match = placeholderPattern.exec(queryText)) !== null) {
+        matches.push({
+          index: match.index,
+          length: match[0].length,
+          paramNum: parseInt(match[1], 10)
+        });
+      }
+      
+      if (matches.length === 0) {
+        // No placeholders found but we expected them - this is an error
+        throw new Error(`Query contains $ but no $1, $2 placeholders found. Query: ${queryText.substring(0, 100)}`);
+      }
+      
+      // Sort matches by index to process in order
+      matches.sort((a, b) => a.index - b.index);
+      
+      // Build parts array and extract values
+      let currentIndex = 0;
+      for (const match of matches) {
+        // Add SQL text before this placeholder
+        if (match.index > currentIndex) {
+          parts.push(queryText.substring(currentIndex, match.index));
         } else if (parts.length === 0) {
+          // First placeholder at start
           parts.push('');
         }
         
-        const paramIndex = parseInt(match[1], 10) - 1;
-        if (paramIndex >= 0 && paramIndex < params.length) {
-          values.push(params[paramIndex]);
+        // Get parameter value (convert 1-based $1, $2 to 0-based array index)
+        const paramIndex = match.paramNum - 1;
+        if (paramIndex < 0 || paramIndex >= params.length) {
+          throw new Error(
+            `Invalid parameter index $${match.paramNum}: only ${params.length} params provided (need param ${match.paramNum}). ` +
+            `Query: ${queryText.substring(0, 150)}`
+          );
         }
+        values.push(params[paramIndex]);
         
-        lastIndex = match.index + match[0].length;
+        // Move past this placeholder
+        currentIndex = match.index + match.length;
       }
       
-      if (lastIndex < queryText.length) {
-        parts.push(queryText.substring(lastIndex));
+      // Add remaining SQL after last placeholder
+      if (currentIndex < queryText.length) {
+        parts.push(queryText.substring(currentIndex));
       } else if (parts.length <= values.length) {
+        // Last placeholder at end - add empty string
         parts.push('');
       }
       
+      // Validate: parts should equal values.length + 1
       if (parts.length !== values.length + 1) {
-        throw new Error(`Template literal mismatch: ${parts.length} parts for ${values.length} values`);
+        throw new Error(
+          `Template literal construction failed: ${parts.length} parts but ${values.length} values. ` +
+          `Expected ${values.length + 1} parts. Query: ${queryText.substring(0, 150)}`
+        );
       }
       
       // Create template literal call using Function constructor
       const valueNames = values.map((_, i) => `v${i}`);
-      const escapedParts = parts.map(part => part.replace(/`/g, '\\`').replace(/\$\{/g, '\\${'));
+      const escapedParts = parts.map(part => {
+        // Escape backticks and template literal syntax in SQL parts
+        return part
+          .replace(/\\/g, '\\\\')  // Escape backslashes first
+          .replace(/`/g, '\\`')     // Escape backticks
+          .replace(/\$\{/g, '\\${'); // Escape ${ template literal syntax
+      });
       
+      // Build the template literal string
       let templateCall = 'sql`';
       for (let i = 0; i < escapedParts.length; i++) {
         templateCall += escapedParts[i];
@@ -227,9 +381,66 @@ neonDbInternal.withTransaction = async function <T>(
       }
       templateCall += '`';
       
-      const executeQueryFn = new Function('sql', ...valueNames, `return ${templateCall};`);
-      return await executeQueryFn(sql, ...values);
+      // Debug: Log the conversion
+      console.log('✅ [withTransaction] Converting query with placeholders:', {
+        originalQuery: queryText.substring(0, 150),
+        matchesFound: matches.length,
+        valuesCount: values.length,
+        partsCount: parts.length,
+        templateCallPreview: templateCall.substring(0, 200)
+      });
+      
+      try {
+        const executeQueryFn = new Function('sql', ...valueNames, `return ${templateCall};`);
+        const result = await executeQueryFn(sql, ...values);
+        
+        // Debug: Log successful conversion
+        console.log('✅ [withTransaction] Query converted and executed successfully');
+        
+        return result;
+      } catch (convError) {
+        console.error('❌ [withTransaction] Template literal execution failed:', {
+          error: convError,
+          templateCall: templateCall.substring(0, 300),
+          query: queryText.substring(0, 200),
+          valuesCount: values.length
+        });
+        throw new Error(
+          `Failed to execute converted query: ${convError instanceof Error ? convError.message : 'Unknown error'}. ` +
+          `Original query: ${queryText.substring(0, 100)}`
+        );
+      }
+    } else if (hasParams && queryContainsDollar) {
+      // SAFEGUARD: Params provided and query contains $ - must have placeholders even if detection failed
+      // This is a critical fallback to prevent queries with $1 from being executed without conversion
+      console.error('🚨 CRITICAL: Params provided and query contains $, but placeholder detection failed!', {
+        query: queryText.substring(0, 200),
+        hasParams,
+        queryContainsDollar,
+        hasPlaceholderPattern,
+        isTransactionCommand
+      });
+      throw new Error(`Query has params and contains $ but placeholder detection failed. Query: ${queryText.substring(0, 100)}`);
+    } else if (hasParams) {
+      // Params provided but query doesn't contain $ - this is unusual
+      console.warn('⚠️ Parameters provided but query has no $1, $2 placeholders. Query:', queryText.substring(0, 100));
+      return await sql`${queryText}`;
     } else {
+      // No placeholders and no params - use template literal directly (for BEGIN, COMMIT, etc.)
+      // BUT: If query contains $ followed by digits, this is an error - it needs params!
+      if (queryText.includes('$') && /\$\d+/.test(queryText)) {
+        console.error('🚨 CRITICAL ERROR: Query contains $1, $2 placeholders but no params provided!', {
+          query: queryText.substring(0, 300),
+          paramsProvided: params !== undefined,
+          paramsIsArray: Array.isArray(params),
+          paramsLength: params?.length,
+          queryHasDollarSign: queryText.includes('$')
+        });
+        throw new Error(
+          `Query contains $1, $2 placeholders but no parameters provided. ` +
+          `This should never happen. Query: ${queryText.substring(0, 200)}`
+        );
+      }
       return await sql`${queryText}`;
     }
   };

@@ -43,45 +43,81 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   constructor() {}
 
   async findById(id: string): Promise<Supplier | null> {
-    const queryText = `
-      SELECT
-        s.id,
-        s.name,
-        s.code,
-        s.status,
-        s.tier,
-        s.category,
-        s.subcategory,
-        s.tags,
-        s.legal_name,
-        s.website,
-        s.industry,
-        s.tax_id,
-        s.registration_number,
-        s.founded_year,
-        s.employee_count,
-        s.annual_revenue,
-        s.currency,
-        s.created_at,
-        s.updated_at,
-        json_agg(DISTINCT sc.*) FILTER (WHERE sc.id IS NOT NULL) as contacts,
-        json_agg(DISTINCT sa.*) FILTER (WHERE sa.id IS NOT NULL) as addresses,
-        json_agg(DISTINCT sp.*) FILTER (WHERE sp.id IS NOT NULL) as performance_data
+    // Get supplier - use SELECT * to get all columns that exist
+    const supplierQuery = `
+      SELECT *
       FROM public.suppliers s
-      LEFT JOIN supplier_contacts sc ON s.id = sc.supplier_id AND sc.is_active = true
-      LEFT JOIN supplier_addresses sa ON s.id = sa.supplier_id AND sa.is_active = true
-      LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
-      WHERE s.id = $1
-      GROUP BY
-        s.id, s.name, s.code, s.status, s.tier, s.category, s.subcategory, s.tags,
-        s.legal_name, s.website, s.industry, s.tax_id, s.registration_number,
-        s.founded_year, s.employee_count, s.annual_revenue, s.currency,
-        s.created_at, s.updated_at
+      WHERE CAST(s.id AS TEXT) = $1
+      LIMIT 1
     `
-
-    const result = await query(queryText, [id])
-    if (result.rows.length === 0) return null
-    return this.mapRowToSupplier(result.rows[0])
+    
+    const supplierResult = await query(supplierQuery, [id])
+    if (supplierResult.rows.length === 0) return null
+    
+    const row: any = supplierResult.rows[0]
+    
+    // Map columns that exist - handle different column name variations
+    row.tier = row.tier || row.performance_tier || 'approved'
+    row.category = row.category || row.primary_category || ''
+    row.subcategory = row.subcategory || ''
+    row.tags = row.tags || []
+    row.brands = row.brands || []
+    row.legal_name = row.legal_name || row.name
+    row.website = row.website || ''
+    row.industry = row.industry || ''
+    row.tax_id = row.tax_id || row.tax_number || ''
+    row.registration_number = row.registration_number || ''
+    row.founded_year = row.founded_year ?? null
+    row.employee_count = row.employee_count ?? null
+    row.annual_revenue = row.annual_revenue ?? null
+    row.currency = row.currency || row.currency_code || 'ZAR'
+    row.notes = row.notes || null
+    
+    // Get contacts
+    const contactsQuery = `
+      SELECT id, type, name, title, email, phone, mobile, department, is_primary, is_active
+      FROM supplier_contacts
+      WHERE CAST(supplier_id AS TEXT) = $1 AND is_active = true
+    `
+    const contactsResult = await query(contactsQuery, [id])
+    
+    // Get addresses
+    const addressesQuery = `
+      SELECT id, type, name, address_line1, address_line2, city, state, postal_code, country, is_primary, is_active
+      FROM supplier_addresses
+      WHERE CAST(supplier_id AS TEXT) = $1 AND is_active = true
+    `
+    const addressesResult = await query(addressesQuery, [id])
+    
+    // Map contacts and addresses
+    row.contacts = contactsResult.rows.map((c: any) => ({
+      id: c.id,
+      type: c.type,
+      name: c.name,
+      title: c.title,
+      email: c.email,
+      phone: c.phone,
+      mobile: c.mobile,
+      department: c.department,
+      isPrimary: c.is_primary,
+      isActive: c.is_active
+    }))
+    
+    row.addresses = addressesResult.rows.map((a: any) => ({
+      id: a.id,
+      type: a.type,
+      name: a.name,
+      addressLine1: a.address_line1,
+      addressLine2: a.address_line2,
+      city: a.city,
+      state: a.state,
+      postalCode: a.postal_code,
+      country: a.country,
+      isPrimary: a.is_primary,
+      isActive: a.is_active
+    }))
+    
+    return this.mapRowToSupplier(row)
   }
 
   async findMany(filters: SupplierFilters): Promise<SupplierSearchResult> {
@@ -107,10 +143,10 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       const supplierQuery = `
         INSERT INTO suppliers (
           name, code, legal_name, website, industry, tier, status, category, subcategory,
-          tags, tax_id, registration_number, founded_year, employee_count, annual_revenue,
+          tags, brands, tax_id, registration_number, founded_year, employee_count, annual_revenue,
           currency, created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW()
         ) RETURNING id
       `
 
@@ -126,6 +162,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         data.category,
         data.subcategory ?? null,
         data.tags,
+        data.brands || [],
         businessInfo.taxId,
         businessInfo.registrationNumber,
         businessInfo.foundedYear ?? null,
@@ -326,15 +363,19 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         updateFields.push(`tags = $${paramIndex++}`)
         params.push(data.tags)
       }
+      if (data.brands !== undefined) {
+        updateFields.push(`brands = $${paramIndex++}`)
+        params.push(data.brands)
+      }
 
       if (updateFields.length > 0) {
         updateFields.push(`updated_at = NOW()`)
         params.push(id)
-        await client.query(`UPDATE suppliers SET ${updateFields.join(', ')} WHERE id = $${paramIndex}`, params)
+        await client.query(`UPDATE suppliers SET ${updateFields.join(', ')} WHERE id = $${paramIndex}::uuid`, params)
       }
 
       if (data.contacts) {
-        await client.query('DELETE FROM supplier_contacts WHERE supplier_id = $1', [id])
+        await client.query('DELETE FROM supplier_contacts WHERE supplier_id = $1::uuid', [id])
         if (data.contacts.length > 0) {
           const contactArrays = data.contacts.reduce((acc, contact) => {
             acc.supplierIds.push(id)
@@ -387,7 +428,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       }
 
       if (data.addresses) {
-        await client.query('DELETE FROM supplier_addresses WHERE supplier_id = $1', [id])
+        await client.query('DELETE FROM supplier_addresses WHERE supplier_id = $1::uuid', [id])
         if (data.addresses.length > 0) {
           const addressArrays = data.addresses.reduce((acc, address) => {
             acc.supplierIds.push(id)
@@ -452,10 +493,12 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
 
   async delete(id: string): Promise<void> {
     await withTransaction(async (client: PoolClient) => {
-      await client.query('DELETE FROM supplier_performance WHERE supplier_id = $1', [id])
-      await client.query('DELETE FROM supplier_contacts WHERE supplier_id = $1', [id])
-      await client.query('DELETE FROM supplier_addresses WHERE supplier_id = $1', [id])
-      const result = await client.query('DELETE FROM public.suppliers WHERE id = $1', [id])
+      // Delete all related data first (CASCADE would handle this, but being explicit)
+      await client.query('DELETE FROM supplier_performance WHERE CAST(supplier_id AS TEXT) = $1', [id])
+      await client.query('DELETE FROM supplier_contacts WHERE CAST(supplier_id AS TEXT) = $1', [id])
+      await client.query('DELETE FROM supplier_addresses WHERE CAST(supplier_id AS TEXT) = $1', [id])
+      // Finally delete the supplier itself
+      const result = await client.query('DELETE FROM public.suppliers WHERE CAST(id AS TEXT) = $1', [id])
       if (result.rowCount === 0) {
         throw new Error('Supplier not found')
       }
@@ -862,10 +905,11 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       name: row.name,
       code: row.code,
       status: row.status,
-      tier: row.tier,
+      tier: row.tier || 'approved',
       category: row.category,
       subcategory: row.subcategory,
       tags: row.tags || [],
+      brands: row.brands || [],
 
       businessInfo: {
         legalName: row.legal_name,
@@ -879,8 +923,31 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         currency: row.currency || 'ZAR'
       },
 
-      contacts: row.contacts || [],
-      addresses: row.addresses || [],
+      contacts: (row.contacts || []).map((c: any) => ({
+        id: c.id,
+        type: c.type,
+        name: c.name,
+        title: c.title,
+        email: c.email,
+        phone: c.phone,
+        mobile: c.mobile,
+        department: c.department,
+        isPrimary: c.isPrimary ?? c.is_primary ?? false,
+        isActive: c.isActive ?? c.is_active !== false
+      })),
+      addresses: (row.addresses || []).map((a: any) => ({
+        id: a.id,
+        type: a.type,
+        name: a.name,
+        addressLine1: a.addressLine1 ?? a.address_line1,
+        addressLine2: a.addressLine2 ?? a.address_line2,
+        city: a.city,
+        state: a.state,
+        postalCode: a.postalCode ?? a.postal_code,
+        country: a.country,
+        isPrimary: a.isPrimary ?? a.is_primary ?? false,
+        isActive: a.isActive ?? a.is_active !== false
+      })),
 
       performance: this.mapPerformanceData(row.performance_data?.[0] || {}),
 

@@ -37,7 +37,9 @@ import {
   Menu,
   X,
   ChevronRight,
-  Upload
+  Upload,
+  BookOpen,
+  UserCheck
 } from 'lucide-react'
 
 interface SelfContainedLayoutProps {
@@ -80,6 +82,21 @@ const navigationGroups: NavigationGroup[] = [
         title: "Test Auth",
         url: "/test-auth",
         icon: Settings,
+      },
+    ],
+  },
+  {
+    title: "Business Directories",
+    items: [
+      {
+        title: "Suppliers",
+        url: "/directories/suppliers",
+        icon: Building2,
+      },
+      {
+        title: "Customers",
+        url: "/directories/customers",
+        icon: UserCheck,
       },
     ],
   },

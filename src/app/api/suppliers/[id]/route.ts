@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupplierById as ssotGet, upsertSupplier as ssotUpsert, deactivateSupplier as ssotDeactivate } from '@/services/ssot/supplierService'
+import { getSupplierById as ssotGet, upsertSupplier as ssotUpsert } from '@/services/ssot/supplierService'
 import { CacheInvalidator } from '@/lib/cache/invalidation'
+import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 
 
 
@@ -81,7 +82,9 @@ export async function DELETE(
     const supplier = await ssotGet(id)
     const supplierName = supplier?.name
 
-    await ssotDeactivate(id)
+    // HARD DELETE - actually remove the supplier from the database
+    const repository = new PostgreSQLSupplierRepository()
+    await repository.delete(id)
 
     // Invalidate cache after successful deletion
     CacheInvalidator.invalidateSupplier(id, supplierName)

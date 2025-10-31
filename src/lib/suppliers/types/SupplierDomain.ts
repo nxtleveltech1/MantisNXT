@@ -13,6 +13,7 @@ export interface Supplier {
   category: string
   subcategory?: string
   tags: string[]
+  brands: string[] // Supplier brands/line of products
 
   // Business Information
   businessInfo: SupplierBusinessInfo
@@ -103,6 +104,7 @@ export interface CreateSupplierData {
   category: string
   subcategory?: string
   tags: string[]
+  brands: string[]
 
   businessInfo: Omit<SupplierBusinessInfo, 'tradingName'>
   contacts: Omit<SupplierContact, 'id'>[]
@@ -118,6 +120,7 @@ export interface UpdateSupplierData {
   category?: string
   subcategory?: string
   tags?: string[]
+  brands?: string[]
 
   businessInfo?: Partial<SupplierBusinessInfo>
   contacts?: Omit<SupplierContact, 'id'>[]

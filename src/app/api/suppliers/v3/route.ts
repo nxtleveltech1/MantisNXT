@@ -14,53 +14,68 @@ import { CacheInvalidator } from '@/lib/cache/invalidation'
 
 // SSOT services used directly
 
-// Validation Schemas
+// Validation Schemas - All fields optional to match form
 const CreateSupplierSchema = z.object({
-  name: z.string().min(1, 'Supplier name is required'),
-  code: z.string().min(3, 'Supplier code must be at least 3 characters'),
-  status: z.enum(['active', 'inactive', 'pending', 'suspended']),
-  tier: z.enum(['strategic', 'preferred', 'approved', 'conditional']),
-  category: z.string().min(1, 'Category is required'),
-  subcategory: z.string().optional(),
+  name: z.string().optional().or(z.literal("")),
+  code: z.string().optional().or(z.literal("")),
+  status: z.enum(['active', 'inactive', 'pending', 'suspended']).optional(),
+  tier: z.enum(['strategic', 'preferred', 'approved', 'conditional']).optional(),
+  category: z.string().optional().or(z.literal("")),
+  subcategory: z.string().optional().or(z.literal("")),
   tags: z.array(z.string()).default([]),
+  brands: z.array(z.string()).default([]),
 
   businessInfo: z.object({
-    legalName: z.string().min(1, 'Legal name is required'),
-    taxId: z.string().min(1, 'Tax ID is required'),
-    registrationNumber: z.string().min(1, 'Registration number is required'),
-    website: z.string().url().optional(),
+    legalName: z.string().optional().or(z.literal("")),
+    tradingName: z.string().optional().or(z.literal("")),
+    taxId: z.string().optional().or(z.literal("")),
+    registrationNumber: z.string().optional().or(z.literal("")),
+    website: z.string().url().optional().or(z.literal("")),
     foundedYear: z.number().min(1800).max(new Date().getFullYear()).optional(),
     employeeCount: z.number().min(1).optional(),
     annualRevenue: z.number().min(0).optional(),
-    currency: z.string().length(3, 'Currency must be 3 characters').default('ZAR')
-  }),
+    currency: z.string().optional().or(z.literal(""))
+  }).optional(),
 
   contacts: z.array(z.object({
-    type: z.enum(['primary', 'billing', 'technical', 'sales', 'support']),
-    name: z.string().min(1, 'Contact name is required'),
-    title: z.string().min(1, 'Contact title is required'),
-    email: z.string().email('Invalid email address'),
-    phone: z.string().min(10, 'Phone number must be at least 10 characters'),
-    mobile: z.string().optional(),
-    department: z.string().optional(),
+    type: z.enum(['primary', 'billing', 'technical', 'sales', 'support']).optional(),
+    name: z.string().optional().or(z.literal("")),
+    title: z.string().optional().or(z.literal("")),
+    email: z.string().email('Invalid email address').optional().or(z.literal("")),
+    phone: z.string().optional().or(z.literal("")),
+    mobile: z.string().optional().or(z.literal("")),
+    department: z.string().optional().or(z.literal("")),
     isPrimary: z.boolean().default(false),
     isActive: z.boolean().default(true)
-  })).min(1, 'At least one contact is required'),
+  })).optional().default([]),
 
   addresses: z.array(z.object({
-    type: z.enum(['headquarters', 'billing', 'shipping', 'warehouse', 'manufacturing']),
-    name: z.string().optional(),
-    addressLine1: z.string().min(1, 'Address line 1 is required'),
-    addressLine2: z.string().optional(),
-    city: z.string().min(1, 'City is required'),
-    state: z.string().min(1, 'State is required'),
-    postalCode: z.string().min(1, 'Postal code is required'),
-    country: z.string().min(1, 'Country is required'),
+    type: z.enum(['headquarters', 'billing', 'shipping', 'warehouse', 'manufacturing']).optional(),
+    name: z.string().optional().or(z.literal("")),
+    addressLine1: z.string().optional().or(z.literal("")),
+    addressLine2: z.string().optional().or(z.literal("")),
+    city: z.string().optional().or(z.literal("")),
+    state: z.string().optional().or(z.literal("")),
+    postalCode: z.string().optional().or(z.literal("")),
+    country: z.string().optional().or(z.literal("")),
     isPrimary: z.boolean().default(false),
     isActive: z.boolean().default(true)
-  })).min(1, 'At least one address is required'),
+  })).optional().default([]),
 
-  notes: z.string().optional()
+  capabilities: z.object({
+    products: z.array(z.string()).default([]),
+    services: z.array(z.string()).default([]),
+    leadTime: z.number().optional(),
+    paymentTerms: z.string().optional().or(z.literal(""))
+  }).optional(),
+
+  financial: z.object({
+    creditRating: z.string().optional().or(z.literal("")),
+    paymentTerms: z.string().optional().or(z.literal("")),
+    currency: z.string().optional().or(z.literal(""))
+  }).optional(),
+
+  notes: z.string().optional().or(z.literal(""))
 })
 
 const UpdateSupplierSchema = CreateSupplierSchema.partial()
@@ -215,15 +230,15 @@ export async function POST(request: NextRequest) {
     }
 
     const created = await upsertSupplier({
-      name: validationResult.data.name,
-      code: validationResult.data.code,
-      status: validationResult.data.status,
-      currency: validationResult.data.businessInfo?.currency,
-      contact: validationResult.data.contacts?.[0]
+      name: validationResult.data.name || 'Unnamed Supplier',
+      code: validationResult.data.code || 'TEMP-' + Date.now(),
+      status: validationResult.data.status || 'pending',
+      currency: validationResult.data.businessInfo?.currency || 'ZAR',
+      contact: validationResult.data.contacts?.[0] && validationResult.data.contacts[0].email
         ? {
             email: validationResult.data.contacts[0].email,
-            phone: validationResult.data.contacts[0].phone,
-            website: validationResult.data.businessInfo?.website,
+            phone: validationResult.data.contacts[0].phone || '',
+            website: validationResult.data.businessInfo?.website || '',
           }
         : undefined,
     })

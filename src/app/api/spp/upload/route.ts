@@ -55,29 +55,200 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse file and extract rows
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    // Helper function to parse price values (handles "R 1,300.00" format and plain numbers)
+    const parsePrice = (value: any): number => {
+      if (!value && value !== 0) return 0;
+      if (typeof value === 'number') return Math.max(0, value);
+      
+      const str = String(value).trim();
+      if (!str) return 0;
+      
+      // Remove currency symbols (R, $, €, £, etc.), spaces, and formatting
+      // Handle "R 1,300.00" format by removing R, spaces, and commas
+      const cleaned = str
+        .replace(/^[R$€£¥₹]\s*/i, '') // Remove currency symbols at start
+        .replace(/,/g, '') // Remove thousand separators
+        .replace(/\s+/g, '') // Remove spaces
+        .trim();
+      
+      const parsed = parseFloat(cleaned);
+      return isNaN(parsed) ? 0 : Math.max(0, parsed);
+    };
 
-    // Transform to PricelistRow format
+    // Parse file and extract rows
+    // Handle semicolon-delimited CSV properly
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const text = buffer.toString('utf-8');
+    
+    // Detect if file is CSV (by extension or content)
+    const isCSV = file.name.toLowerCase().endsWith('.csv') || 
+                 (!file.name.toLowerCase().endsWith('.xlsx') && 
+                  !file.name.toLowerCase().endsWith('.xls'));
+    
+    let data: any[] = [];
+    
+    if (isCSV) {
+      // Parse CSV manually to handle semicolon delimiters properly
+      const lines = text.split(/\r?\n/).filter(line => line.trim());
+      if (lines.length > 0) {
+        // Detect delimiter (semicolon or comma)
+        const firstLine = lines[0];
+        const semicolonCount = (firstLine.match(/;/g) || []).length;
+        const commaCount = (firstLine.match(/,/g) || []).length;
+        const delimiter = semicolonCount > commaCount ? ';' : ',';
+        
+        const headers = firstLine.split(delimiter).map(h => h.trim().replace(/^"|"$/g, ''));
+        data = lines.slice(1).map(line => {
+          // Handle quoted values that might contain the delimiter
+          const values: string[] = [];
+          let currentValue = '';
+          let inQuotes = false;
+          
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === delimiter && !inQuotes) {
+              values.push(currentValue.trim().replace(/^"|"$/g, ''));
+              currentValue = '';
+            } else {
+              currentValue += char;
+            }
+          }
+          values.push(currentValue.trim().replace(/^"|"$/g, '')); // Last value
+          
+          const row: any = {};
+          headers.forEach((header, idx) => {
+            row[header] = values[idx] || '';
+          });
+          return row;
+        }).filter(row => Object.keys(row).length > 0 && Object.values(row).some(v => String(v).trim())); // Filter empty rows
+      }
+    } else {
+      // Handle Excel files with XLSX
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      data = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+    }
+
+    // Transform to PricelistRow format with proper column mapping for this CSV format
     const rows: PricelistRow[] = data.map((row: any, index) => {
-      // Flexible column mapping - adjust based on actual file format
+      // Map columns based on actual CSV headers:
+      // Supplier Name;Supplier Code;Produt Category;BRAND;Brand Sub Tag;SKU / MODEL;PRODUCT DESCRIPTION;SUPPLIER SOH;COST  EX VAT;QTY ON ORDER;NEXT SHIPMENT;Tags;Links
+      
+      // Flexible column name matching (case-insensitive, handle spaces/variations)
+      const getColumn = (possibleNames: string[]): string | undefined => {
+        const rowKeys = Object.keys(row);
+        for (const name of possibleNames) {
+          // Exact match
+          if (row[name] !== undefined) return row[name];
+          // Case-insensitive match
+          const found = rowKeys.find(key => key.toLowerCase() === name.toLowerCase());
+          if (found) return row[found];
+        }
+        return undefined;
+      };
+
+      const supplierSku = getColumn([
+        'SKU / MODEL',
+        'SKU/MODEL',
+        'SKU',
+        'MODEL',
+        'Code',
+        'Item Code',
+        'Product Code'
+      ]) || '';
+
+      const productName = getColumn([
+        'PRODUCT DESCRIPTION',
+        'Product Description',
+        'Description',
+        'Name',
+        'Product Name',
+        'Item Name'
+      ]) || '';
+
+      const brand = getColumn([
+        'BRAND',
+        'Brand',
+        'Manufacturer',
+        'Make'
+      ]);
+
+      const category = getColumn([
+        'Produt Category',
+        'Product Category',
+        'Category',
+        'Type',
+        'Group',
+        'Class'
+      ]);
+
+      const priceValue = getColumn([
+        'COST  EX VAT',
+        'COST EX VAT',
+        'Cost Ex VAT',
+        'Cost',
+        'Price',
+        'Unit Price',
+        'Unit Cost',
+        'COST',
+        'PRICE'
+      ]);
+
+      const stockQty = getColumn([
+        'SUPPLIER SOH',
+        'Supplier SOH',
+        'SOH',
+        'Stock',
+        'Quantity',
+        'Qty',
+        'Stock On Hand'
+      ]);
+
+      const uom = getColumn([
+        'UOM',
+        'Unit',
+        'Unit of Measure',
+        'Pack Size'
+      ]) || 'EA';
+
+      const packSize = getColumn([
+        'Pack Size',
+        'Package',
+        'Packing'
+      ]);
+
+      const barcode = getColumn([
+        'Barcode',
+        'EAN',
+        'UPC',
+        'GTIN'
+      ]);
+
+      // Store additional info in attrs_json
+      const attrs: any = {};
+      if (stockQty) attrs.stock_qty = parseInt(String(stockQty)) || 0;
+      if (getColumn(['QTY ON ORDER'])) attrs.qty_on_order = parseInt(String(getColumn(['QTY ON ORDER']))) || 0;
+      if (getColumn(['NEXT SHIPMENT'])) attrs.next_shipment = getColumn(['NEXT SHIPMENT']);
+      if (getColumn(['Tags'])) attrs.tags = getColumn(['Tags']);
+      if (getColumn(['Links'])) attrs.links = getColumn(['Links']);
+      if (getColumn(['Brand Sub Tag'])) attrs.brand_sub_tag = getColumn(['Brand Sub Tag']);
+
       return {
         upload_id: upload.upload_id,
         row_num: index + 1,
-        supplier_sku: row['SKU'] || row['Code'] || row['Item Code'] || '',
-        name: row['Name'] || row['Description'] || row['Product Name'] || '',
-        brand: row['Brand'] || row['Manufacturer'] || undefined,
-        uom: row['UOM'] || row['Unit'] || 'EA',
-        pack_size: row['Pack Size'] || row['Package'] || undefined,
-        price: parseFloat(row['Price'] || row['Unit Price'] || row['Cost'] || 0),
-        currency: row['Currency'] || currency,
-        category_raw: row['Category'] || undefined,
-        vat_code: row['VAT'] || row['Tax Code'] || undefined,
-        barcode: row['Barcode'] || row['EAN'] || undefined,
-        attrs_json: {}
+        supplier_sku: supplierSku,
+        name: productName,
+        brand: brand || undefined,
+        uom: uom || 'EA',
+        pack_size: packSize || undefined,
+        price: parsePrice(priceValue),
+        currency: currency || 'ZAR', // Default to ZAR for South African Rand
+        category_raw: category || undefined,
+        vat_code: undefined, // Not in this CSV
+        barcode: barcode || undefined,
+        attrs_json: attrs
       };
     });
 
@@ -109,11 +280,17 @@ export async function POST(request: NextRequest) {
       validation: validationResult
     });
   } catch (error) {
-    console.error('Pricelist upload error:', error);
+    console.error('❌ [POST /api/spp/upload] Pricelist upload error:', error);
+    console.error('❌ [POST /api/spp/upload] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : typeof error
+    });
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Upload failed'
+        error: error instanceof Error ? error.message : 'Upload failed',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : String(error)) : undefined
       },
       { status: 500 }
     );

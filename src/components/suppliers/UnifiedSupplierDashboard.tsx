@@ -50,6 +50,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useSuppliers } from "@/hooks/useSuppliers"
+import { useSupplierMutations } from "@/hooks/useRealTimeDataFixed"
 import { cn, formatCurrency, formatDate, formatPercentage } from "@/lib/utils"
 import { getDisplayUrl } from "@/lib/utils/url-validation"
 import { SafeLink } from "@/components/ui/SafeLink"
@@ -89,6 +90,7 @@ import {
   Award,
   Zap,
   X,
+  Trash2,
   SlidersHorizontal,
   ArrowUpDown,
   ChevronLeft,
@@ -469,6 +471,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
 }) => {
   const router = useRouter()
   const { suppliers: apiSuppliers, loading: suppliersLoading, error: suppliersError, fetchSuppliers, refresh } = useSuppliers()
+  const { deleteSupplier } = useSupplierMutations()
   
   // Refetch suppliers when component mounts or when refresh param is present
   useEffect(() => {
@@ -664,6 +667,23 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
 
   const navigateToEditSupplier = (supplierId: string) => {
     router.push(`/suppliers/${supplierId}/edit`)
+  }
+
+  const handleDeleteSupplier = async (supplierId: string, supplierName: string) => {
+    if (!confirm(`Are you sure you want to delete "${supplierName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      await deleteSupplier.mutateAsync(supplierId)
+      // Refresh the suppliers list after deletion
+      await fetchSuppliers()
+      // Also trigger a router refresh to ensure UI updates
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to delete supplier:', error)
+      alert(error instanceof Error ? error.message : 'Failed to delete supplier')
+    }
   }
 
   // Utility functions
@@ -1242,6 +1262,14 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                               <DropdownMenuItem>
                                 <BarChart3 className="h-4 w-4 mr-2" />
                                 Performance Report
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteSupplier(supplier.id, supplier.name)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Supplier
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
