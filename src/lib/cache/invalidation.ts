@@ -47,12 +47,12 @@ export class CacheInvalidator {
   static invalidateProduct(productId: string, supplierId?: string) {
     // Invalidate specific product pages
     revalidatePath(`/api/products/${productId}`)
-    revalidatePath(`/api/inventory/products/${productId}`)
+    revalidatePath(`/api/inventory/${productId}`) // Use /api/inventory/[id] instead of deprecated /api/inventory/products/[id]
     revalidatePath(`/products/${productId}`)
 
     // Invalidate list pages
     revalidatePath('/api/products')
-    revalidatePath('/api/inventory/products')
+    revalidatePath('/api/inventory') // Use /api/inventory instead of deprecated /api/inventory/products
     revalidatePath('/api/products/catalog')
     revalidatePath('/products')
 

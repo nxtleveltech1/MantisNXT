@@ -43,7 +43,7 @@ export class PricelistService {
         supplier_id, filename, currency, valid_from, valid_to, status
       )
       VALUES ($1, $2, $3, $4, $5, 'received')
-      RETURNING *
+      RETURNING upload_id, supplier_id, received_at, filename, currency, valid_from, valid_to, row_count, status, errors_json, processed_by, processed_at, created_at, updated_at
     `;
 
     const values = [
@@ -55,7 +55,38 @@ export class PricelistService {
     ];
 
     const result = await neonDb.query<PricelistUpload>(query, values);
-    return result.rows[0];
+    
+    if (!result || !result.rows || result.rows.length === 0) {
+      console.error('❌ [PricelistService.createUpload] No rows returned from INSERT:', {
+        query,
+        values,
+        result
+      });
+      throw new Error('Failed to create upload record - no rows returned');
+    }
+    
+    const upload = result.rows[0];
+    
+    // Debug: log the actual structure returned
+    if (!upload || !upload.upload_id) {
+      console.error('❌ [PricelistService.createUpload] Upload record structure:', {
+        upload,
+        hasUploadId: !!upload?.upload_id,
+        keys: upload ? Object.keys(upload) : [],
+        fullResult: result
+      });
+      
+      // Try to find upload_id with different casing
+      const uploadId = (upload as any)?.upload_id || (upload as any)?.uploadId || (upload as any)?.['upload_id'];
+      if (uploadId) {
+        console.warn('⚠️ Found upload_id with different casing, mapping...');
+        return { ...upload, upload_id: uploadId } as PricelistUpload;
+      }
+      
+      throw new Error('Upload record created but missing upload_id field');
+    }
+    
+    return upload;
   }
 
   /**

@@ -46,6 +46,15 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Validate upload was created successfully
+    if (!upload || !upload.upload_id) {
+      console.error('Failed to create upload record:', upload);
+      return NextResponse.json(
+        { success: false, error: 'Failed to create upload record' },
+        { status: 500 }
+      );
+    }
+
     // Parse file and extract rows
     const buffer = Buffer.from(await file.arrayBuffer());
     const workbook = XLSX.read(buffer, { type: 'buffer' });

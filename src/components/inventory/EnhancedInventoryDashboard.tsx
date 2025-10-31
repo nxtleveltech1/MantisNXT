@@ -226,7 +226,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
         fetch('/api/inventory/analytics'),
         fetch(`/api/inventory?${qs.toString()}`),
         fetch('/api/inventory/alerts'),
-        fetch('/api/inventory/trends'),
+        fetch('/api/inventory/analytics'), // Use analytics endpoint for trends data
         fetch('/api/stock-movements?limit=20')
       ])
 
@@ -323,7 +323,15 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
         setAlerts(alertsData.data.alerts || [])
       }
 
-      if (analyticsData?.success) setChartData(Array.isArray(analyticsData.data?.series) ? analyticsData.data.series : [])
+      // Use analytics data for chart, handling both series and direct data formats
+      if (analyticsData?.success) {
+        const chartSeries = Array.isArray(analyticsData.data?.series) 
+          ? analyticsData.data.series 
+          : Array.isArray(analyticsData.data)
+          ? analyticsData.data
+          : []
+        setChartData(chartSeries)
+      }
 
       const mvData = await movementsResponse.json()
       const movementList = Array.isArray(mvData?.data) ? mvData.data : []
@@ -356,12 +364,24 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch('/api/suppliers?status=active&limit=5000')
+        // Use v3 API with correct parameter format: status as array, limit max 1000
+        const res = await fetch('/api/suppliers?status=active&limit=1000')
+        if (!res.ok) {
+          console.warn('Failed to fetch suppliers:', res.status)
+          return
+        }
         const data = await res.json()
-        const list = Array.isArray(data) ? data : (data?.data || [])
+        // Handle v3 API response format with pagination
+        const list = Array.isArray(data?.data) 
+          ? data.data 
+          : Array.isArray(data) 
+          ? data 
+          : (data?.data || [])
         const options = list.map((s: any) => ({ id: s.id, name: s.name || s.supplier_name || 'Unnamed Supplier' }))
         if (!cancelled) setSupplierOptions(options)
-      } catch {}
+      } catch (err) {
+        console.error('Error fetching suppliers:', err)
+      }
     })()
     return () => { cancelled = true }
   }, [])

@@ -468,7 +468,19 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   initialTab = "overview"
 }) => {
   const router = useRouter()
-  const { suppliers: apiSuppliers, loading: suppliersLoading, error: suppliersError } = useSuppliers()
+  const { suppliers: apiSuppliers, loading: suppliersLoading, error: suppliersError, fetchSuppliers, refresh } = useSuppliers()
+  
+  // Refetch suppliers when component mounts or when refresh param is present
+  useEffect(() => {
+    // Check if there's a refresh param in the URL
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.has('refresh')) {
+      // Remove the refresh param and refetch
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+      refresh()
+    }
+  }, [refresh])
 
   // Convert API suppliers to component format
   const suppliers = useMemo(() => {

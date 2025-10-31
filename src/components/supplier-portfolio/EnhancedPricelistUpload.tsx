@@ -94,10 +94,29 @@ export function EnhancedPricelistUpload({
   const { data: suppliersData } = useQuery({
     queryKey: ['suppliers', 'active'],
     queryFn: async () => {
-      const response = await fetch('/api/core/suppliers?active=true')
-      if (!response.ok) throw new Error('Failed to fetch suppliers')
+      // Use /api/suppliers with status=active filter (v3 API)
+      const response = await fetch('/api/suppliers?status=active&limit=1000')
+      if (!response.ok) {
+        console.error('Failed to fetch suppliers:', response.status)
+        throw new Error('Failed to fetch suppliers')
+      }
       const data = await response.json()
-      return (data.data || []) as Supplier[]
+      // Handle v3 API response format with pagination: {success, data, pagination}
+      const supplierList = data.success && data.data 
+        ? data.data 
+        : Array.isArray(data?.data) 
+        ? data.data 
+        : Array.isArray(data) 
+        ? data 
+        : []
+      // Map supplier data to match expected format (id instead of supplier_id)
+      return supplierList.map((s: any) => ({
+        ...s,
+        id: s.id || s.supplier_id, // Ensure id field exists
+        supplier_id: s.supplier_id || s.id, // Keep supplier_id for compatibility
+        code: s.code || s.supplier_code,
+        active: s.active ?? s.status === 'active',
+      })) as Supplier[]
     },
     enabled: open,
     staleTime: 5 * 60 * 1000,
@@ -160,11 +179,17 @@ export function EnhancedPricelistUpload({
     setError(null)
 
     try {
+      // Get supplier's default currency or fall back to ZAR
+      const selectedSupplier = suppliers.find(s => s.id === supplierId)
+      const currency = selectedSupplier?.default_currency || 
+                       (selectedSupplier as any)?.currency || 
+                       'ZAR'
+      
       const newUploadId = await uploadMutation.mutateAsync({
         file,
         supplier_id: supplierId,
         filename: file.name,
-        currency: 'GBP',
+        currency: currency,
       })
 
       setUploadId(newUploadId)
@@ -365,7 +390,17 @@ export function EnhancedPricelistUpload({
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Prices will be imported in GBP. The system will automatically map columns and validate data.
+                {supplierId ? (
+                  (() => {
+                    const selectedSupplier = suppliers.find(s => s.id === supplierId)
+                    const currency = selectedSupplier?.default_currency || 
+                                     (selectedSupplier as any)?.currency || 
+                                     'ZAR'
+                    return `Prices will be imported in ${currency}. The system will automatically map columns and validate data.`
+                  })()
+                ) : (
+                  'Prices will be imported in ZAR (South African Rand). The system will automatically map columns and validate data.'
+                )}
               </AlertDescription>
             </Alert>
           </div>

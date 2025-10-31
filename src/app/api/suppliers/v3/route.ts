@@ -10,6 +10,7 @@ import type {
   PaginatedAPIResponse
 } from '@/lib/suppliers/types/SupplierDomain'
 import { listSuppliers, upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService'
+import { CacheInvalidator } from '@/lib/cache/invalidation'
 
 // SSOT services used directly
 
@@ -226,6 +227,9 @@ export async function POST(request: NextRequest) {
           }
         : undefined,
     })
+
+    // Invalidate cache after creating supplier
+    CacheInvalidator.invalidateSupplier(created.id, created.name)
 
     return createSuccessResponse(created, 'Supplier created in canonical layer')
   } catch (error) {

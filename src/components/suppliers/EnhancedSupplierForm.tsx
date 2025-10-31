@@ -453,15 +453,35 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
       if (onSubmit) {
         await onSubmit(data)
       } else {
-        // Default submission logic
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Default submission logic - actually call the API
+        const response = await fetch('/api/suppliers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+        }
+
+        const result = await response.json()
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create supplier')
+        }
 
         setSubmitSuccess(true)
 
-        // Navigate back after success
+        // Invalidate cache and refresh supplier lists
+        // Trigger a refresh by reloading the page or using router refresh
+        // Navigate back after success with cache invalidation
         setTimeout(() => {
-          router.push('/suppliers')
+          // Add timestamp to force cache invalidation
+          router.push(`/suppliers?refresh=${Date.now()}`)
+          router.refresh() // Force refresh of server components
         }, 1500)
       }
     } catch (error) {

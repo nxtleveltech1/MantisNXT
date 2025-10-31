@@ -214,7 +214,8 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   fetchProducts: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/inventory/products');
+      // Use /api/inventory instead of deprecated /api/inventory/products
+      const res = await fetch('/api/inventory');
       if (!res.ok) throw new Error(`PRODUCTS_FETCH_FAILED: ${res.status}`);
       const payload = await res.json();
       const productRows = Array.isArray(payload)
@@ -254,10 +255,16 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   fetchSuppliers: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/suppliers?limit=5000');
+      // Use v3 API with correct limit (max 1000) and handle pagination if needed
+      const res = await fetch('/api/suppliers?limit=1000');
       if (!res.ok) throw new Error(`SUPPLIERS_FETCH_FAILED: ${res.status}`);
       const data = await res.json();
-      const supplierRows = Array.isArray(data) ? data : (data?.data || data?.items || []);
+      // Handle v3 API response format with pagination
+      const supplierRows = Array.isArray(data?.data) 
+        ? data.data 
+        : Array.isArray(data) 
+        ? data 
+        : (data?.data || data?.items || []);
 
       // Map to consistent format
       const suppliers = supplierRows.map((s: any) => ({
@@ -288,7 +295,8 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   addProduct: async (p: any) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/inventory/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+      // Use /api/inventory instead of deprecated /api/inventory/products
+      const res = await fetch('/api/inventory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
       if (!res.ok) throw new Error(`ADD_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });
@@ -300,7 +308,8 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   updateProduct: async (id: string, p: any) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/inventory/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+      // Use /api/inventory/[id] instead of deprecated /api/inventory/products/[id]
+      const res = await fetch(`/api/inventory/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
       if (!res.ok) throw new Error(`UPDATE_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });
@@ -312,7 +321,8 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   deleteProduct: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/inventory/products/${id}`, { method: 'DELETE' });
+      // Use /api/inventory/[id] instead of deprecated /api/inventory/products/[id]
+      const res = await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`DELETE_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });

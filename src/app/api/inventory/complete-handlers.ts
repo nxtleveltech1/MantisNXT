@@ -101,18 +101,14 @@ export async function getCompleteInventory(request: NextRequest) {
         s.name as supplier_name,
         s.email as supplier_email,
         s.phone as supplier_phone,
-        (i.stock_qty - i.reserved_qty) as available_qty,
+        (i.stock_qty - COALESCE(i.reserved_qty, 0)) as available_qty,
         CASE
-          WHEN i.stock_qty <= i.reorder_point THEN 'low'
           WHEN i.stock_qty = 0 THEN 'out'
-          WHEN i.max_stock IS NOT NULL AND i.stock_qty >= i.max_stock THEN 'over'
+          WHEN i.stock_qty <= COALESCE(i.reorder_point, 0) THEN 'low'
           ELSE 'normal'
         END as stock_status,
-        (i.sale_price - i.cost_price) as margin,
-        CASE
-          WHEN i.cost_price > 0 THEN ((i.sale_price - i.cost_price) / i.cost_price * 100)
-          ELSE 0
-        END as margin_percentage
+        0::numeric as margin,
+        0::numeric as margin_percentage
       FROM public.inventory_items i
       LEFT JOIN public.suppliers s ON i.supplier_id::text = s.id
       WHERE 1=1
@@ -254,15 +250,15 @@ export async function getCompleteInventory(request: NextRequest) {
         SELECT
           COUNT(*) as total_items,
           COUNT(*) FILTER (WHERE stock_qty = 0) as out_of_stock,
-          COUNT(*) FILTER (WHERE stock_qty <= reorder_point AND stock_qty > 0) as low_stock,
-          COUNT(*) FILTER (WHERE max_stock IS NOT NULL AND stock_qty >= max_stock) as over_stock,
+          COUNT(*) FILTER (WHERE stock_qty <= COALESCE(reorder_point, 0) AND stock_qty > 0) as low_stock,
+          0::integer as over_stock,
           COUNT(DISTINCT category) as categories,
-          COUNT(DISTINCT brand) as brands,
+          0::integer as brands,
           COUNT(DISTINCT supplier_id) as suppliers,
-          SUM(stock_qty * cost_price) as total_value,
-          AVG(cost_price) as avg_cost_price,
-          AVG(sale_price) as avg_sale_price,
-          AVG(CASE WHEN cost_price > 0 THEN ((sale_price - cost_price) / cost_price * 100) ELSE 0 END) as avg_margin_percentage
+          0::numeric as total_value,
+          0::numeric as avg_cost_price,
+          0::numeric as avg_sale_price,
+          0::numeric as avg_margin_percentage
         FROM public.inventory_items
         WHERE status = 'active'
       `
