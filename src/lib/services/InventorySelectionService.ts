@@ -11,7 +11,7 @@
  * This is enforced in the activateSelection() method and executeWorkflow(action='approve').
  */
 
-import { neonDb } from '../../../lib/database/neon-connection';
+import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
 import { isFeatureEnabled, FeatureFlag } from '@/lib/feature-flags';
 import {
   InventorySelection,
@@ -52,7 +52,7 @@ export class InventorySelectionService {
       validated.valid_to || null
     ];
 
-    const result = await neonDb.query<InventorySelection>(query, values);
+    const result = await dbQuery<InventorySelection>(query, values);
     return result.rows[0];
   }
 
@@ -61,7 +61,7 @@ export class InventorySelectionService {
    */
   async getById(selectionId: string): Promise<InventorySelection | null> {
     const query = 'SELECT * FROM core.inventory_selection WHERE selection_id = $1';
-    const result = await neonDb.query<InventorySelection>(query, [selectionId]);
+    const result = await dbQuery<InventorySelection>(query, [selectionId]);
     return result.rows[0] || null;
   }
 
@@ -69,7 +69,7 @@ export class InventorySelectionService {
    * List selections
    */
   async listSelections(filters?: {
-    status?: InventorySelection['status'];
+    status?: InventorySelection['status'][];
     created_by?: string;
     limit?: number;
     offset?: number;
@@ -78,8 +78,8 @@ export class InventorySelectionService {
     const params: any[] = [];
     let paramIndex = 1;
 
-    if (filters?.status) {
-      conditions.push(`status = $${paramIndex++}`);
+    if (filters?.status && Array.isArray(filters.status) && filters.status.length > 0) {
+      conditions.push(`status = ANY($${paramIndex++}::text[])`);
       params.push(filters.status);
     }
 
@@ -94,7 +94,7 @@ export class InventorySelectionService {
 
     // Get total count
     const countQuery = `SELECT COUNT(*) as total FROM core.inventory_selection WHERE ${whereClause}`;
-    const countResult = await neonDb.query<{ total: string }>(countQuery, params);
+    const countResult = await dbQuery<{ total: string }>(countQuery, params);
     const total = parseInt(countResult.rows[0].total);
 
     // Get paginated results
@@ -106,7 +106,7 @@ export class InventorySelectionService {
     `;
     params.push(limit, offset);
 
-    const result = await neonDb.query<InventorySelection>(query, params);
+    const result = await dbQuery<InventorySelection>(query, params);
 
     return {
       selections: result.rows,
@@ -128,7 +128,7 @@ export class InventorySelectionService {
     let itemsAffected = 0;
 
     try {
-      await neonDb.withTransaction(async (client) => {
+      await withTransaction(async (client) => {
         let selectionId = validated.selection_id;
 
         // Create new selection if not provided
@@ -259,7 +259,7 @@ export class InventorySelectionService {
     const errors: string[] = [];
     let added = 0;
 
-    await neonDb.withTransaction(async (client) => {
+    await withTransaction(async (client) => {
       for (const productId of supplierProductIds) {
         try {
           const query = `
@@ -297,7 +297,7 @@ export class InventorySelectionService {
     const errors: string[] = [];
     let removed = 0;
 
-    await neonDb.withTransaction(async (client) => {
+    await withTransaction(async (client) => {
       try {
         const query = `
           DELETE FROM core.inventory_selected_item
@@ -357,7 +357,7 @@ export class InventorySelectionService {
       ORDER BY isi.selected_at DESC
     `;
 
-    const result = await neonDb.query<InventorySelectedItem>(query, params);
+    const result = await dbQuery<InventorySelectedItem>(query, params);
     return result.rows;
   }
 
@@ -442,7 +442,7 @@ export class InventorySelectionService {
       ORDER BY s.name, sp.name_from_supplier
     `;
 
-    const result = await neonDb.query<SelectedCatalog>(query, params);
+    const result = await dbQuery<SelectedCatalog>(query, params);
     return result.rows;
   }
 
@@ -460,7 +460,7 @@ export class InventorySelectionService {
       RETURNING *
     `;
 
-    const result = await neonDb.query<InventorySelection>(query, [status, selectionId]);
+    const result = await dbQuery<InventorySelection>(query, [status, selectionId]);
 
     if (result.rowCount === 0) {
       throw new Error(`Selection ${selectionId} not found`);
@@ -481,7 +481,7 @@ export class InventorySelectionService {
       RETURNING selection_id
     `;
 
-    const result = await neonDb.query(query);
+    const result = await dbQuery(query);
     return result.rowCount || 0;
   }
 
@@ -497,7 +497,7 @@ export class InventorySelectionService {
     selectionId: string,
     deactivateOthers: boolean = false
   ): Promise<InventorySelection> {
-    return await neonDb.withTransaction(async (client) => {
+    return await withTransaction(async (client) => {
       // Check if selection exists and is in valid state for activation
       const selectionQuery = 'SELECT * FROM core.inventory_selection WHERE selection_id = $1';
       const selectionResult = await client.query<InventorySelection>(selectionQuery, [selectionId]);
@@ -572,7 +572,7 @@ export class InventorySelectionService {
    */
   async getActiveSelection(): Promise<InventorySelection | null> {
     const query = 'SELECT * FROM core.inventory_selection WHERE status = $1 LIMIT 1';
-    const result = await neonDb.query<InventorySelection>(query, ['active']);
+    const result = await dbQuery<InventorySelection>(query, ['active']);
     return result.rows[0] || null;
   }
 
@@ -602,7 +602,7 @@ export class InventorySelectionService {
       FROM core.inventory_selected_item
       WHERE selection_id = $1 AND status = 'selected'
     `;
-    const itemCountResult = await neonDb.query<{ count: string }>(itemCountQuery, [selection.selection_id]);
+    const itemCountResult = await dbQuery<{ count: string }>(itemCountQuery, [selection.selection_id]);
     const itemCount = parseInt(itemCountResult.rows[0].count);
 
     // Get inventory value (calculate from price history and stock on hand)
@@ -615,7 +615,7 @@ export class InventorySelectionService {
         JOIN core.stock_on_hand soh ON soh.supplier_product_id = isi.supplier_product_id
         WHERE isi.selection_id = $1 AND isi.status = 'selected'
       `;
-      const valueResult = await neonDb.query<{ total: string }>(valueQuery, [selection.selection_id]);
+      const valueResult = await dbQuery<{ total: string }>(valueQuery, [selection.selection_id]);
       inventoryValue = parseFloat(valueResult.rows[0]?.total || '0');
     } catch (error) {
       // If stock_on_hand table doesn't exist or query fails, return 0

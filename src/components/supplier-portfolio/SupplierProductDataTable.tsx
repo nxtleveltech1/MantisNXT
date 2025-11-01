@@ -68,7 +68,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from 'lucide-react'
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { cn, formatDate, formatCostAmount } from '@/lib/utils'
 
 const ALL_SUPPLIERS_VALUE = '__all-suppliers__'
 const ALL_CATEGORIES_VALUE = '__all-categories__'
@@ -139,7 +139,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'supplier', label: 'Supplier', visible: true, sortable: true, width: 'w-40' },
   { id: 'brand', label: 'Brand', visible: true, sortable: true, width: 'w-32' },
   { id: 'category', label: 'Category', visible: true, sortable: true, width: 'w-32' },
-  { id: 'price', label: 'Current Price', visible: true, sortable: true, width: 'w-32' },
+  { id: 'price', label: 'Cost Price', visible: true, sortable: true, width: 'w-32' },
   { id: 'price_change', label: 'Price Change', visible: false, sortable: true, width: 'w-32' },
   { id: 'status', label: 'Status', visible: true, sortable: false, width: 'w-40' },
   { id: 'stock', label: 'Stock', visible: false, sortable: true, width: 'w-24' },
@@ -183,84 +183,44 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
     setError(null)
 
     try {
-      // Fetch products IN the selection (already selected items)
-      const itemsResponse = await fetch(`/api/core/selections/${selection_id}/items`)
+      // Direct enriched endpoint for the specific selection
+      const response = await fetch(`/api/core/selections/${selection_id}/products`)
 
-      if (!itemsResponse.ok) {
-        if (itemsResponse.status === 401) {
+      if (!response.ok) {
+        if (response.status === 401) {
           throw new Error('Authentication required. Please log in.')
         }
-        throw new Error(`Failed to fetch selection items: ${itemsResponse.statusText}`)
+        throw new Error(`Failed to fetch selection products: ${response.statusText}`)
       }
 
-      const itemsData = await itemsResponse.json()
-
-      if (!itemsData.success) {
-        throw new Error(itemsData.error || 'Failed to load selection items')
+      const data = await response.json()
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load selection products')
       }
 
-      const items = itemsData.data || []
+      const rows = data.data || []
+      const mapped = rows.map((p: any) => ({
+        supplier_product_id: p.supplier_product_id,
+        supplier_id: p.supplier_id,
+        supplier_name: p.supplier_name || 'Unknown Supplier',
+        supplier_code: p.supplier_code,
+        supplier_sku: p.supplier_sku,
+        name_from_supplier: p.product_name || 'Product Details Unavailable',
+        brand: p.brand,
+        category_id: p.category_id,
+        category_name: p.category_name,
+        current_price: p.current_price || 0,
+        currency: p.currency || 'ZAR',
+        barcode: p.barcode,
+        uom: p.uom,
+        pack_size: p.pack_size,
+        qty_on_hand: p.qty_on_hand,
+        is_in_stock: !!p.is_in_stock,
+        selected_at: p.selected_at,
+        is_selected: true,
+      }))
 
-      // Fetch full product details from catalog
-      const catalogResponse = await fetch('/api/core/selections/catalog')
-
-      if (!catalogResponse.ok) {
-        if (catalogResponse.status === 401) {
-          // Fallback: use basic items data if catalog fails due to auth
-          console.warn('Catalog API unauthorized, using basic selection items')
-          setProducts(items.map((item: any) => ({
-            supplier_product_id: item.supplier_product_id,
-            supplier_id: item.supplier_id || '',
-            supplier_name: 'Unknown Supplier',
-            supplier_sku: item.supplier_product_id,
-            name_from_supplier: 'Product Details Unavailable',
-            current_price: 0,
-            currency: 'ZAR',
-            is_in_stock: false,
-            selected_at: item.selected_at,
-            is_selected: true,
-          })))
-          setLoading(false)
-          return
-        }
-        throw new Error(`Failed to fetch catalog: ${catalogResponse.statusText}`)
-      }
-
-      const catalogData = await catalogResponse.json()
-
-      if (!catalogData.success) {
-        throw new Error(catalogData.error || 'Failed to load catalog')
-      }
-
-      const catalog = catalogData.catalog || []
-
-      // Match selection items with catalog data
-      const enrichedProducts = items.map((item: any) => {
-        const catalogProduct = catalog.find((p: any) => p.supplier_product_id === item.supplier_product_id)
-
-        return {
-          supplier_product_id: item.supplier_product_id,
-          supplier_id: catalogProduct?.supplier_id || item.supplier_id || '',
-          supplier_name: catalogProduct?.supplier_name || 'Unknown Supplier',
-          supplier_code: catalogProduct?.supplier_code,
-          supplier_sku: catalogProduct?.supplier_sku || item.supplier_product_id,
-          name_from_supplier: catalogProduct?.product_name || 'Product Details Unavailable',
-          brand: catalogProduct?.brand,
-          category_id: catalogProduct?.category_id,
-          category_name: catalogProduct?.category_name,
-          current_price: catalogProduct?.current_price || 0,
-          currency: catalogProduct?.currency || 'ZAR',
-          barcode: catalogProduct?.barcode,
-          uom: catalogProduct?.uom,
-          pack_size: catalogProduct?.pack_size,
-          qty_on_hand: catalogProduct?.qty_on_hand,
-          is_in_stock: catalogProduct?.is_in_stock || false,
-          selected_at: item.selected_at || catalogProduct?.selected_at,
-          is_selected: true,
-        }
-      })
-
-      setProducts(enrichedProducts)
+      setProducts(mapped)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load products'
       console.error('Error fetching selection products:', err)
@@ -665,7 +625,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                         return (
                           <TableCell key={col.id}>
                             <div className="font-medium">
-                              {formatCurrency(product.current_price || 0, product.currency)}
+                              {formatCostAmount(product.current_price || 0)}
                             </div>
                           </TableCell>
                         )
@@ -842,10 +802,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                   <div className="mt-1">{detailsProduct.category_name || '-'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Current Price</label>
-                  <div className="mt-1 font-medium">
-                    {formatCurrency(detailsProduct.current_price || 0, detailsProduct.currency)}
-                  </div>
+                  <label className="text-sm font-medium text-muted-foreground">Cost Price</label>
+                  <div className="mt-1 font-medium">{formatCostAmount(detailsProduct.current_price || 0)}</div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Stock Quantity</label>

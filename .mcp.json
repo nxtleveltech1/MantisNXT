@@ -8,17 +8,13 @@
         "ctx7sk-63485f97-a194-4380-a721-55b3c5afee7b"
       ]
     },
-    "magic": {
-      "command": "npx",
-      "args": [
-        "@21st-dev/magic"
-      ]
-    },
     "playwright": {
       "command": "npx",
       "args": [
         "@playwright/mcp"
-      ]
+      ],
+      "disabled": true,
+      "alwaysAllow": []
     },
     "shadcn": {
       "command": "npx",
@@ -33,7 +29,9 @@
         "-y",
         "@modelcontextprotocol/server-fetch"
       ],
-      "env": {}
+      "env": {},
+      "disabled": true,
+      "alwaysAllow": []
     },
     "neon": {
       "command": "npx",
@@ -44,7 +42,9 @@
       ],
       "env": {
         "NEON_API_KEY": "napi_78ar5t6y154b1wq4b572mwxkutziy5g9fb3hxuqcjztuiv4dqn6aztx51i1ysshp"
-      }
+      },
+      "disabled": false,
+      "alwaysAllow": []
     },
     "postgres": {
       "type": "stdio",
@@ -70,7 +70,9 @@
         "-y",
         "@modelcontextprotocol/server-git"
       ],
-      "env": {}
+      "env": {},
+      "disabled": true,
+      "alwaysAllow": []
     },
     "chrome-devtools": {
       "type": "stdio",
@@ -82,7 +84,9 @@
     },
     "factory": {
       "type": "sse",
-      "url": "http://localhost:58952/sse"
+      "url": "http://localhost:58952/sse",
+      "disabled": true,
+      "alwaysAllow": []
     }
   }
 }

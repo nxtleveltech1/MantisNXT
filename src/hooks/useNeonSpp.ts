@@ -153,7 +153,12 @@ export function useUploadPricelist() {
       }
 
       const data = await response.json();
-      return data.data.upload_id;
+      // Support both { upload_id } and { data: { upload_id } } shapes
+      return (
+        data.upload_id ||
+        data?.data?.upload_id ||
+        data?.upload?.upload_id
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sppKeys.uploads() });
@@ -164,12 +169,17 @@ export function useUploadPricelist() {
 export function useMergeUpload() {
   const queryClient = useQueryClient();
 
+  type MergeParams = string | { uploadId: string; skipInvalidRows?: boolean };
+
   return useMutation({
-    mutationFn: async (uploadId: string): Promise<MergeResult> => {
+    mutationFn: async (params: MergeParams): Promise<MergeResult> => {
+      const uploadId = typeof params === 'string' ? params : params.uploadId;
+      const skipInvalid = typeof params === 'string' ? false : !!params.skipInvalidRows;
+
       const response = await fetch('/api/spp/merge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ upload_id: uploadId }),
+        body: JSON.stringify({ upload_id: uploadId, skip_invalid_rows: skipInvalid }),
       });
 
       if (!response.ok) {

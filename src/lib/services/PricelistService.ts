@@ -9,7 +9,7 @@
  */
 
 import { PoolClient } from 'pg';
-import { neonDb } from '../../../lib/database/neon-connection';
+import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
 import { isFeatureEnabled, FeatureFlag } from '@/lib/feature-flags';
 import {
   PricelistUpload,
@@ -54,8 +54,8 @@ export class PricelistService {
       validated.valid_to
     ];
 
-    const result = await neonDb.query<PricelistUpload>(query, values);
-    
+    const result = await dbQuery<PricelistUpload>(query, values);
+
     if (!result || !result.rows || result.rows.length === 0) {
       console.error('❌ [PricelistService.createUpload] No rows returned from INSERT:', {
         query,
@@ -64,28 +64,31 @@ export class PricelistService {
       });
       throw new Error('Failed to create upload record - no rows returned');
     }
-    
-    const upload = result.rows[0];
-    
-    // Debug: log the actual structure returned
-    if (!upload || !upload.upload_id) {
+
+    // Normalize the first returned row and ensure upload_id exists
+    const first = result.rows[0] as any;
+    let normalizedUploadId = first?.upload_id ?? first?.uploadId ?? first?.['upload_id'];
+
+    if (!normalizedUploadId) {
+      // Fallback: fetch upload_id explicitly
+      console.warn('⚠️ [PricelistService.createUpload] Missing upload_id in RETURNING; falling back to SELECT');
+      const fallback = await dbQuery<{ upload_id: string }>(
+        'SELECT upload_id FROM spp.pricelist_upload WHERE supplier_id = $1 AND filename = $2 ORDER BY received_at DESC LIMIT 1',
+        [validated.supplier_id, validated.filename]
+      );
+      normalizedUploadId = fallback.rows?.[0]?.upload_id;
+    }
+
+    if (!normalizedUploadId) {
       console.error('❌ [PricelistService.createUpload] Upload record structure:', {
-        upload,
-        hasUploadId: !!upload?.upload_id,
-        keys: upload ? Object.keys(upload) : [],
+        row0: first,
+        keys: first ? Object.keys(first) : [],
         fullResult: result
       });
-      
-      // Try to find upload_id with different casing
-      const uploadId = (upload as any)?.upload_id || (upload as any)?.uploadId || (upload as any)?.['upload_id'];
-      if (uploadId) {
-        console.warn('⚠️ Found upload_id with different casing, mapping...');
-        return { ...upload, upload_id: uploadId } as PricelistUpload;
-      }
-      
       throw new Error('Upload record created but missing upload_id field');
     }
-    
+
+    const upload = { ...first, upload_id: normalizedUploadId } as PricelistUpload;
     return upload;
   }
 
@@ -93,7 +96,7 @@ export class PricelistService {
    * Insert pricelist rows in batch
    */
   async insertRows(uploadId: string, rows: PricelistRow[]): Promise<number> {
-    return await neonDb.withTransaction(async (client) => {
+    return await withTransaction(async (client: any) => {
       let insertedCount = 0;
 
       // Batch insert for performance (100 rows at a time)
@@ -110,7 +113,7 @@ export class PricelistService {
           placeholders.push(
             `($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
             `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
-            `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`
+            `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`
           );
           values.push(
             uploadId,
@@ -124,14 +127,15 @@ export class PricelistService {
             row.currency,
             row.category_raw || null,
             row.vat_code || null,
-            row.barcode || null
+            row.barcode || null,
+            (row as any).attrs_json || null
           );
         });
 
         const query = `
           INSERT INTO spp.pricelist_row (
             upload_id, row_num, supplier_sku, name, brand, uom, pack_size,
-            price, currency, category_raw, vat_code, barcode
+            price, currency, category_raw, vat_code, barcode, attrs_json
           ) VALUES ${placeholders.join(', ')}
         `;
 
@@ -178,7 +182,7 @@ export class PricelistService {
           currency IS NULL OR currency = ''
         )
       `;
-      const missingFields = await neonDb.query(missingFieldsQuery, [uploadId]);
+      const missingFields = await dbQuery(missingFieldsQuery, [uploadId]);
 
       missingFields.rows.forEach(row => {
         if (!row.supplier_sku) {
@@ -218,7 +222,7 @@ export class PricelistService {
         GROUP BY supplier_sku
         HAVING COUNT(*) > 1
       `;
-      const duplicates = await neonDb.query(duplicatesQuery, [uploadId]);
+      const duplicates = await dbQuery(duplicatesQuery, [uploadId]);
 
       duplicates.rows.forEach(dup => {
         warnings.push({
@@ -237,7 +241,7 @@ export class PricelistService {
         FROM spp.pricelist_row
         WHERE upload_id = $1
       `;
-      const summary = await neonDb.query(summaryQuery, [uploadId]);
+      const summary = await dbQuery(summaryQuery, [uploadId]);
       const stats = summary.rows[0];
 
       // Check for new products vs updates
@@ -251,7 +255,7 @@ export class PricelistService {
           AND sp.supplier_sku = r.supplier_sku
         )
       `;
-      const newProducts = await neonDb.query(newProductsQuery, [uploadId, upload.supplier_id]);
+      const newProducts = await dbQuery(newProductsQuery, [uploadId, upload.supplier_id]);
 
       // Determine validation status
       const status = errors.length > 0 ? 'invalid' : warnings.length > 0 ? 'warning' : 'valid';
@@ -302,7 +306,7 @@ export class PricelistService {
    * @returns MergeResult with success status, metrics, and any errors
    * @throws Error if upload not found or not in validated status
    */
-  async mergePricelist(uploadId: string): Promise<MergeResult> {
+  async mergePricelist(uploadId: string, options?: { skipInvalidRows?: boolean }): Promise<MergeResult> {
     const startTime = Date.now();
 
     try {
@@ -312,15 +316,15 @@ export class PricelistService {
         throw new Error(`Upload ${uploadId} not found`);
       }
 
-      if (upload.status !== 'validated') {
+      if (upload.status !== 'validated' && !options?.skipInvalidRows) {
         throw new Error(`Upload must be validated before merging. Current status: ${upload.status}`);
       }
 
       // Check if stored procedure is available via feature flag
-      if (isFeatureEnabled(FeatureFlag.USE_MERGE_STORED_PROCEDURE)) {
+      if (isFeatureEnabled(FeatureFlag.USE_MERGE_STORED_PROCEDURE) && !options?.skipInvalidRows) {
         return await this.mergeWithStoredProcedure(uploadId, startTime);
       } else {
-        return await this.mergeWithInlineSQL(uploadId, upload, startTime);
+        return await this.mergeWithInlineSQL(uploadId, upload, startTime, options?.skipInvalidRows === true);
       }
     } catch (error) {
       await this.updateUploadStatus(uploadId, 'failed', {
@@ -353,7 +357,7 @@ export class PricelistService {
   ): Promise<MergeResult> {
     try {
       // Call stored procedure - it returns MergeProcedureResult
-      const result = await neonDb.query<MergeProcedureResult>(
+      const result = await dbQuery<MergeProcedureResult>(
         'SELECT * FROM spp.merge_pricelist($1)',
         [uploadId]
       );
@@ -391,21 +395,52 @@ export class PricelistService {
   private async mergeWithInlineSQL(
     uploadId: string,
     upload: PricelistUpload,
-    startTime: number
+    startTime: number,
+    filterValidOnly: boolean = false
   ): Promise<MergeResult> {
     let productsCreated = 0;
     let productsUpdated = 0;
     let pricesUpdated = 0;
     const errors: string[] = [];
 
-    await neonDb.withTransaction(async (client) => {
-      // Step 1: Upsert supplier products
-      const upsertQuery = `
-        INSERT INTO core.supplier_product (
-          supplier_id, supplier_sku, name_from_supplier, uom, pack_size,
-          barcode, is_new, is_active, first_seen_at, last_seen_at
+    await withTransaction(async (client) => {
+      // Detect optional brand_from_supplier column for compatibility
+      let hasBrandColumn = true
+      try {
+        const brandCheck = await client.query(
+          "SELECT 1 FROM information_schema.columns WHERE table_schema='core' AND table_name='supplier_product' AND column_name='brand_from_supplier' LIMIT 1"
         )
-        SELECT DISTINCT
+        hasBrandColumn = (brandCheck.rowCount || 0) > 0
+      } catch {
+        hasBrandColumn = false
+      }
+      const validRowCondition = `(
+        r.supplier_sku IS NOT NULL AND r.supplier_sku <> '' AND
+        r.name IS NOT NULL AND r.name <> '' AND
+        r.uom IS NOT NULL AND r.uom <> '' AND
+        r.price IS NOT NULL AND r.price > 0 AND
+        r.currency IS NOT NULL AND r.currency <> ''
+      )`;
+      // Step 1: Upsert supplier products
+      const upsertColumns = hasBrandColumn
+        ? `supplier_id, supplier_sku, name_from_supplier, brand_from_supplier, uom, pack_size, barcode, is_new, is_active, first_seen_at, last_seen_at`
+        : `supplier_id, supplier_sku, name_from_supplier, uom, pack_size, barcode, is_new, is_active, first_seen_at, last_seen_at`
+
+      const upsertSelect = hasBrandColumn
+        ? `
+          $1::uuid as supplier_id,
+          r.supplier_sku,
+          r.name,
+          r.brand,
+          r.uom,
+          r.pack_size,
+          r.barcode,
+          true as is_new,
+          true as is_active,
+          NOW() as first_seen_at,
+          NOW() as last_seen_at
+        `
+        : `
           $1::uuid as supplier_id,
           r.supplier_sku,
           r.name,
@@ -416,11 +451,25 @@ export class PricelistService {
           true as is_active,
           NOW() as first_seen_at,
           NOW() as last_seen_at
+        `
+
+      const upsertBrandUpdate = hasBrandColumn
+        ? `, brand_from_supplier = COALESCE(EXCLUDED.brand_from_supplier, core.supplier_product.brand_from_supplier)`
+        : ''
+
+      const upsertQuery = `
+        INSERT INTO core.supplier_product (
+          ${upsertColumns}
+        )
+        SELECT DISTINCT
+          ${upsertSelect}
         FROM spp.pricelist_row r
         WHERE r.upload_id = $2
+        ${filterValidOnly ? `AND ${validRowCondition}` : ''}
         ON CONFLICT (supplier_id, supplier_sku) DO UPDATE
         SET
-          name_from_supplier = EXCLUDED.name_from_supplier,
+          name_from_supplier = EXCLUDED.name_from_supplier
+          ${upsertBrandUpdate},
           uom = EXCLUDED.uom,
           pack_size = EXCLUDED.pack_size,
           barcode = EXCLUDED.barcode,
@@ -455,6 +504,7 @@ export class PricelistService {
           JOIN core.supplier_product sp
             ON sp.supplier_id = $1 AND sp.supplier_sku = r.supplier_sku
           WHERE r.upload_id = $2
+          ${filterValidOnly ? `AND ${validRowCondition}` : ''}
         ) new_prices
         WHERE ph.supplier_product_id = new_prices.supplier_product_id
           AND ph.is_current = true
@@ -482,6 +532,7 @@ export class PricelistService {
         JOIN core.supplier_product sp
           ON sp.supplier_id = $1 AND sp.supplier_sku = r.supplier_sku
         WHERE r.upload_id = $2
+        ${filterValidOnly ? `AND ${validRowCondition}` : ''}
         ON CONFLICT (supplier_product_id, valid_from) WHERE (is_current = true)
         DO UPDATE SET
           price = EXCLUDED.price,
@@ -520,7 +571,7 @@ export class PricelistService {
    */
   async getUploadById(uploadId: string): Promise<PricelistUpload | null> {
     const query = 'SELECT * FROM spp.pricelist_upload WHERE upload_id = $1';
-    const result = await neonDb.query<PricelistUpload>(query, [uploadId]);
+    const result = await dbQuery<PricelistUpload>(query, [uploadId]);
     return result.rows[0] || null;
   }
 
@@ -572,7 +623,7 @@ export class PricelistService {
 
     // Get total count
     const countQuery = `SELECT COUNT(*) as total FROM spp.pricelist_upload ${whereSql}`;
-    const countResult = await neonDb.query<{ total: string }>(countQuery, params);
+    const countResult = await dbQuery<{ total: string }>(countQuery, params);
     const total = parseInt(countResult.rows?.[0]?.total ?? '0');
 
     // Get paginated results
@@ -584,7 +635,7 @@ export class PricelistService {
     `;
     params.push(limit, offset);
 
-    const result = await neonDb.query<PricelistUpload>(query, params);
+    const result = await dbQuery<PricelistUpload>(query, params);
 
     return {
       uploads: result.rows,
@@ -610,7 +661,7 @@ export class PricelistService {
       WHERE upload_id = $1
       ORDER BY row_num
     `;
-    const rowsResult = await neonDb.query<PricelistRow>(rowsQuery, [uploadId]);
+    const rowsResult = await dbQuery<PricelistRow>(rowsQuery, [uploadId]);
 
     return {
       upload,
@@ -633,17 +684,17 @@ export class PricelistService {
     try {
       const metricsQueries = await Promise.all([
         // Total suppliers with uploads
-        neonDb.query<{ count: string }>(
+        dbQuery<{ count: string }>(
           'SELECT COUNT(DISTINCT supplier_id) as count FROM spp.pricelist_upload'
         ),
 
         // Total products in core catalog
-        neonDb.query<{ count: string }>(
+        dbQuery<{ count: string }>(
           'SELECT COUNT(*) as count FROM core.supplier_product WHERE is_active = true'
         ),
 
         // Selected products in active selection
-        neonDb.query<{ count: string }>(
+        dbQuery<{ count: string }>(
           `SELECT COUNT(DISTINCT isi.supplier_product_id) as count
            FROM core.inventory_selection s
            JOIN core.inventory_selected_item isi ON isi.selection_id = s.selection_id
@@ -651,7 +702,7 @@ export class PricelistService {
         ),
 
         // Selected inventory value - calculate from price history and stock on hand
-        neonDb.query<{ total: string }>(
+        dbQuery<{ total: string }>(
           `SELECT COALESCE(SUM(ph.price * soh.qty), 0) as total
            FROM core.inventory_selection s
            JOIN core.inventory_selected_item isi ON isi.selection_id = s.selection_id
@@ -661,14 +712,14 @@ export class PricelistService {
         ),
 
         // New products count (last 30 days)
-        neonDb.query<{ count: string }>(
+        dbQuery<{ count: string }>(
           `SELECT COUNT(*) as count
            FROM core.supplier_product
            WHERE created_at >= NOW() - INTERVAL '30 days' AND is_active = true`
         ),
 
         // Recent price changes (last 7 days)
-        neonDb.query<{ count: string }>(
+        dbQuery<{ count: string }>(
           `SELECT COUNT(*) as count
            FROM core.price_history
            WHERE created_at >= NOW() - INTERVAL '7 days'`
@@ -723,7 +774,7 @@ export class PricelistService {
       SET status = $1, errors_json = $2, updated_at = NOW()
       WHERE upload_id = $3
     `;
-    await neonDb.query(query, [status, errorsJson ? JSON.stringify(errorsJson) : null, uploadId]);
+    await dbQuery(query, [status, errorsJson ? JSON.stringify(errorsJson) : null, uploadId]);
   }
 }
 

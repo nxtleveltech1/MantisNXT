@@ -111,6 +111,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
+      data: { deleted: true },
       message: 'Upload deleted successfully'
     });
   } catch (error) {

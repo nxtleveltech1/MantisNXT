@@ -6,13 +6,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import {
   TrendingUp,
   TrendingDown,
   Package,
-  DollarSign,
-  CheckCircle2,
   Users,
   Sparkles,
   AlertTriangle,
@@ -106,16 +103,11 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
   }
 
   const totalProducts = metrics?.total_products || 0;
-  const selectedProducts = metrics?.selected_products || 0;
   const totalSuppliers = metrics?.total_suppliers || 0;
   const newProductsCount = metrics?.new_products_count || 0;
 
-  const selectionPercentage = totalProducts > 0
-    ? Math.round((selectedProducts / totalProducts) * 100)
-    : 0;
-
   return (
-    <div className={cn('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4', className)}>
+    <div className={cn('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4', className)}>
       {/* Total Suppliers */}
       <MetricCard
         title="Active Suppliers"
@@ -146,34 +138,7 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
         }
       />
 
-      {/* Selected Products */}
-      <MetricCard
-        title="Selected Products"
-        value={selectedProducts.toLocaleString()}
-        description={
-          <div className="space-y-1">
-            <div className="text-xs text-muted-foreground">
-              {selectionPercentage}% of catalog selected
-            </div>
-            <Progress value={selectionPercentage} className="h-1" />
-          </div>
-        }
-        icon={CheckCircle2}
-        iconColor="bg-purple-100 text-purple-600"
-        badge={{
-          text: 'Ready for stock',
-          variant: 'secondary'
-        }}
-      />
-
-      {/* Inventory Value */}
-      <MetricCard
-        title="Selected Inventory Value"
-        value={formatCurrency(metrics?.selected_inventory_value || 0)}
-        description="Total value of selected items"
-        icon={DollarSign}
-        iconColor="bg-orange-100 text-orange-600"
-      />
+      {/* Selected metrics removed for catalog-focused view */}
 
       {/* New Products Alert */}
       {newProductsCount > 0 && (
@@ -186,8 +151,7 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
               <div className="flex-1">
                 <h3 className="font-semibold text-blue-900 mb-1">New Products Available</h3>
                 <p className="text-sm text-blue-700">
-                  <strong>{newProductsCount}</strong> new products have been added to the catalog.
-                  Review and add them to your selection.
+                  <strong>{newProductsCount}</strong> new products have been added to the catalog. Review them in the catalog view.
                 </p>
               </div>
             </div>

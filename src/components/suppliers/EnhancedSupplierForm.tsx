@@ -43,6 +43,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import WebSupplierDiscovery from "./WebSupplierDiscovery"
 import {
   Building2,
   User,
@@ -195,77 +196,80 @@ const useAISupplierDiscovery = () => {
   return { searchSupplier, isSearching, error }
 }
 
-// AI Discovery Component
-interface AIDiscoveryPanelProps {
-  onDataFound: (data: Partial<SupplierFormData>) => void
+// Web Discovery Integration Component
+interface WebDiscoveryIntegrationProps {
+  onDataFound: (data: any) => void
   initialQuery?: string
+  onClose?: () => void
 }
 
-const AIDiscoveryPanel: React.FC<AIDiscoveryPanelProps> = ({
+const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
   onDataFound,
-  initialQuery = ""
+  initialQuery = "",
+  onClose
 }) => {
-  const [query, setQuery] = useState(initialQuery)
-  const { searchSupplier, isSearching, error } = useAISupplierDiscovery()
-
-  const handleSearch = async () => {
-    // Get the supplier code from the form if available
-    const codeInput = document.querySelector('input[placeholder*="Supplier Code"]') as HTMLInputElement
-    const supplierCode = codeInput?.value || undefined
-    
-    const data = await searchSupplier(query, supplierCode)
-    if (data) {
-      onDataFound(data)
+  // Handle web discovery data transformation
+  const handleWebDataFound = (webData: any) => {
+    // Transform web discovery data to form format
+    const transformedData: Partial<SupplierFormData> = {
+      name: webData.companyName,
+      businessInfo: {
+        legalName: webData.companyName,
+        website: webData.website,
+        foundedYear: webData.founded ? parseInt(webData.founded) : undefined,
+        employeeCount: webData.employees ? parseInt(webData.employees.replace(/[^0-9]/g, '')) : undefined,
+      },
+      capabilities: {
+        products: webData.products || [],
+        services: webData.services || [],
+      },
+      addresses: webData.addresses?.map((addr: any, index: number) => ({
+        type: index === 0 ? "headquarters" : "shipping",
+        addressLine1: addr.street,
+        city: addr.city,
+        country: addr.country,
+        postalCode: addr.postalCode,
+        isPrimary: index === 0,
+        isActive: true,
+      })) || [],
     }
+
+    // Add contact from web data if available
+    if (webData.contactEmail || webData.contactPhone) {
+      transformedData.contacts = [{
+        type: "primary",
+        name: "", // Could be extracted from contact info
+        email: webData.contactEmail,
+        phone: webData.contactPhone,
+        isPrimary: true,
+        isActive: true,
+      }]
+    }
+
+    onDataFound(transformedData)
+    if (onClose) onClose()
   }
 
   return (
-    <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-blue-700">
-          <Brain className="h-5 w-5" />
-          AI Supplier Discovery
-        </CardTitle>
-        <p className="text-sm text-blue-600">
-          Let AI automatically discover and populate supplier information
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Enter supplier name..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && !isSearching && handleSearch()}
-            className="flex-1"
-          />
-          <Button
-            onClick={handleSearch}
-            disabled={isSearching || !query.trim()}
-            className="min-w-[120px] bg-blue-600 hover:bg-blue-700"
-          >
-            {isSearching ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Searching...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Discover
-              </>
-            )}
-          </Button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold">Web Supplier Discovery</h3>
         </div>
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+        {onClose && (
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Close Discovery
+          </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      
+      <WebSupplierDiscovery
+        onDataFound={handleWebDataFound}
+        initialQuery={initialQuery}
+        onClose={onClose}
+      />
+    </div>
   )
 }
 
@@ -310,7 +314,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
-  const [showAIDiscovery, setShowAIDiscovery] = useState(false)
+  const [showWebDiscovery, setShowWebDiscovery] = useState(false)
 
   const form = useForm<SupplierFormData>({
     resolver: zodResolver(supplierSchema),
@@ -405,7 +409,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
         }
       }
     })
-    setShowAIDiscovery(false)
+    setShowWebDiscovery(false)
     // Trigger validation to show any errors
     setTimeout(() => {
       form.trigger()
@@ -587,11 +591,11 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
             {!supplier && (
               <Button
                 variant="outline"
-                onClick={() => setShowAIDiscovery(true)}
+                onClick={() => setShowWebDiscovery(true)}
                 className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200"
               >
-                <Brain className="h-4 w-4 mr-2" />
-                AI Assist
+                <Globe className="h-4 w-4 mr-2" />
+                Web Discovery
               </Button>
             )}
 
@@ -637,12 +641,27 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
           </div>
         </div>
 
-        {/* AI Discovery Panel */}
-        {showAIDiscovery && (
-          <AIDiscoveryPanel
-            onDataFound={handleAIDataFound}
-            initialQuery={form.watch("name")}
-          />
+        {/* Web Discovery Panel */}
+        {showWebDiscovery && (
+          <Dialog open={showWebDiscovery} onOpenChange={setShowWebDiscovery}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  Web Supplier Discovery
+                </DialogTitle>
+                <DialogDescription>
+                  Discover supplier information from the web to auto-populate form fields
+                </DialogDescription>
+              </DialogHeader>
+              
+              <WebDiscoveryIntegration
+                onDataFound={handleAIDataFound}
+                initialQuery={form.watch("name")}
+                onClose={() => setShowWebDiscovery(false)}
+              />
+            </DialogContent>
+          </Dialog>
         )}
 
         {/* Success/Error Messages */}

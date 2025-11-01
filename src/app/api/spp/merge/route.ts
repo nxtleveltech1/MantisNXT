@@ -7,19 +7,34 @@ import { pricelistService } from '@/lib/services/PricelistService';
 import { z } from 'zod';
 
 const MergeRequestSchema = z.object({
-  upload_id: z.string().uuid()
+  upload_id: z.string().uuid(),
+  skip_invalid_rows: z.boolean().optional()
 });
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { upload_id } = MergeRequestSchema.parse(body);
+    const url = new URL(request.url);
+    const qpUploadId = url.searchParams.get('upload_id');
+    const qpSkip = url.searchParams.get('skip_invalid_rows');
+    let body: any = {};
+    try { body = await request.json(); } catch {}
+    const parsed = MergeRequestSchema.safeParse({
+      upload_id: body?.upload_id || qpUploadId,
+      skip_invalid_rows: typeof body?.skip_invalid_rows === 'boolean'
+        ? body.skip_invalid_rows
+        : qpSkip === 'true'
+    });
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: 'Invalid request', details: parsed.error.issues }, { status: 400 });
+    }
+    const { upload_id, skip_invalid_rows } = parsed.data;
 
-    const mergeResult = await pricelistService.mergePricelist(upload_id);
+    const mergeResult = await pricelistService.mergePricelist(upload_id, { skipInvalidRows: !!skip_invalid_rows });
 
+    // Normalize response shape to { success, data }
     return NextResponse.json({
-      success: mergeResult.success,
-      merge: mergeResult
+      success: true,
+      data: mergeResult
     });
   } catch (error) {
     console.error('Merge error:', error);

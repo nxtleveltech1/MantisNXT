@@ -67,6 +67,8 @@ import type { InventoryItem, Product, Supplier, InventoryFilters } from '@/lib/t
 import { format } from 'date-fns'
 import { deriveStockStatus } from '@/lib/utils/inventory-metrics'
 import AddProductDialog from './AddProductDialog'
+import AddProductsModeDialog from './AddProductsModeDialog'
+import MultiProductSelectorDialog from './MultiProductSelectorDialog'
 import EditProductDialog from './EditProductDialog'
 import StockAdjustmentDialog from './StockAdjustmentDialog'
 import ProductDetailsDialog from './ProductDetailsDialog'
@@ -94,6 +96,8 @@ export default function InventoryManagement() {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [showAddProduct, setShowAddProduct] = useState(false)
+  const [showAddMode, setShowAddMode] = useState(false)
+  const [showMultiSelect, setShowMultiSelect] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [adjustingStock, setAdjustingStock] = useState<InventoryItem | null>(null)
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
@@ -239,7 +243,7 @@ export default function InventoryManagement() {
               Export
             </Button>
             <Button
-              onClick={() => setShowAddProduct(true)}
+              onClick={() => setShowAddMode(true)}
               size="sm"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -429,7 +433,7 @@ export default function InventoryManagement() {
                 <p className="text-muted-foreground mb-4">
                   Get started by adding your first product.
                 </p>
-                <Button onClick={() => setShowAddProduct(true)}>
+                <Button onClick={() => setShowAddMode(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Product
                 </Button>
@@ -582,9 +586,24 @@ export default function InventoryManagement() {
         </Card>
 
         {/* Dialogs */}
+        <AddProductsModeDialog
+          open={showAddMode}
+          onOpenChange={setShowAddMode}
+          onChoose={(mode) => {
+            setShowAddMode(false)
+            if (mode === 'single') setShowAddProduct(true)
+            if (mode === 'multi') setShowMultiSelect(true)
+          }}
+        />
+
         <AddProductDialog
           open={showAddProduct}
           onOpenChange={setShowAddProduct}
+        />
+
+        <MultiProductSelectorDialog
+          open={showMultiSelect}
+          onOpenChange={setShowMultiSelect}
         />
 
         {editingProduct && (

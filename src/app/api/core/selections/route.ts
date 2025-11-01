@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      selection
+      data: selection
     });
   } catch (error) {
     console.error('Create selection error:', error);
@@ -52,8 +52,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
+    const statusParam = searchParams.get('status');
+    const statuses = statusParam
+      ? statusParam.split(',').map(s => s.trim()).filter(Boolean)
+      : undefined;
+
     const filters = {
-      status: searchParams.get('status') as any || undefined,
+      status: statuses as any,
       created_by: searchParams.get('created_by') || undefined,
       limit: parseInt(searchParams.get('limit') || '50'),
       offset: parseInt(searchParams.get('offset') || '0')
@@ -63,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      ...result,
+      data: result.selections,
       pagination: {
         limit: filters.limit,
         offset: filters.offset,

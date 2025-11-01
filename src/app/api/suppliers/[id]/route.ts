@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupplierById as ssotGet, upsertSupplier as ssotUpsert } from '@/services/ssot/supplierService'
+import { getSupplierById as ssotGet, upsertSupplier as ssotUpsert, deactivateSupplier as ssotDeactivate } from '@/services/ssot/supplierService'
+import { query as dbQuery } from '@/lib/database/unified-connection'
 import { CacheInvalidator } from '@/lib/cache/invalidation'
 import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 
@@ -82,7 +83,21 @@ export async function DELETE(
     const supplier = await ssotGet(id)
     const supplierName = supplier?.name
 
-    // HARD DELETE - actually remove the supplier from the database
+    // Check for dependent records that block hard delete
+    const [locRes, spRes] = await Promise.all([
+      dbQuery<{ count: string }>('SELECT COUNT(*)::int as count FROM core.stock_location WHERE supplier_id = $1', [id]),
+      dbQuery<{ count: string }>('SELECT COUNT(*)::int as count FROM core.supplier_product WHERE supplier_id = $1', [id]),
+    ])
+    const hasDependencies = (parseInt(locRes.rows[0]?.count || '0') > 0) || (parseInt(spRes.rows[0]?.count || '0') > 0)
+
+    if (hasDependencies) {
+      // Soft delete (deactivate) when FK dependencies exist
+      await ssotDeactivate(id)
+      CacheInvalidator.invalidateSupplier(id, supplierName)
+      return NextResponse.json({ success: true, message: 'Supplier deactivated (has linked records)' })
+    }
+
+    // No dependencies: proceed with hard delete
     const repository = new PostgreSQLSupplierRepository()
     await repository.delete(id)
 
@@ -95,13 +110,17 @@ export async function DELETE(
     })
   } catch (error) {
     console.error('Delete supplier API error:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to delete supplier',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    // If FK constraint error sneaks through, fallback to soft delete
+    const message = error instanceof Error ? error.message : ''
+    if (message.toLowerCase().includes('foreign key') || message.toLowerCase().includes('constraint')) {
+      try {
+        const { id } = await params
+        await ssotDeactivate(id)
+        return NextResponse.json({ success: true, message: 'Supplier deactivated (linked records prevented deletion)' })
+      } catch (e) {
+        // fall through to error response below
+      }
+    }
+    return NextResponse.json({ success: false, error: 'Failed to delete supplier', message: message || 'Unknown error' }, { status: 500 })
   }
 }

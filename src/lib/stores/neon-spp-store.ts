@@ -77,7 +77,8 @@ export const useNeonSppStore = create<NeonSppState>((set, get) => ({
       if (!response.ok) throw new Error('Failed to fetch uploads');
 
       const data = await response.json();
-      set({ uploads: data.data || [], loading: false });
+      const uploads = data?.data?.uploads || data?.data || [];
+      set({ uploads, loading: false });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       set({ error: message, loading: false });

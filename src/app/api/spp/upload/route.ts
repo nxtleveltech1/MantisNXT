@@ -265,19 +265,25 @@ export async function POST(request: NextRequest) {
         const mergeResult = await pricelistService.mergePricelist(upload.upload_id);
         return NextResponse.json({
           success: true,
-          upload,
-          rows_inserted: insertedCount,
-          validation: validationResult,
-          merge: mergeResult
+          data: {
+            upload,
+            upload_id: upload.upload_id,
+            rows_inserted: insertedCount,
+            validation: validationResult,
+            merge: mergeResult
+          }
         });
       }
     }
 
     return NextResponse.json({
       success: true,
-      upload,
-      rows_inserted: insertedCount,
-      validation: validationResult
+      data: {
+        upload,
+        upload_id: upload.upload_id,
+        rows_inserted: insertedCount,
+        validation: validationResult
+      }
     });
   } catch (error) {
     console.error('❌ [POST /api/spp/upload] Pricelist upload error:', error);

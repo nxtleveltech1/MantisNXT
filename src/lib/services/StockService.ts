@@ -9,7 +9,7 @@
  * - Calculate inventory values
  */
 
-import { neonDb } from "../../../lib/database/neon-connection";
+import { query as dbQuery, withTransaction } from "../../../lib/database/unified-connection";
 import { isFeatureEnabled, FeatureFlag } from "@/lib/feature-flags";
 import {
   StockOnHand,
@@ -54,7 +54,7 @@ export class StockService {
       const q = `SELECT COUNT(*) AS cnt FROM serve.v_nxt_soh WHERE ${conditions.join(
         " AND "
       )}`;
-      const r = await neonDb.query<{ cnt: string }>(q, params);
+      const r = await dbQuery<{ cnt: string }>(q, params);
       return parseInt(r.rows[0]?.cnt || "0", 10);
     }
 
@@ -100,7 +100,7 @@ export class StockService {
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       WHERE ${conditions.join(" AND ")}
     `;
-    const r = await neonDb.query<{ cnt: string }>(q, params);
+    const r = await dbQuery<{ cnt: string }>(q, params);
     return parseInt(r.rows[0]?.cnt || "0", 10);
   }
   /**
@@ -137,7 +137,7 @@ export class StockService {
       validated.source,
     ];
 
-    const result = await neonDb.query<StockOnHand>(query, values);
+    const result = await dbQuery<StockOnHand>(query, values);
     return result.rows[0];
   }
 
@@ -156,7 +156,7 @@ export class StockService {
     let imported = 0;
     const errors: string[] = [];
 
-    await neonDb.withTransaction(async (client) => {
+    await withTransaction(async (client) => {
       // Batch insert for performance
       const batchSize = 100;
       for (let i = 0; i < stocks.length; i += batchSize) {
@@ -307,7 +307,7 @@ export class StockService {
       ORDER BY s.name, sp.name_from_supplier, l.name
     `;
 
-    const result = await neonDb.query<SohBySupplier>(query, params);
+    const result = await dbQuery<SohBySupplier>(query, params);
     return result.rows;
   }
 
@@ -409,7 +409,7 @@ export class StockService {
       ORDER BY product_name
     `;
 
-    const result = await neonDb.query(query, params);
+    const result = await dbQuery(query, params);
 
     // Transform the jsonb suppliers array
     return result.rows.map((row) => ({
@@ -436,7 +436,7 @@ export class StockService {
       LIMIT 1
     `;
 
-    const result = await neonDb.query<StockOnHand>(query, [
+    const result = await dbQuery<StockOnHand>(query, [
       locationId,
       supplierProductId,
     ]);
@@ -468,7 +468,7 @@ export class StockService {
     `;
     params.push(limit);
 
-    const result = await neonDb.query<StockOnHand>(query, params);
+    const result = await dbQuery<StockOnHand>(query, params);
     return result.rows;
   }
 
@@ -547,7 +547,7 @@ export class StockService {
       ORDER BY value DESC
     `;
 
-    const result = await neonDb.query(query, params);
+    const result = await dbQuery(query, params);
 
     const bySupplier = result.rows.map((row) => ({
       supplier_id: row.supplier_id,
@@ -642,7 +642,7 @@ export class StockService {
 
     params.push(limit, offset);
 
-    const result = await neonDb.query<NxtSoh>(query, params);
+    const result = await dbQuery<NxtSoh>(query, params);
     return result.rows;
   }
 
@@ -746,7 +746,7 @@ export class StockService {
 
     params.push(limit, offset);
 
-    const result = await neonDb.query<NxtSoh>(query, params);
+    const result = await dbQuery<NxtSoh>(query, params);
     return result.rows;
   }
 }

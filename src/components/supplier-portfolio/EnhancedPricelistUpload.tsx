@@ -89,6 +89,7 @@ export function EnhancedPricelistUpload({
   const [validationResult, setValidationResult] = useState<PricelistValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [validationProgress, setValidationProgress] = useState(0)
+  // Selection integration removed from NXT-SPP workflow
 
   // Load suppliers query
   const { data: suppliersData } = useQuery({
@@ -124,6 +125,8 @@ export function EnhancedPricelistUpload({
 
   const suppliers = suppliersData || []
   const loading = uploadMutation.isPending || mergeMutation.isPending
+
+  // Selections list no longer needed here
 
   // Reset state
   const resetState = useCallback(() => {
@@ -267,14 +270,14 @@ export function EnhancedPricelistUpload({
   }
 
   // Step 4: Merge
-  const handleMerge = async () => {
+  const handleMerge = async (skipInvalidRows?: boolean) => {
     if (!uploadId) return
 
     setError(null)
     setCurrentStep(4) // Show loading state
 
     try {
-      const result = await mergeMutation.mutateAsync(uploadId)
+      const result = await mergeMutation.mutateAsync(skipInvalidRows ? { uploadId, skipInvalidRows: true } : uploadId)
       setCurrentStep(5)
 
       toast({
@@ -632,9 +635,10 @@ export function EnhancedPricelistUpload({
                 <Alert>
                   <ArrowRight className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Next Step:</strong> Go to the Selections tab to choose which products to stock from this upload.
+                    <strong>Next Step:</strong> Review updated products in the catalog. This upload updated pricing and created any missing products.
                   </AlertDescription>
                 </Alert>
+
               </>
             )}
           </div>
@@ -726,13 +730,18 @@ export function EnhancedPricelistUpload({
             )}
             {currentStep === 3 && validationResult && (
               <>
-                {validationResult.status === 'invalid' && (
-                  <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                    Fix & Re-upload
-                  </Button>
-                )}
-                {validationResult.status !== 'invalid' && (
-                  <Button onClick={handleMerge} disabled={loading}>
+                {validationResult.status === 'invalid' ? (
+                  <>
+                    <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                      Fix & Re-upload
+                    </Button>
+                    <Button onClick={() => handleMerge(true)} disabled={loading}>
+                      {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                      Proceed with {validationResult.valid_rows} of {validationResult.total_rows}
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={() => handleMerge(false)} disabled={loading}>
                     {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                     Merge to Catalog
                   </Button>
@@ -741,7 +750,7 @@ export function EnhancedPricelistUpload({
             )}
             {currentStep === 5 && (
               <Button onClick={handleClose}>
-                Go to Selections
+                Close
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             )}

@@ -28,6 +28,17 @@ export function formatNumber(
   return new Intl.NumberFormat(locale).format(value)
 }
 
+// Format with space thousands and 2 decimals, e.g., 9 998.00
+export function formatCostAmount(value: number | string | null | undefined): string {
+  const num = Number(value ?? 0)
+  const sign = num < 0 ? '-' : ''
+  const abs = Math.abs(num)
+  const fixed = abs.toFixed(2)
+  const [intPart, decPart] = fixed.split('.')
+  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  return `${sign}${withSpaces}.${decPart}`
+}
+
 export function formatPercentage(
   value: number,
   decimals: number = 1

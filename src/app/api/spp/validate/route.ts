@@ -17,9 +17,10 @@ export async function POST(request: NextRequest) {
 
     const validationResult = await pricelistService.validateUpload(upload_id);
 
+    // Normalize response shape to { success, data }
     return NextResponse.json({
       success: true,
-      validation: validationResult
+      data: validationResult
     });
   } catch (error) {
     console.error('Validation error:', error);

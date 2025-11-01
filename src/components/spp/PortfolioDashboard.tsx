@@ -30,7 +30,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
-import { useDashboardMetrics, usePricelistUploads, useActiveSelection } from '@/hooks/useNeonSpp';
+import { useDashboardMetrics, usePricelistUploads } from '@/hooks/useNeonSpp';
 import { MetricsDashboard } from './MetricsDashboard';
 import { SkeletonDashboard } from './LoadingStates';
 import { ConnectionError, EmptyState } from './ErrorStates';
@@ -45,12 +45,11 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
   // React Query hooks
   const { data: metrics, isLoading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useDashboardMetrics();
   const { data: uploadsData, isLoading: uploadsLoading, error: uploadsError, refetch: refetchUploads } = usePricelistUploads({ limit: 10 });
-  const { data: activeSelection, isLoading: selectionLoading } = useActiveSelection();
 
   // Ensure uploads is always an array
   const uploads = Array.isArray(uploadsData) ? uploadsData : [];
 
-  const loading = metricsLoading || uploadsLoading || selectionLoading;
+  const loading = metricsLoading || uploadsLoading;
 
   const handleRefresh = () => {
     refetchMetrics();
@@ -123,9 +122,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
-          <p className="text-muted-foreground mt-1">
-            Monitor your supplier portfolio and inventory selections
-          </p>
+          <p className="text-muted-foreground mt-1">Monitor your supplier portfolio and catalog updates</p>
         </div>
         <Button onClick={handleRefresh} variant="outline" size="sm" disabled={loading}>
           <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
@@ -133,34 +130,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
         </Button>
       </div>
 
-      {/* Active Selection Alert */}
-      {activeSelection && (
-        <Card className="border-purple-200 bg-purple-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 rounded-md bg-purple-100">
-                <CheckCircle2 className="h-5 w-5 text-purple-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-purple-900 mb-1">Active Selection</h3>
-                <p className="text-sm text-purple-700">
-                  <strong>{activeSelection.selection_name}</strong> is currently active.
-                  {activeSelection.description && ` ${activeSelection.description}`}
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleNavigate('stock-reports')}
-                className="flex-shrink-0"
-              >
-                View Reports
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Selection UI removed from dashboard */}
 
       {/* Key Metrics */}
       <MetricsDashboard metrics={metrics || null} loading={loading} />
@@ -238,26 +208,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
               <ArrowRight className="h-4 w-4 ml-auto" />
             </Button>
 
-            <Button
-              className="w-full justify-start"
-              variant="outline"
-              onClick={() => handleNavigate('selections')}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Manage Selections
-              <ArrowRight className="h-4 w-4 ml-auto" />
-            </Button>
-
-            <Button
-              className="w-full justify-start"
-              variant="outline"
-              onClick={() => handleNavigate('stock-reports')}
-              disabled={!activeSelection}
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              View Stock Reports
-              <ArrowRight className="h-4 w-4 ml-auto" />
-            </Button>
+            {/* Selection and Stock controls removed from NXT-SPP dashboard */}
 
             {/* Activity Summary */}
             <div className="pt-4 border-t mt-6">
@@ -304,10 +255,10 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
         </Card>
       </div>
 
-      {/* Workflow Progress Indicator */}
+      {/* Workflow progress simplified to Upload stage only; Selection removed */}
       <Card>
         <CardHeader>
-          <CardTitle>Workflow Progress</CardTitle>
+          <CardTitle>Workflow</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between gap-8">
@@ -319,44 +270,7 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
               <div className="text-2xl font-bold text-green-600 mt-1">
                 {uploads.filter(u => u.status === 'merged').length}
               </div>
-              <div className="text-xs text-muted-foreground">Complete</div>
-            </div>
-
-            <ArrowRight className="h-8 w-8 text-muted-foreground" />
-
-            <div className="flex-1 text-center">
-              <div className="w-16 h-16 mx-auto bg-purple-100 rounded-full flex items-center justify-center mb-2">
-                <CheckCircle2 className="h-8 w-8 text-purple-600" />
-              </div>
-              <div className="font-medium">Select</div>
-              <div className="text-2xl font-bold text-purple-600 mt-1">
-                {metrics?.selected_products?.toLocaleString() || 0}
-              </div>
-              <div className="text-xs text-muted-foreground">Products selected</div>
-            </div>
-
-            <ArrowRight className="h-8 w-8 text-muted-foreground" />
-
-            <div className="flex-1 text-center">
-              <div className={cn(
-                'w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2',
-                activeSelection ? 'bg-orange-100' : 'bg-gray-100'
-              )}>
-                <BarChart3 className={cn(
-                  'h-8 w-8',
-                  activeSelection ? 'text-orange-600' : 'text-gray-400'
-                )} />
-              </div>
-              <div className="font-medium">Stock</div>
-              <div className={cn(
-                'text-2xl font-bold mt-1',
-                activeSelection ? 'text-orange-600' : 'text-gray-400'
-              )}>
-                {activeSelection ? (metrics?.selected_products || 0) : '-'}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {activeSelection ? 'Active' : 'No selection'}
-              </div>
+              <div className="text-xs text-muted-foreground">Merged uploads</div>
             </div>
           </div>
         </CardContent>

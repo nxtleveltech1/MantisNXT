@@ -8,7 +8,7 @@
  * - Search and filtering
  */
 
-import { neonDb } from '../../../lib/database/neon-connection';
+import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
 import { SupplierProduct, ProductTableBySupplier, BulkOperationResult } from '../../types/nxt-spp';
 
 export class SupplierProductService {
@@ -17,7 +17,7 @@ export class SupplierProductService {
    */
   async getById(supplierProductId: string): Promise<SupplierProduct | null> {
     const query = 'SELECT * FROM core.supplier_product WHERE supplier_product_id = $1';
-    const result = await neonDb.query<SupplierProduct>(query, [supplierProductId]);
+    const result = await dbQuery<SupplierProduct>(query, [supplierProductId]);
     return result.rows[0] || null;
   }
 
@@ -71,7 +71,7 @@ export class SupplierProductService {
 
     // Get total count
     const countQuery = `SELECT COUNT(*) as total FROM core.supplier_product WHERE ${whereClause}`;
-    const countResult = await neonDb.query<{ total: string }>(countQuery, params);
+    const countResult = await dbQuery<{ total: string }>(countQuery, params);
     const total = parseInt(countResult.rows[0].total);
 
     // Get paginated results
@@ -83,7 +83,7 @@ export class SupplierProductService {
     `;
     params.push(limit, offset);
 
-    const result = await neonDb.query<SupplierProduct>(query, params);
+    const result = await dbQuery<SupplierProduct>(query, params);
 
     return {
       products: result.rows,
@@ -153,8 +153,10 @@ export class SupplierProductService {
         sp.name_from_supplier,
         sp.uom,
         sp.pack_size,
+        br.brand,
+        sp.category_id,
         c.name as category_name,
-        cp.price as current_price,
+        COALESCE(cp.price, pp.previous_price, 0) as current_price,
         pp.previous_price,
         CASE
           WHEN pp.previous_price IS NOT NULL AND pp.previous_price > 0
@@ -181,11 +183,19 @@ export class SupplierProductService {
       LEFT JOIN previous_prices pp ON pp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN core.category c ON c.category_id = sp.category_id
       LEFT JOIN core.product p ON p.product_id = sp.product_id
+      LEFT JOIN LATERAL (
+        SELECT r.brand
+        FROM spp.pricelist_row r
+        JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+        WHERE r.supplier_sku = sp.supplier_sku AND r.brand IS NOT NULL AND r.brand <> ''
+        ORDER BY u.received_at DESC, r.row_num DESC
+        LIMIT 1
+      ) br ON TRUE
       WHERE ${conditions.join(' AND ')}
       ORDER BY sp.is_new DESC, sp.last_seen_at DESC NULLS LAST
     `;
 
-    const result = await neonDb.query<ProductTableBySupplier>(query, params);
+    const result = await dbQuery<ProductTableBySupplier>(query, params);
     return result.rows;
   }
 
@@ -200,7 +210,7 @@ export class SupplierProductService {
       RETURNING *
     `;
 
-    const result = await neonDb.query<SupplierProduct>(query, [productId, supplierProductId]);
+    const result = await dbQuery<SupplierProduct>(query, [productId, supplierProductId]);
 
     if (result.rowCount === 0) {
       throw new Error(`Supplier product ${supplierProductId} not found`);
@@ -223,7 +233,7 @@ export class SupplierProductService {
     let processed = 0;
     let failed = 0;
 
-    await neonDb.withTransaction(async client => {
+    await withTransaction(async client => {
       for (const mapping of mappings) {
         try {
           const query = `
@@ -274,7 +284,7 @@ export class SupplierProductService {
       RETURNING *
     `;
 
-    const result = await neonDb.query<SupplierProduct>(query, [categoryId, supplierProductId]);
+    const result = await dbQuery<SupplierProduct>(query, [categoryId, supplierProductId]);
 
     if (result.rowCount === 0) {
       throw new Error(`Supplier product ${supplierProductId} not found`);
@@ -296,7 +306,7 @@ export class SupplierProductService {
       RETURNING supplier_product_id
     `;
 
-    const result = await neonDb.query(query, [supplierId]);
+    const result = await dbQuery(query, [supplierId]);
     return result.rowCount || 0;
   }
 
@@ -312,7 +322,7 @@ export class SupplierProductService {
       RETURNING supplier_product_id
     `;
 
-    const result = await neonDb.query(query);
+    const result = await dbQuery(query);
     return result.rowCount || 0;
   }
 
@@ -339,7 +349,7 @@ export class SupplierProductService {
       LIMIT $2
     `;
 
-    const result = await neonDb.query(query, [supplierProductId, limit]);
+    const result = await dbQuery(query, [supplierProductId, limit]);
     return result.rows;
   }
 }

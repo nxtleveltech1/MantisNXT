@@ -79,8 +79,8 @@ const navigationGroups: NavigationGroup[] = [
         icon: TrendingUp,
       },
       {
-        title: "Test Auth",
-        url: "/test-auth",
+        title: "System Health",
+        url: "/system-health",
         icon: Settings,
       },
     ],
@@ -130,7 +130,12 @@ const navigationGroups: NavigationGroup[] = [
     title: "Operations",
     items: [
       {
-        title: "Inventory",
+        title: "Supplier Inventory Portfolio",
+        url: "/nxt-spp",
+        icon: Package,
+      },
+      {
+        title: "Inventory Management",
         url: "/inventory",
         icon: Package,
       },

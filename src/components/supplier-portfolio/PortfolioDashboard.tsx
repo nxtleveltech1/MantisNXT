@@ -88,7 +88,8 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
       const uploadsResponse = await fetch('/api/spp/upload?limit=10')
       if (uploadsResponse.ok) {
         const uploadsData = await uploadsResponse.json()
-        setRecentUploads(uploadsData.data || [])
+        const uploads = uploadsData?.data?.uploads || uploadsData?.data || []
+        setRecentUploads(uploads)
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err)
