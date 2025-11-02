@@ -131,7 +131,7 @@ async function syncSingleCustomer(
   wooService: WooCommerceService,
   wooCustomer: WooCommerceCustomer,
   orgId: string
-): Promise<{ success: boolean; customerId?: string; error?: string }> {
+): Promise<{ success: boolean; customerId?: string; wasUpdate?: boolean; error?: string }> {
   try {
     // Fetch customer's orders
     const ordersResponse = await wooService.getOrders({
@@ -185,7 +185,7 @@ async function syncSingleCustomer(
         ]
       );
 
-      return { success: true, customerId };
+      return { success: true, customerId, wasUpdate: true };
     } else {
       // Create new customer
       const result = await query<any>(
@@ -224,7 +224,7 @@ async function syncSingleCustomer(
         ]
       );
 
-      return { success: true, customerId: result.rows[0].id };
+      return { success: true, customerId: result.rows[0].id, wasUpdate: false };
     }
   } catch (error: any) {
     console.error(`Error syncing customer ${wooCustomer.email}:`, error);
@@ -233,6 +233,50 @@ async function syncSingleCustomer(
       error: error.message || 'Unknown error',
     };
   }
+}
+
+/**
+ * Process customers in batches with delays to prevent overwhelming the database
+ */
+async function processBatch(
+  batch: WooCommerceCustomer[],
+  wooService: WooCommerceService,
+  orgId: string,
+  result: CustomerSyncResult
+): Promise<void> {
+  for (const wooCustomer of batch) {
+    result.customersProcessed++;
+
+    let syncResult = await syncSingleCustomer(wooService, wooCustomer, orgId);
+
+    // CRITICAL FIX: If circuit breaker is open, wait and retry once
+    if (syncResult.error && syncResult.error.includes('circuit breaker is open')) {
+      console.log(`Circuit breaker open for ${wooCustomer.email}, waiting 60s and retrying...`);
+      await delay(60000); // Wait 60 seconds for circuit to close
+      syncResult = await syncSingleCustomer(wooService, wooCustomer, orgId);
+    }
+
+    if (syncResult.success) {
+      if (syncResult.wasUpdate) {
+        result.customersUpdated++;
+      } else {
+        result.customersCreated++;
+      }
+    } else {
+      result.errors.push({
+        wooCustomerId: wooCustomer.id,
+        email: wooCustomer.email,
+        error: syncResult.error || 'Unknown error',
+      });
+    }
+  }
+}
+
+/**
+ * Delay helper for batch processing
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -333,30 +377,23 @@ export async function POST(request: NextRequest) {
 
     console.log(`Syncing ${wooCustomers.length} customers from WooCommerce...`);
 
-    // Process each customer
-    for (const wooCustomer of wooCustomers) {
-      result.customersProcessed++;
+    // CRITICAL FIX: Process customers in batches to prevent overwhelming the database
+    const BATCH_SIZE = 10; // Process 10 customers at a time
+    const BATCH_DELAY_MS = 2000; // 2 second delay between batches
 
-      const syncResult = await syncSingleCustomer(wooService, wooCustomer, org_id);
+    for (let i = 0; i < wooCustomers.length; i += BATCH_SIZE) {
+      const batch = wooCustomers.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(wooCustomers.length / BATCH_SIZE);
 
-      if (syncResult.success) {
-        // Check if it was an update or create by checking if customer existed
-        const existed = await query<any>(
-          `SELECT id FROM customer WHERE email = $1 AND org_id = $2`,
-          [wooCustomer.email, org_id]
-        );
+      console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} customers)...`);
 
-        if (existed.rows.length > 0 && existed.rows[0].id === syncResult.customerId) {
-          result.customersUpdated++;
-        } else {
-          result.customersCreated++;
-        }
-      } else {
-        result.errors.push({
-          wooCustomerId: wooCustomer.id,
-          email: wooCustomer.email,
-          error: syncResult.error || 'Unknown error',
-        });
+      await processBatch(batch, wooService, org_id, result);
+
+      // Add delay between batches (except after the last batch)
+      if (i + BATCH_SIZE < wooCustomers.length) {
+        console.log(`Waiting ${BATCH_DELAY_MS}ms before next batch...`);
+        await delay(BATCH_DELAY_MS);
       }
     }
 

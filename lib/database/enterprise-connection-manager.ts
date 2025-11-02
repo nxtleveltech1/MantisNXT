@@ -170,7 +170,7 @@ class EnterpriseConnectionManager {
 
     consecutiveSuccesses: 0,
 
-    threshold: 3,
+    threshold: 10, // CRITICAL FIX: Increased from 3 to 10 for bulk operations
 
     resetTimeout: DEFAULT_RESET_TIMEOUT,
 
@@ -1053,17 +1053,15 @@ class EnterpriseConnectionManager {
 
             console.log(`🚫 Non-retryable error detected for query ${queryId}, aborting retries`);
 
+            // CRITICAL FIX: Only count as one failure for the entire operation
+
+            this.circuitBreaker.failures++;
+
+            this.circuitBreaker.lastFailure = Date.now();
+
             break; // Exit retry loop immediately
 
           }
-
-
-
-          // Increment circuit breaker failures on EACH retry attempt
-
-          this.circuitBreaker.failures++;
-
-          this.circuitBreaker.lastFailure = Date.now();
 
 
 
@@ -1077,21 +1075,31 @@ class EnterpriseConnectionManager {
 
 
 
-          // Check threshold after EACH failure
+          // CRITICAL FIX: Only increment failure counter on LAST retry attempt
 
-          if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
+          // This prevents a single failed operation from being counted as multiple failures
 
-            console.warn(
+          if (attempt === maxRetries) {
 
-              `🚨 Circuit breaker threshold reached: ${this.circuitBreaker.failures}/${this.circuitBreaker.threshold}`
+            this.circuitBreaker.failures++;
 
-            );
+            this.circuitBreaker.lastFailure = Date.now();
 
-            this.openCircuitBreaker();
 
-            // Don't retry if circuit breaker just opened
 
-            break;
+            // Check threshold after final failure
+
+            if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
+
+              console.warn(
+
+                `🚨 Circuit breaker threshold reached: ${this.circuitBreaker.failures}/${this.circuitBreaker.threshold}`
+
+              );
+
+              this.openCircuitBreaker();
+
+            }
 
           }
 
