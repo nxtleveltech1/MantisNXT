@@ -188,17 +188,40 @@ export class WooCommerceService {
     params?: Record<string, any>
   ): Promise<WooCommerceResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
+
+    // Build query parameters object for OAuth signature
+    // For OAuth 1.0a: query params must be included in signature base string
+    const oauthData: Record<string, string> = {};
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          oauthData[key] = String(value);
+        }
+      });
+    }
+
+    // Create request data for OAuth signature
+    // WooCommerce uses two-legged OAuth (no token), so we pass null as second param
     const requestData = {
       url,
       method,
+      data: oauthData, // Query params MUST be in data field for signature
     };
 
-    // Generate OAuth signature
-    const authHeader = this.oauth.toHeader(
-      this.oauth.authorize(requestData)
-    );
+    // Generate OAuth signature - no token needed for WooCommerce (two-legged OAuth)
+    const authorized = this.oauth.authorize(requestData);
+    const authHeader = this.oauth.toHeader(authorized);
 
-    // Build query string
+    // Debug logging for signature verification
+    console.log('[WooCommerce OAuth Debug]', {
+      method,
+      url,
+      queryParams: oauthData,
+      signatureParams: Object.keys(authorized).sort(),
+      authorizationHeader: authHeader.Authorization?.substring(0, 100) + '...',
+    });
+
+    // Build query string for actual request
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
