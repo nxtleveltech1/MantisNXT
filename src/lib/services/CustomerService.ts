@@ -36,11 +36,21 @@ export interface CustomerInsert {
   email?: string;
   phone?: string;
   company?: string;
-  segment?: 'individual' | 'business' | 'enterprise' | 'vip';
-  status?: 'prospect' | 'active' | 'inactive' | 'churned';
+  segment?: 'individual' | 'startup' | 'smb' | 'mid_market' | 'enterprise';
+  status?: 'prospect' | 'active' | 'inactive' | 'churned' | 'suspended';
+  lifetime_value?: number;
+  acquisition_date?: string;
+  last_interaction_date?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  } | null;
   notes?: string;
-  tags?: string[];
-  metadata?: Record<string, any>;
+  tags?: string[] | null;
+  metadata?: Record<string, any> | null;
 }
 
 export interface CustomerUpdate {
@@ -101,8 +111,8 @@ export class CustomerService {
   static async createCustomer(customer: CustomerInsert): Promise<Customer> {
     try {
       const result = await query<Customer>(
-        `INSERT INTO customer (name, email, phone, company, segment, status, notes, tags, metadata)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `INSERT INTO customer (name, email, phone, company, segment, status, lifetime_value, acquisition_date, last_interaction_date, address, notes, tags, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          RETURNING *`,
         [
           customer.name,
@@ -111,6 +121,10 @@ export class CustomerService {
           customer.company || null,
           customer.segment || 'individual',
           customer.status || 'prospect',
+          customer.lifetime_value || null,
+          customer.acquisition_date || null,
+          customer.last_interaction_date || null,
+          customer.address ? JSON.stringify(customer.address) : null,
           customer.notes || null,
           customer.tags || null,
           customer.metadata ? JSON.stringify(customer.metadata) : null,

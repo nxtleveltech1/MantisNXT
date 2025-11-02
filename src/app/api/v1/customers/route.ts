@@ -58,7 +58,14 @@ export async function POST(request: NextRequest) {
       email: body.email,
       phone: body.phone || null,
       company: body.company || null,
+      segment: body.segment || 'individual',
       status: body.status || 'active',
+      lifetime_value: body.lifetime_value || null,
+      acquisition_date: body.acquisition_date || null,
+      last_interaction_date: body.last_interaction_date || null,
+      address: body.address || null,
+      tags: body.tags || null,
+      metadata: body.metadata || null,
       notes: body.notes || null
     });
 
