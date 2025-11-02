@@ -141,6 +141,26 @@ export default function WooCommercePage() {
         return;
       }
 
+      // CRITICAL FIX: Get real organization ID from API
+      let orgId: string;
+      try {
+        const orgResponse = await fetch('/api/v1/organizations/current');
+        const orgData = await orgResponse.json();
+
+        if (!orgData.success || !orgData.data?.id) {
+          throw new Error('Failed to get organization ID');
+        }
+
+        orgId = orgData.data.id;
+      } catch (error) {
+        toast({
+          title: "Organization Error",
+          description: "Could not determine your organization. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Prepare the request payload
       const payload = {
         config: {
@@ -148,7 +168,7 @@ export default function WooCommercePage() {
           consumerKey: config.consumer_key,
           consumerSecret: config.consumer_secret,
         },
-        org_id: 'default', // TODO: Get actual org_id from session/context
+        org_id: orgId,
         options: {
           limit: 100,
         },

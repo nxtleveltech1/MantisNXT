@@ -319,11 +319,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // CRITICAL FIX: Validate org_id is provided and is a valid UUID
     if (!org_id) {
       return NextResponse.json(
         {
           success: false,
           error: 'org_id is required',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUID format to prevent database errors
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(org_id)) {
+      console.error(`Invalid org_id format: "${org_id}" (expected UUID)`);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid organization ID format: "${org_id}". Must be a valid UUID.`,
+          details: 'Organization ID must be in UUID format (e.g., 123e4567-e89b-12d3-a456-426614174000)',
         },
         { status: 400 }
       );
