@@ -14,9 +14,11 @@ import { PricingOptimizationService } from '@/lib/services/PricingOptimizationSe
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     const { searchParams } = new URL(request.url);
     const getRecommendations = searchParams.get('recommendations') === 'true';
 
@@ -26,7 +28,7 @@ export async function GET(
         : undefined;
 
       const recommendations = await PricingOptimizationService.getRecommendations(
-        params.id,
+        id,
         { min_confidence: minConfidence }
       );
 
@@ -37,7 +39,7 @@ export async function GET(
       });
     }
 
-    const run = await PricingOptimizationService.getRunById(params.id);
+    const run = await PricingOptimizationService.getRunById(id);
 
     if (!run) {
       return NextResponse.json(
@@ -57,7 +59,8 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();

@@ -38,7 +38,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  Activity,
   Award,
+  BarChart,
   Bell,
   Building2,
   ChevronDown,
@@ -46,7 +48,10 @@ import {
   Database,
   DollarSign,
   FileText,
+  Gift,
+  Heart,
   Home,
+  Layout,
   LayoutDashboard,
   LifeBuoy,
   MessageSquare,
@@ -163,6 +168,82 @@ const sidebarNavigation = [
         title: "Add Customer",
         url: "/customers/new",
         icon: UserCheck,
+        isActive: false,
+      },
+    ],
+  },
+  {
+    title: "Loyalty & Rewards",
+    items: [
+      {
+        title: "Programs",
+        url: "/admin/loyalty/programs",
+        icon: Award,
+        isActive: false,
+      },
+      {
+        title: "Rewards",
+        url: "/admin/loyalty/rewards",
+        icon: Gift,
+        isActive: false,
+      },
+      {
+        title: "Rules",
+        url: "/admin/loyalty/rules",
+        icon: Settings,
+        isActive: false,
+      },
+      {
+        title: "Redemptions",
+        url: "/admin/loyalty/redemptions",
+        icon: ShoppingCart,
+        isActive: false,
+      },
+      {
+        title: "Analytics",
+        url: "/admin/loyalty/analytics",
+        icon: BarChart,
+        isActive: false,
+      },
+    ],
+  },
+  {
+    title: "AI Services",
+    items: [
+      {
+        title: "Configuration",
+        url: "/admin/ai/config",
+        icon: Settings,
+        isActive: false,
+      },
+      {
+        title: "Predictions",
+        url: "/admin/ai/predictions",
+        icon: TrendingUp,
+        isActive: false,
+      },
+      {
+        title: "Forecasts",
+        url: "/admin/ai/forecasts",
+        icon: Activity,
+        isActive: false,
+      },
+      {
+        title: "Alerts",
+        url: "/admin/ai/alerts",
+        icon: Bell,
+        isActive: false,
+      },
+      {
+        title: "Dashboards",
+        url: "/admin/ai/dashboards",
+        icon: Layout,
+        isActive: false,
+      },
+      {
+        title: "Health Monitor",
+        url: "/admin/ai/health",
+        icon: Heart,
         isActive: false,
       },
     ],
@@ -425,7 +506,7 @@ const AdminHeader: React.FC<{
           <DropdownMenuItem>
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium">New supplier application</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground">
                 Global Manufacturing Inc. submitted application
               </p>
             </div>

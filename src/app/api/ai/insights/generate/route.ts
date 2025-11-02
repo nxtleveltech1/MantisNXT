@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
       const insights = await generateContextualInsights(body)
 
-      console.log(? Generated  insights)
+      console.log(`✅ Generated ${insights.insights.length} insights`)
 
       return {
         success: true,

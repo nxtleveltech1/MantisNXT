@@ -78,3 +78,101 @@ export function disposeRegisteredAIServices(): void {
     registry.delete(name);
   }
 }
+
+// ============================================================================
+// New AI Analytics & Management Services
+// ============================================================================
+
+// Configuration & Management Services
+export { AIServiceConfigService } from './AIServiceConfigService';
+export type {
+  AIServiceType,
+  AIProvider,
+  AIServiceConfig,
+  CreateConfigData,
+  UpdateConfigData,
+  ConnectionTestResult,
+  RateLimitStatus,
+} from './AIServiceConfigService';
+
+// Prediction & Analytics Services
+export { AIPredictionService } from './AIPredictionService';
+export type {
+  AIPrediction,
+  CreatePredictionData,
+  PaginatedResult,
+  AccuracyMetrics,
+} from './AIPredictionService';
+
+// Alert Management Services
+export { AIAlertService } from './AIAlertService';
+export type {
+  AlertSeverity,
+  AIAlert,
+  CreateAlertData,
+  AlertStats,
+} from './AIAlertService';
+
+// Conversation Services
+export { AIConversationService } from './AIConversationService';
+export type {
+  ConversationRole,
+  AIConversation,
+  CreateMessageData,
+  ConversationSummary,
+  ConversationSearchResult,
+} from './AIConversationService';
+
+// Dashboard Services
+export { AnalyticsDashboardService } from './AnalyticsDashboardService';
+export type {
+  AnalyticsDashboard,
+  CreateDashboardData,
+  UpdateDashboardData,
+} from './AnalyticsDashboardService';
+
+// Widget Services
+export { AnalyticsWidgetService } from './AnalyticsWidgetService';
+export type {
+  WidgetType,
+  AnalyticsMetricType,
+  AnalyticsWidget,
+  CreateWidgetData,
+  UpdateWidgetData,
+} from './AnalyticsWidgetService';
+
+// Cache Services
+export { MetricsCacheService } from './MetricsCacheService';
+export type {
+  TimePeriod,
+  CachedMetric,
+  CacheMetricData,
+} from './MetricsCacheService';
+
+// Specialized AI Services (Already exist, updated)
+export { DemandForecastingService } from './DemandForecastingService';
+export type {
+  ForecastRequest,
+  ForecastResult,
+  BatchForecastRequest,
+  ForecastAccuracyMetrics,
+} from './DemandForecastingService';
+
+export { AnomalyDetectionService } from './AnomalyDetectionService';
+export type {
+  Anomaly,
+  AnomalyDetectionConfig,
+} from './AnomalyDetectionService';
+
+export { SupplierScoringService } from './SupplierScoringService';
+export type {
+  SupplierScore,
+  SupplierPerformanceData,
+} from './SupplierScoringService';
+
+export { AIAssistantService } from './AIAssistantService';
+export type {
+  AssistantContext,
+  AssistantMessage,
+  AssistantResponse,
+} from './AIAssistantService';

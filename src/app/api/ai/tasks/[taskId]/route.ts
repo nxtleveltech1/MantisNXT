@@ -3,9 +3,9 @@ import { getTask } from '@/lib/queue/taskQueue'
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { taskId: string } }
+  context: { params: Promise<{ taskId: string }> }
 ) {
-  const taskId = params.taskId
+  const { taskId } = await context.params
   if (!taskId) {
     return NextResponse.json(
       { success: false, error: 'Task ID is required' },
@@ -31,4 +31,3 @@ export async function GET(
     finishedAt: record.finishedAt,
   })
 }
-

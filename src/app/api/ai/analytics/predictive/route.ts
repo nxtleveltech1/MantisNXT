@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
         metrics: body.metrics,
       })
 
-      console.log(? Generated predictions for  metrics)
+      console.log(`✅ Generated predictions for ${body.metrics.length} metrics`)
 
       return {
         success: true,
@@ -81,64 +81,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams
-    const supplierId = searchParams.get('supplierId')
-    const months = parseInt(searchParams.get('months') || '6')
+}
 
-    if (!supplierId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Supplier ID is required for performance forecasting',
-        },
-        { status: 400 }
-      )
-    }
-
-    if (months < 1 || months > 24) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Forecast period must be between 1 and 24 months',
-        },
-        { status: 400 }
-      )
-    }
-
-    console.log(?? Forecasting supplier performance for  months:, supplierId)
-
-    const cacheKey = makeKey(request.url)
-    const payload = await getOrSet(cacheKey, async () => {
-      const forecast = await predictiveAnalytics.forecastSupplierPerformance(supplierId, months)
-      return {
-        success: true,
-        data: {
-          supplierId,
-          forecastPeriod: months,
-          performanceForecast: forecast.performanceForecast,
-          riskTrend: forecast.riskTrend,
-          recommendations: forecast.recommendations,
-          timestamp: new Date().toISOString(),
-        },
-      }
-    })
-
-    return NextResponse.json(payload)
-  } catch (error) {
-    console.error('? Supplier performance forecasting failed:', error)
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Supplier performance forecasting failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    )
-  }
-}export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const supplierId = searchParams.get('supplierId');

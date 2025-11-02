@@ -13,10 +13,11 @@ import { query } from '@/lib/database';
 // GET - Fetch customer by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const customerId = params.id;
+    const { id } = await context.params;
 
     const sql = `
       SELECT
@@ -40,7 +41,7 @@ export async function GET(
       WHERE id = $1
     `;
 
-    const result = await query<any>(sql, [customerId]);
+    const result = await query<any>(sql, [id]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -71,10 +72,11 @@ export async function GET(
 // DELETE - Delete customer
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const customerId = params.id;
+    const { id } = await context.params;
 
     const sql = `
       DELETE FROM public.customer
@@ -82,7 +84,7 @@ export async function DELETE(
       RETURNING id
     `;
 
-    const result = await query<any>(sql, [customerId]);
+    const result = await query<any>(sql, [id]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(

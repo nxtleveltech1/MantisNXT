@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, RefreshCw, Settings, History, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2 } from "lucide-react";
+import { ShoppingBag, RefreshCw, Settings, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, Clock, XCircle, Loader2, Play, Square } from "lucide-react";
 import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface WooCommerceConfig {
   id?: string;
@@ -25,6 +27,44 @@ interface WooCommerceConfig {
   sync_customers: boolean;
   sync_frequency: number;
 }
+
+interface SyncProgress {
+  entityType: 'products' | 'orders' | 'customers';
+  status: 'idle' | 'syncing' | 'completed' | 'error';
+  processed: number;
+  total: number;
+  created: number;
+  updated: number;
+  failed: number;
+  startTime?: number;
+  endTime?: number;
+  error?: string;
+}
+
+interface SyncHistoryEntry {
+  id: string;
+  entityType: 'products' | 'orders' | 'customers';
+  status: 'success' | 'partial' | 'failed';
+  timestamp: string;
+  processed: number;
+  created: number;
+  updated: number;
+  failed: number;
+  duration: number;
+  error?: string;
+}
+
+const ENTITY_ICONS = {
+  products: Package,
+  orders: ShoppingCart,
+  customers: Users,
+};
+
+const ENTITY_LABELS = {
+  products: 'Products',
+  orders: 'Orders',
+  customers: 'Customers',
+};
 
 export default function WooCommercePage() {
   const { toast } = useToast();
@@ -43,8 +83,19 @@ export default function WooCommercePage() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
 
+  // Real-time sync state
+  const [syncProgress, setSyncProgress] = useState<Record<string, SyncProgress>>({
+    products: { entityType: 'products', status: 'idle', processed: 0, total: 0, created: 0, updated: 0, failed: 0 },
+    orders: { entityType: 'orders', status: 'idle', processed: 0, total: 0, created: 0, updated: 0, failed: 0 },
+    customers: { entityType: 'customers', status: 'idle', processed: 0, total: 0, created: 0, updated: 0, failed: 0 },
+  });
+
+  const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
+  const [syncAllInProgress, setSyncAllInProgress] = useState(false);
+
   useEffect(() => {
     fetchConfiguration();
+    loadSyncHistory();
   }, []);
 
   const fetchConfiguration = async () => {
@@ -60,6 +111,24 @@ export default function WooCommercePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadSyncHistory = () => {
+    // Load from localStorage for now (can be replaced with API call)
+    try {
+      const stored = localStorage.getItem('woo_sync_history');
+      if (stored) {
+        setSyncHistory(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Error loading sync history:', error);
+    }
+  };
+
+  const saveSyncHistory = (entry: SyncHistoryEntry) => {
+    const updated = [entry, ...syncHistory].slice(0, 50); // Keep last 50 entries
+    setSyncHistory(updated);
+    localStorage.setItem('woo_sync_history', JSON.stringify(updated));
   };
 
   const handleSaveConfiguration = async () => {
@@ -129,7 +198,7 @@ export default function WooCommercePage() {
     }
   };
 
-  const handleSync = async (entityType: string) => {
+  const handleSync = async (entityType: 'products' | 'orders' | 'customers') => {
     try {
       // Validate configuration exists
       if (!config.id || !config.store_url || !config.consumer_key || !config.consumer_secret) {
@@ -141,7 +210,7 @@ export default function WooCommercePage() {
         return;
       }
 
-      // CRITICAL FIX: Get real organization ID from API
+      // Get organization ID
       let orgId: string;
       try {
         const orgResponse = await fetch('/api/v1/organizations/current');
@@ -160,6 +229,22 @@ export default function WooCommercePage() {
         });
         return;
       }
+
+      // Initialize sync progress
+      const startTime = Date.now();
+      setSyncProgress(prev => ({
+        ...prev,
+        [entityType]: {
+          entityType,
+          status: 'syncing',
+          processed: 0,
+          total: 0,
+          created: 0,
+          updated: 0,
+          failed: 0,
+          startTime,
+        }
+      }));
 
       // Prepare the request payload
       const payload = {
@@ -181,8 +266,41 @@ export default function WooCommercePage() {
       });
 
       const data = await response.json();
+      const endTime = Date.now();
+      const duration = endTime - startTime;
 
       if (data.success) {
+        // Update sync progress
+        setSyncProgress(prev => ({
+          ...prev,
+          [entityType]: {
+            entityType,
+            status: 'completed',
+            processed: data.data.customersProcessed || data.data.productsProcessed || data.data.ordersProcessed || 0,
+            total: data.data.customersProcessed || data.data.productsProcessed || data.data.ordersProcessed || 0,
+            created: data.data.customersCreated || data.data.productsCreated || data.data.ordersCreated || 0,
+            updated: data.data.customersUpdated || data.data.productsUpdated || data.data.ordersUpdated || 0,
+            failed: data.data.errors?.length || 0,
+            startTime,
+            endTime,
+          }
+        }));
+
+        // Save to history
+        const historyEntry: SyncHistoryEntry = {
+          id: `${entityType}-${Date.now()}`,
+          entityType,
+          status: data.data.errors?.length > 0 ? 'partial' : 'success',
+          timestamp: new Date().toISOString(),
+          processed: data.data.customersProcessed || data.data.productsProcessed || data.data.ordersProcessed || 0,
+          created: data.data.customersCreated || data.data.productsCreated || data.data.ordersCreated || 0,
+          updated: data.data.customersUpdated || data.data.productsUpdated || data.data.ordersUpdated || 0,
+          failed: data.data.errors?.length || 0,
+          duration,
+          error: data.data.errors?.length > 0 ? `${data.data.errors.length} errors occurred` : undefined,
+        };
+        saveSyncHistory(historyEntry);
+
         toast({
           title: "Sync Completed",
           description: data.message || `${entityType} sync has been completed successfully.`,
@@ -191,11 +309,104 @@ export default function WooCommercePage() {
         throw new Error(data.error);
       }
     } catch (error: any) {
+      const endTime = Date.now();
+      const startTime = syncProgress[entityType].startTime || endTime;
+
+      setSyncProgress(prev => ({
+        ...prev,
+        [entityType]: {
+          ...prev[entityType],
+          status: 'error',
+          error: error.message,
+          endTime,
+        }
+      }));
+
+      // Save error to history
+      const historyEntry: SyncHistoryEntry = {
+        id: `${entityType}-${Date.now()}`,
+        entityType,
+        status: 'failed',
+        timestamp: new Date().toISOString(),
+        processed: 0,
+        created: 0,
+        updated: 0,
+        failed: 0,
+        duration: endTime - startTime,
+        error: error.message,
+      };
+      saveSyncHistory(historyEntry);
+
       toast({
         title: "Sync Failed",
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleSyncAll = async () => {
+    setSyncAllInProgress(true);
+    try {
+      await handleSync('products');
+      await handleSync('orders');
+      await handleSync('customers');
+
+      toast({
+        title: "All Syncs Completed",
+        description: "All entities have been synced successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Sync Error",
+        description: "Some syncs may have failed. Check sync history for details.",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncAllInProgress(false);
+    }
+  };
+
+  const calculateProgress = (progress: SyncProgress): number => {
+    if (progress.total === 0) return 0;
+    return Math.round((progress.processed / progress.total) * 100);
+  };
+
+  const calculateEstimatedTime = (progress: SyncProgress): string => {
+    if (!progress.startTime || progress.processed === 0) return 'Calculating...';
+
+    const elapsed = Date.now() - progress.startTime;
+    const avgTimePerItem = elapsed / progress.processed;
+    const remaining = (progress.total - progress.processed) * avgTimePerItem;
+
+    const seconds = Math.ceil(remaining / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}m ${seconds % 60}s`;
+  };
+
+  const formatDuration = (ms: number): string => {
+    const seconds = Math.floor(ms / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}m ${seconds % 60}s`;
+  };
+
+  const formatTimestamp = (timestamp: string): string => {
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <Badge variant="default" className="bg-green-500"><CheckCircle2 className="h-3 w-3 mr-1" />Success</Badge>;
+      case 'partial':
+        return <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" />Partial</Badge>;
+      case 'failed':
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -258,12 +469,178 @@ export default function WooCommercePage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="configuration" className="space-y-6">
+        <Tabs defaultValue="sync" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="configuration">Configuration</TabsTrigger>
             <TabsTrigger value="sync">Sync & Operations</TabsTrigger>
+            <TabsTrigger value="configuration">Configuration</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="history">Sync History</TabsTrigger>
           </TabsList>
+
+          {/* Sync Tab - ENHANCED */}
+          <TabsContent value="sync" className="space-y-6">
+            {/* Sync All Button */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">Data Synchronization</h3>
+                <p className="text-sm text-muted-foreground">Sync data between WooCommerce and MantisNXT</p>
+              </div>
+              <Button
+                onClick={handleSyncAll}
+                disabled={config.status !== 'active' || syncAllInProgress}
+                size="lg"
+              >
+                {syncAllInProgress ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Syncing All...
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-4 w-4" />
+                    Sync All
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Enhanced Sync Cards */}
+            <div className="grid gap-4 md:grid-cols-3">
+              {(['products', 'orders', 'customers'] as const).map((entityType) => {
+                const progress = syncProgress[entityType];
+                const Icon = ENTITY_ICONS[entityType];
+                const label = ENTITY_LABELS[entityType];
+                const percentage = calculateProgress(progress);
+
+                return (
+                  <Card key={entityType}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">{label}</CardTitle>
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {progress.status === 'syncing' ? (
+                        <>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Progress</span>
+                              <span>{percentage}%</span>
+                            </div>
+                            <Progress value={percentage} className="h-2" />
+                            <div className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                {progress.processed} / {progress.total || '...'}
+                              </span>
+                              <span className="text-muted-foreground">
+                                ETA: {calculateEstimatedTime(progress)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <div className="text-muted-foreground">Created</div>
+                              <div className="font-semibold text-green-600">{progress.created}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">Updated</div>
+                              <div className="font-semibold text-blue-600">{progress.updated}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">Failed</div>
+                              <div className="font-semibold text-red-600">{progress.failed}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Syncing...
+                          </div>
+                        </>
+                      ) : progress.status === 'completed' ? (
+                        <>
+                          <div className="text-center py-2">
+                            <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                            <p className="text-sm font-medium">Sync Completed</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDuration((progress.endTime || 0) - (progress.startTime || 0))}
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 text-xs border-t pt-3">
+                            <div>
+                              <div className="text-muted-foreground">Created</div>
+                              <div className="font-semibold text-green-600">{progress.created}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">Updated</div>
+                              <div className="font-semibold text-blue-600">{progress.updated}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">Failed</div>
+                              <div className="font-semibold text-red-600">{progress.failed}</div>
+                            </div>
+                          </div>
+                        </>
+                      ) : progress.status === 'error' ? (
+                        <>
+                          <div className="text-center py-2">
+                            <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                            <p className="text-sm font-medium text-red-600">Sync Failed</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {progress.error}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-center py-4">
+                            <div className="text-2xl font-bold text-muted-foreground">-</div>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Ready to sync
+                            </p>
+                          </div>
+                        </>
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => handleSync(entityType)}
+                        disabled={config.status !== 'active' || progress.status === 'syncing'}
+                      >
+                        {progress.status === 'syncing' ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Syncing...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-2 h-3 w-3" />
+                            Sync Now
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {config.status !== 'active' && (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-600" />
+                    <p className="text-sm text-yellow-800">
+                      Please configure and test your connection before syncing data.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
           {/* Configuration Tab */}
           <TabsContent value="configuration" className="space-y-6">
@@ -362,93 +739,6 @@ export default function WooCommercePage() {
             </Card>
           </TabsContent>
 
-          {/* Sync Tab */}
-          <TabsContent value="sync" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Products</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Ready to sync
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-4"
-                    onClick={() => handleSync('products')}
-                    disabled={config.status !== 'active'}
-                  >
-                    <RefreshCw className="mr-2 h-3 w-3" />
-                    Sync Now
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Orders</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Ready to import
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-4"
-                    onClick={() => handleSync('orders')}
-                    disabled={config.status !== 'active'}
-                  >
-                    <RefreshCw className="mr-2 h-3 w-3" />
-                    Import Now
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Customers</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Ready to sync
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-4"
-                    onClick={() => handleSync('customers')}
-                    disabled={config.status !== 'active'}
-                  >
-                    <RefreshCw className="mr-2 h-3 w-3" />
-                    Sync Now
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            {config.status !== 'active' && (
-              <Card className="border-yellow-200 bg-yellow-50">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600" />
-                    <p className="text-sm text-yellow-800">
-                      Please configure and test your connection before syncing data.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
             <Card>
@@ -523,6 +813,68 @@ export default function WooCommercePage() {
                     {saving ? 'Saving...' : 'Save Settings'}
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sync History Tab - NEW */}
+          <TabsContent value="history" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sync History</CardTitle>
+                <CardDescription>View past synchronization operations and their results</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {syncHistory.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No sync history available yet</p>
+                    <p className="text-sm mt-2">Start a sync to see history here</p>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Entity</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Timestamp</TableHead>
+                          <TableHead className="text-right">Processed</TableHead>
+                          <TableHead className="text-right">Created</TableHead>
+                          <TableHead className="text-right">Updated</TableHead>
+                          <TableHead className="text-right">Failed</TableHead>
+                          <TableHead className="text-right">Duration</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {syncHistory.map((entry) => {
+                          const Icon = ENTITY_ICONS[entry.entityType];
+                          return (
+                            <TableRow key={entry.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4 text-muted-foreground" />
+                                  <span className="font-medium">{ENTITY_LABELS[entry.entityType]}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>{getStatusBadge(entry.status)}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {formatTimestamp(entry.timestamp)}
+                              </TableCell>
+                              <TableCell className="text-right font-mono">{entry.processed}</TableCell>
+                              <TableCell className="text-right font-mono text-green-600">{entry.created}</TableCell>
+                              <TableCell className="text-right font-mono text-blue-600">{entry.updated}</TableCell>
+                              <TableCell className="text-right font-mono text-red-600">{entry.failed}</TableCell>
+                              <TableCell className="text-right text-sm text-muted-foreground">
+                                {formatDuration(entry.duration)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

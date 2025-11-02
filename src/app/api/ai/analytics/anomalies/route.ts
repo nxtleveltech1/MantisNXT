@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         metrics: body.metrics,
       })
 
-      console.log(? Detected  anomalies ( critical))
+      console.log(`✅ Detected ${result.anomalies.length} anomalies (${result.summary.criticalCount} critical)`)
 
       return {
         success: true,

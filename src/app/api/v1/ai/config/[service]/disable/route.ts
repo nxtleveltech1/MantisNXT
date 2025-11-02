@@ -17,11 +17,13 @@ import {
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { service: string } }
+
+  context: { params: Promise<{ service: string }> }
 ) {
   try {
+    const { service } = await context.params;
     const user = await authenticateRequest(request);
-    const serviceType = extractServiceType(params);
+    const serviceType = extractServiceType({ service });
 
     // TODO: Call AIConfigService when available from Team C
     // const config = await AIConfigService.disableService(user.org_id, serviceType);

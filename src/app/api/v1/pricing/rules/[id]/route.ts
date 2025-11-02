@@ -16,10 +16,12 @@ import { z } from 'zod';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rule = await PricingRuleService.getRuleById(params.id);
+    const { id } = await context.params;
+    const rule = await PricingRuleService.getRuleById(id);
 
     if (!rule) {
       return NextResponse.json(
@@ -39,11 +41,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     const body = await request.json();
-    const rule = await PricingRuleService.updateRule(params.id, body);
+    const rule = await PricingRuleService.updateRule(id, body);
 
     if (!rule) {
       return NextResponse.json(
@@ -67,10 +71,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const success = await PricingRuleService.deleteRule(params.id);
+    const success = await PricingRuleService.deleteRule(id);
+    const { id } = await context.params;
 
     if (!success) {
       return NextResponse.json(

@@ -440,10 +440,11 @@ Respond with a JSON array of recommendations:
   }
 
   /**
-   * Store alerts in database
+   * Store alerts in database and track predictions
    */
   private async storeAlerts(orgId: string, anomalies: Anomaly[]): Promise<void> {
     for (const anomaly of anomalies) {
+      // Store in ai_alert table
       await db.query(
         `
         INSERT INTO ai_alert (
@@ -465,6 +466,65 @@ Respond with a JSON array of recommendations:
           JSON.stringify({ metrics: anomaly.metrics }),
         ],
       );
+
+      // Store in ai_prediction table for tracking
+      const confidenceScore = this.calculateConfidence(anomaly);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Anomaly predictions valid for 7 days
+
+      await db.query(
+        `
+        INSERT INTO ai_prediction (
+          org_id, service_type, entity_type, entity_id,
+          prediction_data, confidence_score, expires_at, metadata
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `,
+        [
+          orgId,
+          'anomaly_detection',
+          anomaly.affectedEntity.type,
+          anomaly.affectedEntity.id,
+          JSON.stringify({
+            anomalyType: anomaly.type,
+            severity: anomaly.severity,
+            detected: true,
+            metrics: anomaly.metrics,
+          }),
+          confidenceScore,
+          expiresAt,
+          JSON.stringify({
+            title: anomaly.title,
+            detectedAt: anomaly.detectedAt,
+          }),
+        ],
+      );
+    }
+  }
+
+  /**
+   * Calculate confidence score based on anomaly metrics
+   */
+  private calculateConfidence(anomaly: Anomaly): number {
+    // Z-score based confidence calculation
+    const zScore = anomaly.metrics.zScore || anomaly.metrics.z_score || 0;
+
+    if (zScore > 3.5) return 0.95;
+    if (zScore > 3.0) return 0.90;
+    if (zScore > 2.5) return 0.85;
+    if (zScore > 2.0) return 0.75;
+
+    // Severity-based confidence for non-statistical anomalies
+    switch (anomaly.severity) {
+      case 'urgent':
+      case 'critical':
+        return 0.90;
+      case 'warning':
+        return 0.75;
+      case 'info':
+        return 0.60;
+      default:
+        return 0.70;
     }
   }
 }

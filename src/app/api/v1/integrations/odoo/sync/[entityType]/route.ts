@@ -12,10 +12,11 @@ import { query } from '@/lib/database';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { entityType: string } }
+
+  context: { params: Promise<{ entityType: string }> }
 ) {
+    const { entityType } = await context.params;
   try {
-    const entityType = params.entityType;
 
     // Validate entity type
     const validTypes = ['products', 'orders', 'customers', 'invoices'];
@@ -205,11 +206,11 @@ export async function POST(
       },
     });
   } catch (error: any) {
-    console.error(`Error syncing ${params.entityType}:`, error);
+    console.error(`Error syncing ${entityType}:`, error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || `Failed to sync ${params.entityType}`,
+        error: error.message || `Failed to sync ${entityType}`,
       },
       { status: 500 }
     );

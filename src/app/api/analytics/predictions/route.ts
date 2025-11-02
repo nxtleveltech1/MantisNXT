@@ -7,7 +7,8 @@ import { getOrSet, makeKey } from '@/lib/cache/responseCache'
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
 
-export async function GET(request: NextRequest) {\n  const cacheKey = makeKey(request.url)\n
+export async function GET(request: NextRequest) {
+  const cacheKey = makeKey(request.url)
   try {
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type') || 'all';

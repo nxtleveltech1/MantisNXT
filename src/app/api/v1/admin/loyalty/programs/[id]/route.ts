@@ -32,22 +32,23 @@ const updateProgramSchema = z.object({
 // GET - Get program details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     // Authentication
     const user = await authenticateRequest(request);
 
     // Authorization - Admin only
     await requireAdmin(user);
 
-    const programId = params.id;
 
     // TODO: Replace with actual service call when Team B completes services
-    // const result = await LoyaltyProgramService.getById(programId, user.organizationId);
+    // const result = await LoyaltyProgramService.getById(id, user.organizationId);
 
     const mockResult = {
-      id: programId,
+      id: id,
       org_id: user.organizationId,
       name: 'Main Loyalty Program',
       description: 'Our primary customer loyalty program',
@@ -96,16 +97,17 @@ export async function GET(
 // PATCH - Update program
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     // Authentication
     const user = await authenticateRequest(request);
 
     // Authorization - Admin only
     await requireAdmin(user);
 
-    const programId = params.id;
 
     // Parse and validate body
     const body = await request.json();
@@ -113,13 +115,13 @@ export async function PATCH(
 
     // TODO: Replace with actual service call when Team B completes services
     // const result = await LoyaltyProgramService.update(
-    //   programId,
+    //   id,
     //   user.organizationId,
     //   validated
     // );
 
     const mockResult = {
-      id: programId,
+      id: id,
       org_id: user.organizationId,
       ...validated,
       updated_at: new Date().toISOString(),
@@ -147,19 +149,20 @@ export async function PATCH(
 // DELETE - Delete program
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     // Authentication
     const user = await authenticateRequest(request);
 
     // Authorization - Admin only
     await requireAdmin(user);
 
-    const programId = params.id;
 
     // TODO: Replace with actual service call when Team B completes services
-    // await LoyaltyProgramService.delete(programId, user.organizationId);
+    // await LoyaltyProgramService.delete(id, user.organizationId);
 
     return NextResponse.json({
       success: true,

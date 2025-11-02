@@ -328,7 +328,8 @@ Respond in JSON format:
    * Store forecast in database
    */
   private async storeForecast(orgId: string, data: any): Promise<ForecastResult> {
-    const result = await db.query(
+    // Store in demand_forecast table
+    const forecastResult = await db.query(
       `
       INSERT INTO demand_forecast (
         org_id, product_id, forecast_date, forecast_horizon,
@@ -352,7 +353,41 @@ Respond in JSON format:
       ],
     );
 
-    const row = result.rows[0];
+    const row = forecastResult.rows[0];
+
+    // Also store in ai_prediction table for unified tracking
+    const confidenceScore = data.metadata.confidence || 0.8;
+    const expiresAt = this.calculateExpirationDate(data.forecastDate, data.horizon);
+
+    await db.query(
+      `
+      INSERT INTO ai_prediction (
+        org_id, service_type, entity_type, entity_id,
+        prediction_data, confidence_score, expires_at, metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `,
+      [
+        orgId,
+        'demand_forecasting',
+        'product',
+        data.productId,
+        JSON.stringify({
+          predictedQuantity: data.predictedQuantity,
+          lowerBound: data.lowerBound,
+          upperBound: data.upperBound,
+          horizon: data.horizon,
+          forecastId: row.id,
+        }),
+        confidenceScore,
+        expiresAt,
+        JSON.stringify({
+          algorithm: data.algorithm,
+          forecastDate: data.forecastDate,
+        }),
+      ],
+    );
+
     return {
       productId: row.product_id,
       forecastDate: row.forecast_date,
@@ -364,5 +399,34 @@ Respond in JSON format:
       algorithm: row.algorithm_used,
       metadata: row.metadata,
     };
+  }
+
+  /**
+   * Calculate expiration date based on forecast horizon
+   */
+  private calculateExpirationDate(forecastDate: Date, horizon: string): Date {
+    const expiresAt = new Date(forecastDate);
+
+    switch (horizon) {
+      case 'daily':
+        expiresAt.setDate(expiresAt.getDate() + 1);
+        break;
+      case 'weekly':
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        break;
+      case 'monthly':
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        break;
+      case 'quarterly':
+        expiresAt.setMonth(expiresAt.getMonth() + 3);
+        break;
+      case 'yearly':
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        break;
+      default:
+        expiresAt.setDate(expiresAt.getDate() + 30);
+    }
+
+    return expiresAt;
   }
 }

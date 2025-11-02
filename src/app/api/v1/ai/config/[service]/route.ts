@@ -21,11 +21,13 @@ import { updateConfigSchema } from '@/lib/ai/validation-schemas';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { service: string } }
+
+  context: { params: Promise<{ service: string }> }
 ) {
   try {
+    const { service } = await context.params;
     const user = await authenticateRequest(request);
-    const serviceType = extractServiceType(params);
+    const serviceType = extractServiceType({ service });
 
     // TODO: Call AIConfigService when available from Team C
     // const config = await AIConfigService.getConfig(user.org_id, serviceType);
@@ -53,11 +55,13 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { service: string } }
+
+  context: { params: Promise<{ service: string }> }
 ) {
   try {
+    const { service } = await context.params;
     const user = await authenticateRequest(request);
-    const serviceType = extractServiceType(params);
+    const serviceType = extractServiceType({ service });
     const body = await request.json();
     const validated = updateConfigSchema.parse(body);
 
@@ -90,11 +94,13 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { service: string } }
+
+  context: { params: Promise<{ service: string }> }
 ) {
   try {
+    const { service } = await context.params;
     const user = await authenticateRequest(request);
-    const serviceType = extractServiceType(params);
+    const serviceType = extractServiceType({ service });
 
     // TODO: Call AIConfigService when available from Team C
     // await AIConfigService.deleteConfig(user.org_id, serviceType);

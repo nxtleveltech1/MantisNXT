@@ -3,10 +3,12 @@ import { CustomerService } from '@/lib/services/CustomerService';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tickets = await CustomerService.getCustomerTickets(params.id);
+    const { id } = await context.params;
+    const tickets = await CustomerService.getCustomerTickets(id);
 
     return NextResponse.json({
       success: true,
