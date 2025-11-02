@@ -20,14 +20,17 @@ import {
   Building2,
   ChevronDown,
   CreditCard,
+  Database,
   DollarSign,
   FileText,
   Home,
   LayoutDashboard,
   MessageSquare,
   Package,
+  Plug,
   Search,
   Settings,
+  ShoppingBag,
   ShoppingCart,
   TrendingUp,
   Users,
@@ -139,6 +142,26 @@ const navigationGroups: NavigationGroup[] = [
         url: "/inventory",
         icon: Package,
       },
+      {
+        title: "Pricing & Optimization",
+        url: "/operations/pricing",
+        icon: TrendingUp,
+      },
+    ],
+  },
+  {
+    title: "Customer Engagement",
+    items: [
+      {
+        title: "All Customers",
+        url: "/customers",
+        icon: Users,
+      },
+      {
+        title: "Add Customer",
+        url: "/customers/new",
+        icon: UserCheck,
+      },
     ],
   },
   {
@@ -154,6 +177,26 @@ const navigationGroups: NavigationGroup[] = [
         url: "/messages",
         icon: MessageSquare,
         badge: "3",
+      },
+    ],
+  },
+  {
+    title: "System Integration",
+    items: [
+      {
+        title: "Integrations Overview",
+        url: "/integrations",
+        icon: Plug,
+      },
+      {
+        title: "WooCommerce",
+        url: "/integrations/woocommerce",
+        icon: ShoppingBag,
+      },
+      {
+        title: "Odoo ERP",
+        url: "/integrations/odoo",
+        icon: Database,
       },
     ],
   },
@@ -187,6 +230,17 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
   breadcrumbs = [],
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    "Overview": true,
+    "Business Directories": true,
+    "Supplier Management": true,
+    "Operations": true,
+    "Customer Engagement": true,
+    "Financial": true,
+    "Communication": true,
+    "System Integration": true,
+    "Modules Coming": false,
+  })
   const pathname = usePathname()
 
   // Helper function to check if navigation item is active
@@ -195,6 +249,14 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
       return pathname === '/'
     }
     return pathname.startsWith(url)
+  }
+
+  // Toggle group expansion
+  const toggleGroup = (groupTitle: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupTitle]: !prev[groupTitle]
+    }))
   }
 
   return (
@@ -231,47 +293,65 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-2">
-          {navigationGroups.map((group) => (
-            <div key={group.title} className="mb-4">
-              {sidebarOpen && (
-                <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  {group.title}
-                </h3>
-              )}
-              <div className="space-y-1">
-                {group.items.map((item) => {
-                  const isActive = isActiveRoute(item.url)
-                  return (
-                    <Link
-                      key={item.title}
-                      href={item.url}
-                      className={cn(
-                        "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
-                      {sidebarOpen && (
-                        <>
-                          <span className="flex-1">{item.title}</span>
-                          {item.badge && (
-                            <Badge
-                              variant={isActive ? "default" : "secondary"}
-                              className="h-5 min-w-5 text-xs"
-                            >
-                              {item.badge}
-                            </Badge>
+          {navigationGroups.map((group) => {
+            const isExpanded = expandedGroups[group.title] !== false
+            const hasItems = group.items.length > 0
+
+            return (
+              <div key={group.title} className="mb-2">
+                {sidebarOpen && (
+                  <button
+                    onClick={() => toggleGroup(group.title)}
+                    className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    <span>{group.title}</span>
+                    {hasItems && (
+                      <ChevronRight
+                        className={cn(
+                          "h-3 w-3 transition-transform",
+                          isExpanded && "rotate-90"
+                        )}
+                      />
+                    )}
+                  </button>
+                )}
+                {isExpanded && hasItems && (
+                  <div className="space-y-1 mt-1">
+                    {group.items.map((item) => {
+                      const isActive = isActiveRoute(item.url)
+                      return (
+                        <Link
+                          key={item.title}
+                          href={item.url}
+                          className={cn(
+                            "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            isActive
+                              ? "bg-blue-50 text-blue-700"
+                              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                           )}
-                        </>
-                      )}
-                    </Link>
-                  )
-                })}
+                        >
+                          <item.icon className="h-4 w-4 flex-shrink-0" />
+                          {sidebarOpen && (
+                            <>
+                              <span className="flex-1">{item.title}</span>
+                              {item.badge && (
+                                <Badge
+                                  variant={isActive ? "default" : "secondary"}
+                                  className="h-5 min-w-5 text-xs"
+                                >
+                                  {item.badge}
+                                </Badge>
+                              )}
+                            </>
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </nav>
 
         {/* User Profile */}

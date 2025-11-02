@@ -101,8 +101,10 @@ export class SupplierProductService {
       include_unmapped?: boolean;
       category_id?: string;
       search?: string;
+      limit?: number;
+      offset?: number;
     }
-  ): Promise<ProductTableBySupplier[]> {
+  ): Promise<{ products: ProductTableBySupplier[]; total: number }> {
     const conditions: string[] = ['sp.supplier_id = $1'];
     const params: any[] = [supplierId];
     let paramIndex = 2;
@@ -124,7 +126,7 @@ export class SupplierProductService {
       paramIndex++;
     }
 
-    const query = `
+    let query = `
       WITH current_prices AS (
         SELECT DISTINCT ON (supplier_product_id)
           supplier_product_id,
@@ -155,7 +157,7 @@ export class SupplierProductService {
         sp.pack_size,
         br.brand,
         sp.category_id,
-        c.name as category_name,
+        COALESCE(c.name, cat.category_raw) as category_name,
         COALESCE(cp.price, pp.previous_price, 0) as current_price,
         pp.previous_price,
         CASE
@@ -191,12 +193,36 @@ export class SupplierProductService {
         ORDER BY u.received_at DESC, r.row_num DESC
         LIMIT 1
       ) br ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT r.category_raw
+        FROM spp.pricelist_row r
+        JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+        WHERE r.supplier_sku = sp.supplier_sku AND r.category_raw IS NOT NULL AND r.category_raw <> ''
+        ORDER BY u.received_at DESC, r.row_num DESC
+        LIMIT 1
+      ) cat ON TRUE
       WHERE ${conditions.join(' AND ')}
-      ORDER BY sp.is_new DESC, sp.last_seen_at DESC NULLS LAST
     `;
 
+    // Get total count (using same conditions but without pagination)
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM core.supplier_product sp
+      WHERE ${conditions.join(' AND ')}
+    `;
+    const countResult = await dbQuery<{ total: string }>(countQuery, params);
+    const total = parseInt(countResult.rows[0].total);
+
+    // Apply pagination and ordering
+    query += ` ORDER BY sp.is_new DESC, sp.last_seen_at DESC NULLS LAST`;
+    
+    if (options?.limit !== undefined && options.limit > 0) {
+      query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex}`;
+      params.push(options.limit, options.offset || 0);
+    }
+
     const result = await dbQuery<ProductTableBySupplier>(query, params);
-    return result.rows;
+    return { products: result.rows, total };
   }
 
   /**

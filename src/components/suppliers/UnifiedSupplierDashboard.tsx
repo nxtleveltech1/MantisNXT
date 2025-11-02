@@ -470,9 +470,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   initialTab = "overview"
 }) => {
   const router = useRouter()
-  const { suppliers: apiSuppliers, loading: suppliersLoading, error: suppliersError, fetchSuppliers, refresh } = useSuppliers()
-  const { deleteSupplier } = useSupplierMutations()
-  
+  const { suppliers: apiSuppliers, loading: suppliersLoading, error: suppliersError, fetchSuppliers, refresh, deleteSupplier: deleteSupplierHook } = useSuppliers()
+  const { deleteSupplier: deleteSupplierMutation } = useSupplierMutations()
+
   // Refetch suppliers when component mounts or when refresh param is present
   useEffect(() => {
     // Check if there's a refresh param in the URL
@@ -675,11 +675,21 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
     }
 
     try {
-      await deleteSupplier.mutateAsync(supplierId)
-      // Refresh the suppliers list after deletion
-      await fetchSuppliers()
-      // Also trigger a router refresh to ensure UI updates
-      router.refresh()
+      // Use the deleteSupplier from useSuppliers hook to ensure local state is updated
+      await deleteSupplierHook(supplierId)
+
+      // Also update React Query cache for consistency
+      if (deleteSupplierMutation) {
+        try {
+          await deleteSupplierMutation.mutateAsync(supplierId)
+        } catch (e) {
+          // If React Query mutation fails, it's ok since the main deletion succeeded
+          console.log('React Query cache update skipped:', e)
+        }
+      }
+
+      // Success notification could be added here if needed
+      console.log(`✅ Supplier "${supplierName}" deleted successfully`)
     } catch (error) {
       console.error('Failed to delete supplier:', error)
       alert(error instanceof Error ? error.message : 'Failed to delete supplier')

@@ -17,19 +17,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
     const options = {
       include_inactive: searchParams.get('include_inactive') === 'true',
       include_unmapped: searchParams.get('include_unmapped') === 'true',
       category_id: searchParams.get('category_id') || undefined,
-      search: searchParams.get('search') || undefined
+      search: searchParams.get('search') || undefined,
+      limit: limit > 0 ? limit : 50,
+      offset: offset >= 0 ? offset : 0
     };
 
-    const products = await supplierProductService.getProductTable(supplierId, options);
+    const { products, total } = await supplierProductService.getProductTable(supplierId, options);
 
     return NextResponse.json({
       success: true,
       products,
-      count: products.length
+      count: products.length,
+      total,
+      limit: options.limit,
+      offset: options.offset,
+      hasMore: (options.offset + products.length) < total
     });
   } catch (error) {
     console.error('Get product table error:', error);

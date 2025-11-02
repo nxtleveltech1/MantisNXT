@@ -27,7 +27,7 @@ import {
     TableRow,
   } from '@/components/ui/table'
   import { Checkbox } from '@/components/ui/checkbox'
-  import { Search, RefreshCw, Columns } from 'lucide-react'
+  import { Search, RefreshCw, Columns, ChevronLeft, ChevronRight } from 'lucide-react'
   import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -64,6 +64,8 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
       setSearch('')
       setSelected(new Set())
       setQuantities({})
+      setPage(1)
+      setTotal(0)
     }
   }, [open])
   type SelectorRow = {
@@ -81,10 +83,23 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
   const [rows, setRows] = useState<SelectorRow[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [categoryList, setCategoryList] = useState<Array<{ id: string; name: string }>>([])
   const [brandList, setBrandList] = useState<string[]>([])
   const [brand, setBrand] = useState<string>('all_brands')
   const [supplierOptions, setSupplierOptions] = useState<Array<{ id: string; name: string }>>([])
+
+  const PAGE_SIZE = 50
+
+  // Format currency to match supplier inventory format: "9 999.00" (space-separated thousands, 2 decimals, no currency symbol)
+  const formatPrice = (price: number | null | undefined): string => {
+    const num = Number(price || 0)
+    return num.toLocaleString('en-ZA', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: true
+    }).replace(/,/g, ' ')
+  }
 
   // Column visibility similar to SPP
   const [visibleCols, setVisibleCols] = useState({
@@ -97,6 +112,11 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
   })
   const [quantities, setQuantities] = useState<QuantityMap>({})
   const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [search, category, brand, supplierId])
 
   // Load suppliers first, then auto-select one to trigger product loading
   useEffect(() => {
@@ -146,19 +166,26 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
         // Use enriched table endpoint with current price and category join
         const url = new URL('/api/core/suppliers/products/table', window.location.origin)
         url.searchParams.set('supplier_id', supplierId)
+        url.searchParams.set('limit', String(PAGE_SIZE))
+        url.searchParams.set('offset', String((page - 1) * PAGE_SIZE))
         if (search) url.searchParams.set('search', search)
-        
+
         const resp = await fetch(url.toString())
         if (cancelled) return
-        
+
         if (!resp.ok) {
           throw new Error(`Failed to fetch products: ${resp.status} ${resp.statusText}`)
         }
-        
+
         const json = await resp.json().catch(() => ({}))
         if (cancelled) return
-        
+
         const data = Array.isArray(json?.products) ? json.products : []
+        const totalCount = json?.total || 0
+
+        if (!cancelled) {
+          setTotal(totalCount)
+        }
 
         // Fetch categories map once (on first data load)
         if (categoryList.length === 0) {
@@ -227,26 +254,21 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
     return Array.from(new Set(rows.map(p => p.category_name || 'uncategorized'))).sort()
   }, [rows, categoryList])
 
+  // Since we now use server-side pagination and search, just display the current page of rows
+  // Client-side filtering would give incorrect results with paginated data
   const filtered = useMemo(() => {
-    const selectedCategoryName = category
+    // Apply only client-side category and brand filters for the current page
     return rows.filter(p => {
-      if (selectedCategoryName !== 'all_categories') {
+      if (category !== 'all_categories') {
         const name = p.category_name || 'uncategorized'
-        if (name !== selectedCategoryName) return false
+        if (name !== category) return false
       }
       if (brand !== 'all_brands') {
         if ((p.brand || '').toLowerCase() !== brand.toLowerCase()) return false
       }
-      if (supplierId !== 'all_suppliers' && p.supplier_id !== supplierId) return false
-      if (search) {
-        const s = search.toLowerCase()
-        const match = [p.name_from_supplier, p.supplier_sku, p.supplier_name || '', p.brand || '']
-          .some(v => (v || '').toLowerCase().includes(s))
-        if (!match) return false
-      }
       return true
     })
-  }, [rows, category, brand, supplierId, search])
+  }, [rows, category, brand])
 
   const supplierNameFromRow = (r: SelectorRow) => r.supplier_name || 'Unknown'
 
@@ -431,7 +453,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
                     </TableCell>
                   )}
                   {visibleCols.uom && (<TableCell>{p.uom || '-'}</TableCell>)}
-                  {visibleCols.price && (<TableCell className="text-right">{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 0 }).format(Number(p.current_price || 0))}</TableCell>)}
+                  {visibleCols.price && (<TableCell className="text-right">{formatPrice(p.current_price)}</TableCell>)}
                   <TableCell className="text-right">
                     <Input type="number" min={0} value={quantities[p.supplier_product_id] ?? 0} onChange={(e) => setQty(p.supplier_product_id, Math.max(0, Number(e.target.value || 0)))} className="w-24 ml-auto" />
                   </TableCell>
@@ -441,8 +463,38 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
           </Table>
         </div>
 
-        <div className="flex items-center justify-between pt-3">
-          <div className="text-sm text-muted-foreground">Selected: <span className="font-medium">{selectedCount}</span></div>
+        <div className="flex items-center justify-between pt-3 border-t">
+          <div className="text-sm text-muted-foreground">
+            Selected: <span className="font-medium">{selectedCount}</span>
+            {total > 0 && (
+              <span className="ml-4">
+                Showing {((page - 1) * PAGE_SIZE) + 1}-{Math.min(page * PAGE_SIZE, total)} of {total} products
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1 || loading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              Page {page} of {Math.ceil(total / PAGE_SIZE) || 1}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => p + 1)}
+              disabled={page >= Math.ceil(total / PAGE_SIZE) || loading}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button disabled={!canSubmit || loading} onClick={handleBulkAdd}>Add Selected</Button>

@@ -38,18 +38,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  Award,
   Bell,
   Building2,
   ChevronDown,
   CreditCard,
+  Database,
   DollarSign,
   FileText,
   Home,
   LayoutDashboard,
+  LifeBuoy,
   MessageSquare,
   Package,
+  Plug,
   Search,
   Settings,
+  ShoppingBag,
   ShoppingCart,
   TrendingUp,
   Users,
@@ -137,6 +142,29 @@ const sidebarNavigation = [
         icon: Package,
         isActive: false,
       },
+      {
+        title: "Pricing & Optimization",
+        url: "/operations/pricing",
+        icon: TrendingUp,
+        isActive: false,
+      },
+    ],
+  },
+  {
+    title: "Customer Engagement",
+    items: [
+      {
+        title: "All Customers",
+        url: "/customers",
+        icon: Users,
+        isActive: false,
+      },
+      {
+        title: "Add Customer",
+        url: "/customers/new",
+        icon: UserCheck,
+        isActive: false,
+      },
     ],
   },
   {
@@ -153,6 +181,29 @@ const sidebarNavigation = [
         icon: MessageSquare,
         isActive: false,
         badge: "3",
+      },
+    ],
+  },
+  {
+    title: "System Integration",
+    items: [
+      {
+        title: "Integrations Overview",
+        url: "/integrations",
+        icon: Plug,
+        isActive: false,
+      },
+      {
+        title: "WooCommerce",
+        url: "/integrations/woocommerce",
+        icon: ShoppingBag,
+        isActive: false,
+      },
+      {
+        title: "Odoo ERP",
+        url: "/integrations/odoo",
+        icon: Database,
+        isActive: false,
       },
     ],
   },

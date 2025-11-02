@@ -95,6 +95,7 @@ export async function getCompleteInventory(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Build dynamic query with proper SQL injection protection
+    // Include enriched data from supplier_product and pricelist
     let baseQuery = `
       SELECT
         i.*,
@@ -107,10 +108,30 @@ export async function getCompleteInventory(request: NextRequest) {
           WHEN i.stock_qty <= COALESCE(i.reorder_point, 0) THEN 'low'
           ELSE 'normal'
         END as stock_status,
+        COALESCE(ph.price, 0) as cost_per_unit_zar,
+        COALESCE(ph.price, 0) * i.stock_qty as total_value_zar,
+        COALESCE(cat.category_raw, i.category, 'Unknown') as category,
         0::numeric as margin,
         0::numeric as margin_percentage
       FROM public.inventory_items i
       LEFT JOIN public.suppliers s ON i.supplier_id::text = s.id
+      LEFT JOIN core.supplier_product sp ON sp.supplier_sku = i.sku AND sp.supplier_id::text = i.supplier_id
+      LEFT JOIN LATERAL (
+        SELECT price
+        FROM core.price_history
+        WHERE supplier_product_id = sp.supplier_product_id
+          AND is_current = true
+        ORDER BY valid_from DESC
+        LIMIT 1
+      ) ph ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT category_raw
+        FROM spp.pricelist_row r
+        JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id
+        WHERE r.supplier_sku = i.sku AND u.supplier_id::text = i.supplier_id
+        ORDER BY u.received_at DESC
+        LIMIT 1
+      ) cat ON TRUE
       WHERE 1=1
     `
 
@@ -231,12 +252,107 @@ export async function getCompleteInventory(request: NextRequest) {
     // Execute main query
     const result = await query(baseQuery, queryParams)
 
-    // Get total count for pagination
-    let countQuery = baseQuery.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(*) as total FROM')
-    countQuery = countQuery.replace(/ORDER BY[\s\S]*$/, '')
-    countQuery = countQuery.replace(/LIMIT[\s\S]*$/, '')
+    // Build proper count query without complex LATERAL joins
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM public.inventory_items i
+      LEFT JOIN public.suppliers s ON i.supplier_id::text = s.id
+      WHERE 1=1
+    `
 
-    const countParams = queryParams.slice(0, -2) // Remove limit and offset
+    // Rebuild the WHERE conditions for count query (same as baseQuery filters)
+    let countParamIndex = 1
+    const countParams: any[] = []
+
+    if (search) {
+      countQuery += ` AND (
+        i.sku ILIKE $${countParamIndex} OR
+        i.name ILIKE $${countParamIndex} OR
+        i.description ILIKE $${countParamIndex} OR
+        i.barcode ILIKE $${countParamIndex} OR
+        s.name ILIKE $${countParamIndex}
+      )`
+      countParams.push(`%${search}%`)
+      countParamIndex++
+    }
+
+    if (category?.length) {
+      countQuery += ` AND i.category = ANY($${countParamIndex})`
+      countParams.push(category)
+      countParamIndex++
+    }
+
+    if (brand?.length) {
+      countQuery += ` AND i.brand = ANY($${countParamIndex})`
+      countParams.push(brand)
+      countParamIndex++
+    }
+
+    if (supplier?.length) {
+      if (supplier.length === 1) {
+        countQuery += ` AND i.supplier_id = $${countParamIndex}::uuid`
+        countParams.push(supplier[0])
+      } else {
+        countQuery += ` AND i.supplier_id = ANY($${countParamIndex}::uuid[])`
+        countParams.push(supplier)
+      }
+      countParamIndex++
+    }
+
+    if (status?.length) {
+      countQuery += ` AND i.status = ANY($${countParamIndex})`
+      countParams.push(status)
+      countParamIndex++
+    }
+
+    if (lowStock) {
+      countQuery += ` AND i.stock_qty <= COALESCE(i.reorder_point, 0) AND i.stock_qty > 0`
+    }
+
+    if (outOfStock) {
+      countQuery += ` AND i.stock_qty = 0`
+    }
+
+    if (overStock) {
+      countQuery += ` AND i.max_stock IS NOT NULL AND i.stock_qty >= i.max_stock`
+    }
+
+    if (minCost) {
+      countQuery += ` AND i.cost_price >= $${countParamIndex}`
+      countParams.push(parseFloat(minCost))
+      countParamIndex++
+    }
+
+    if (maxCost) {
+      countQuery += ` AND i.cost_price <= $${countParamIndex}`
+      countParams.push(parseFloat(maxCost))
+      countParamIndex++
+    }
+
+    if (minPrice) {
+      countQuery += ` AND i.sale_price >= $${countParamIndex}`
+      countParams.push(parseFloat(minPrice))
+      countParamIndex++
+    }
+
+    if (maxPrice) {
+      countQuery += ` AND i.sale_price <= $${countParamIndex}`
+      countParams.push(parseFloat(maxPrice))
+      countParamIndex++
+    }
+
+    if (location?.length) {
+      countQuery += ` AND i.location = ANY($${countParamIndex})`
+      countParams.push(location)
+      countParamIndex++
+    }
+
+    if (tags?.length) {
+      countQuery += ` AND i.tags && $${countParamIndex}`
+      countParams.push(tags)
+      countParamIndex++
+    }
+
     const countResult = await query(countQuery, countParams)
     const total = parseInt(countResult.rows[0].total)
     const totalPages = Math.ceil(total / limit)
@@ -464,29 +580,93 @@ async function handleBulkCreate(items: any[]) {
   const validatedItems = items.map(item => inventoryItemSchema.parse(item))
 
   return TransactionHelper.withTransaction(async (client) => {
-    const results = []
+    const created = []
+    const updated = []
+    const errors = []
 
     for (const item of validatedItems) {
-      // Check for duplicate SKU
-      const existing = await client.query('SELECT id FROM public.inventory_items WHERE sku = $1', [item.sku])
-      if (existing.rows.length > 0) {
-        throw new Error(`SKU ${item.sku} already exists`)
+      try {
+        // Check if item already exists
+        const existing = await client.query(
+          'SELECT id, stock_qty FROM public.inventory_items WHERE sku = $1',
+          [item.sku]
+        )
+
+        const spSku = item.supplier_sku || item.sku
+
+        if (existing.rows.length > 0) {
+          // Update existing item: add to stock quantity and update cost price
+          const existingId = existing.rows[0].id
+          const existingStock = existing.rows[0].stock_qty || 0
+          const newStock = existingStock + (item.stock_qty || 0)
+
+          await client.query(
+            `UPDATE public.inventory_items
+             SET stock_qty = $1,
+                 updated_at = NOW()
+             WHERE id = $2`,
+            [newStock, existingId]
+          )
+
+          // SSOT: update supplier_product and add to stock
+          await upsertSupplierProduct({
+            supplierId: item.supplier_id,
+            sku: spSku,
+            name: item.name
+          })
+          await setStock({
+            supplierId: item.supplier_id,
+            sku: spSku,
+            quantity: item.stock_qty || 0,
+            unitCost: item.cost_price,
+            reason: 'bulk_update_stock_in'
+          })
+
+          updated.push({
+            sku: item.sku,
+            supplier_id: item.supplier_id,
+            previous_stock: existingStock,
+            new_stock: newStock,
+            added: item.stock_qty
+          })
+        } else {
+          // Create new item
+          // SSOT: create supplier_product and set initial stock
+          await upsertSupplierProduct({
+            supplierId: item.supplier_id,
+            sku: spSku,
+            name: item.name
+          })
+          await setStock({
+            supplierId: item.supplier_id,
+            sku: spSku,
+            quantity: item.stock_qty || 0,
+            unitCost: item.cost_price,
+            reason: 'bulk_create'
+          })
+
+          created.push({
+            sku: item.sku,
+            supplier_id: item.supplier_id,
+            stock: item.stock_qty
+          })
+        }
+      } catch (error) {
+        errors.push({
+          sku: item.sku,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        })
       }
-
-      // Insert item (same logic as single create)
-      const availableQty = item.stock_qty - item.reserved_qty
-
-      // SSOT: create supplier_product and set initial stock
-      const spSku = item.supplier_sku || item.sku
-      await upsertSupplierProduct({ supplierId: item.supplier_id, sku: spSku, name: item.name })
-      await setStock({ supplierId: item.supplier_id, sku: spSku, quantity: item.stock_qty || 0, unitCost: item.cost_price, reason: 'bulk_create' })
-      results.push({ sku: item.sku, supplier_id: item.supplier_id })
     }
 
     return NextResponse.json({
-      success: true,
-      data: results,
-      message: `${results.length} inventory items created successfully`
+      success: errors.length === 0,
+      data: {
+        created,
+        updated,
+        errors
+      },
+      message: `Created: ${created.length}, Updated: ${updated.length}, Errors: ${errors.length}`
     })
   });
 }

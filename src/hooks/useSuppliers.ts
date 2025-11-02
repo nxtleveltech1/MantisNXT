@@ -181,7 +181,10 @@ export function useSuppliers(options: UseSupplierOptions = {}) {
       const result: APIResponse<void> = await response.json()
 
       if (result.success) {
+        // Immediately remove from local state
         setSuppliers(prev => prev.filter(supplier => supplier.id !== id))
+        console.log('✅ Supplier removed from local state:', id)
+        return true
       } else {
         throw new Error(result.error || 'Failed to delete supplier')
       }
