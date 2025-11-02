@@ -436,36 +436,48 @@ export default function WooCommercePage() {
     >
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-              <ShoppingBag className="h-6 w-6" />
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-900 dark:to-blue-900 rounded-xl p-6 shadow-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
+                <ShoppingBag className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">WooCommerce Store</h2>
+                <p className="text-white/90 text-sm mt-1">
+                  {config.store_url || 'Not configured'}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground">
-                {config.store_url || 'Not configured'}
-              </p>
-            </div>
-          </div>
 
-          <Badge variant={config.status === 'active' ? 'default' : config.status === 'error' ? 'destructive' : 'secondary'}>
-            {config.status === 'active' ? (
-              <>
-                <CheckCircle2 className="mr-1 h-3 w-3" />
-                Connected
-              </>
-            ) : config.status === 'error' ? (
-              <>
-                <AlertCircle className="mr-1 h-3 w-3" />
-                Error
-              </>
-            ) : (
-              <>
-                <AlertCircle className="mr-1 h-3 w-3" />
-                Not Connected
-              </>
-            )}
-          </Badge>
+            <Badge
+              variant={config.status === 'active' ? 'default' : config.status === 'error' ? 'destructive' : 'secondary'}
+              className={`text-sm px-4 py-2 ${
+                config.status === 'active'
+                  ? 'bg-green-500 hover:bg-green-600 text-white shadow-md'
+                  : config.status === 'error'
+                  ? 'bg-red-500 hover:bg-red-600 text-white shadow-md'
+                  : 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-md'
+              }`}
+            >
+              {config.status === 'active' ? (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Connected
+                </>
+              ) : config.status === 'error' ? (
+                <>
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Connection Error
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Not Connected
+                </>
+              )}
+            </Badge>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -480,15 +492,16 @@ export default function WooCommercePage() {
           {/* Sync Tab - ENHANCED */}
           <TabsContent value="sync" className="space-y-6">
             {/* Sync All Button */}
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-semibold">Data Synchronization</h3>
-                <p className="text-sm text-muted-foreground">Sync data between WooCommerce and MantisNXT</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-6 rounded-lg border border-blue-100 dark:border-blue-900">
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Data Synchronization</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Sync data between WooCommerce and MantisNXT in real-time</p>
               </div>
               <Button
                 onClick={handleSyncAll}
                 disabled={config.status !== 'active' || syncAllInProgress}
                 size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 {syncAllInProgress ? (
                   <>
@@ -498,14 +511,14 @@ export default function WooCommercePage() {
                 ) : (
                   <>
                     <Play className="mr-2 h-4 w-4" />
-                    Sync All
+                    Sync All Entities
                   </>
                 )}
               </Button>
             </div>
 
             {/* Enhanced Sync Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3">
               {(['products', 'orders', 'customers'] as const).map((entityType) => {
                 const progress = syncProgress[entityType];
                 const Icon = ENTITY_ICONS[entityType];
@@ -513,91 +526,100 @@ export default function WooCommercePage() {
                 const percentage = calculateProgress(progress);
 
                 return (
-                  <Card key={entityType}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">{label}</CardTitle>
-                      <Icon className="h-4 w-4 text-muted-foreground" />
+                  <Card key={entityType} className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-200 hover:shadow-lg">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+                      <CardTitle className="text-base font-bold">{label}</CardTitle>
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 pt-6">
                       {progress.status === 'syncing' ? (
                         <>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>Progress</span>
-                              <span>{percentage}%</span>
+                          <div className="space-y-3">
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-blue-600 dark:text-blue-400">Syncing...</span>
+                              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{percentage}%</span>
                             </div>
-                            <Progress value={percentage} className="h-2" />
+                            <Progress value={percentage} className="h-3 bg-blue-100 dark:bg-blue-900" />
                             <div className="flex justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                {progress.processed} / {progress.total || '...'}
+                              <span className="font-medium text-gray-700 dark:text-gray-300">
+                                {progress.processed.toLocaleString()} / {progress.total > 0 ? progress.total.toLocaleString() : '...'}
                               </span>
-                              <span className="text-muted-foreground">
-                                ETA: {calculateEstimatedTime(progress)}
+                              <span className="font-medium text-gray-600 dark:text-gray-400">
+                                <Clock className="h-3 w-3 inline mr-1" />
+                                {calculateEstimatedTime(progress)}
                               </span>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div>
-                              <div className="text-muted-foreground">Created</div>
-                              <div className="font-semibold text-green-600">{progress.created}</div>
+                          <div className="grid grid-cols-3 gap-3 pt-2">
+                            <div className="text-center p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                              <div className="text-xs text-green-700 dark:text-green-400 font-medium">Created</div>
+                              <div className="text-lg font-bold text-green-600 dark:text-green-400">{progress.created}</div>
                             </div>
-                            <div>
-                              <div className="text-muted-foreground">Updated</div>
-                              <div className="font-semibold text-blue-600">{progress.updated}</div>
+                            <div className="text-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                              <div className="text-xs text-blue-700 dark:text-blue-400 font-medium">Updated</div>
+                              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{progress.updated}</div>
                             </div>
-                            <div>
-                              <div className="text-muted-foreground">Failed</div>
-                              <div className="font-semibold text-red-600">{progress.failed}</div>
+                            <div className="text-center p-2 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                              <div className="text-xs text-red-700 dark:text-red-400 font-medium">Failed</div>
+                              <div className="text-lg font-bold text-red-600 dark:text-red-400">{progress.failed}</div>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                          <div className="flex items-center justify-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 py-2 rounded-lg">
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Syncing...
+                            Processing {label.toLowerCase()}...
                           </div>
                         </>
                       ) : progress.status === 'completed' ? (
                         <>
-                          <div className="text-center py-2">
-                            <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                            <p className="text-sm font-medium">Sync Completed</p>
-                            <p className="text-xs text-muted-foreground">
+                          <div className="text-center py-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2 animate-pulse" />
+                            <p className="text-base font-bold text-green-700 dark:text-green-400">Sync Completed</p>
+                            <p className="text-xs text-green-600 dark:text-green-500 mt-1 font-medium">
+                              <Clock className="h-3 w-3 inline mr-1" />
                               {formatDuration((progress.endTime || 0) - (progress.startTime || 0))}
                             </p>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 text-xs border-t pt-3">
-                            <div>
-                              <div className="text-muted-foreground">Created</div>
-                              <div className="font-semibold text-green-600">{progress.created}</div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="text-center p-2 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                              <div className="text-xs text-green-700 dark:text-green-400 font-medium">Created</div>
+                              <div className="text-xl font-bold text-green-600 dark:text-green-400">{progress.created}</div>
                             </div>
-                            <div>
-                              <div className="text-muted-foreground">Updated</div>
-                              <div className="font-semibold text-blue-600">{progress.updated}</div>
+                            <div className="text-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                              <div className="text-xs text-blue-700 dark:text-blue-400 font-medium">Updated</div>
+                              <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{progress.updated}</div>
                             </div>
-                            <div>
-                              <div className="text-muted-foreground">Failed</div>
-                              <div className="font-semibold text-red-600">{progress.failed}</div>
+                            <div className="text-center p-2 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                              <div className="text-xs text-red-700 dark:text-red-400 font-medium">Failed</div>
+                              <div className="text-xl font-bold text-red-600 dark:text-red-400">{progress.failed}</div>
                             </div>
                           </div>
                         </>
                       ) : progress.status === 'error' ? (
                         <>
-                          <div className="text-center py-2">
-                            <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-                            <p className="text-sm font-medium text-red-600">Sync Failed</p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                          <div className="text-center py-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-2" />
+                            <p className="text-base font-bold text-red-700 dark:text-red-400">Sync Failed</p>
+                            <p className="text-xs text-red-600 dark:text-red-500 mt-2 px-2 leading-relaxed">
                               {progress.error}
                             </p>
                           </div>
                         </>
                       ) : (
                         <>
-                          <div className="text-center py-4">
-                            <div className="text-2xl font-bold text-muted-foreground">-</div>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Ready to sync
+                          <div className="text-center py-6">
+                            <div className="relative mx-auto w-20 h-20 mb-3">
+                              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                                <Icon className="h-10 w-10 text-gray-400 dark:text-gray-500" />
+                              </div>
+                            </div>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Ready to Sync</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Click below to start synchronization
                             </p>
                           </div>
                         </>
@@ -605,20 +627,37 @@ export default function WooCommercePage() {
 
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="w-full"
+                        className={`w-full font-semibold transition-all duration-200 ${
+                          progress.status === 'syncing'
+                            ? 'bg-blue-600 hover:bg-blue-700'
+                            : progress.status === 'completed'
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : progress.status === 'error'
+                            ? 'bg-red-600 hover:bg-red-700'
+                            : 'bg-primary hover:bg-primary/90'
+                        }`}
                         onClick={() => handleSync(entityType)}
                         disabled={config.status !== 'active' || progress.status === 'syncing'}
                       >
                         {progress.status === 'syncing' ? (
                           <>
-                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Syncing...
+                          </>
+                        ) : progress.status === 'completed' ? (
+                          <>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Sync Again
+                          </>
+                        ) : progress.status === 'error' ? (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Retry Sync
                           </>
                         ) : (
                           <>
-                            <RefreshCw className="mr-2 h-3 w-3" />
-                            Sync Now
+                            <Play className="mr-2 h-4 w-4" />
+                            Start Sync
                           </>
                         )}
                       </Button>
@@ -629,13 +668,18 @@ export default function WooCommercePage() {
             </div>
 
             {config.status !== 'active' && (
-              <Card className="border-yellow-200 bg-yellow-50">
+              <Card className="border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 shadow-md">
                 <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600" />
-                    <p className="text-sm text-yellow-800">
-                      Please configure and test your connection before syncing data.
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Connection Required</p>
+                      <p className="text-sm text-amber-800 dark:text-amber-300 mt-1">
+                        Please configure and test your WooCommerce connection in the Configuration tab before syncing data.
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -644,14 +688,17 @@ export default function WooCommercePage() {
 
           {/* Configuration Tab */}
           <TabsContent value="configuration" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Connection Details</CardTitle>
-                <CardDescription>
-                  Configure your WooCommerce store connection settings
+            <Card className="border-2">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-primary" />
+                  Connection Details
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Configure your WooCommerce store connection settings and credentials
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 pt-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Integration Name</Label>
                   <Input
@@ -700,20 +747,22 @@ export default function WooCommercePage() {
                   />
                 </div>
 
-                <div className="flex gap-2 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t-2">
                   <Button
                     onClick={handleTestConnection}
                     disabled={!config.store_url || !config.consumer_key || !config.consumer_secret || testing}
                     variant="outline"
+                    className="flex-1 h-11 font-semibold border-2"
+                    size="lg"
                   >
                     {testing ? (
                       <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Testing...
+                        <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                        Testing Connection...
                       </>
                     ) : (
                       <>
-                        <TestTube2 className="mr-2 h-4 w-4" />
+                        <TestTube2 className="mr-2 h-5 w-5" />
                         Test Connection
                       </>
                     )}
@@ -721,15 +770,17 @@ export default function WooCommercePage() {
                   <Button
                     onClick={handleSaveConfiguration}
                     disabled={saving}
+                    className="flex-1 h-11 font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    size="lg"
                   >
                     {saving ? (
                       <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <Save className="mr-2 h-4 w-4" />
+                        <Save className="mr-2 h-5 w-5" />
                         Save Configuration
                       </>
                     )}
@@ -817,55 +868,81 @@ export default function WooCommercePage() {
             </Card>
           </TabsContent>
 
-          {/* Sync History Tab - NEW */}
+          {/* Sync History Tab - ENHANCED */}
           <TabsContent value="history" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Sync History</CardTitle>
-                <CardDescription>View past synchronization operations and their results</CardDescription>
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl">Sync History</CardTitle>
+                    <CardDescription className="mt-1">Complete log of all synchronization operations</CardDescription>
+                  </div>
+                  {syncHistory.length > 0 && (
+                    <Badge variant="secondary" className="text-sm">
+                      {syncHistory.length} {syncHistory.length === 1 ? 'entry' : 'entries'}
+                    </Badge>
+                  )}
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {syncHistory.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No sync history available yet</p>
-                    <p className="text-sm mt-2">Start a sync to see history here</p>
+                  <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
+                    <div className="relative mx-auto w-24 h-24 mb-4">
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                        <Clock className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+                      </div>
+                    </div>
+                    <p className="text-base font-semibold text-gray-700 dark:text-gray-300">No Sync History Yet</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
+                      Your synchronization history will appear here once you perform your first sync operation.
+                    </p>
                   </div>
                 ) : (
-                  <div className="border rounded-lg">
+                  <div className="border rounded-lg overflow-hidden shadow-sm">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Entity</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Timestamp</TableHead>
-                          <TableHead className="text-right">Processed</TableHead>
-                          <TableHead className="text-right">Created</TableHead>
-                          <TableHead className="text-right">Updated</TableHead>
-                          <TableHead className="text-right">Failed</TableHead>
-                          <TableHead className="text-right">Duration</TableHead>
+                        <TableRow className="bg-gray-50 dark:bg-gray-900/50">
+                          <TableHead className="font-bold">Entity</TableHead>
+                          <TableHead className="font-bold">Status</TableHead>
+                          <TableHead className="font-bold">Timestamp</TableHead>
+                          <TableHead className="text-right font-bold">Processed</TableHead>
+                          <TableHead className="text-right font-bold">Created</TableHead>
+                          <TableHead className="text-right font-bold">Updated</TableHead>
+                          <TableHead className="text-right font-bold">Failed</TableHead>
+                          <TableHead className="text-right font-bold">Duration</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {syncHistory.map((entry) => {
                           const Icon = ENTITY_ICONS[entry.entityType];
                           return (
-                            <TableRow key={entry.id}>
+                            <TableRow key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <Icon className="h-4 w-4 text-muted-foreground" />
-                                  <span className="font-medium">{ENTITY_LABELS[entry.entityType]}</span>
+                                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <Icon className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <span className="font-semibold">{ENTITY_LABELS[entry.entityType]}</span>
                                 </div>
                               </TableCell>
                               <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
+                              <TableCell className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 {formatTimestamp(entry.timestamp)}
                               </TableCell>
-                              <TableCell className="text-right font-mono">{entry.processed}</TableCell>
-                              <TableCell className="text-right font-mono text-green-600">{entry.created}</TableCell>
-                              <TableCell className="text-right font-mono text-blue-600">{entry.updated}</TableCell>
-                              <TableCell className="text-right font-mono text-red-600">{entry.failed}</TableCell>
-                              <TableCell className="text-right text-sm text-muted-foreground">
+                              <TableCell className="text-right font-mono font-semibold text-gray-900 dark:text-gray-100">
+                                {entry.processed.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold text-green-600 dark:text-green-400">
+                                {entry.created.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold text-blue-600 dark:text-blue-400">
+                                {entry.updated.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold text-red-600 dark:text-red-400">
+                                {entry.failed.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right text-sm font-medium text-gray-600 dark:text-gray-400">
+                                <Clock className="h-3 w-3 inline mr-1" />
                                 {formatDuration(entry.duration)}
                               </TableCell>
                             </TableRow>
