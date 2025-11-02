@@ -131,16 +131,41 @@ export default function WooCommercePage() {
 
   const handleSync = async (entityType: string) => {
     try {
+      // Validate configuration exists
+      if (!config.id || !config.store_url || !config.consumer_key || !config.consumer_secret) {
+        toast({
+          title: "Configuration Missing",
+          description: "Please save your WooCommerce configuration before syncing.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prepare the request payload
+      const payload = {
+        config: {
+          url: config.store_url,
+          consumerKey: config.consumer_key,
+          consumerSecret: config.consumer_secret,
+        },
+        org_id: 'default', // TODO: Get actual org_id from session/context
+        options: {
+          limit: 100,
+        },
+      };
+
       const response = await fetch(`/api/v1/integrations/woocommerce/sync/${entityType}`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (data.success) {
         toast({
-          title: "Sync Started",
-          description: `${entityType} sync has been initiated.`,
+          title: "Sync Completed",
+          description: data.message || `${entityType} sync has been completed successfully.`,
         });
       } else {
         throw new Error(data.error);
