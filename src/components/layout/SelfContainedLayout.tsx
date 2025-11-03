@@ -16,6 +16,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  Activity,
+  Award,
+  BarChart,
   Bell,
   Building2,
   ChevronDown,
@@ -23,7 +26,10 @@ import {
   Database,
   DollarSign,
   FileText,
+  Gift,
+  Heart,
   Home,
+  Layout,
   LayoutDashboard,
   MessageSquare,
   Package,
@@ -165,6 +171,71 @@ const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
+    title: "Loyalty & Rewards",
+    items: [
+      {
+        title: "Programs",
+        url: "/admin/loyalty/programs",
+        icon: Award,
+      },
+      {
+        title: "Rewards",
+        url: "/admin/loyalty/rewards",
+        icon: Gift,
+      },
+      {
+        title: "Rules",
+        url: "/admin/loyalty/rules",
+        icon: Settings,
+      },
+      {
+        title: "Redemptions",
+        url: "/admin/loyalty/redemptions",
+        icon: ShoppingCart,
+      },
+      {
+        title: "Analytics",
+        url: "/admin/loyalty/analytics",
+        icon: BarChart,
+      },
+    ],
+  },
+  {
+    title: "AI Services",
+    items: [
+      {
+        title: "Configuration",
+        url: "/admin/ai/config",
+        icon: Settings,
+      },
+      {
+        title: "Predictions",
+        url: "/admin/ai/predictions",
+        icon: TrendingUp,
+      },
+      {
+        title: "Forecasts",
+        url: "/admin/ai/forecasts",
+        icon: Activity,
+      },
+      {
+        title: "Alerts",
+        url: "/admin/ai/alerts",
+        icon: Bell,
+      },
+      {
+        title: "Dashboards",
+        url: "/admin/ai/dashboards",
+        icon: Layout,
+      },
+      {
+        title: "Health Monitor",
+        url: "/admin/ai/health",
+        icon: Heart,
+      },
+    ],
+  },
+  {
     title: "Financial",
     items: [
     ],
@@ -236,6 +307,8 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
     "Supplier Management": true,
     "Operations": true,
     "Customer Engagement": true,
+    "Loyalty & Rewards": true,
+    "AI Services": true,
     "Financial": true,
     "Communication": true,
     "System Integration": true,

@@ -51,6 +51,18 @@ export class ServiceError extends Error {
  * Extract and verify JWT token from request
  */
 export async function authenticateRequest(request: NextRequest): Promise<AuthUser> {
+  // Development mode bypass - return mock user
+  if (process.env.NODE_ENV === 'development' && process.env.DISABLE_AUTH === 'true') {
+    return {
+      userId: 'dev-user-123',
+      email: 'dev@mantisnxt.com',
+      name: 'Development User',
+      role: 'admin',
+      permissions: ['admin'],
+      organizationId: 'dev-org-123',
+    };
+  }
+
   const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
   if (!token) {

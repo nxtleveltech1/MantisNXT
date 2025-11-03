@@ -246,6 +246,16 @@ export function extractStatus(searchParams: URLSearchParams): string | null {
  * TODO: Integrate with project authentication system
  */
 export async function authenticateRequest(request: NextRequest) {
+  // Development mode bypass
+  if (process.env.NODE_ENV === 'development' && process.env.DISABLE_AUTH === 'true') {
+    return {
+      id: 'dev-user-123',
+      org_id: 'dev-org-123',
+      email: 'dev@mantisnxt.com',
+      role: 'admin',
+    };
+  }
+
   // This is a placeholder - integrate with your actual auth system
   // For now, returning mock user data
   const authHeader = request.headers.get('authorization');

@@ -92,7 +92,13 @@
       "Bash(python:*)",
       "Bash(powershell:*)",
       "Bash(timeout 10 psql:*)",
-      "Bash(timeout 5 curl:*)"
+      "Bash(timeout 5 curl:*)",
+      "Bash(git reset:*)",
+      "Bash(timeout 10 curl:*)",
+      "Bash(tasklist)",
+      "Bash(rm:*)",
+      "Bash(PORT=3005 npm run dev:raw:*)",
+      "Bash(PORT=3006 npm run dev:raw:*)"
     ],
     "deny": [],
     "ask": []

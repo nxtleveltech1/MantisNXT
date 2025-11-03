@@ -52,6 +52,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import {
   Search,
   Plus,
@@ -132,7 +133,9 @@ export default function RewardCatalogManager() {
     queryFn: async () => {
       const res = await fetch('/api/v1/admin/loyalty/rewards')
       if (!res.ok) throw new Error('Failed to fetch rewards')
-      return res.json() as Promise<RewardCatalog[]>
+      const response = await res.json()
+      // API returns paginated response { success: true, data: [...], pagination: {...} }
+      return (response.data || []) as RewardCatalog[]
     },
   })
 
