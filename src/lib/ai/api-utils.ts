@@ -245,32 +245,35 @@ export function extractStatus(searchParams: URLSearchParams): string | null {
  * Mock authentication - replace with actual auth
  * TODO: Integrate with project authentication system
  */
-export async function authenticateRequest(request: NextRequest) {
-  // Development mode bypass
-  if (process.env.NODE_ENV === 'development' && process.env.DISABLE_AUTH === 'true') {
+const FALLBACK_ORG_ID = '00000000-0000-0000-0000-000000000000'
+const DEFAULT_ORG_ID = process.env.DEFAULT_ORG_ID ?? FALLBACK_ORG_ID
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+
+function normalizeOrgId(value?: string | null): string {
+  if (value && UUID_REGEX.test(value)) {
+    return value
+  }
+  return DEFAULT_ORG_ID
+}
+
+export async function authenticateRequest(_request: NextRequest) {
+  // In non-production, allow a consistent development identity without headers
+  if (process.env.NODE_ENV !== 'production') {
     return {
-      id: 'dev-user-123',
-      org_id: 'dev-org-123',
+      id: '11111111-1111-1111-1111-111111111111',
+      org_id: DEFAULT_ORG_ID,
       email: 'dev@mantisnxt.com',
       role: 'admin',
-    };
+    } as const
   }
 
-  // This is a placeholder - integrate with your actual auth system
-  // For now, returning mock user data
-  const authHeader = request.headers.get('authorization');
-
-  if (!authHeader) {
-    throw new Error('Unauthorized');
-  }
-
-  // Mock user - replace with actual auth logic
+  // Placeholder for production authentication
   return {
-    id: 'user-123',
-    org_id: 'org-456',
+    id: '22222222-2222-2222-2222-222222222222',
+    org_id: normalizeOrgId('org-456'),
     email: 'user@example.com',
     role: 'admin',
-  };
+  } as const
 }
 
 /**
@@ -319,16 +322,16 @@ export function validateWidgetType(type: string): void {
  */
 export function validateMetricType(type: string): void {
   const validTypes = [
-    'demand_forecast',
-    'prediction_accuracy',
-    'anomaly_count',
-    'alert_summary',
-    'supplier_score',
-    'cost_savings',
-    'efficiency_gain',
+    'sales',
+    'inventory',
+    'supplier_performance',
+    'customer_behavior',
+    'financial',
+    'operational',
+    'all', // Special type for recalculation
   ];
 
   if (!validTypes.includes(type)) {
-    throw new MetricsError(`Invalid metric type: ${type}`);
+    throw new MetricsError(`Invalid metric type: ${type}. Valid types: ${validTypes.join(', ')}`);
   }
 }

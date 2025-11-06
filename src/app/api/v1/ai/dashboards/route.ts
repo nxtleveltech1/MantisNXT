@@ -13,6 +13,7 @@ import {
   extractPagination,
 } from '@/lib/ai/api-utils';
 import { createDashboardSchema } from '@/lib/ai/validation-schemas';
+import { DashboardService } from '@/lib/ai/services/dashboard-service';
 
 /**
  * GET /api/v1/ai/dashboards
@@ -25,23 +26,20 @@ export async function GET(request: NextRequest) {
     const { limit, offset, page } = extractPagination(searchParams);
 
     const isPublic = searchParams.get('isPublic') === 'true';
+    const includeWidgets = searchParams.get('includeWidgets') === 'true';
 
-    // TODO: Call DashboardService when available from Team C
-    // const result = await DashboardService.listDashboards(user.id, user.org_id, {
-    //   isPublic,
-    //   limit,
-    //   offset,
-    // });
+    const result = await DashboardService.listDashboards(user.id, user.org_id, {
+      isPublic,
+      limit,
+      offset,
+      includeWidgets,
+    });
 
-    // Mock response structure
-    const dashboards = [];
-    const total = 0;
-
-    return successResponse(dashboards, {
+    return successResponse(result.dashboards, {
       page,
       limit,
-      total,
-      hasMore: offset + limit < total,
+      total: result.total,
+      hasMore: offset + limit < result.total,
     });
   } catch (error) {
     return handleAIError(error);
@@ -58,26 +56,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = createDashboardSchema.parse(body);
 
-    // TODO: Call DashboardService when available from Team C
-    // const dashboard = await DashboardService.createDashboard(
-    //   user.id,
-    //   user.org_id,
-    //   validated
-    // );
-
-    // Mock response structure
-    const dashboard = {
-      id: 'dash-123',
-      org_id: user.org_id,
-      user_id: user.id,
-      name: validated.name,
-      description: validated.description,
-      layout: validated.layout,
-      is_public: validated.isPublic,
-      metadata: validated.metadata,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    const dashboard = await DashboardService.createDashboard(
+      user.id,
+      user.org_id,
+      validated
+    );
 
     return createdResponse(dashboard);
   } catch (error) {

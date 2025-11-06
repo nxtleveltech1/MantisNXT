@@ -10,6 +10,7 @@ import {
   successResponse,
   extractDateRange,
 } from '@/lib/ai/api-utils';
+import { anomalyService } from '@/lib/ai/services/anomaly-service';
 
 /**
  * GET /api/v1/ai/anomalies/stats
@@ -21,62 +22,26 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const { startDate, endDate } = extractDateRange(searchParams);
 
-    const entityType = searchParams.get('entityType');
-    const metricType = searchParams.get('metricType');
+    const entityType = searchParams.get('entityType') as any;
 
-    // TODO: Call AnomalyDetectionService when available from Team C
-    // const stats = await AnomalyDetectionService.getAnomalyStats(user.org_id, {
-    //   entityType,
-    //   metricType,
-    //   startDate,
-    //   endDate,
-    // });
+    const stats = await anomalyService.getAnomalyStats(user.org_id, {
+      entityType,
+      startDate,
+      endDate,
+    });
 
-    // Mock response structure
-    const stats = {
+    return successResponse({
       summary: {
-        total: 234,
-        bySeverity: {
-          critical: 12,
-          high: 45,
-          medium: 98,
-          low: 79,
-        },
-        byStatus: {
-          new: 34,
-          investigating: 56,
-          resolved: 144,
-        },
+        total: stats.total,
+        bySeverity: stats.bySeverity,
+        byStatus: stats.byStatus,
       },
-      trends: {
-        daily: [
-          { date: '2025-11-01', count: 12, avgSeverity: 'medium' },
-          { date: '2025-11-02', count: 15, avgSeverity: 'high' },
-        ],
-        weekOverWeek: {
-          change: -8.5,
-          direction: 'decreasing',
-        },
-      },
-      topAnomalies: [
-        {
-          entityType: 'supplier',
-          entityId: 'sup-123',
-          metricType: 'delivery_time',
-          count: 15,
-          avgSeverity: 'high',
-        },
-      ],
-      byMetricType: {
-        delivery_time: 67,
-        cost_variance: 45,
-        quality_score: 89,
-        stock_level: 33,
-      },
-      calculatedAt: new Date().toISOString(),
-    };
-
-    return successResponse(stats);
+      byType: stats.byType,
+      byEntity: stats.byEntity,
+      trends: stats.trends,
+      topAnomalies: stats.topAnomalies,
+      calculatedAt: stats.calculatedAt.toISOString(),
+    });
   } catch (error) {
     return handleAIError(error);
   }

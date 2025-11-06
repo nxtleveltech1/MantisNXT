@@ -179,8 +179,8 @@ export default function OrganizationSettingsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Organization Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your organization's information and configuration</p>
+          <h1 className="text-3xl font-bold">Organization Settings</h1>
+          <p className="text-muted-foreground mt-1">Manage your organization's information and configuration</p>
         </div>
 
         <ProtectedComponent permission="organization.update">
@@ -205,8 +205,8 @@ export default function OrganizationSettingsPage() {
 
       {/* Status Messages */}
       {success && (
-        <Alert className="border-green-200 bg-green-50">
-          <AlertDescription className="text-green-800">{success}</AlertDescription>
+        <Alert className="border-chart-2 bg-chart-2/10">
+          <AlertDescription className="text-chart-2">{success}</AlertDescription>
         </Alert>
       )}
 
@@ -217,7 +217,7 @@ export default function OrganizationSettingsPage() {
       )}
 
       {/* Basic Information */}
-      <Card>
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Building2 className="mr-2 h-5 w-5" />
@@ -277,7 +277,7 @@ export default function OrganizationSettingsPage() {
       </Card>
 
       {/* South African Business Registration */}
-      <Card>
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Shield className="mr-2 h-5 w-5" />
@@ -388,7 +388,7 @@ export default function OrganizationSettingsPage() {
       </Card>
 
       {/* Contact Information */}
-      <Card>
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Phone className="mr-2 h-5 w-5" />
@@ -446,7 +446,7 @@ export default function OrganizationSettingsPage() {
       </Card>
 
       {/* Address */}
-      <Card>
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center">
             <MapPin className="mr-2 h-5 w-5" />
@@ -535,7 +535,7 @@ export default function OrganizationSettingsPage() {
                   ...prev!,
                   address: {
                     ...prev!.address,
-                    province: value,
+                    province: value as any,
                   },
                   updatedAt: new Date(),
                 }));
@@ -559,7 +559,7 @@ export default function OrganizationSettingsPage() {
       </Card>
 
       {/* System Configuration */}
-      <Card>
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center">
             <CreditCard className="mr-2 h-5 w-5" />
@@ -609,7 +609,7 @@ export default function OrganizationSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">VAT Rate:</span>
-                <span className="font-medium">{(organization.vatRate * 100).toFixed(1)}%</span>
+                <span className="font-medium">{((organization.vatRate ?? 0) * 100).toFixed(1)}%</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax Year:</span>

@@ -9,7 +9,7 @@ import {
   authenticateRequest,
   successResponse,
 } from '@/lib/ai/api-utils';
-import { acknowledgeAlertSchema } from '@/lib/ai/validation-schemas';
+import { alertService } from '@/lib/ai/services/alert-service';
 
 /**
  * POST /api/v1/ai/alerts/[id]/acknowledge
@@ -17,29 +17,14 @@ import { acknowledgeAlertSchema } from '@/lib/ai/validation-schemas';
  */
 export async function POST(
   request: NextRequest,
-
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
     const user = await authenticateRequest(request);
-    const body = await request.json();
-    const validated = acknowledgeAlertSchema.parse(body);
 
-    // TODO: Call AIAlertService when available from Team C
-    // const alert = await AIAlertService.acknowledgeAlert(user.org_id, id, {
-    //   acknowledgedBy: validated.acknowledgedBy,
-    //   notes: validated.notes,
-    // });
-
-    // Mock response structure
-    const alert = {
-      id,
-      status: 'acknowledged',
-      acknowledged_at: new Date().toISOString(),
-      acknowledged_by: validated.acknowledgedBy,
-      acknowledgement_notes: validated.notes,
-    };
+    // Call production alert service
+    const alert = await alertService.acknowledgeAlert(id, user.user_id, user.org_id);
 
     return successResponse(alert);
   } catch (error) {

@@ -11,6 +11,7 @@ import {
   validateMetricType,
 } from '@/lib/ai/api-utils';
 import { invalidateMetricsSchema } from '@/lib/ai/validation-schemas';
+import { AIMetricsService, type MetricType } from '@/lib/ai/services/metrics-service';
 
 /**
  * POST /api/v1/ai/metrics/invalidate
@@ -26,23 +27,21 @@ export async function POST(request: NextRequest) {
       validateMetricType(validated.metricType);
     }
 
-    // TODO: Call MetricsCalculator when available from Team C
-    // const result = await MetricsCalculator.invalidateCache(user.org_id, {
-    //   metricType: validated.metricType,
-    //   key: validated.key,
-    // });
+    const count = await AIMetricsService.invalidateMetricCache(
+      user.org_id,
+      validated.metricType as MetricType | undefined
+    );
 
-    // Mock response structure
     const result = {
       success: true,
       invalidated: {
         metricType: validated.metricType || 'all',
         key: validated.key,
-        count: validated.metricType ? 1 : 7,
+        count,
       },
       message: validated.metricType
-        ? `Invalidated cache for ${validated.metricType}`
-        : 'Invalidated all metrics cache',
+        ? `Invalidated cache for ${validated.metricType} (${count} entries)`
+        : `Invalidated all metrics cache (${count} entries)`,
       timestamp: new Date().toISOString(),
     };
 

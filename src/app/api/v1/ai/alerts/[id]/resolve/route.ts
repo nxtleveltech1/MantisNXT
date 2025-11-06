@@ -9,7 +9,7 @@ import {
   authenticateRequest,
   successResponse,
 } from '@/lib/ai/api-utils';
-import { resolveAlertSchema } from '@/lib/ai/validation-schemas';
+import { alertService } from '@/lib/ai/services/alert-service';
 
 /**
  * POST /api/v1/ai/alerts/[id]/resolve
@@ -17,31 +17,14 @@ import { resolveAlertSchema } from '@/lib/ai/validation-schemas';
  */
 export async function POST(
   request: NextRequest,
-
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
     const user = await authenticateRequest(request);
-    const body = await request.json();
-    const validated = resolveAlertSchema.parse(body);
 
-    // TODO: Call AIAlertService when available from Team C
-    // const alert = await AIAlertService.resolveAlert(user.org_id, id, {
-    //   resolvedBy: validated.resolvedBy,
-    //   resolution: validated.resolution,
-    //   notes: validated.notes,
-    // });
-
-    // Mock response structure
-    const alert = {
-      id,
-      status: 'resolved',
-      resolved_at: new Date().toISOString(),
-      resolved_by: validated.resolvedBy,
-      resolution: validated.resolution,
-      resolution_notes: validated.notes,
-    };
+    // Call production alert service
+    const alert = await alertService.resolveAlert(id, user.org_id);
 
     return successResponse(alert);
   } catch (error) {

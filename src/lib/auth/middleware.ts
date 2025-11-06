@@ -10,6 +10,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as jwt from 'jsonwebtoken';
 
+const FALLBACK_ORG_ID = '00000000-0000-0000-0000-000000000000';
+const DEFAULT_ORG_ID = process.env.DEFAULT_ORG_ID ?? FALLBACK_ORG_ID;
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
@@ -54,12 +57,12 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthUse
   // Development mode bypass - return mock user
   if (process.env.NODE_ENV === 'development' && process.env.DISABLE_AUTH === 'true') {
     return {
-      userId: 'dev-user-123',
+      userId: '11111111-1111-1111-1111-111111111111',
       email: 'dev@mantisnxt.com',
       name: 'Development User',
       role: 'admin',
       permissions: ['admin'],
-      organizationId: 'dev-org-123',
+      organizationId: DEFAULT_ORG_ID,
     };
   }
 

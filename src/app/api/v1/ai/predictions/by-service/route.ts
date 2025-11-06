@@ -11,6 +11,7 @@ import {
   extractPagination,
   requireQueryParams,
 } from '@/lib/ai/api-utils';
+import { predictionService } from '@/lib/ai/services/prediction-service';
 
 /**
  * GET /api/v1/ai/predictions/by-service?serviceType=demand_forecasting
@@ -25,30 +26,25 @@ export async function GET(request: NextRequest) {
     // Validate required parameters
     requireQueryParams(searchParams, ['serviceType']);
 
-    const serviceType = searchParams.get('serviceType')!;
-    const status = searchParams.get('status');
+    const serviceType = searchParams.get('serviceType')! as any;
+    const status = searchParams.get('status') || undefined;
     const minConfidence = searchParams.get('minConfidence')
       ? parseFloat(searchParams.get('minConfidence')!)
       : undefined;
 
-    // TODO: Call PredictionService when available from Team C
-    // const result = await PredictionService.getPredictionsByService(user.org_id, {
-    //   serviceType,
-    //   status,
-    //   minConfidence,
-    //   limit,
-    //   offset,
-    // });
+    const result = await predictionService.listPredictions(user.org_id, {
+      serviceType,
+      status,
+      minConfidence,
+      limit,
+      offset,
+    });
 
-    // Mock response structure
-    const predictions = [];
-    const total = 0;
-
-    return successResponse(predictions, {
+    return successResponse(result.predictions, {
       page,
       limit,
-      total,
-      hasMore: offset + limit < total,
+      total: result.total,
+      hasMore: offset + limit < result.total,
     });
   } catch (error) {
     return handleAIError(error);

@@ -10,6 +10,7 @@ import {
   successResponse,
 } from '@/lib/ai/api-utils';
 import { shareDashboardSchema } from '@/lib/ai/validation-schemas';
+import { DashboardService } from '@/lib/ai/services/dashboard-service';
 
 /**
  * POST /api/v1/ai/dashboards/[id]/share
@@ -26,19 +27,15 @@ export async function POST(
     const body = await request.json();
     const validated = shareDashboardSchema.parse(body);
 
-    // TODO: Call DashboardService when available from Team C
-    // const result = await DashboardService.shareDashboard(user.id, id, {
-    //   userIds: validated.userIds,
-    //   makePublic: validated.makePublic,
-    // });
-
-    // Mock response structure
-    const result = {
-      dashboardId: id,
-      isPublic: validated.makePublic || false,
-      sharedWith: validated.userIds || [],
-      sharedAt: new Date().toISOString(),
-    };
+    const result = await DashboardService.shareDashboard(
+      user.id,
+      user.org_id,
+      id,
+      {
+        userIds: validated.userIds,
+        makePublic: validated.makePublic,
+      }
+    );
 
     return successResponse(result);
   } catch (error) {

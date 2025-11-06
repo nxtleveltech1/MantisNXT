@@ -14,6 +14,7 @@ import {
   validateWidgetType,
 } from '@/lib/ai/api-utils';
 import { createWidgetSchema } from '@/lib/ai/validation-schemas';
+import { DashboardService } from '@/lib/ai/services/dashboard-service';
 
 /**
  * GET /api/v1/ai/widgets
@@ -25,30 +26,25 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const { limit, offset, page } = extractPagination(searchParams);
 
-    const dashboardId = searchParams.get('dashboardId');
-    const type = searchParams.get('type');
+    const dashboardId = searchParams.get('dashboardId') || undefined;
+    const type = searchParams.get('type') || undefined;
 
     if (type) {
       validateWidgetType(type);
     }
 
-    // TODO: Call WidgetService when available from Team C
-    // const result = await WidgetService.listWidgets(user.org_id, {
-    //   dashboardId,
-    //   type,
-    //   limit,
-    //   offset,
-    // });
+    const result = await DashboardService.listWidgets(user.org_id, {
+      dashboardId,
+      type,
+      limit,
+      offset,
+    });
 
-    // Mock response structure
-    const widgets = [];
-    const total = 0;
-
-    return successResponse(widgets, {
+    return successResponse(result.widgets, {
       page,
       limit,
-      total,
-      hasMore: offset + limit < total,
+      total: result.total,
+      hasMore: offset + limit < result.total,
     });
   } catch (error) {
     return handleAIError(error);
@@ -67,23 +63,11 @@ export async function POST(request: NextRequest) {
 
     validateWidgetType(validated.type);
 
-    // TODO: Call WidgetService when available from Team C
-    // const widget = await WidgetService.createWidget(user.org_id, validated);
-
-    // Mock response structure
-    const widget = {
-      id: 'widget-123',
-      org_id: user.org_id,
-      dashboard_id: validated.dashboardId,
-      type: validated.type,
-      title: validated.title,
-      config: validated.config,
-      data_source: validated.dataSource,
-      refresh_interval: validated.refreshInterval,
-      metadata: validated.metadata,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    const widget = await DashboardService.addWidget(
+      user.org_id,
+      validated.dashboardId,
+      validated
+    );
 
     return createdResponse(widget);
   } catch (error) {

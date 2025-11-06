@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import GridLayout, { Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -47,23 +47,30 @@ interface Dashboard {
   name: string;
   description?: string;
   layout: Layout[];
-  is_public: boolean;
-  metadata?: any;
+  filters?: Record<string, any>;
+  is_default: boolean;
+  is_shared: boolean;
+  created_by: string;
   created_at: string;
   updated_at: string;
+  widgets?: Widget[];
 }
 
 interface Widget {
   id: string;
+  org_id: string;
   dashboard_id: string;
-  type: string;
-  title: string;
-  config: any;
-  data_source: {
-    type: string;
-    params: any;
-  };
-  refresh_interval?: number;
+  widget_type: string;
+  metric_type: string;
+  config: Record<string, any>;
+  query: Record<string, any>;
+  refresh_interval_seconds: number;
+  position_x: number;
+  position_y: number;
+  width: number;
+  height: number;
+  created_at: string;
+  updated_at: string;
 }
 
 const WIDGET_LIBRARY = [
@@ -75,9 +82,13 @@ const WIDGET_LIBRARY = [
   { type: 'alert_list', icon: AlertCircle, label: 'Alert List', color: 'text-red-600' },
 ];
 
-export default function DashboardBuilder() {
+interface DashboardBuilderProps {
+  dashboardId?: string;
+}
+
+export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps = {}) {
   const queryClient = useQueryClient();
-  const [selectedDashboardId, setSelectedDashboardId] = useState<string>('');
+  const [selectedDashboardId, setSelectedDashboardId] = useState<string>(dashboardId || '');
   const [layout, setLayout] = useState<Layout[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newDashboard, setNewDashboard] = useState({
@@ -87,28 +98,35 @@ export default function DashboardBuilder() {
   });
 
   // Fetch dashboards
-  const { data: dashboards = [], isLoading } = useQuery<Dashboard[]>({
+  const { data: dashboardsResponse, isLoading } = useQuery<{
+    data: Dashboard[];
+    metadata: { total: number; page: number; limit: number; hasMore: boolean };
+  }>({
     queryKey: ['ai-dashboards'],
     queryFn: async () => {
-      const response = await fetch('/api/v1/ai/dashboards');
+      const response = await fetch('/api/v1/ai/dashboards?includeWidgets=false&limit=100');
       if (!response.ok) throw new Error('Failed to fetch dashboards');
-      const data = await response.json();
-      return data.data || [];
+      return response.json();
     },
   });
 
+  const dashboards = dashboardsResponse?.data || [];
+
   // Fetch widgets for selected dashboard
-  const { data: widgets = [] } = useQuery<Widget[]>({
+  const { data: widgetsResponse } = useQuery<{
+    data: { dashboardId: string; widgets: Widget[]; totalWidgets: number };
+  }>({
     queryKey: ['ai-widgets', selectedDashboardId],
     queryFn: async () => {
-      if (!selectedDashboardId) return [];
-      const response = await fetch(`/api/v1/ai/widgets?dashboardId=${selectedDashboardId}`);
+      if (!selectedDashboardId) return { data: { dashboardId: '', widgets: [], totalWidgets: 0 } };
+      const response = await fetch(`/api/v1/ai/widgets/dashboard/${selectedDashboardId}`);
       if (!response.ok) throw new Error('Failed to fetch widgets');
-      const data = await response.json();
-      return data.data || [];
+      return response.json();
     },
     enabled: !!selectedDashboardId,
   });
+
+  const widgets = widgetsResponse?.data?.widgets || [];
 
   // Create dashboard
   const createDashboardMutation = useMutation({
@@ -123,38 +141,68 @@ export default function DashboardBuilder() {
           isPublic: data.isPublic,
         }),
       });
-      if (!response.ok) throw new Error('Failed to create dashboard');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create dashboard');
+      }
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (responseData) => {
       queryClient.invalidateQueries({ queryKey: ['ai-dashboards'] });
-      setSelectedDashboardId(data.data.id);
+      setSelectedDashboardId(responseData.data.id);
       setIsCreating(false);
       setNewDashboard({ name: '', description: '', isPublic: false });
       toast.success('Dashboard created successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create: ${error.message}`);
+      toast.error(`Failed to create dashboard: ${error.message}`);
     },
   });
 
-  // Update layout
-  const updateLayoutMutation = useMutation({
+  // Update dashboard (including layout)
+  const updateDashboardMutation = useMutation({
     mutationFn: async ({ dashboardId, layout }: { dashboardId: string; layout: Layout[] }) => {
-      const response = await fetch(`/api/v1/ai/dashboards/${dashboardId}/layout`, {
+      const response = await fetch(`/api/v1/ai/dashboards/${dashboardId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ layout }),
       });
-      if (!response.ok) throw new Error('Failed to update layout');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update dashboard');
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-dashboards'] });
-      toast.success('Layout saved');
+      queryClient.invalidateQueries({ queryKey: ['ai-widgets', selectedDashboardId] });
+      toast.success('Layout saved successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to save: ${error.message}`);
+      toast.error(`Failed to save layout: ${error.message}`);
+    },
+  });
+
+  // Delete dashboard
+  const deleteDashboardMutation = useMutation({
+    mutationFn: async (dashboardId: string) => {
+      const response = await fetch(`/api/v1/ai/dashboards/${dashboardId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok && response.status !== 204) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete dashboard');
+      }
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-dashboards'] });
+      setSelectedDashboardId('');
+      setLayout([]);
+      toast.success('Dashboard deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete dashboard: ${error.message}`);
     },
   });
 
@@ -166,15 +214,71 @@ export default function DashboardBuilder() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ makePublic }),
       });
-      if (!response.ok) throw new Error('Failed to share dashboard');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to share dashboard');
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-dashboards'] });
-      toast.success('Dashboard shared successfully');
+      toast.success('Dashboard sharing updated successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to share: ${error.message}`);
+      toast.error(`Failed to update sharing: ${error.message}`);
+    },
+  });
+
+  // Create widget
+  const createWidgetMutation = useMutation({
+    mutationFn: async (widgetData: {
+      dashboardId: string;
+      type: string;
+      title: string;
+      config: Record<string, any>;
+      dataSource: { type: string; params: Record<string, any> };
+      refreshInterval?: number;
+    }) => {
+      const response = await fetch('/api/v1/ai/widgets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(widgetData),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create widget');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-widgets', selectedDashboardId] });
+      queryClient.invalidateQueries({ queryKey: ['ai-dashboards'] });
+      toast.success('Widget created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create widget: ${error.message}`);
+    },
+  });
+
+  // Delete widget
+  const deleteWidgetMutation = useMutation({
+    mutationFn: async (widgetId: string) => {
+      const response = await fetch(`/api/v1/ai/widgets/${widgetId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok && response.status !== 204) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete widget');
+      }
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-widgets', selectedDashboardId] });
+      queryClient.invalidateQueries({ queryKey: ['ai-dashboards'] });
+      toast.success('Widget deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete widget: ${error.message}`);
     },
   });
 
@@ -185,10 +289,32 @@ export default function DashboardBuilder() {
       return;
     }
 
+    // Calculate position
+    const x = (layout.length * 3) % 12;
+    const y = Infinity; // Will place at bottom
+
+    // Create widget via API
+    createWidgetMutation.mutate({
+      dashboardId: selectedDashboardId,
+      type: widgetType,
+      title: WIDGET_LIBRARY.find(w => w.type === widgetType)?.label || widgetType,
+      config: {
+        position: { x, y },
+        size: { w: 3, h: 2 },
+        metricType: 'operational',
+      },
+      dataSource: {
+        type: 'mock',
+        params: {},
+      },
+      refreshInterval: 300,
+    });
+
+    // Add to local layout for immediate feedback
     const newWidget: Layout = {
       i: `widget-${Date.now()}`,
-      x: (layout.length * 3) % 12,
-      y: Infinity, // Will place at bottom
+      x,
+      y,
       w: 3,
       h: 2,
       minW: 2,
@@ -196,13 +322,19 @@ export default function DashboardBuilder() {
     };
 
     setLayout([...layout, newWidget]);
-    toast.success('Widget added - configure it in the next step');
   };
 
   // Save layout
   const handleSaveLayout = () => {
     if (!selectedDashboardId) return;
-    updateLayoutMutation.mutate({ dashboardId: selectedDashboardId, layout });
+    updateDashboardMutation.mutate({ dashboardId: selectedDashboardId, layout });
+  };
+
+  // Delete dashboard handler
+  const handleDeleteDashboard = (dashboardId: string) => {
+    if (confirm('Are you sure you want to delete this dashboard? This action cannot be undone.')) {
+      deleteDashboardMutation.mutate(dashboardId);
+    }
   };
 
   // Handle layout change from grid
@@ -213,11 +345,13 @@ export default function DashboardBuilder() {
   const selectedDashboard = dashboards.find((d) => d.id === selectedDashboardId);
 
   // Initialize layout when dashboard is selected
-  useState(() => {
+  useEffect(() => {
     if (selectedDashboard) {
       setLayout(selectedDashboard.layout || []);
+    } else {
+      setLayout([]);
     }
-  });
+  }, [selectedDashboard]);
 
   if (isLoading) {
     return (
@@ -370,24 +504,36 @@ export default function DashboardBuilder() {
                   onClick={() =>
                     shareDashboardMutation.mutate({
                       dashboardId: selectedDashboard.id,
-                      makePublic: !selectedDashboard.is_public,
+                      makePublic: !selectedDashboard.is_shared,
                     })
                   }
                   disabled={shareDashboardMutation.isPending}
                 >
                   <Share2 className="mr-2 h-4 w-4" />
-                  {selectedDashboard.is_public ? 'Make Private' : 'Share'}
+                  {selectedDashboard.is_shared ? 'Make Private' : 'Share'}
                 </Button>
                 <Button
                   onClick={handleSaveLayout}
-                  disabled={updateLayoutMutation.isPending}
+                  disabled={updateDashboardMutation.isPending}
                 >
-                  {updateLayoutMutation.isPending ? (
+                  {updateDashboardMutation.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Save className="mr-2 h-4 w-4" />
                   )}
                   Save Layout
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDeleteDashboard(selectedDashboard.id)}
+                  disabled={deleteDashboardMutation.isPending}
+                >
+                  {deleteDashboardMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
+                  Delete
                 </Button>
               </div>
             </div>

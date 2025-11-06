@@ -18,7 +18,7 @@ async function main() {
   if (!navTool || !evalTool) throw new Error('DevTools MCP navigate/evaluate tools not found')
 
   // Navigate to Dashboard
-  await client.callTool({ name: navTool.name, arguments: { url: `${baseUrl}/` } })
+  await client.callTool(navTool.name, { url: `${baseUrl}/` })
 
   // Pull dashboard data directly from API to avoid flakiness
   const dash = await fetch(`${baseUrl}/api/dashboard/real-stats`).then(r => r.json())

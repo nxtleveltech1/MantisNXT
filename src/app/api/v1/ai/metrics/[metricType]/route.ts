@@ -11,6 +11,7 @@ import {
   validateMetricType,
   extractDateRange,
 } from '@/lib/ai/api-utils';
+import { AIMetricsService, type MetricType } from '@/lib/ai/services/metrics-service';
 
 /**
  * GET /api/v1/ai/metrics/[metricType]
@@ -30,25 +31,26 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const { startDate, endDate } = extractDateRange(searchParams);
     const fresh = searchParams.get('fresh') === 'true';
+    const period = (searchParams.get('period') as any) || 'daily';
 
-    // TODO: Call MetricsCalculator when available from Team C
-    // const metrics = await MetricsCalculator.getMetricsByType(user.org_id, {
-    //   metricType,
-    //   startDate,
-    //   endDate,
-    //   fresh,
-    // });
+    const data = await AIMetricsService.getMetrics(
+      user.org_id,
+      metricType as MetricType,
+      { period, fresh }
+    );
 
-    // Mock response structure
+    const now = new Date();
+    const cacheExpires = new Date(now.getTime() + 5 * 60 * 1000);
+
     const metrics = {
       metricType,
-      data: {},
+      data,
       period: {
         startDate: startDate?.toISOString(),
         endDate: endDate?.toISOString(),
       },
-      calculatedAt: new Date().toISOString(),
-      cacheExpires: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      calculatedAt: now.toISOString(),
+      cacheExpires: cacheExpires.toISOString(),
     };
 
     return successResponse(metrics);

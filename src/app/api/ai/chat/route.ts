@@ -2,13 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'
 import { AIChatService, type ChatRequestOptions, type StreamingResult } from '@/lib/ai/services'
-import type { AIChatMessage, AIStreamChunk } from '@/types/ai'
+import { getAIConfig, updateAIConfig } from '@/lib/ai/config'
+import { getConfig as getServiceConfig, upsertConfig as upsertServiceConfig } from '@/app/api/v1/ai/config/_store'
+import type { AIChatMessage, AIStreamChunk, AIProviderId } from '@/types/ai'
+import {
+  getSupportedModels,
+  normalizeModelForProvider,
+  resolveOrgId
+} from '@/lib/ai/model-utils'
+import { conversationService } from '@/lib/ai/services/conversation-service'
+import { getSystemContext } from '@/lib/ai/system-context'
 
 const chatService = new AIChatService({
   notifyChannel: 'ai_chat_events',
   defaultMetadata: { source: 'api.ai.chat' },
   tags: ['api', 'chat'],
 })
+
+const PROVIDER_ID_MAP: Record<string, AIProviderId> = {
+  openai: 'openai',
+  anthropic: 'anthropic',
+  openai_compatible: 'openai-compatible',
+  'openai-compatible': 'openai-compatible',
+}
+
+type AssistantRuntimeSnapshot = {
+  provider: AIProviderId
+  model?: string
+}
 
 const ChatMessageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant', 'tool']),
@@ -69,7 +90,112 @@ const ChatQuerySchema = z.object({
 
 type ChatQueryParams = z.infer<typeof ChatQuerySchema>
 
-const postHandler = ApiMiddleware.withValidation(ChatRequestSchema)(
+function normalizeProviderId(value?: string | null): AIProviderId {
+  return PROVIDER_ID_MAP[value ?? ''] ?? 'openai'
+}
+
+async function ensureAssistantRuntimeConfig(context: RequestContext): Promise<AssistantRuntimeSnapshot> {
+  try {
+    const orgId = resolveOrgId(context.user?.organizationId)
+    const record = (await getServiceConfig(orgId, 'assistant'))
+      || (await upsertServiceConfig(orgId, 'assistant', { config: {}, enabled: false }))
+
+    const activeProvider = normalizeProviderId(record.config.activeProvider || record.config.provider)
+    const providerPartials: Record<AIProviderId, any> = {}
+    const providerSections = record.config.providers ?? {}
+
+    const collectProvider = (key: string) => {
+      const normalized = normalizeProviderId(key)
+      const section = providerSections?.[key] as Record<string, any> | undefined
+      const isActive = normalized === activeProvider
+      const inheritedModel = section?.model || (isActive ? record.config.model : undefined)
+      const inheritedApiKey = section?.apiKey || (record.config.provider === key ? record.config.apiKey : undefined)
+      const inheritedBaseUrl = section?.baseUrl || (record.config.provider === key ? record.config.baseUrl : undefined)
+      const enabledFlag = typeof section?.enabled === 'boolean'
+        ? Boolean(section.enabled && inheritedApiKey)
+        : inheritedApiKey ? true : undefined
+
+      const hasDetails = Boolean(
+        inheritedApiKey ||
+        inheritedBaseUrl ||
+        inheritedModel ||
+        typeof section?.enabled === 'boolean'
+      )
+
+      if (!hasDetails) {
+        return inheritedModel
+      }
+
+      const partial: Record<string, any> = {}
+      if (enabledFlag !== undefined) {
+        partial.enabled = enabledFlag
+      }
+      if (inheritedApiKey || inheritedBaseUrl) {
+        partial.credentials = {
+          ...(inheritedApiKey ? { apiKey: inheritedApiKey } : {}),
+          ...(inheritedBaseUrl ? { baseUrl: inheritedBaseUrl } : {}),
+        }
+      }
+      const supportedModels = getSupportedModels(normalized)
+      const resolvedModel = inheritedModel
+        ? normalizeModelForProvider(normalized, inheritedModel)
+        : undefined
+      if (resolvedModel) {
+        partial.models = {
+          default: resolvedModel,
+          chat: resolvedModel,
+        }
+      } else if (supportedModels && supportedModels.length > 0) {
+        partial.models = {
+          default: supportedModels[0],
+          chat: supportedModels[0],
+        }
+      }
+
+     providerPartials[normalized] = {
+       ...providerPartials[normalized],
+       ...partial,
+     }
+
+      return resolvedModel
+    }
+
+    const providerKeys = ['openai', 'anthropic', 'openai_compatible']
+    let selectedModel: string | undefined
+    providerKeys.forEach((key) => {
+      const model = collectProvider(key)
+      if (!selectedModel && normalizeProviderId(key) === activeProvider) {
+        selectedModel = model
+      }
+    })
+
+    const currentConfig = getAIConfig()
+    const fallbackOrder = [
+      activeProvider,
+      ...currentConfig.fallbackOrder.filter((id) => id !== activeProvider),
+    ]
+
+    const providerUpdate = Object.keys(providerPartials).length > 0 ? { providers: providerPartials } : {}
+
+    updateAIConfig({
+      defaultProvider: activeProvider,
+      fallbackOrder,
+      enableFeatures: true,
+      enableStreaming: true,
+      ...providerUpdate,
+    })
+
+    return {
+      provider: activeProvider,
+      model: normalizeModelForProvider(activeProvider, selectedModel || record.config.model),
+    }
+  } catch (error) {
+    console.error('Failed to sync assistant runtime config', error)
+    return { provider: 'openai' }
+  }
+}
+
+const postHandler = ApiMiddleware.withValidation(ChatRequestSchema, { validateBody: true }, { allowAnonymous: true })(
   async (request: NextRequest, context: RequestContext, payload: ChatRequestPayload) => {
     try {
       const messages = payload.messages.map(cloneMessage)
@@ -91,12 +217,47 @@ const postHandler = ApiMiddleware.withValidation(ChatRequestSchema)(
       const effectiveMaxHistory = payload.maxHistory ?? conversationOptions.maxHistory
 
       const userMetadata = buildUserMetadata(context)
+      const assistantRuntime = await ensureAssistantRuntimeConfig(context)
+
+      // Fetch FULL system context for AI assistant
+      let systemContext = null
+      if (context.user) {
+        try {
+          const orgId = resolveOrgId(context.user.organizationId)
+          systemContext = await getSystemContext(orgId.toString())
+        } catch (error) {
+          console.error('Failed to fetch system context:', error)
+        }
+      }
+
       const requestMetadata = mergeDefined(
         conversationOptions.metadata,
         payload.metadata,
         userMetadata ? { user: userMetadata } : undefined,
-        { stream: streamRequested }
+        systemContext ? { systemContext } : undefined,
+        {
+          stream: streamRequested,
+          provider: assistantRuntime.provider,
+          model: assistantRuntime.model,
+        }
       )
+
+      // Enrich system prompt with FULL system context
+      if (systemContext && !conversationOptions.systemPrompt) {
+        const contextSummary = `
+You are an AI assistant with FULL ACCESS to the organization's system data.
+
+Current System Overview:
+- Suppliers: ${systemContext.suppliers.total} total (${systemContext.suppliers.active} active)
+- Inventory: ${systemContext.inventory.total} items (${systemContext.inventory.lowStock} low stock, ${systemContext.inventory.outOfStock} out of stock)
+- Customers: ${systemContext.customers.total} total (${systemContext.customers.totalLoyaltyMembers} loyalty members)
+- Active Alerts: ${systemContext.alerts.critical} critical, ${systemContext.alerts.high} high priority
+
+You can answer questions about suppliers, inventory, customers, orders, analytics, and all system data.
+When asked about specific data, provide accurate information from the system context above.
+`
+        conversationOptions.systemPrompt = contextSummary
+      }
 
       let conversationId = payload.conversationId
       let conversationCreated = false
@@ -141,13 +302,43 @@ const postHandler = ApiMiddleware.withValidation(ChatRequestSchema)(
         payload.runtime
       )
 
+      if (!chatOptions.provider) {
+        chatOptions.provider = assistantRuntime.provider
+      }
+      if (!chatOptions.model && assistantRuntime.model) {
+        chatOptions.model = assistantRuntime.model
+      }
+
+      // Persist user message if requested
+      const shouldPersist = payload.persistHistory ?? false
+      if (shouldPersist && context.user) {
+        const orgId = resolveOrgId(context.user.organizationId)
+        const userId = context.user.id
+
+        // Save user message
+        await conversationService.saveMessage(
+          orgId,
+          userId,
+          conversationId,
+          'user',
+          latestMessage.content,
+          {
+            ...(latestMessage.metadata || {}),
+            timestamp: new Date().toISOString(),
+            requestId,
+          }
+        ).catch((error) => {
+          console.error('Failed to persist user message:', error)
+        })
+      }
+
       if (streamRequested) {
         const streamingResult = await chatService.streamChat(conversationId, latestMessage, chatOptions)
         const stream = toEventStream(request, streamingResult, {
           conversationId,
           requestId,
           created: conversationCreated,
-        })
+        }, shouldPersist, context)
 
         const response = new NextResponse(stream, { headers: buildStreamHeaders() })
         response.headers.set('X-AI-Conversation-ID', conversationId)
@@ -169,6 +360,30 @@ const postHandler = ApiMiddleware.withValidation(ChatRequestSchema)(
         )
       }
 
+      // Persist assistant message if requested
+      if (shouldPersist && context.user && response.message) {
+        const orgId = resolveOrgId(context.user.organizationId)
+        const userId = context.user.id
+
+        await conversationService.saveMessage(
+          orgId,
+          userId,
+          conversationId,
+          'assistant',
+          response.message,
+          {
+            provider: response.provider,
+            model: response.model,
+            finishReason: response.finishReason,
+            tokenUsage: response.tokenUsage,
+            timestamp: new Date().toISOString(),
+            requestId,
+          }
+        ).catch((error) => {
+          console.error('Failed to persist assistant message:', error)
+        })
+      }
+
       return ApiMiddleware.createSuccessResponse(
         {
           conversationId,
@@ -179,6 +394,7 @@ const postHandler = ApiMiddleware.withValidation(ChatRequestSchema)(
           requestId: response.requestId,
           processingTime: response.durationMs,
           provider: response.provider,
+          persisted: shouldPersist,
         }
       )
     } catch (error) {
@@ -191,7 +407,7 @@ const postHandler = ApiMiddleware.withValidation(ChatRequestSchema)(
   }
 )
 
-const getHandler = ApiMiddleware.withValidation(ChatQuerySchema, { validateQuery: true, validateBody: false })(
+const getHandler = ApiMiddleware.withValidation(ChatQuerySchema, { validateQuery: true, validateBody: false }, { allowAnonymous: true })(
   async (_request: NextRequest, _context: RequestContext, query: ChatQueryParams) => {
     try {
       const conversation = chatService.getConversationHistory(query.conversationId)
@@ -225,14 +441,9 @@ const getHandler = ApiMiddleware.withValidation(ChatQuerySchema, { validateQuery
   }
 )
 
-// Next.js Route Handlers
-export async function POST(request: NextRequest) {
-  return await postHandler(request);
-}
-
-export async function GET(request: NextRequest) {
-  return await getHandler(request);
-}
+// Next.js Route Handlers (export the wrapped handlers directly)
+export const POST = postHandler
+export const GET = getHandler
 
 function conversationExists(conversationId: string): boolean {
   try {
@@ -352,7 +563,9 @@ function buildStreamHeaders(): Record<string, string> {
 function toEventStream(
   request: NextRequest,
   streamingResult: StreamingResult<AIStreamChunk, { text: string; chunks: number }>,
-  info: { conversationId: string; requestId: string; created: boolean }
+  info: { conversationId: string; requestId: string; created: boolean },
+  shouldPersist: boolean,
+  context: RequestContext
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder()
   let iterator: AsyncIterator<AIStreamChunk> | null = null
@@ -380,10 +593,18 @@ function toEventStream(
       iterator = streamingResult[Symbol.asyncIterator]()
 
       const pump = async () => {
+        const chunks: string[] = []
+
         try {
           while (iterator) {
             const { value, done } = await iterator.next()
             if (done) break
+
+            // Collect chunks for persistence
+            if (value.type === 'content' && value.content) {
+              chunks.push(value.content)
+            }
+
             const chunkEvent = `event: chunk\ndata: ${JSON.stringify(value)}\n\n`
             controller.enqueue(encoder.encode(chunkEvent))
           }
@@ -391,6 +612,29 @@ function toEventStream(
           const summary = await streamingResult.summary
           const completeEvent = `event: complete\ndata: ${JSON.stringify(summary)}\n\n`
           controller.enqueue(encoder.encode(completeEvent))
+
+          // Persist assistant message if requested
+          if (shouldPersist && context.user && chunks.length > 0) {
+            const orgId = resolveOrgId(context.user.organizationId)
+            const userId = context.user.id
+            const fullContent = chunks.join('')
+
+            await conversationService.saveMessage(
+              orgId,
+              userId,
+              info.conversationId,
+              'assistant',
+              fullContent,
+              {
+                ...summary,
+                timestamp: new Date().toISOString(),
+                requestId: info.requestId,
+                streaming: true,
+              }
+            ).catch((error) => {
+              console.error('Failed to persist streamed assistant message:', error)
+            })
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Streaming error'
           const errorEvent = `event: error\ndata: ${JSON.stringify({ message })}\n\n`

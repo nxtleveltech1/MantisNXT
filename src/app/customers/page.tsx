@@ -361,36 +361,36 @@ export default function CustomersPage() {
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="bg-background rounded-lg border border-border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Customers</p>
+                <p className="text-3xl font-bold mt-2">{stats.total}</p>
               </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="h-12 w-12 bg-chart-1/10 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6 text-chart-1" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="bg-background rounded-lg border border-border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Customers</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">{stats.activePercentage}%</p>
-                <p className="text-xs text-gray-500 mt-1">{stats.active} active</p>
+                <p className="text-sm font-medium text-muted-foreground">Active Customers</p>
+                <p className="text-3xl font-bold text-chart-2 mt-2">{stats.activePercentage}%</p>
+                <p className="text-xs text-muted-foreground mt-1">{stats.active} active</p>
               </div>
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <Activity className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 bg-chart-2/10 rounded-lg flex items-center justify-center">
+                <Activity className="h-6 w-6 text-chart-2" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="bg-background rounded-lg border border-border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Lifetime Value</p>
-                <p className="text-2xl font-bold text-purple-600 mt-2">
+                <p className="text-sm font-medium text-muted-foreground">Total Lifetime Value</p>
+                <p className="text-2xl font-bold text-chart-3 mt-2">
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: 'USD',
@@ -399,17 +399,17 @@ export default function CustomersPage() {
                   }).format(stats.totalValue)}
                 </p>
               </div>
-              <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-purple-600" />
+              <div className="h-12 w-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-chart-3" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="bg-background rounded-lg border border-border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Lifetime Value</p>
-                <p className="text-2xl font-bold text-orange-600 mt-2">
+                <p className="text-sm font-medium text-muted-foreground">Avg Lifetime Value</p>
+                <p className="text-2xl font-bold text-chart-4 mt-2">
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
                     currency: 'USD',
@@ -418,28 +418,20 @@ export default function CustomersPage() {
                   }).format(stats.avgValue)}
                 </p>
               </div>
-              <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-orange-600" />
+              <div className="h-12 w-12 bg-chart-4/10 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-chart-4" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Segment Breakdown */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Segments</h3>
+        <div className="bg-background rounded-lg border border-border p-6">
+          <h3 className="text-lg font-semibold mb-4">Customer Segments</h3>
           <div className="flex flex-wrap gap-3">
             {Object.entries(stats.segments).map(([segment, count]) => {
-              const config: Record<string, string> = {
-                individual: 'bg-gray-100 text-gray-800',
-                startup: 'bg-yellow-100 text-yellow-800',
-                smb: 'bg-green-100 text-green-800',
-                mid_market: 'bg-blue-100 text-blue-800',
-                enterprise: 'bg-purple-100 text-purple-800',
-              };
-              const color = config[segment] || 'bg-gray-100 text-gray-800';
               return (
-                <Badge key={segment} className={`${color} px-4 py-2 text-sm font-medium`}>
+                <Badge key={segment} variant="secondary" className="px-4 py-2 text-sm font-medium">
                   {segment}: {count}
                 </Badge>
               );
@@ -451,18 +443,18 @@ export default function CustomersPage() {
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
             <input
               type="text"
               placeholder="Search customers by name, email, company, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-10 py-2.5 border border-border rounded-lg bg-background focus:ring-2 focus:ring-ring focus:border-transparent"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -546,11 +538,11 @@ export default function CustomersPage() {
 
         {/* Results Summary */}
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            Showing <span className="font-semibold text-gray-900">{filteredCustomers.length}</span> of{' '}
-            <span className="font-semibold text-gray-900">{customers.length}</span> customers
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-semibold text-foreground">{filteredCustomers.length}</span> of{' '}
+            <span className="font-semibold text-foreground">{customers.length}</span> customers
             {debouncedSearch && (
-              <span className="text-gray-500"> matching &quot;{debouncedSearch}&quot;</span>
+              <span className="text-muted-foreground"> matching &quot;{debouncedSearch}&quot;</span>
             )}
           </p>
         </div>

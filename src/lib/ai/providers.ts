@@ -314,7 +314,7 @@ const instantiateProviderBinding = (config: AIProviderConfig): ProviderBinding =
         baseURL: config.credentials.baseUrl,
         organization: config.credentials.organization,
         project: config.credentials.project,
-        compatibility: config.compatibility,
+        name: config.id === 'openai-compatible' ? 'openai-compatible' : undefined,
       });
 
       return {

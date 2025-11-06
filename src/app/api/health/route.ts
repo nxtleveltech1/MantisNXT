@@ -1,24 +1,159 @@
+/**
+ * Comprehensive Health Check Endpoint
+ *
+ * Provides system health status for:
+ * - Application
+ * - Database connection pool
+ * - Redis cache
+ * - Session store
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
+import { dbHealthCheck, getDbMetrics } from '@/lib/database/connection-pool';
+import { redisHealthCheck } from '@/lib/cache/redis-client';
+import { sessionStore } from '@/lib/cache/redis-session-store';
+
+interface HealthStatus {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  timestamp: string;
+  uptime: number;
+  version: string;
+  environment: string;
+  checks: {
+    database: {
+      status: 'healthy' | 'unhealthy';
+      latency?: number;
+      poolInfo?: any;
+      error?: string;
+    };
+    redis: {
+      status: 'healthy' | 'unhealthy';
+      latency?: number;
+      error?: string;
+    };
+    sessions: {
+      status: 'healthy' | 'unhealthy';
+      count?: number;
+      error?: string;
+    };
+  };
+  metrics?: {
+    database?: any;
+  };
+}
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const detailed = request.nextUrl.searchParams.get('detailed') === 'true';
+
   try {
-    return NextResponse.json({
-      success: true,
-      message: 'MantisNXT API is healthy',
+    // Perform health checks in parallel
+    const [dbCheck, redisCheck] = await Promise.all([
+      dbHealthCheck().catch((err) => ({
+        healthy: false,
+        error: err.message,
+      })),
+      redisHealthCheck().catch((err) => ({
+        healthy: false,
+        error: err.message,
+      })),
+    ]);
+
+    // Check session store
+    const sessionCheck = await checkSessionStore();
+
+    // Determine overall status
+    const status = determineOverallStatus(dbCheck, redisCheck, sessionCheck);
+
+    const health: HealthStatus = {
+      status,
       timestamp: new Date().toISOString(),
-      version: '1.0.0',
-      status: 'operational'
-    });
+      uptime: process.uptime(),
+      version: process.env.npm_package_version || '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      checks: {
+        database: {
+          status: dbCheck.healthy ? 'healthy' : 'unhealthy',
+          latency: dbCheck.latency,
+          poolInfo: dbCheck.poolInfo,
+          error: dbCheck.error,
+        },
+        redis: {
+          status: redisCheck.healthy ? 'healthy' : 'unhealthy',
+          latency: redisCheck.latency,
+          error: redisCheck.error,
+        },
+        sessions: sessionCheck,
+      },
+    };
+
+    // Add detailed metrics if requested
+    if (detailed) {
+      const dbMetrics = await getDbMetrics().catch(() => null);
+      if (dbMetrics) {
+        health.metrics = {
+          database: dbMetrics,
+        };
+      }
+    }
+
+    // Return appropriate status code
+    const httpStatus = status === 'healthy' ? 200 : status === 'degraded' ? 200 : 503;
+
+    return NextResponse.json(health, { status: httpStatus });
   } catch (error) {
     console.error('Health check error:', error);
+
     return NextResponse.json(
       {
-        success: false,
-        message: 'Health check failed',
-        error: 'HEALTH_CHECK_ERROR',
-        timestamp: new Date().toISOString()
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 503 }
     );
   }
+}
+
+async function checkSessionStore(): Promise<{
+  status: 'healthy' | 'unhealthy';
+  count?: number;
+  error?: string;
+}> {
+  try {
+    const count = await sessionStore.count();
+    return {
+      status: 'healthy',
+      count,
+    };
+  } catch (error) {
+    return {
+      status: 'unhealthy',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+function determineOverallStatus(
+  dbCheck: any,
+  redisCheck: any,
+  sessionCheck: any
+): 'healthy' | 'degraded' | 'unhealthy' {
+  // Database is critical
+  if (!dbCheck.healthy) {
+    return 'unhealthy';
+  }
+
+  // Redis and sessions are important but not critical
+  const redisHealthy = redisCheck.healthy;
+  const sessionsHealthy = sessionCheck.status === 'healthy';
+
+  if (redisHealthy && sessionsHealthy) {
+    return 'healthy';
+  }
+
+  if (!redisHealthy || !sessionsHealthy) {
+    return 'degraded';
+  }
+
+  return 'healthy';
 }

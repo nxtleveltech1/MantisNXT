@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Activity,
   Award,
@@ -32,6 +33,7 @@ import {
   Layout,
   LayoutDashboard,
   MessageSquare,
+  Bot,
   Package,
   Plug,
   Search,
@@ -50,6 +52,7 @@ import {
   BookOpen,
   UserCheck
 } from 'lucide-react'
+import ChatAssistant from '@/components/ai/assistant/ChatAssistant'
 
 interface SelfContainedLayoutProps {
   children: ReactNode
@@ -97,36 +100,26 @@ const navigationGroups: NavigationGroup[] = [
   {
     title: "Business Directories",
     items: [
-      {
-        title: "Suppliers",
-        url: "/directories/suppliers",
-        icon: Building2,
-      },
-      {
-        title: "Customers",
-        url: "/directories/customers",
-        icon: UserCheck,
-      },
+      // Customers removed per request; Suppliers moved under Suppliers group as Supplier Directory
     ],
   },
   {
-    title: "Supplier Management",
+    title: "Suppliers",
     items: [
       {
-        title: "All Suppliers",
+        title: "Supplier Dashboard",
         url: "/suppliers",
         icon: Building2,
-        badge: "247",
       },
       {
-        title: "Add Supplier",
-        url: "/suppliers/new",
-        icon: Users,
+        title: "Supplier Inventory Portfolio",
+        url: "/nxt-spp",
+        icon: Package,
       },
       {
-        title: "Upload Pricelist",
-        url: "/suppliers/pricelist-upload",
-        icon: Upload,
+        title: "Supplier Directory",
+        url: "/directories/suppliers",
+        icon: Building2,
       },
       {
         title: "Performance",
@@ -136,13 +129,8 @@ const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    title: "Operations",
+    title: "Inventory Management",
     items: [
-      {
-        title: "Supplier Inventory Portfolio",
-        url: "/nxt-spp",
-        icon: Package,
-      },
       {
         title: "Inventory Management",
         url: "/inventory",
@@ -152,6 +140,11 @@ const navigationGroups: NavigationGroup[] = [
         title: "Pricing & Optimization",
         url: "/operations/pricing",
         icon: TrendingUp,
+      },
+      {
+        title: "Category Management",
+        url: "/catalog/categories",
+        icon: Settings,
       },
     ],
   },
@@ -207,6 +200,11 @@ const navigationGroups: NavigationGroup[] = [
         title: "Configuration",
         url: "/admin/ai/config",
         icon: Settings,
+      },
+      {
+        title: "Assistant",
+        url: "/admin/ai/assistant",
+        icon: Bot,
       },
       {
         title: "Predictions",
@@ -295,17 +293,33 @@ const navigationGroups: NavigationGroup[] = [
   },
 ]
 
+// Icon to use for each top-level group when the sidebar is minimized
+const groupIcons: Record<string, React.ComponentType<any>> = {
+  'Overview': LayoutDashboard,
+  'Business Directories': Building2,
+  'Suppliers': Building2,
+  'Inventory Management': Package,
+  'Customer Engagement': Users,
+  'Loyalty & Rewards': Gift,
+  'AI Services': Settings,
+  'Financial': DollarSign,
+  'Communication': MessageSquare,
+  'System Integration': Plug,
+  'Modules Coming': Package,
+}
+
 const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
   children,
   title = "Dashboard",
   breadcrumbs = [],
 }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [assistantOpen, setAssistantOpen] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     "Overview": true,
     "Business Directories": true,
-    "Supplier Management": true,
-    "Operations": true,
+    "Suppliers": true,
+    "Inventory Management": true,
     "Customer Engagement": true,
     "Loyalty & Rewards": true,
     "AI Services": true,
@@ -337,7 +351,7 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 transition-all duration-300",
+          "fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 transition-all duration-300 flex flex-col",
           sidebarOpen ? "w-64" : "w-16"
         )}
       >
@@ -372,23 +386,26 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
 
             return (
               <div key={group.title} className="mb-2">
-                {sidebarOpen && (
-                  <button
-                    onClick={() => toggleGroup(group.title)}
-                    className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    <span>{group.title}</span>
-                    {hasItems && (
-                      <ChevronRight
-                        className={cn(
-                          "h-3 w-3 transition-transform",
-                          isExpanded && "rotate-90"
-                        )}
-                      />
-                    )}
-                  </button>
-                )}
-                {isExpanded && hasItems && (
+                <button
+                  onClick={() => toggleGroup(group.title)}
+                  className={cn(
+                    'w-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-700 transition-colors flex',
+                    sidebarOpen ? 'items-center justify-between' : 'items-center justify-center'
+                  )}
+                  title={!sidebarOpen ? group.title : undefined}
+                >
+                  {(() => { const Icon = groupIcons[group.title] || LayoutDashboard; return (<Icon className={cn('h-4 w-4', sidebarOpen ? 'mr-2' : '')} />) })()}
+                  {sidebarOpen && <span className="flex-1 text-left">{group.title}</span>}
+                  {sidebarOpen && hasItems && (
+                    <ChevronRight
+                      className={cn(
+                        'h-3 w-3 transition-transform',
+                        isExpanded && 'rotate-90'
+                      )}
+                    />
+                  )}
+                </button>
+                {sidebarOpen && isExpanded && hasItems && (
                   <div className="space-y-1 mt-1">
                     {group.items.map((item) => {
                       const isActive = isActiveRoute(item.url)
@@ -398,6 +415,7 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
                           href={item.url}
                           className={cn(
                             "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            sidebarOpen && "pl-8",
                             isActive
                               ? "bg-blue-50 text-blue-700"
                               : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -428,7 +446,7 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
         </nav>
 
         {/* User Profile */}
-        <div className="border-t border-gray-200 p-2">
+        <div className="border-t border-gray-200 p-2 mt-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -532,17 +550,17 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
                 />
               </div>
 
-              {/* Notifications */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="relative">
-                    <Bell className="h-4 w-4" />
-                    <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs">
-                      3
-                    </Badge>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
+            {/* Notifications */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="relative">
+                  <Bell className="h-4 w-4" />
+                  <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs">
+                    3
+                  </Badge>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <div className="max-h-64 overflow-y-auto">
@@ -565,13 +583,27 @@ const SelfContainedLayout: React.FC<SelfContainedLayoutProps> = ({
                       </div>
                     </DropdownMenuItem>
                   </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* Settings */}
-              <Button variant="outline" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
+            {/* Assistant */}
+            <Button variant="outline" size="icon" onClick={() => setAssistantOpen(true)} title="Open AI Assistant">
+              <Bot className="h-4 w-4" />
+            </Button>
+            <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>AI Assistant</DialogTitle>
+                  <p className="sr-only">Ask questions and get help.</p>
+                </DialogHeader>
+                <ChatAssistant />
+              </DialogContent>
+            </Dialog>
+
+            {/* Settings */}
+            <Button variant="outline" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
             </div>
           </div>
         </header>

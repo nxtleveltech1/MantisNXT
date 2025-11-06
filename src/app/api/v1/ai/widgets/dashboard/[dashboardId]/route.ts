@@ -9,6 +9,7 @@ import {
   authenticateRequest,
   successResponse,
 } from '@/lib/ai/api-utils';
+import { DashboardService } from '@/lib/ai/services/dashboard-service';
 
 /**
  * GET /api/v1/ai/widgets/dashboard/[dashboardId]
@@ -25,20 +26,16 @@ export async function GET(
 
     const includeData = request.nextUrl.searchParams.get('includeData') === 'true';
 
-    // TODO: Call WidgetService when available from Team C
-    // const widgets = await WidgetService.getDashboardWidgets(
-    //   user.org_id,
-    //   dashboardId,
-    //   { includeData }
-    // );
-
-    // Mock response structure
-    const widgets = [];
+    const result = await DashboardService.listWidgets(user.org_id, {
+      dashboardId,
+      limit: 1000, // Get all widgets for the dashboard
+      offset: 0,
+    });
 
     return successResponse({
       dashboardId,
-      widgets,
-      totalWidgets: widgets.length,
+      widgets: result.widgets,
+      totalWidgets: result.total,
     });
   } catch (error) {
     return handleAIError(error);

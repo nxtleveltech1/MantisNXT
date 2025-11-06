@@ -1,9 +1,18 @@
 /**
  * OdooService - Production-ready Odoo XML-RPC/JSON-RPC client
  * Implements authentication and comprehensive ERP integration
+ *
+ * Features:
+ * - Rate limiting to prevent API abuse
+ * - Authentication token caching (60 min TTL)
+ * - Exponential backoff for 429 errors
+ * - Circuit breaker for fault tolerance
+ * - Request queuing to prevent duplicate auth calls
  */
 
-import xmlrpc from 'xmlrpc';
+import * as xmlrpc from 'xmlrpc';
+import { getRateLimiter, exponentialBackoff, getCircuitBreaker } from '@/lib/utils/rate-limiter';
+import { getOdooAuthCache, getAuthRequestQueue } from '@/lib/cache/odoo-auth-cache';
 
 export interface OdooConfig {
   url: string;
@@ -154,22 +163,60 @@ export interface OdooInvoiceLine {
 }
 
 /**
- * Odoo Service using XML-RPC protocol
+ * Odoo Service using XML-RPC protocol with rate limiting and caching
  */
 export class OdooService {
   private config: Required<OdooConfig>;
   private commonClient: xmlrpc.Client;
   private objectClient: xmlrpc.Client;
   private uid: number | null = null;
+  private rateLimiter: ReturnType<typeof getRateLimiter>;
+  private circuitBreaker: ReturnType<typeof getCircuitBreaker>;
+  private authCache: ReturnType<typeof getOdooAuthCache>;
+  private authQueue: ReturnType<typeof getAuthRequestQueue>;
 
   constructor(config: OdooConfig) {
+    // Normalize URL: remove trailing slash and ensure protocol
+    let normalizedUrl = config.url.replace(/\/$/, '');
+    
+    // Check for common Odoo.sh URL mistakes
+    if (normalizedUrl.includes('www.odoo.sh/project/')) {
+      throw new Error(
+        `Invalid Odoo.sh URL. You're using the project management URL.\n\n` +
+        `Wrong: https://www.odoo.sh/project/yourproject/branches/production\n` +
+        `Correct: https://yourproject-production-xxxxx.odoo.com\n\n` +
+        `Find your instance URL in your Odoo.sh dashboard under "Connect" or "Access" section.`
+      );
+    }
+    
+    // Detect protocol from URL if not explicitly provided
+    let protocol: 'http' | 'https' = config.protocol || 'https';
+    if (!normalizedUrl.startsWith('http')) {
+      normalizedUrl = `${protocol}://${normalizedUrl}`;
+    } else {
+      protocol = normalizedUrl.startsWith('https') ? 'https' : 'http';
+    }
+
+    // Auto-detect port based on URL and protocol
+    // Odoo.sh always uses HTTPS on port 443
+    // Self-hosted may use HTTP on 8069 or HTTPS on 443
+    const urlObj = new URL(normalizedUrl);
+    let port = config.port;
+    if (!port) {
+      if (urlObj.port) {
+        port = parseInt(urlObj.port, 10);
+      } else {
+        port = protocol === 'https' ? 443 : 8069;
+      }
+    }
+
     this.config = {
-      url: config.url.replace(/\/$/, ''),
+      url: normalizedUrl,
       database: config.database,
       username: config.username,
       password: config.password,
-      protocol: config.protocol || 'https',
-      port: config.port || (config.protocol === 'https' ? 443 : 8069),
+      protocol,
+      port,
       timeout: config.timeout || 30000,
     };
 
@@ -189,37 +236,180 @@ export class OdooService {
     this.objectClient = this.config.protocol === 'https'
       ? xmlrpc.createSecureClient({ ...clientOptions, path: '/xmlrpc/2/object' })
       : xmlrpc.createClient({ ...clientOptions, path: '/xmlrpc/2/object' });
+
+    // Initialize rate limiter (10 requests per minute)
+    const rateLimitKey = `odoo:${this.config.url}:${this.config.database}`;
+    this.rateLimiter = getRateLimiter(rateLimitKey, 10, 0.16);
+
+    // Initialize circuit breaker
+    this.circuitBreaker = getCircuitBreaker(rateLimitKey, 5, 60000);
+
+    // Get global auth cache and queue
+    this.authCache = getOdooAuthCache();
+    this.authQueue = getAuthRequestQueue();
   }
 
   /**
    * Authenticate with Odoo
+   * Uses caching and request queuing to prevent excessive auth calls
    */
   async authenticate(): Promise<OdooAuthResult> {
-    return new Promise((resolve, reject) => {
-      this.commonClient.methodCall(
-        'authenticate',
-        [
-          this.config.database,
-          this.config.username,
-          this.config.password,
-          {},
-        ],
-        (error, uid) => {
-          if (error) {
-            reject(new Error(`Odoo authentication failed: ${error.message}`));
-            return;
-          }
+    // Check cache first
+    const cached = this.authCache.get(
+      this.config.url,
+      this.config.database,
+      this.config.username
+    );
 
-          if (!uid || uid === false) {
-            reject(new Error('Invalid Odoo credentials'));
-            return;
-          }
+    if (cached) {
+      console.log('[OdooService] Using cached authentication');
+      this.uid = cached.uid;
+      return { uid: cached.uid };
+    }
 
-          this.uid = uid as number;
-          resolve({ uid: this.uid });
-        }
+    // Use auth queue to prevent concurrent auth requests
+    const authKey = `${this.config.url}:${this.config.database}:${this.config.username}`;
+
+    const uid = await this.authQueue.execute(authKey, async () => {
+      // Double-check cache after acquiring queue (another request might have populated it)
+      const recheck = this.authCache.get(
+        this.config.url,
+        this.config.database,
+        this.config.username
+      );
+
+      if (recheck) {
+        console.log('[OdooService] Using cached authentication (from queue)');
+        return recheck.uid;
+      }
+
+      // Wait for rate limiter token
+      await this.rateLimiter.consume();
+
+      console.log('[OdooService] Performing fresh authentication');
+
+      // Perform actual authentication with exponential backoff
+      return await exponentialBackoff<number>(
+        () => new Promise((resolve, reject) => {
+          this.commonClient.methodCall(
+            'authenticate',
+            [
+              this.config.database,
+              this.config.username,
+              this.config.password,
+              {},
+            ],
+            (error, uid) => {
+              if (error) {
+                // Check for rate limit error
+                const errorMsg = error.message || String(error);
+                if (errorMsg.includes('429') || errorMsg.includes('too many requests')) {
+                  const rateLimitError: any = new Error(`Odoo authentication rate limited: ${errorMsg}`);
+                  rateLimitError.status = 429;
+                  reject(rateLimitError);
+                  return;
+                }
+
+                reject(new Error(`Odoo authentication failed: ${errorMsg}`));
+                return;
+              }
+
+              if (!uid || uid === false) {
+                reject(new Error('Invalid Odoo credentials'));
+                return;
+              }
+
+              // Cache the successful authentication
+              this.authCache.set(
+                this.config.url,
+                this.config.database,
+                this.config.username,
+                uid as number
+              );
+
+              resolve(uid as number);
+            }
+          );
+        }),
+        5, // max retries
+        1000, // base delay 1s
+        32000 // max delay 32s
       );
     });
+
+    this.uid = uid;
+    return { uid };
+  }
+
+  /**
+   * Verify XML-RPC endpoint is accessible before making calls
+   * This helps catch issues where server returns HTML instead of XML-RPC
+   */
+  private async verifyEndpoint(): Promise<void> {
+    try {
+      const url = `${this.config.url}/xmlrpc/2/common`;
+      
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml',
+            'User-Agent': 'MantisNXT-Odoo-Integration/1.0',
+          },
+          body: '<?xml version="1.0"?><methodCall><methodName>version</methodName></methodCall>',
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        const contentType = response.headers.get('content-type') || '';
+        
+        // Check if response is HTML (error page) instead of XML
+        if (contentType.includes('text/html')) {
+          const text = await response.text();
+          if (text.includes('<html') || text.includes('<TITLE>') || text.includes('<!DOCTYPE')) {
+            throw new Error(
+              `Odoo server returned HTML instead of XML-RPC. This usually means:\n` +
+              `1. The URL is incorrect or redirecting to a login/error page\n` +
+              `2. The XML-RPC endpoint is not enabled\n` +
+              `3. SSL certificate issues\n` +
+              `URL: ${url}\n` +
+              `Status: ${response.status} ${response.statusText}\n` +
+              `Response preview: ${text.substring(0, 200)}...`
+            );
+          }
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP ${response.status}: ${response.statusText}. ` +
+            `Please verify the server URL is correct and XML-RPC is enabled.`
+          );
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error(`Request timeout after ${this.config.timeout}ms`);
+        }
+        throw fetchError;
+      }
+    } catch (error: any) {
+      // Re-throw with better context if it's not our custom error
+      if (error.message && !error.message.includes('Odoo server returned HTML')) {
+        throw new Error(
+          `Failed to connect to Odoo XML-RPC endpoint: ${error.message}\n` +
+          `URL: ${this.config.url}/xmlrpc/2/common\n` +
+          `Please verify:\n` +
+          `1. The server URL is correct\n` +
+          `2. The server is accessible\n` +
+          `3. XML-RPC is enabled on the Odoo instance`
+        );
+      }
+      throw error;
+    }
   }
 
   /**
@@ -229,6 +419,20 @@ export class OdooService {
     return new Promise((resolve, reject) => {
       this.commonClient.methodCall('version', [], (error, version) => {
         if (error) {
+          // Check if error is due to HTML response
+          const errorMsg = error.message || String(error);
+          if (errorMsg.includes('Unknown XML-RPC tag') || errorMsg.includes('TITLE')) {
+            reject(new Error(
+              `Odoo server returned HTML instead of XML-RPC response.\n` +
+              `This usually means:\n` +
+              `1. The URL is incorrect (check: ${this.config.url})\n` +
+              `2. XML-RPC endpoint is disabled or redirecting\n` +
+              `3. The server URL should end with domain only (e.g., https://company.odoo.sh)\n` +
+              `4. Try accessing ${this.config.url}/xmlrpc/2/common manually to verify\n` +
+              `Original error: ${errorMsg}`
+            ));
+            return;
+          }
           reject(error);
           return;
         }
@@ -239,15 +443,57 @@ export class OdooService {
 
   /**
    * Test connection to Odoo
+   * Returns detailed connection info including server version
    */
-  async testConnection(): Promise<boolean> {
+  async testConnection(): Promise<{ success: boolean; version?: any; error?: string }> {
     try {
-      await this.version();
+      // First verify endpoint is accessible (helps catch HTML response issues early)
+      try {
+        await this.verifyEndpoint();
+      } catch (verifyError: any) {
+        // If verification fails, include helpful error message
+        return {
+          success: false,
+          error: verifyError.message || 'Failed to verify XML-RPC endpoint',
+        };
+      }
+
+      // Then check version (doesn't require auth)
+      const versionInfo = await this.version();
+      
+      // Finally authenticate
       await this.authenticate();
-      return true;
-    } catch (error) {
+      
+      return {
+        success: true,
+        version: versionInfo,
+      };
+    } catch (error: any) {
       console.error('Odoo connection test failed:', error);
-      return false;
+      
+      // Provide more helpful error messages
+      let errorMessage = error.message || 'Connection test failed';
+      
+      // Check for common issues
+      if (errorMessage.includes('Unknown XML-RPC tag') || errorMessage.includes('TITLE')) {
+        errorMessage = 
+          `Odoo server returned HTML instead of XML-RPC. ` +
+          `Verify the server URL is correct and XML-RPC is enabled. ` +
+          `URL: ${this.config.url}`;
+      } else if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
+        errorMessage = 
+          `Cannot connect to Odoo server at ${this.config.url}. ` +
+          `Please verify the URL is correct and the server is accessible.`;
+      } else if (errorMessage.includes('ETIMEDOUT') || errorMessage.includes('timeout')) {
+        errorMessage = 
+          `Connection timeout. The server at ${this.config.url} did not respond. ` +
+          `Please check if the server is running and accessible.`;
+      }
+      
+      return {
+        success: false,
+        error: errorMessage,
+      };
     }
   }
 
@@ -263,6 +509,7 @@ export class OdooService {
 
   /**
    * Execute a method on an Odoo model
+   * Uses rate limiting, circuit breaker, and exponential backoff
    */
   private async execute<T>(
     model: string,
@@ -270,27 +517,47 @@ export class OdooService {
     args: any[] = [],
     kwargs: Record<string, any> = {}
   ): Promise<T> {
-    const uid = await this.ensureAuthenticated();
+    return await this.circuitBreaker.execute(async () => {
+      const uid = await this.ensureAuthenticated();
 
-    return new Promise((resolve, reject) => {
-      this.objectClient.methodCall(
-        'execute_kw',
-        [
-          this.config.database,
-          uid,
-          this.config.password,
-          model,
-          method,
-          args,
-          kwargs,
-        ],
-        (error, result) => {
-          if (error) {
-            reject(new Error(`Odoo execute error: ${error.message}`));
-            return;
-          }
-          resolve(result as T);
-        }
+      // Wait for rate limiter token
+      await this.rateLimiter.consume();
+
+      // Execute with exponential backoff
+      return await exponentialBackoff<T>(
+        () => new Promise((resolve, reject) => {
+          this.objectClient.methodCall(
+            'execute_kw',
+            [
+              this.config.database,
+              uid,
+              this.config.password,
+              model,
+              method,
+              args,
+              kwargs,
+            ],
+            (error, result) => {
+              if (error) {
+                // Check for rate limit error
+                const errorMsg = error.message || String(error);
+                if (errorMsg.includes('429') || errorMsg.includes('too many requests')) {
+                  const rateLimitError: any = new Error(`Odoo API rate limited: ${errorMsg}`);
+                  rateLimitError.status = 429;
+                  reject(rateLimitError);
+                  return;
+                }
+
+                reject(new Error(`Odoo execute error: ${errorMsg}`));
+                return;
+              }
+              resolve(result as T);
+            }
+          );
+        }),
+        5, // max retries
+        1000, // base delay 1s
+        32000 // max delay 32s
       );
     });
   }

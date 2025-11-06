@@ -177,7 +177,7 @@ export function useEnhancedSupplierDiscovery(
           socialMedia: { enabled: options.includeSocialMedia, platforms: [], rateLimit: 60 },
           businessDirectories: { enabled: options.includeBusinessDirectories, directories: [], priority: 1 }
         },
-        ai: { enabled: options.enableAIEnhancement, provider: 'openai', model: 'gpt-4', confidenceThreshold: options.confidenceThreshold, maxTokens: 2000, temperature: 0.1 },
+        ai: { enabled: options.enableAIEnhancement, provider: 'openai', model: 'gpt-4.1', confidenceThreshold: options.confidenceThreshold, maxTokens: 2000, temperature: 0.1 },
         data: { validation: { strict: true, requiredFields: ['name'], optionalFields: ['email'] }, enrichment: { enabled: true, sources: [], autoValidate: true }, storage: { cacheResults: true, storeRawData: true, retentionDays: 30 } },
         output: { format: 'both', includeMetadata: true, includeSources: true, includeConfidence: true }
       });

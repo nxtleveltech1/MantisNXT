@@ -205,8 +205,14 @@ scripts/processing_report_*.json
 # Monitoring
 monitoring/
 
-# Secrets
+# Secrets (CRITICAL: Never commit secrets!)
 secrets/
+*.secrets
+*.secret
+.env.production
+.env.production.local
+production-secrets.json
+*-secrets.json
 
 # Nginx
 nginx/
@@ -254,4 +260,3 @@ fix_missing_tables.sql
 temp_*.sql
 *.backup
 *.old
-.env.production

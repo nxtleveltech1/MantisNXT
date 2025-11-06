@@ -364,7 +364,7 @@ export default function SupplierContactsDirectoryPage() {
                   <p className="text-sm text-muted-foreground">Total Contacts</p>
                   <p className="text-2xl font-bold">{contacts.length}</p>
                 </div>
-                <User className="h-8 w-8 text-blue-500" />
+                <User className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -504,8 +504,8 @@ export default function SupplierContactsDirectoryPage() {
                     <TableRow key={`${contact.supplierId}-${contact.id}`}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-5 w-5 text-blue-600" />
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary" />
                           </div>
                           <div>
                             <div className="font-medium">{contact.name}</div>
@@ -518,7 +518,7 @@ export default function SupplierContactsDirectoryPage() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{contact.supplierName}</div>
-                          <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">{contact.supplierCode}</code>
+                          <code className="text-xs bg-secondary px-1 py-0.5 rounded">{contact.supplierCode}</code>
                         </div>
                       </TableCell>
                       <TableCell>{contact.title || 'N/A'}</TableCell>
@@ -552,8 +552,8 @@ export default function SupplierContactsDirectoryPage() {
                         <Badge
                           className={
                             contact.isActive
-                              ? 'bg-green-100 text-green-800 border-green-200'
-                              : 'bg-gray-100 text-gray-800 border-gray-200'
+                              ? 'bg-success/10 text-success border-success/20'
+                              : 'bg-secondary text-secondary-foreground border-border'
                           }
                           variant="outline"
                         >

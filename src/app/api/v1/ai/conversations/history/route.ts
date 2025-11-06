@@ -11,6 +11,7 @@ import {
   extractPagination,
   extractDateRange,
 } from '@/lib/ai/api-utils';
+import { conversationService } from '@/lib/ai/services/conversation-service';
 
 /**
  * GET /api/v1/ai/conversations/history
@@ -23,33 +24,40 @@ export async function GET(request: NextRequest) {
     const { limit, offset, page } = extractPagination(searchParams);
     const { startDate, endDate } = extractDateRange(searchParams);
 
-    // TODO: Call AIAssistantService when available from Team C
-    // const result = await AIAssistantService.getConversationHistory(user.id, {
-    //   startDate,
-    //   endDate,
-    //   limit,
-    //   offset,
-    // });
+    const orgId = user.organizationId || user.org_id;
+    const userId = user.id;
 
-    // Mock response structure
-    const history = [];
-    const total = 0;
+    // Get conversation summaries
+    const conversations = await conversationService.listConversations(orgId, userId, {
+      limit,
+      offset,
+      fromDate: startDate,
+      toDate: endDate,
+    });
+
+    // Calculate summary statistics
+    const totalConversations = conversations.length;
+    const totalMessages = conversations.reduce((sum, conv) => sum + conv.messageCount, 0);
+    const avgMessages = totalConversations > 0 ? totalMessages / totalConversations : 0;
 
     return successResponse(
       {
-        history,
+        history: conversations,
         summary: {
-          totalConversations: total,
-          totalMessages: 0,
-          averageMessagesPerConversation: 0,
-          topTopics: [],
+          totalConversations,
+          totalMessages,
+          averageMessagesPerConversation: Math.round(avgMessages * 10) / 10,
+          dateRange: {
+            from: startDate?.toISOString(),
+            to: endDate?.toISOString(),
+          },
         },
       },
       {
         page,
         limit,
-        total,
-        hasMore: offset + limit < total,
+        total: totalConversations,
+        hasMore: offset + limit < totalConversations,
       }
     );
   } catch (error) {

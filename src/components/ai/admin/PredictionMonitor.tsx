@@ -36,22 +36,37 @@ import { format } from 'date-fns';
 
 interface Prediction {
   id: string;
+  org_id: string;
   service_type: string;
   entity_type: string;
   entity_id: string;
-  prediction_type: string;
   prediction_data: any;
-  confidence: number;
-  status: string;
-  accuracy?: number;
+  confidence_score: number;
+  accuracy_score?: number;
+  status: 'pending' | 'validated' | 'expired' | 'rejected';
   created_at: string;
   expires_at: string;
+  feedback_received: boolean;
+  actual_outcome?: any;
+  metadata?: any;
 }
 
 interface AccuracyStats {
-  averageAccuracy: number;
-  totalPredictions: number;
-  accurateCount: number;
+  overall: {
+    totalPredictions: number;
+    pendingPredictions: number;
+    validatedPredictions: number;
+    expiredPredictions: number;
+    averageConfidence: number;
+    averageAccuracy: number;
+  };
+}
+
+interface GeneratePredictionInput {
+  entityType: 'product' | 'supplier' | 'category' | 'customer';
+  entityId: string;
+  predictionType: 'inventory_demand' | 'supplier_performance' | 'price_trends' | 'stock_levels' | 'custom';
+  forecastDays?: number;
 }
 
 export default function PredictionMonitor() {
@@ -63,7 +78,7 @@ export default function PredictionMonitor() {
   const [endDate, setEndDate] = useState<string>('');
 
   // Fetch predictions with filters
-  const { data: predictions = [], isLoading } = useQuery<Prediction[]>({
+  const { data: predictionsData, isLoading, refetch: refetchPredictions } = useQuery({
     queryKey: [
       'ai-predictions',
       serviceFilter,
@@ -82,10 +97,15 @@ export default function PredictionMonitor() {
 
       const response = await fetch(`/api/v1/ai/predictions?${params}`);
       if (!response.ok) throw new Error('Failed to fetch predictions');
-      const data = await response.json();
-      return data.data || [];
+      const result = await response.json();
+      return {
+        predictions: result.data || [],
+        total: result.pagination?.total || 0,
+      };
     },
   });
+
+  const predictions = predictionsData?.predictions || [];
 
   // Fetch accuracy statistics
   const { data: accuracyStats } = useQuery<AccuracyStats>({
@@ -93,38 +113,54 @@ export default function PredictionMonitor() {
     queryFn: async () => {
       const response = await fetch('/api/v1/ai/predictions/accuracy');
       if (!response.ok) throw new Error('Failed to fetch accuracy stats');
-      const data = await response.json();
-      return data.data || { averageAccuracy: 0, totalPredictions: 0, accurateCount: 0 };
+      const result = await response.json();
+      return result.data || {
+        overall: {
+          totalPredictions: 0,
+          pendingPredictions: 0,
+          validatedPredictions: 0,
+          expiredPredictions: 0,
+          averageConfidence: 0,
+          averageAccuracy: 0,
+        },
+      };
     },
   });
 
   // Filter predictions by confidence range
   const filteredPredictions = predictions.filter(
     (p) =>
-      p.confidence * 100 >= confidenceRange[0] && p.confidence * 100 <= confidenceRange[1]
+      p.confidence_score * 100 >= confidenceRange[0] &&
+      p.confidence_score * 100 <= confidenceRange[1]
   );
 
   // Calculate confidence distribution
   const confidenceDistribution = [
     {
       range: '0-20%',
-      count: filteredPredictions.filter((p) => p.confidence < 0.2).length,
+      count: filteredPredictions.filter((p) => p.confidence_score < 0.2).length,
     },
     {
       range: '20-40%',
-      count: filteredPredictions.filter((p) => p.confidence >= 0.2 && p.confidence < 0.4).length,
+      count: filteredPredictions.filter(
+        (p) => p.confidence_score >= 0.2 && p.confidence_score < 0.4
+      ).length,
     },
     {
       range: '40-60%',
-      count: filteredPredictions.filter((p) => p.confidence >= 0.4 && p.confidence < 0.6).length,
+      count: filteredPredictions.filter(
+        (p) => p.confidence_score >= 0.4 && p.confidence_score < 0.6
+      ).length,
     },
     {
       range: '60-80%',
-      count: filteredPredictions.filter((p) => p.confidence >= 0.6 && p.confidence < 0.8).length,
+      count: filteredPredictions.filter(
+        (p) => p.confidence_score >= 0.6 && p.confidence_score < 0.8
+      ).length,
     },
     {
       range: '80-100%',
-      count: filteredPredictions.filter((p) => p.confidence >= 0.8).length,
+      count: filteredPredictions.filter((p) => p.confidence_score >= 0.8).length,
     },
   ];
 
@@ -167,8 +203,12 @@ export default function PredictionMonitor() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{accuracyStats?.totalPredictions || 0}</div>
-            <p className="text-xs text-muted-foreground">Across all services</p>
+            <div className="text-2xl font-bold">
+              {accuracyStats?.overall.totalPredictions || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {accuracyStats?.overall.pendingPredictions || 0} pending
+            </p>
           </CardContent>
         </Card>
 
@@ -179,12 +219,15 @@ export default function PredictionMonitor() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {predictions.length > 0
-                ? (
-                    (predictions.reduce((sum, p) => sum + p.confidence, 0) / predictions.length) *
-                    100
-                  ).toFixed(1)
-                : 0}
+              {accuracyStats?.overall.averageConfidence
+                ? (accuracyStats.overall.averageConfidence * 100).toFixed(1)
+                : predictions.length > 0
+                  ? (
+                      (predictions.reduce((sum, p) => sum + p.confidence_score, 0) /
+                        predictions.length) *
+                      100
+                    ).toFixed(1)
+                  : 0}
               %
             </div>
             <p className="text-xs text-muted-foreground">Prediction confidence</p>
@@ -198,13 +241,13 @@ export default function PredictionMonitor() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {accuracyStats?.averageAccuracy
-                ? (accuracyStats.averageAccuracy * 100).toFixed(1)
+              {accuracyStats?.overall.averageAccuracy
+                ? (accuracyStats.overall.averageAccuracy * 100).toFixed(1)
                 : 0}
               %
             </div>
             <p className="text-xs text-muted-foreground">
-              {accuracyStats?.accurateCount || 0} accurate predictions
+              {accuracyStats?.overall.validatedPredictions || 0} validated
             </p>
           </CardContent>
         </Card>
@@ -334,15 +377,19 @@ export default function PredictionMonitor() {
                         {prediction.entity_id.slice(0, 8)}...
                       </span>
                     </TableCell>
-                    <TableCell>{prediction.prediction_type}</TableCell>
-                    <TableCell>{getConfidenceBadge(prediction.confidence)}</TableCell>
+                    <TableCell>
+                      {prediction.metadata?.prediction_type ||
+                        prediction.prediction_data?.type ||
+                        '-'}
+                    </TableCell>
+                    <TableCell>{getConfidenceBadge(prediction.confidence_score)}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{prediction.status}</Badge>
                     </TableCell>
                     <TableCell>
-                      {prediction.accuracy ? (
+                      {prediction.accuracy_score ? (
                         <Badge className="bg-green-600">
-                          {(prediction.accuracy * 100).toFixed(1)}%
+                          {(prediction.accuracy_score * 100).toFixed(1)}%
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground">-</span>
@@ -375,7 +422,9 @@ export default function PredictionMonitor() {
             <DialogTitle>Prediction Details</DialogTitle>
             <DialogDescription>
               {selectedPrediction?.service_type.replace(/_/g, ' ')} -{' '}
-              {selectedPrediction?.prediction_type}
+              {selectedPrediction?.metadata?.prediction_type ||
+                selectedPrediction?.prediction_data?.type ||
+                'N/A'}
             </DialogDescription>
           </DialogHeader>
           {selectedPrediction && (
@@ -384,13 +433,31 @@ export default function PredictionMonitor() {
                 <div>
                   <Label className="text-sm text-muted-foreground">Confidence</Label>
                   <div className="mt-1">
-                    {getConfidenceBadge(selectedPrediction.confidence)}
+                    {getConfidenceBadge(selectedPrediction.confidence_score)}
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm text-muted-foreground">Status</Label>
                   <div className="mt-1">
                     <Badge variant="outline">{selectedPrediction.status}</Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Accuracy</Label>
+                  <div className="mt-1">
+                    {selectedPrediction.accuracy_score ? (
+                      <Badge className="bg-green-600">
+                        {(selectedPrediction.accuracy_score * 100).toFixed(1)}%
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Not validated</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Feedback Received</Label>
+                  <div className="mt-1 text-sm">
+                    {selectedPrediction.feedback_received ? 'Yes' : 'No'}
                   </div>
                 </div>
                 <div>
@@ -412,6 +479,22 @@ export default function PredictionMonitor() {
                   {JSON.stringify(selectedPrediction.prediction_data, null, 2)}
                 </pre>
               </div>
+              {selectedPrediction.actual_outcome && (
+                <div>
+                  <Label className="text-sm text-muted-foreground">Actual Outcome</Label>
+                  <pre className="mt-1 rounded-md bg-muted p-4 text-sm overflow-auto max-h-64">
+                    {JSON.stringify(selectedPrediction.actual_outcome, null, 2)}
+                  </pre>
+                </div>
+              )}
+              {selectedPrediction.metadata && (
+                <div>
+                  <Label className="text-sm text-muted-foreground">Metadata</Label>
+                  <pre className="mt-1 rounded-md bg-muted p-4 text-sm overflow-auto max-h-64">
+                    {JSON.stringify(selectedPrediction.metadata, null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

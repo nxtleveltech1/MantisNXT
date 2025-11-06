@@ -125,18 +125,37 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
   }
 
   /**
-   * Get conversation history for a user
+   * Get conversation history for a user (alias for listConversations)
    */
   async getConversationHistory(
     userId: string,
     limit: number = 50,
     options?: AIServiceRequestOptions,
   ): Promise<AIServiceResponse<ConversationSummary[]>> {
+    return this.listConversations(userId, { limit }, options);
+  }
+
+  /**
+   * List conversations for a user with optional filters
+   */
+  async listConversations(
+    userId: string,
+    filters?: {
+      orgId?: string;
+      limit?: number;
+      offset?: number;
+      fromDate?: Date;
+      toDate?: Date;
+    },
+    options?: AIServiceRequestOptions,
+  ): Promise<AIServiceResponse<ConversationSummary[]>> {
     return this.executeOperation(
-      'conversation.history',
+      'conversation.list',
       async () => {
-        const result = await db.query(
-          `
+        const limit = filters?.limit ?? 50;
+        const offset = filters?.offset ?? 0;
+
+        let query = `
           SELECT
             conversation_id,
             COUNT(*) as message_count,
@@ -146,12 +165,39 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
             MAX(created_at) as last_updated
           FROM ai_conversation
           WHERE user_id = $1
+        `;
+
+        const params: any[] = [userId];
+        let paramIndex = 2;
+
+        if (filters?.orgId) {
+          query += ` AND org_id = $${paramIndex}`;
+          params.push(filters.orgId);
+          paramIndex++;
+        }
+
+        if (filters?.fromDate) {
+          query += ` AND created_at >= $${paramIndex}`;
+          params.push(filters.fromDate);
+          paramIndex++;
+        }
+
+        if (filters?.toDate) {
+          query += ` AND created_at <= $${paramIndex}`;
+          params.push(filters.toDate);
+          paramIndex++;
+        }
+
+        query += `
           GROUP BY conversation_id
           ORDER BY last_updated DESC
-          LIMIT $2
-          `,
-          [userId, limit],
-        );
+          LIMIT $${paramIndex}
+          OFFSET $${paramIndex + 1}
+        `;
+
+        params.push(limit, offset);
+
+        const result = await db.query(query, params);
 
         return result.rows.map((row) => ({
           conversationId: row.conversation_id,
@@ -163,7 +209,93 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         }));
       },
       options,
-      { userId, limit },
+      { userId, filters },
+    );
+  }
+
+  /**
+   * Save a message (alias for createMessage with simpler interface)
+   */
+  async saveMessage(
+    orgId: string,
+    userId: string,
+    conversationId: string,
+    role: ConversationRole,
+    content: string,
+    context?: Record<string, any>,
+    options?: AIServiceRequestOptions,
+  ): Promise<AIServiceResponse<AIConversation>> {
+    return this.createMessage(
+      orgId,
+      {
+        userId,
+        conversationId,
+        role,
+        content,
+        context,
+      },
+      options,
+    );
+  }
+
+  /**
+   * Get messages from a conversation with optional limit
+   */
+  async getMessages(
+    orgId: string,
+    conversationId: string,
+    limit?: number,
+    options?: AIServiceRequestOptions,
+  ): Promise<AIServiceResponse<AIConversation[]>> {
+    return this.executeOperation(
+      'conversation.getMessages',
+      async () => {
+        let query = `
+          SELECT * FROM ai_conversation
+          WHERE org_id = $1 AND conversation_id = $2
+          ORDER BY created_at DESC
+        `;
+
+        const params: any[] = [orgId, conversationId];
+
+        if (limit) {
+          query += ` LIMIT $3`;
+          params.push(limit);
+        }
+
+        const result = await db.query(query, params);
+
+        // Reverse to get chronological order (oldest first)
+        return result.rows.reverse().map((row) => this.mapConversationRow(row));
+      },
+      options,
+      { orgId, conversationId, limit },
+    );
+  }
+
+  /**
+   * Delete an entire conversation
+   */
+  async deleteConversation(
+    conversationId: string,
+    options?: AIServiceRequestOptions,
+  ): Promise<AIServiceResponse<number>> {
+    return this.executeOperation(
+      'conversation.delete',
+      async () => {
+        const result = await db.query(
+          `
+          DELETE FROM ai_conversation
+          WHERE conversation_id = $1
+          RETURNING id
+          `,
+          [conversationId],
+        );
+
+        return result.rows.length;
+      },
+      options,
+      { conversationId },
     );
   }
 

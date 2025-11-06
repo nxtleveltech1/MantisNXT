@@ -19,11 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   AlertTriangle,
   AlertCircle,
@@ -37,32 +34,43 @@ import { toast } from 'sonner';
 
 interface AIAlert {
   id: string;
+  org_id: string;
   service_type: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   title: string;
   message: string;
   entity_type?: string;
   entity_id?: string;
-  status: 'pending' | 'acknowledged' | 'resolved' | 'dismissed';
-  metadata?: any;
-  created_at: string;
+  is_acknowledged: boolean;
+  acknowledged_by?: string;
   acknowledged_at?: string;
+  is_resolved: boolean;
   resolved_at?: string;
+  created_at: string;
+  metadata?: any;
+  recommendations?: any[];
+}
+
+interface AIAlertWithStatus extends AIAlert {
+  status: 'pending' | 'acknowledged' | 'resolved' | 'dismissed';
 }
 
 interface AlertStats {
-  totalActive: number;
-  bySeverity: {
+  total: number;
+  by_severity: {
     critical: number;
     high: number;
     medium: number;
     low: number;
   };
-  averageResolutionTime: number;
-  trends: Array<{
-    date: string;
-    count: number;
-  }>;
+  by_status: {
+    pending: number;
+    acknowledged: number;
+    resolved: number;
+  };
+  by_service: Record<string, number>;
+  unresolved_count: number;
+  acknowledged_count: number;
 }
 
 const SEVERITY_CONFIG = {
@@ -98,14 +106,28 @@ const SEVERITY_CONFIG = {
 
 export default function AIAlertManagement() {
   const queryClient = useQueryClient();
-  const [selectedAlert, setSelectedAlert] = useState<AIAlert | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<AIAlertWithStatus | null>(null);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [serviceFilter, setServiceFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [notes, setNotes] = useState('');
+
+  // Helper to convert backend alert to component format
+  const addStatusToAlert = (alert: AIAlert): AIAlertWithStatus => {
+    let status: 'pending' | 'acknowledged' | 'resolved' | 'dismissed';
+    if (alert.is_resolved) {
+      status = 'resolved';
+    } else if (alert.is_acknowledged) {
+      status = 'acknowledged';
+    } else if (alert.metadata?.status === 'dismissed') {
+      status = 'dismissed';
+    } else {
+      status = 'pending';
+    }
+    return { ...alert, status };
+  };
 
   // Fetch alerts
-  const { data: alerts = [], isLoading } = useQuery<AIAlert[]>({
+  const { data: alerts = [], isLoading } = useQuery<AIAlertWithStatus[]>({
     queryKey: ['ai-alerts', severityFilter, serviceFilter, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -116,7 +138,8 @@ export default function AIAlertManagement() {
       const response = await fetch(`/api/v1/ai/alerts?${params}`);
       if (!response.ok) throw new Error('Failed to fetch alerts');
       const data = await response.json();
-      return data.data || [];
+      const rawAlerts = data.data || [];
+      return rawAlerts.map(addStatusToAlert);
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   });
@@ -130,10 +153,12 @@ export default function AIAlertManagement() {
       const data = await response.json();
       return (
         data.data || {
-          totalActive: 0,
-          bySeverity: { critical: 0, high: 0, medium: 0, low: 0 },
-          averageResolutionTime: 0,
-          trends: [],
+          total: 0,
+          by_severity: { critical: 0, high: 0, medium: 0, low: 0 },
+          by_status: { pending: 0, acknowledged: 0, resolved: 0 },
+          by_service: {},
+          unresolved_count: 0,
+          acknowledged_count: 0,
         }
       );
     },
@@ -142,13 +167,15 @@ export default function AIAlertManagement() {
 
   // Acknowledge alert
   const acknowledgeMutation = useMutation({
-    mutationFn: async ({ alertId, notes }: { alertId: string; notes?: string }) => {
+    mutationFn: async ({ alertId }: { alertId: string }) => {
       const response = await fetch(`/api/v1/ai/alerts/${alertId}/acknowledge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes }),
       });
-      if (!response.ok) throw new Error('Failed to acknowledge alert');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to acknowledge alert');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -156,7 +183,6 @@ export default function AIAlertManagement() {
       queryClient.invalidateQueries({ queryKey: ['ai-alerts-stats'] });
       toast.success('Alert acknowledged');
       setSelectedAlert(null);
-      setNotes('');
     },
     onError: (error: Error) => {
       toast.error(`Failed to acknowledge: ${error.message}`);
@@ -165,21 +191,15 @@ export default function AIAlertManagement() {
 
   // Resolve alert
   const resolveMutation = useMutation({
-    mutationFn: async ({
-      alertId,
-      resolution,
-      notes,
-    }: {
-      alertId: string;
-      resolution: string;
-      notes?: string;
-    }) => {
+    mutationFn: async ({ alertId }: { alertId: string }) => {
       const response = await fetch(`/api/v1/ai/alerts/${alertId}/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resolution, notes }),
       });
-      if (!response.ok) throw new Error('Failed to resolve alert');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to resolve alert');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -187,7 +207,6 @@ export default function AIAlertManagement() {
       queryClient.invalidateQueries({ queryKey: ['ai-alerts-stats'] });
       toast.success('Alert resolved');
       setSelectedAlert(null);
-      setNotes('');
     },
     onError: (error: Error) => {
       toast.error(`Failed to resolve: ${error.message}`);
@@ -242,7 +261,7 @@ export default function AIAlertManagement() {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalActive || 0}</div>
+            <div className="text-2xl font-bold">{stats?.unresolved_count || 0}</div>
             <p className="text-xs text-muted-foreground">Requiring attention</p>
           </CardContent>
         </Card>
@@ -254,7 +273,7 @@ export default function AIAlertManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {stats?.bySeverity.critical || 0}
+              {stats?.by_severity.critical || 0}
             </div>
             <p className="text-xs text-muted-foreground">High priority</p>
           </CardContent>
@@ -262,16 +281,14 @@ export default function AIAlertManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Resolution</CardTitle>
+            <CardTitle className="text-sm font-medium">Acknowledged</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.averageResolutionTime
-                ? `${Math.round(stats.averageResolutionTime / 60)}m`
-                : '-'}
+              {stats?.acknowledged_count || 0}
             </div>
-            <p className="text-xs text-muted-foreground">Time to resolve</p>
+            <p className="text-xs text-muted-foreground">In progress</p>
           </CardContent>
         </Card>
 
@@ -282,7 +299,7 @@ export default function AIAlertManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {alerts.filter((a) => a.status === 'resolved').length}
+              {stats?.by_status.resolved || 0}
             </div>
             <p className="text-xs text-muted-foreground">Successfully resolved</p>
           </CardContent>
@@ -347,28 +364,22 @@ export default function AIAlertManagement() {
         </CardContent>
       </Card>
 
-      {/* Alert Trend Chart */}
-      {stats?.trends && stats.trends.length > 0 && (
+      {/* Service Distribution */}
+      {stats?.by_service && Object.keys(stats.by_service).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Alert Trends</CardTitle>
-            <CardDescription>Alert volume over time</CardDescription>
+            <CardTitle>Alerts by Service</CardTitle>
+            <CardDescription>Distribution across AI services</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={stats.trends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="space-y-2">
+              {Object.entries(stats.by_service).map(([service, count]) => (
+                <div key={service} className="flex items-center justify-between">
+                  <span className="text-sm capitalize">{service.replace(/_/g, ' ')}</span>
+                  <Badge variant="outline">{count}</Badge>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -449,6 +460,7 @@ export default function AIAlertManagement() {
                                   e.stopPropagation();
                                   acknowledgeMutation.mutate({ alertId: alert.id });
                                 }}
+                                disabled={acknowledgeMutation.isPending}
                               >
                                 Acknowledge
                               </Button>
@@ -456,8 +468,9 @@ export default function AIAlertManagement() {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedAlert(alert);
+                                  resolveMutation.mutate({ alertId: alert.id });
                                 }}
+                                disabled={resolveMutation.isPending}
                               >
                                 Resolve
                               </Button>
@@ -468,8 +481,9 @@ export default function AIAlertManagement() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedAlert(alert);
+                                resolveMutation.mutate({ alertId: alert.id });
                               }}
+                              disabled={resolveMutation.isPending}
                             >
                               Resolve
                             </Button>
@@ -531,7 +545,21 @@ export default function AIAlertManagement() {
                 )}
               </div>
 
-              {selectedAlert.metadata && (
+              {selectedAlert.recommendations && selectedAlert.recommendations.length > 0 && (
+                <div>
+                  <Label className="text-sm text-muted-foreground">Recommendations</Label>
+                  <ul className="mt-1 space-y-1 text-sm">
+                    {selectedAlert.recommendations.map((rec: any, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{typeof rec === 'string' ? rec : JSON.stringify(rec)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {selectedAlert.metadata && Object.keys(selectedAlert.metadata).length > 0 && (
                 <div>
                   <Label className="text-sm text-muted-foreground">Metadata</Label>
                   <pre className="mt-1 rounded-md bg-muted p-4 text-sm overflow-auto max-h-32">
@@ -540,29 +568,15 @@ export default function AIAlertManagement() {
                 </div>
               )}
 
-              {selectedAlert.status !== 'resolved' && (
-                <div className="space-y-2">
-                  <Label htmlFor="resolution-notes">Resolution Notes</Label>
-                  <Textarea
-                    id="resolution-notes"
-                    placeholder="Enter resolution details..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-              )}
-
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setSelectedAlert(null)}>
-                  Cancel
+                  Close
                 </Button>
                 {selectedAlert.status === 'pending' && (
                   <Button
                     onClick={() =>
                       acknowledgeMutation.mutate({
                         alertId: selectedAlert.id,
-                        notes,
                       })
                     }
                     disabled={acknowledgeMutation.isPending}
@@ -579,8 +593,6 @@ export default function AIAlertManagement() {
                     onClick={() =>
                       resolveMutation.mutate({
                         alertId: selectedAlert.id,
-                        resolution: notes || 'Resolved',
-                        notes,
                       })
                     }
                     disabled={resolveMutation.isPending}

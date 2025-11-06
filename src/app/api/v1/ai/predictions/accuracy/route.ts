@@ -10,6 +10,7 @@ import {
   successResponse,
   extractDateRange,
 } from '@/lib/ai/api-utils';
+import { predictionService } from '@/lib/ai/services/prediction-service';
 
 /**
  * GET /api/v1/ai/predictions/accuracy
@@ -21,50 +22,30 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const { startDate, endDate } = extractDateRange(searchParams);
 
-    const serviceType = searchParams.get('serviceType');
-    const predictionType = searchParams.get('predictionType');
+    const serviceType = searchParams.get('serviceType') as any;
+    const predictionType = searchParams.get('predictionType') || undefined;
 
-    // TODO: Call PredictionService when available from Team C
-    // const metrics = await PredictionService.getAccuracyMetrics(user.org_id, {
-    //   serviceType,
-    //   predictionType,
-    //   startDate,
-    //   endDate,
-    // });
+    // Get overall stats
+    const stats = await predictionService.getPredictionStats(user.org_id);
 
-    // Mock response structure
+    // Build metrics response
     const metrics = {
       overall: {
-        totalPredictions: 1000,
-        completedPredictions: 750,
-        averageAccuracy: 0.87,
-        accuracyTrend: 0.02, // +2% vs previous period
+        totalPredictions: stats.total,
+        pendingPredictions: stats.pending,
+        validatedPredictions: stats.validated,
+        expiredPredictions: stats.expired,
+        averageConfidence: stats.averageConfidence,
+        averageAccuracy: stats.averageAccuracy,
       },
-      byService: [
-        {
-          serviceType: 'demand_forecasting',
-          totalPredictions: 600,
-          completedPredictions: 500,
-          averageAccuracy: 0.89,
-          confidenceDistribution: {
-            high: 450,
-            medium: 100,
-            low: 50,
-          },
-        },
-        {
-          serviceType: 'anomaly_detection',
-          totalPredictions: 400,
-          completedPredictions: 250,
-          averageAccuracy: 0.84,
-          confidenceDistribution: {
-            high: 200,
-            medium: 150,
-            low: 50,
-          },
-        },
-      ],
-      byPredictionType: {},
+      period: {
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString(),
+      },
+      filters: {
+        serviceType,
+        predictionType,
+      },
       calculatedAt: new Date().toISOString(),
     };
 

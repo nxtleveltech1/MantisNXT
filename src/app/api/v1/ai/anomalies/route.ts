@@ -16,6 +16,7 @@ import {
   extractSeverity,
 } from '@/lib/ai/api-utils';
 import { detectAnomaliesSchema } from '@/lib/ai/validation-schemas';
+import { anomalyService } from '@/lib/ai/services/anomaly-service';
 
 /**
  * GET /api/v1/ai/anomalies
@@ -30,29 +31,28 @@ export async function GET(request: NextRequest) {
     const { entityType, entityId } = extractEntityFilters(searchParams);
 
     const severity = extractSeverity(searchParams);
-    const status = searchParams.get('status');
+    const status = searchParams.get('status') as any;
 
-    // TODO: Call AnomalyDetectionService when available from Team C
-    // const result = await AnomalyDetectionService.listAnomalies(user.org_id, {
-    //   entityType,
-    //   entityId,
-    //   severity,
-    //   status,
-    //   startDate,
-    //   endDate,
-    //   limit,
-    //   offset,
-    // });
+    // TEMP FIX: Convert UUID org_id to integer for analytics_anomalies table
+    // TODO: Run migration 0017_fix_analytics_anomalies_org_id.sql to fix schema
+    const orgId = user.org_id === '00000000-0000-0000-0000-000000000000' ? 0 : parseInt(user.org_id) || 0;
 
-    // Mock response structure
-    const anomalies = [];
-    const total = 0;
+    const result = await anomalyService.listAnomalies(orgId, {
+      entityType: entityType as any,
+      entityId,
+      severity: severity as any,
+      status,
+      startDate,
+      endDate,
+      limit,
+      offset,
+    });
 
-    return successResponse(anomalies, {
+    return successResponse(result.anomalies, {
       page,
       limit,
-      total,
-      hasMore: offset + limit < total,
+      total: result.total,
+      hasMore: offset + limit < result.total,
     });
   } catch (error) {
     return handleAIError(error);
@@ -69,34 +69,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = detectAnomaliesSchema.parse(body);
 
-    // TODO: Call AnomalyDetectionService when available from Team C
-    // const result = await AnomalyDetectionService.detectAnomalies(
-    //   user.org_id,
-    //   validated
-    // );
+    const result = await anomalyService.detectAnomalies({
+      organizationId: user.org_id,
+      entityType: validated.entityType as any,
+      entityId: validated.entityId,
+      checkTypes: validated.checkTypes as any[],
+      sensitivity: validated.sensitivity,
+    });
 
-    // Mock response structure
-    const result = {
-      jobId: 'anomaly-job-123',
-      status: 'processing',
+    return createdResponse({
+      jobId: `anomaly-${Date.now()}`,
+      status: 'completed',
       entityType: validated.entityType,
       entityId: validated.entityId,
-      metricType: validated.metricType,
-      sensitivity: validated.sensitivity,
-      detectedAnomalies: [],
+      detectedAnomalies: result.anomalies,
       summary: {
-        total: 0,
-        bySeverity: {
-          critical: 0,
-          high: 0,
-          medium: 0,
-          low: 0,
-        },
+        total: result.anomaliesDetected,
+        bySeverity: result.anomalies.reduce((acc, a) => {
+          acc[a.severity] = (acc[a.severity] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
       },
-      startedAt: new Date().toISOString(),
-    };
-
-    return createdResponse(result);
+      overallHealthScore: result.overallHealthScore,
+      recommendations: result.recommendations,
+      detectionTime: result.detectionTime,
+      completedAt: new Date().toISOString(),
+    });
   } catch (error) {
     return handleAIError(error);
   }

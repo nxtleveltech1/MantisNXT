@@ -22,8 +22,8 @@ import {
   Lock
 } from "lucide-react"
 
-// Real data integration - replaced mock data with live API calls
-import RealDataDashboard from '@/components/dashboard/RealDataDashboard'
+// MagicUI Dashboard - Animated components with stunning effects
+import MagicDashboard from '@/components/dashboard/MagicDashboard'
 import AsyncBoundary from '@/components/ui/AsyncBoundary'
 
 export default function Home() {
@@ -36,9 +36,9 @@ export default function Home() {
       title="MantisNXT Dashboard"
       breadcrumbs={breadcrumbs}
     >
-      {/* Real Data Dashboard Component - No More Mock Data */}
+      {/* MagicUI Dashboard - Animated and Interactive */}
       <AsyncBoundary>
-        <RealDataDashboard />
+        <MagicDashboard />
       </AsyncBoundary>
 
       {/* Floating Action Button for Quick Actions */}

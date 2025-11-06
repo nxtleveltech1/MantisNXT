@@ -119,7 +119,7 @@ export class ApiMiddleware {
   /**
    * Main middleware function that handles authentication, authorization, and security
    */
-  static async withAuth(
+  static withAuth(
     handler: (request: NextRequest, context: RequestContext) => Promise<NextResponse>,
     options: {
       requiredPermissions?: string[]
@@ -269,7 +269,8 @@ export class ApiMiddleware {
    */
   static withValidation<T>(
     schema: z.ZodSchema<T>,
-    options: { validateQuery?: boolean; validateBody?: boolean } = { validateBody: true }
+    options: { validateQuery?: boolean; validateBody?: boolean } = { validateBody: true },
+    authOptions: { allowAnonymous?: boolean; requiredPermissions?: string[]; requiredRole?: string; rateLimitType?: keyof typeof RATE_LIMITS } = {}
   ) {
     return (
       handler: (request: NextRequest, context: RequestContext, validatedData: T) => Promise<NextResponse>
@@ -304,7 +305,7 @@ export class ApiMiddleware {
           }
           throw error
         }
-      })
+      }, authOptions)
     }
   }
 

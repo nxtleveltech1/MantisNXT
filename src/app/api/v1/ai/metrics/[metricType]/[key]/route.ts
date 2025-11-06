@@ -10,6 +10,7 @@ import {
   successResponse,
   validateMetricType,
 } from '@/lib/ai/api-utils';
+import { AIMetricsService, type MetricType } from '@/lib/ai/services/metrics-service';
 
 /**
  * GET /api/v1/ai/metrics/[metricType]/[key]
@@ -26,23 +27,22 @@ export async function GET(
 
     validateMetricType(metricType);
 
-    const fresh = request.nextUrl.searchParams.get('fresh') === 'true';
+    const value = await AIMetricsService.getMetricsByKey(
+      user.org_id,
+      metricType as MetricType,
+      key
+    );
 
-    // TODO: Call MetricsCalculator when available from Team C
-    // const metric = await MetricsCalculator.getMetric(user.org_id, {
-    //   metricType,
-    //   key,
-    //   fresh,
-    // });
+    const now = new Date();
+    const cacheExpires = new Date(now.getTime() + 5 * 60 * 1000);
 
-    // Mock response structure
     const metric = {
       metricType,
       key,
-      value: null,
+      value,
       metadata: {},
-      calculatedAt: new Date().toISOString(),
-      cacheExpires: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      calculatedAt: now.toISOString(),
+      cacheExpires: cacheExpires.toISOString(),
     };
 
     return successResponse(metric);

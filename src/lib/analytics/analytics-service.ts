@@ -505,16 +505,38 @@ export class AnalyticsService {
   }
 
   private async detectSystemAnomalies(organizationId: string): Promise<any[]> {
-    // Mock system anomaly detection
-    return [
-      {
-        type: 'system_performance',
-        severity: 'medium',
-        description: 'Database query response time above threshold',
-        value: 150,
-        threshold: 100
-      }
-    ];
+    // Query REAL system anomalies from analytics_anomalies table
+    try {
+      const result = await query(
+        `SELECT
+          id,
+          anomaly_type as type,
+          severity,
+          description,
+          entity_type,
+          entity_id,
+          confidence_score,
+          detected_at
+        FROM analytics_anomalies
+        WHERE organization_id = $1
+          AND entity_type = 'system'
+          AND status = 'active'
+        ORDER BY detected_at DESC
+        LIMIT 10`,
+        [organizationId]
+      );
+
+      return result.rows.map(row => ({
+        type: row.type || 'system_performance',
+        severity: row.severity || 'medium',
+        description: row.description || 'System anomaly detected',
+        confidence: row.confidence_score || 0,
+        detected_at: row.detected_at
+      }));
+    } catch (error) {
+      console.error('Error fetching system anomalies:', error);
+      return [];
+    }
   }
 
   private generateBusinessRecommendations(

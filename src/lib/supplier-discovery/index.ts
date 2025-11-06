@@ -6,6 +6,15 @@
 // Core Engine
 export { supplierDiscoveryEngine } from './engine';
 
+// AI Analytics
+export { supplierAIAnalytics } from './ai-analytics';
+export type {
+  SupplierScore,
+  SupplierRiskAssessment,
+  SupplierPerformancePrediction,
+  SupplierComparison,
+} from './ai-analytics';
+
 // Cache Management
 export { supplierCache } from './cache';
 

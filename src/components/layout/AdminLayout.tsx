@@ -37,11 +37,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Activity,
+  AlertTriangle,
   Award,
   BarChart,
   Bell,
+  Bot,
+  BookOpen,
   Building2,
   ChevronDown,
   CreditCard,
@@ -50,25 +54,27 @@ import {
   FileText,
   Gift,
   Heart,
+  HelpCircle,
   Home,
   Layout,
   LayoutDashboard,
   LifeBuoy,
+  LogOut,
   MessageSquare,
   Package,
   Plug,
+  PieChart,
   Search,
   Settings,
   ShoppingBag,
   ShoppingCart,
   TrendingUp,
-  Users,
   User,
-  LogOut,
-  HelpCircle,
-  BookOpen,
-  UserCheck
+  UserCheck,
+  Users,
 } from "lucide-react"
+import ChatAssistant from "@/components/ai/assistant/ChatAssistant"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -100,34 +106,16 @@ const sidebarNavigation = [
   {
     title: "Business Directories",
     items: [
-      {
-        title: "Suppliers",
-        url: "/directories/suppliers",
-        icon: Building2,
-        isActive: false,
-      },
-      {
-        title: "Customers",
-        url: "/directories/customers",
-        icon: UserCheck,
-        isActive: false,
-      },
+      // Customers removed; Suppliers moved under Suppliers as Supplier Directory
     ],
   },
   {
-    title: "Supplier Management",
+    title: "Suppliers",
     items: [
       {
-        title: "All Suppliers",
+        title: "Supplier Dashboard",
         url: "/suppliers",
         icon: Building2,
-        isActive: false,
-        badge: "247",
-      },
-      {
-        title: "Add Supplier",
-        url: "/suppliers/new",
-        icon: Users,
         isActive: false,
       },
       {
@@ -136,21 +124,34 @@ const sidebarNavigation = [
         icon: TrendingUp,
         isActive: false,
       },
-    ],
-  },
-  {
-    title: "Operations",
-    items: [
       {
-        title: "Inventory",
-        url: "/inventory",
+        title: "Supplier Inventory Portfolio",
+        url: "/nxt-spp",
         icon: Package,
         isActive: false,
       },
       {
+        title: "Supplier Directory",
+        url: "/directories/suppliers",
+        icon: Building2,
+        isActive: false,
+      },
+    ],
+  },
+  {
+    title: "Inventory Management",
+    items: [
+      { title: "Inventory Management", url: "/inventory", icon: Package, isActive: false },
+      {
         title: "Pricing & Optimization",
         url: "/operations/pricing",
         icon: TrendingUp,
+        isActive: false,
+      },
+      {
+        title: "Category Management",
+        url: "/catalog/categories",
+        icon: Settings,
         isActive: false,
       },
     ],
@@ -217,6 +218,18 @@ const sidebarNavigation = [
         isActive: false,
       },
       {
+        title: "Assistant",
+        url: "/admin/ai/assistant",
+        icon: Bot,
+        isActive: false,
+      },
+      {
+        title: "Conversations",
+        url: "/admin/ai/conversations",
+        icon: MessageSquare,
+        isActive: false,
+      },
+      {
         title: "Predictions",
         url: "/admin/ai/predictions",
         icon: TrendingUp,
@@ -229,9 +242,21 @@ const sidebarNavigation = [
         isActive: false,
       },
       {
+        title: "Anomaly Detection",
+        url: "/admin/ai/anomalies",
+        icon: AlertTriangle,
+        isActive: false,
+      },
+      {
         title: "Alerts",
         url: "/admin/ai/alerts",
         icon: Bell,
+        isActive: false,
+      },
+      {
+        title: "Metrics",
+        url: "/admin/ai/metrics",
+        icon: PieChart,
         isActive: false,
       },
       {
@@ -317,7 +342,7 @@ const sidebarNavigation = [
 
 const AdminSidebar: React.FC = () => {
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -436,6 +461,7 @@ const AdminSidebar: React.FC = () => {
 const AdminHeader: React.FC<{
   breadcrumbs?: Array<{ label: string; href?: string }>
 }> = ({ breadcrumbs = [] }) => {
+  const [assistantOpen, setAssistantOpen] = React.useState(false)
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
@@ -521,6 +547,23 @@ const AdminHeader: React.FC<{
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Theme Toggle */}
+      <ThemeToggle />
+
+      {/* AI Assistant */}
+      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setAssistantOpen(true)} title="Open AI Assistant">
+        <Bot className="h-4 w-4" />
+      </Button>
+      <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>AI Assistant</DialogTitle>
+            <p className="sr-only">Ask quick questions about your data.</p>
+          </DialogHeader>
+          <ChatAssistant />
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }
@@ -530,7 +573,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   breadcrumbs = [],
 }) => {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
         <SidebarInset>

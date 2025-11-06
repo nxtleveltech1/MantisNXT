@@ -2,35 +2,34 @@
 
 import React from "react"
 import AdminLayout from "@/components/layout/AdminLayout"
-import LoyaltyAnalytics from "@/components/loyalty/admin/LoyaltyAnalytics"
+import AILoyaltyAnalytics from "@/components/loyalty/admin/AILoyaltyAnalytics"
 import LoyaltyLeaderboard from "@/components/loyalty/admin/LoyaltyLeaderboard"
 
 /**
- * Loyalty Analytics Admin Page
+ * AI-Powered Loyalty Analytics Admin Page
  *
- * Charts, leaderboards, and performance metrics for loyalty programs.
- * Provides insights into program performance, customer engagement, and ROI.
+ * Advanced analytics powered by Claude AI including:
+ * - Churn prediction and at-risk customer identification
+ * - Engagement scoring with behavioral insights
+ * - Reward catalog optimization recommendations
+ * - Tier movement forecasting
+ * - ROI analysis with financial breakdowns
+ * - Fraud and abuse pattern detection
+ *
+ * @author Claude Code
+ * @date 2025-11-04
  */
 export default function LoyaltyAnalyticsPage() {
   return (
     <AdminLayout
       breadcrumbs={[
         { label: "Loyalty & Rewards", href: "/admin/loyalty" },
-        { label: "Analytics" },
+        { label: "AI Analytics" },
       ]}
     >
       <div className="max-w-7xl mx-auto w-full space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Loyalty Analytics</h1>
-          <p className="text-muted-foreground">
-            Track program performance, customer engagement, and ROI metrics
-          </p>
-        </div>
-
-        <div className="grid gap-6">
-          <LoyaltyAnalytics />
-          <LoyaltyLeaderboard />
-        </div>
+        <AILoyaltyAnalytics />
+        <LoyaltyLeaderboard />
       </div>
     </AdminLayout>
   )

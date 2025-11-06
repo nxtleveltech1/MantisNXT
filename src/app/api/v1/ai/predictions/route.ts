@@ -17,6 +17,7 @@ import {
   extractStatus,
 } from '@/lib/ai/api-utils';
 import { createPredictionSchema } from '@/lib/ai/validation-schemas';
+import { predictionService } from '@/lib/ai/services/prediction-service';
 
 /**
  * GET /api/v1/ai/predictions
@@ -31,34 +32,27 @@ export async function GET(request: NextRequest) {
     const { entityType, entityId } = extractEntityFilters(searchParams);
 
     const filters = {
-      serviceType: searchParams.get('serviceType'),
-      predictionType: extractPredictionType(searchParams),
-      status: extractStatus(searchParams),
-      entityType,
-      entityId,
+      serviceType: searchParams.get('serviceType') as any,
+      predictionType: extractPredictionType(searchParams) || undefined,
+      status: extractStatus(searchParams) || undefined,
+      entityType: entityType || undefined,
+      entityId: entityId || undefined,
       startDate,
       endDate,
       minConfidence: searchParams.get('minConfidence')
         ? parseFloat(searchParams.get('minConfidence')!)
         : undefined,
+      limit,
+      offset,
     };
 
-    // TODO: Call PredictionService when available from Team C
-    // const result = await PredictionService.listPredictions(user.org_id, {
-    //   ...filters,
-    //   limit,
-    //   offset,
-    // });
+    const result = await predictionService.listPredictions(user.org_id, filters);
 
-    // Mock response structure
-    const predictions = [];
-    const total = 0;
-
-    return successResponse(predictions, {
+    return successResponse(result.predictions, {
       page,
       limit,
-      total,
-      hasMore: offset + limit < total,
+      total: result.total,
+      hasMore: offset + limit < result.total,
     });
   } catch (error) {
     return handleAIError(error);
@@ -75,26 +69,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = createPredictionSchema.parse(body);
 
-    // TODO: Call PredictionService when available from Team C
-    // const prediction = await PredictionService.createPrediction(
-    //   user.org_id,
-    //   validated
-    // );
-
-    // Mock response structure
-    const prediction = {
-      id: 'pred-123',
-      org_id: user.org_id,
-      service_type: validated.serviceType,
-      entity_type: validated.entityType,
-      entity_id: validated.entityId,
-      prediction_type: validated.predictionType,
-      prediction_data: validated.predictionData,
-      confidence: validated.confidence || 0.85,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    };
+    const prediction = await predictionService.createPrediction(user.org_id, {
+      serviceType: validated.serviceType,
+      entityType: validated.entityType,
+      entityId: validated.entityId,
+      predictionType: validated.predictionType,
+      predictionData: validated.predictionData,
+      confidence: validated.confidence,
+      metadata: validated.metadata,
+    });
 
     return createdResponse(prediction);
   } catch (error) {

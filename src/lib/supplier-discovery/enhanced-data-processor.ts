@@ -769,7 +769,7 @@ export const enhancedDataProcessor = new EnhancedDataProcessor({
     socialMedia: { enabled: true, platforms: [], rateLimit: 60 },
     businessDirectories: { enabled: true, directories: [], priority: 1 }
   },
-  ai: { enabled: false, provider: 'openai', model: 'gpt-4', confidenceThreshold: 0.7, maxTokens: 2000, temperature: 0.1 },
+  ai: { enabled: false, provider: 'openai', model: 'gpt-4.1', confidenceThreshold: 0.7, maxTokens: 2000, temperature: 0.1 },
   data: { 
     validation: { strict: true, requiredFields: ['name'], optionalFields: ['email'] },
     enrichment: { enabled: true, sources: [], autoValidate: true },

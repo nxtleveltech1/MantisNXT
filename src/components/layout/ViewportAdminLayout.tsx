@@ -90,34 +90,16 @@ const sidebarNavigation = [
   {
     title: "Business Directories",
     items: [
-      {
-        title: "Suppliers",
-        url: "/directories/suppliers",
-        icon: Building2,
-        isActive: false,
-      },
-      {
-        title: "Customers",
-        url: "/directories/customers",
-        icon: UserCheck,
-        isActive: false,
-      },
+      // Suppliers directory moved under Suppliers; Customers removed
     ],
   },
   {
-    title: "Supplier Management",
+    title: "Suppliers",
     items: [
       {
-        title: "All Suppliers",
+        title: "Supplier Dashboard",
         url: "/suppliers",
         icon: Building2,
-        isActive: false,
-        badge: "247",
-      },
-      {
-        title: "Add Supplier",
-        url: "/suppliers/new",
-        icon: Users,
         isActive: false,
       },
       {
@@ -126,17 +108,26 @@ const sidebarNavigation = [
         icon: TrendingUp,
         isActive: false,
       },
-    ],
-  },
-  {
-    title: "Operations",
-    items: [
       {
-        title: "Inventory",
-        url: "/inventory",
+        title: "Supplier Inventory Portfolio",
+        url: "/nxt-spp",
         icon: Package,
         isActive: false,
       },
+      {
+        title: "Supplier Directory",
+        url: "/directories/suppliers",
+        icon: Building2,
+        isActive: false,
+      },
+    ],
+  },
+  {
+    title: "Inventory Management",
+    items: [
+      { title: "Inventory Management", url: "/inventory", icon: Package, isActive: false },
+      { title: "Pricing & Optimization", url: "/operations/pricing", icon: TrendingUp, isActive: false },
+      { title: "Category Management", url: "/catalog/categories", icon: Settings, isActive: false },
     ],
   },
   {
@@ -185,7 +176,7 @@ const sidebarNavigation = [
 
 const AdminSidebar: React.FC = () => {
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -382,7 +373,7 @@ const ViewportAdminLayout: React.FC<ViewportAdminLayoutProps> = ({
   breadcrumbs = [],
 }) => {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="flex h-screen w-full overflow-hidden">
         <AdminSidebar />
         <SidebarInset className="flex flex-col overflow-hidden">

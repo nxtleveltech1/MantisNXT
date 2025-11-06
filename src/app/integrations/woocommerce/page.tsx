@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, RefreshCw, Settings, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, Clock, XCircle, Loader2, Play, Square } from "lucide-react";
+import { ShoppingBag, RefreshCw, Settings, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, Clock, XCircle, Loader2, Play, Square, Eye } from "lucide-react";
 import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import SyncPreview from "@/components/integrations/SyncPreview";
+import ProgressTracker from "@/components/integrations/ProgressTracker";
+import ActivityLog from "@/components/integrations/ActivityLog";
+import { useSyncManager } from "@/hooks/useSyncManager";
 
 interface WooCommerceConfig {
   id?: string;
@@ -93,9 +97,24 @@ export default function WooCommercePage() {
   const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
   const [syncAllInProgress, setSyncAllInProgress] = useState(false);
 
+  // Sync preview and progress management
+  const syncManager = useSyncManager();
+  const [orgId, setOrgId] = useState<string>('org-default');
+
   useEffect(() => {
     fetchConfiguration();
     loadSyncHistory();
+    // Get org ID from user context (if available)
+    const loadOrgId = async () => {
+      try {
+        const response = await fetch('/api/auth/user');
+        const data = await response.json();
+        if (data?.orgId) setOrgId(data.orgId);
+      } catch (error) {
+        console.error('Failed to load org ID:', error);
+      }
+    };
+    loadOrgId();
   }, []);
 
   const fetchConfiguration = async () => {
@@ -367,6 +386,46 @@ export default function WooCommercePage() {
     }
   };
 
+  const handlePreviewSync = (entityType: string) => {
+    syncManager.openPreview('woocommerce', entityType);
+  };
+
+  const handleSyncConfirmed = async (config: any) => {
+    syncManager.closePreview();
+    // Generate job ID and start progress tracking
+    const jobId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    syncManager.startProgress(jobId, 'woocommerce', config.entityType || 'unknown');
+
+    // Trigger actual sync
+    try {
+      // Call sync API with job ID
+      const response = await fetch('/api/v1/integrations/sync/orchestrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          syncType: 'woocommerce',
+          entityType: config.entityType,
+          includeNew: config.includeNew,
+          includeUpdated: config.includeUpdated,
+          includeDeleted: config.includeDeleted,
+          selectedIds: config.selectedIds,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to start sync');
+      }
+    } catch (error) {
+      toast({
+        title: 'Sync Error',
+        description: error instanceof Error ? error.message : 'Failed to start sync',
+        variant: 'destructive',
+      });
+      syncManager.resetSync();
+    }
+  };
+
   const calculateProgress = (progress: SyncProgress): number => {
     if (progress.total === 0) return 0;
     return Math.round((progress.processed / progress.total) * 100);
@@ -436,7 +495,7 @@ export default function WooCommercePage() {
     >
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-900 dark:to-blue-900 rounded-xl p-6 shadow-lg">
+        <div className="bg-gradient-to-r from-primary to-primary/80 dark:from-primary dark:to-primary/90 rounded-xl p-6 shadow-lg">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg">
@@ -454,10 +513,10 @@ export default function WooCommercePage() {
               variant={config.status === 'active' ? 'default' : config.status === 'error' ? 'destructive' : 'secondary'}
               className={`text-sm px-4 py-2 ${
                 config.status === 'active'
-                  ? 'bg-green-500 hover:bg-green-600 text-white shadow-md'
+                  ? 'bg-success hover:bg-success/90 text-success-foreground shadow-md'
                   : config.status === 'error'
-                  ? 'bg-red-500 hover:bg-red-600 text-white shadow-md'
-                  : 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-md'
+                  ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-md'
+                  : 'bg-warning hover:bg-warning/90 text-warning-foreground shadow-md'
               }`}
             >
               {config.status === 'active' ? (
@@ -492,16 +551,16 @@ export default function WooCommercePage() {
           {/* Sync Tab - ENHANCED */}
           <TabsContent value="sync" className="space-y-6">
             {/* Sync All Button */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-6 rounded-lg border border-blue-100 dark:border-blue-900">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-accent/20 to-accent/10 dark:from-accent/10 dark:to-accent/5 p-6 rounded-lg border border-accent/30 dark:border-accent/20">
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Data Synchronization</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Sync data between WooCommerce and MantisNXT in real-time</p>
+                <h3 className="text-xl font-bold text-foreground">Data Synchronization</h3>
+                <p className="text-sm text-muted-foreground mt-1">Sync data between WooCommerce and MantisNXT in real-time</p>
               </div>
               <Button
                 onClick={handleSyncAll}
                 disabled={config.status !== 'active' || syncAllInProgress}
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 {syncAllInProgress ? (
                   <>
@@ -527,7 +586,7 @@ export default function WooCommercePage() {
 
                 return (
                   <Card key={entityType} className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-200 hover:shadow-lg">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 bg-gradient-to-br from-secondary/50 to-secondary/30 dark:from-secondary/20 dark:to-secondary/10">
                       <CardTitle className="text-base font-bold">{label}</CardTitle>
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                         <Icon className="h-5 w-5 text-primary" />
@@ -538,15 +597,15 @@ export default function WooCommercePage() {
                         <>
                           <div className="space-y-3">
                             <div className="flex justify-between text-xs font-semibold">
-                              <span className="text-blue-600 dark:text-blue-400">Syncing...</span>
-                              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{percentage}%</span>
+                              <span className="text-primary">Syncing...</span>
+                              <span className="text-2xl font-bold text-primary">{percentage}%</span>
                             </div>
-                            <Progress value={percentage} className="h-3 bg-blue-100 dark:bg-blue-900" />
+                            <Progress value={percentage} className="h-3 bg-primary/10" />
                             <div className="flex justify-between text-xs">
-                              <span className="font-medium text-gray-700 dark:text-gray-300">
+                              <span className="font-medium text-foreground">
                                 {progress.processed.toLocaleString()} / {progress.total > 0 ? progress.total.toLocaleString() : '...'}
                               </span>
-                              <span className="font-medium text-gray-600 dark:text-gray-400">
+                              <span className="font-medium text-muted-foreground">
                                 <Clock className="h-3 w-3 inline mr-1" />
                                 {calculateEstimatedTime(progress)}
                               </span>
@@ -554,57 +613,57 @@ export default function WooCommercePage() {
                           </div>
 
                           <div className="grid grid-cols-3 gap-3 pt-2">
-                            <div className="text-center p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                              <div className="text-xs text-green-700 dark:text-green-400 font-medium">Created</div>
-                              <div className="text-lg font-bold text-green-600 dark:text-green-400">{progress.created}</div>
+                            <div className="text-center p-2 bg-success/10 rounded-lg">
+                              <div className="text-xs text-success font-medium">Created</div>
+                              <div className="text-lg font-bold text-success">{progress.created}</div>
                             </div>
-                            <div className="text-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                              <div className="text-xs text-blue-700 dark:text-blue-400 font-medium">Updated</div>
-                              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{progress.updated}</div>
+                            <div className="text-center p-2 bg-primary/10 rounded-lg">
+                              <div className="text-xs text-primary font-medium">Updated</div>
+                              <div className="text-lg font-bold text-primary">{progress.updated}</div>
                             </div>
-                            <div className="text-center p-2 bg-red-50 dark:bg-red-950/20 rounded-lg">
-                              <div className="text-xs text-red-700 dark:text-red-400 font-medium">Failed</div>
-                              <div className="text-lg font-bold text-red-600 dark:text-red-400">{progress.failed}</div>
+                            <div className="text-center p-2 bg-destructive/10 rounded-lg">
+                              <div className="text-xs text-destructive font-medium">Failed</div>
+                              <div className="text-lg font-bold text-destructive">{progress.failed}</div>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 py-2 rounded-lg">
+                          <div className="flex items-center justify-center gap-2 text-sm font-medium text-primary bg-primary/10 py-2 rounded-lg">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Processing {label.toLowerCase()}...
                           </div>
                         </>
                       ) : progress.status === 'completed' ? (
                         <>
-                          <div className="text-center py-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2 animate-pulse" />
-                            <p className="text-base font-bold text-green-700 dark:text-green-400">Sync Completed</p>
-                            <p className="text-xs text-green-600 dark:text-green-500 mt-1 font-medium">
+                          <div className="text-center py-3 bg-success/10 rounded-lg">
+                            <CheckCircle2 className="h-12 w-12 text-success mx-auto mb-2 animate-pulse" />
+                            <p className="text-base font-bold text-success">Sync Completed</p>
+                            <p className="text-xs text-success/80 mt-1 font-medium">
                               <Clock className="h-3 w-3 inline mr-1" />
                               {formatDuration((progress.endTime || 0) - (progress.startTime || 0))}
                             </p>
                           </div>
 
                           <div className="grid grid-cols-3 gap-3">
-                            <div className="text-center p-2 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                              <div className="text-xs text-green-700 dark:text-green-400 font-medium">Created</div>
-                              <div className="text-xl font-bold text-green-600 dark:text-green-400">{progress.created}</div>
+                            <div className="text-center p-2 bg-success/10 rounded-lg border border-success/20">
+                              <div className="text-xs text-success font-medium">Created</div>
+                              <div className="text-xl font-bold text-success">{progress.created}</div>
                             </div>
-                            <div className="text-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                              <div className="text-xs text-blue-700 dark:text-blue-400 font-medium">Updated</div>
-                              <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{progress.updated}</div>
+                            <div className="text-center p-2 bg-primary/10 rounded-lg border border-primary/20">
+                              <div className="text-xs text-primary font-medium">Updated</div>
+                              <div className="text-xl font-bold text-primary">{progress.updated}</div>
                             </div>
-                            <div className="text-center p-2 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                              <div className="text-xs text-red-700 dark:text-red-400 font-medium">Failed</div>
-                              <div className="text-xl font-bold text-red-600 dark:text-red-400">{progress.failed}</div>
+                            <div className="text-center p-2 bg-destructive/10 rounded-lg border border-destructive/20">
+                              <div className="text-xs text-destructive font-medium">Failed</div>
+                              <div className="text-xl font-bold text-destructive">{progress.failed}</div>
                             </div>
                           </div>
                         </>
                       ) : progress.status === 'error' ? (
                         <>
-                          <div className="text-center py-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
-                            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-2" />
-                            <p className="text-base font-bold text-red-700 dark:text-red-400">Sync Failed</p>
-                            <p className="text-xs text-red-600 dark:text-red-500 mt-2 px-2 leading-relaxed">
+                          <div className="text-center py-3 bg-destructive/10 rounded-lg">
+                            <XCircle className="h-12 w-12 text-destructive mx-auto mb-2" />
+                            <p className="text-base font-bold text-destructive">Sync Failed</p>
+                            <p className="text-xs text-destructive/80 mt-2 px-2 leading-relaxed">
                               {progress.error}
                             </p>
                           </div>
@@ -613,32 +672,43 @@ export default function WooCommercePage() {
                         <>
                           <div className="text-center py-6">
                             <div className="relative mx-auto w-20 h-20 mb-3">
-                              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-                                <Icon className="h-10 w-10 text-gray-400 dark:text-gray-500" />
+                              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center">
+                                <Icon className="h-10 w-10 text-muted-foreground" />
                               </div>
                             </div>
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Ready to Sync</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <p className="text-sm font-semibold text-foreground">Ready to Sync</p>
+                            <p className="text-xs text-muted-foreground mt-1">
                               Click below to start synchronization
                             </p>
                           </div>
                         </>
                       )}
 
-                      <Button
-                        size="sm"
-                        className={`w-full font-semibold transition-all duration-200 ${
-                          progress.status === 'syncing'
-                            ? 'bg-blue-600 hover:bg-blue-700'
-                            : progress.status === 'completed'
-                            ? 'bg-green-600 hover:bg-green-700'
-                            : progress.status === 'error'
-                            ? 'bg-red-600 hover:bg-red-700'
-                            : 'bg-primary hover:bg-primary/90'
-                        }`}
-                        onClick={() => handleSync(entityType)}
-                        disabled={config.status !== 'active' || progress.status === 'syncing'}
-                      >
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => handlePreviewSync(entityType)}
+                          disabled={config.status !== 'active' || progress.status === 'syncing'}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Preview
+                        </Button>
+                        <Button
+                          size="sm"
+                          className={`flex-1 font-semibold transition-all duration-200 ${
+                            progress.status === 'syncing'
+                              ? 'bg-primary hover:bg-primary/90'
+                              : progress.status === 'completed'
+                              ? 'bg-success hover:bg-success/90'
+                              : progress.status === 'error'
+                              ? 'bg-destructive hover:bg-destructive/90'
+                              : 'bg-primary hover:bg-primary/90'
+                          }`}
+                          onClick={() => handleSync(entityType)}
+                          disabled={config.status !== 'active' || progress.status === 'syncing'}
+                        >
                         {progress.status === 'syncing' ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -660,7 +730,8 @@ export default function WooCommercePage() {
                             Start Sync
                           </>
                         )}
-                      </Button>
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -668,15 +739,15 @@ export default function WooCommercePage() {
             </div>
 
             {config.status !== 'active' && (
-              <Card className="border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 shadow-md">
+              <Card className="border-warning/30 bg-gradient-to-r from-warning/10 to-warning/5 shadow-md">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
-                      <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-500" />
+                      <AlertCircle className="h-6 w-6 text-warning" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Connection Required</p>
-                      <p className="text-sm text-amber-800 dark:text-amber-300 mt-1">
+                      <p className="text-sm font-semibold text-warning">Connection Required</p>
+                      <p className="text-sm text-warning/80 mt-1">
                         Please configure and test your WooCommerce connection in the Configuration tab before syncing data.
                       </p>
                     </div>
@@ -689,7 +760,7 @@ export default function WooCommercePage() {
           {/* Configuration Tab */}
           <TabsContent value="configuration" className="space-y-6">
             <Card className="border-2">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+              <CardHeader className="bg-gradient-to-r from-accent/20 to-accent/10">
                 <CardTitle className="text-xl flex items-center gap-2">
                   <Settings className="h-5 w-5 text-primary" />
                   Connection Details
@@ -770,7 +841,7 @@ export default function WooCommercePage() {
                   <Button
                     onClick={handleSaveConfiguration}
                     disabled={saving}
-                    className="flex-1 h-11 font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    className="flex-1 h-11 font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80"
                     size="lg"
                   >
                     {saving ? (
@@ -871,7 +942,7 @@ export default function WooCommercePage() {
           {/* Sync History Tab - ENHANCED */}
           <TabsContent value="history" className="space-y-6">
             <Card>
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+              <CardHeader className="bg-gradient-to-r from-secondary/30 to-secondary/20">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-xl">Sync History</CardTitle>
@@ -886,14 +957,14 @@ export default function WooCommercePage() {
               </CardHeader>
               <CardContent className="pt-6">
                 {syncHistory.length === 0 ? (
-                  <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
+                  <div className="text-center py-12 bg-gradient-to-br from-secondary/30 to-secondary/20 rounded-lg border-2 border-dashed border-border">
                     <div className="relative mx-auto w-24 h-24 mb-4">
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-                        <Clock className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center">
+                        <Clock className="h-12 w-12 text-muted-foreground" />
                       </div>
                     </div>
-                    <p className="text-base font-semibold text-gray-700 dark:text-gray-300">No Sync History Yet</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
+                    <p className="text-base font-semibold text-foreground">No Sync History Yet</p>
+                    <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
                       Your synchronization history will appear here once you perform your first sync operation.
                     </p>
                   </div>
@@ -901,7 +972,7 @@ export default function WooCommercePage() {
                   <div className="border rounded-lg overflow-hidden shadow-sm">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-gray-50 dark:bg-gray-900/50">
+                        <TableRow className="bg-secondary/50">
                           <TableHead className="font-bold">Entity</TableHead>
                           <TableHead className="font-bold">Status</TableHead>
                           <TableHead className="font-bold">Timestamp</TableHead>
@@ -916,7 +987,7 @@ export default function WooCommercePage() {
                         {syncHistory.map((entry) => {
                           const Icon = ENTITY_ICONS[entry.entityType];
                           return (
-                            <TableRow key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                            <TableRow key={entry.id} className="hover:bg-secondary/50 transition-colors">
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -926,22 +997,22 @@ export default function WooCommercePage() {
                                 </div>
                               </TableCell>
                               <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                              <TableCell className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              <TableCell className="text-sm font-medium text-foreground">
                                 {formatTimestamp(entry.timestamp)}
                               </TableCell>
-                              <TableCell className="text-right font-mono font-semibold text-gray-900 dark:text-gray-100">
+                              <TableCell className="text-right font-mono font-semibold text-foreground">
                                 {entry.processed.toLocaleString()}
                               </TableCell>
-                              <TableCell className="text-right font-mono font-semibold text-green-600 dark:text-green-400">
+                              <TableCell className="text-right font-mono font-semibold text-success">
                                 {entry.created.toLocaleString()}
                               </TableCell>
-                              <TableCell className="text-right font-mono font-semibold text-blue-600 dark:text-blue-400">
+                              <TableCell className="text-right font-mono font-semibold text-primary">
                                 {entry.updated.toLocaleString()}
                               </TableCell>
-                              <TableCell className="text-right font-mono font-semibold text-red-600 dark:text-red-400">
+                              <TableCell className="text-right font-mono font-semibold text-destructive">
                                 {entry.failed.toLocaleString()}
                               </TableCell>
-                              <TableCell className="text-right text-sm font-medium text-gray-600 dark:text-gray-400">
+                              <TableCell className="text-right text-sm font-medium text-muted-foreground">
                                 <Clock className="h-3 w-3 inline mr-1" />
                                 {formatDuration(entry.duration)}
                               </TableCell>
@@ -956,7 +1027,44 @@ export default function WooCommercePage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Activity Log Tab */}
+        <Tabs defaultValue="activity" className="space-y-6 mt-6">
+          <TabsList>
+            <TabsTrigger value="activity">Activity Log</TabsTrigger>
+          </TabsList>
+          <TabsContent value="activity">
+            <ActivityLog orgId={orgId} entityType="woocommerce" />
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Sync Preview Modal */}
+      <SyncPreview
+        isOpen={syncManager.state.isPreviewOpen}
+        syncType="woocommerce"
+        entityType={syncManager.state.currentEntityType || ''}
+        onConfirm={(config) => handleSyncConfirmed({ ...config, entityType: syncManager.state.currentEntityType })}
+        onCancel={() => syncManager.closePreview()}
+      />
+
+      {/* Progress Tracker */}
+      {syncManager.state.jobId && (
+        <ProgressTracker
+          jobId={syncManager.state.jobId}
+          syncType="woocommerce"
+          entityType={syncManager.state.currentEntityType || ''}
+          isVisible={syncManager.state.isProgressVisible}
+          onComplete={(status) => {
+            syncManager.hideProgress();
+            toast({
+              title: status === 'completed' ? 'Sync Completed' : 'Sync Failed',
+              description: status === 'completed' ? 'All items synced successfully' : 'Check the error details above',
+            });
+          }}
+          onCancel={() => syncManager.hideProgress()}
+        />
+      )}
     </SelfContainedLayout>
   );
 }

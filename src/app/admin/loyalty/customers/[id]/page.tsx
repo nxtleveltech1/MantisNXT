@@ -13,7 +13,7 @@ import CustomerLoyaltyProfile from "@/components/loyalty/admin/CustomerLoyaltyPr
  */
 export default function CustomerLoyaltyProfilePage() {
   const params = useParams()
-  const customerId = params.id as string
+  const customerId = params?.id as string
 
   return (
     <AdminLayout

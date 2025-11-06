@@ -11,6 +11,7 @@ import {
   extractPagination,
   requireQueryParams,
 } from '@/lib/ai/api-utils';
+import { predictionService } from '@/lib/ai/services/prediction-service';
 
 /**
  * GET /api/v1/ai/predictions/by-entity?entityType=product&entityId=xxx
@@ -25,32 +26,27 @@ export async function GET(request: NextRequest) {
     // Validate required parameters
     requireQueryParams(searchParams, ['entityType', 'entityId']);
 
-    const entityType = searchParams.get('entityType')!;
+    const entityType = searchParams.get('entityType')! as any;
     const entityId = searchParams.get('entityId')!;
 
     // Optional filters
-    const serviceType = searchParams.get('serviceType');
-    const status = searchParams.get('status');
+    const serviceType = searchParams.get('serviceType') as any;
+    const status = searchParams.get('status') || undefined;
 
-    // TODO: Call PredictionService when available from Team C
-    // const result = await PredictionService.getPredictionsByEntity(user.org_id, {
-    //   entityType,
-    //   entityId,
-    //   serviceType,
-    //   status,
-    //   limit,
-    //   offset,
-    // });
+    const result = await predictionService.listPredictions(user.org_id, {
+      entityType,
+      entityId,
+      serviceType,
+      status,
+      limit,
+      offset,
+    });
 
-    // Mock response structure
-    const predictions = [];
-    const total = 0;
-
-    return successResponse(predictions, {
+    return successResponse(result.predictions, {
       page,
       limit,
-      total,
-      hasMore: offset + limit < total,
+      total: result.total,
+      hasMore: offset + limit < result.total,
     });
   } catch (error) {
     return handleAIError(error);

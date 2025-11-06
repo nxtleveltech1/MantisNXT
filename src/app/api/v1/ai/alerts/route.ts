@@ -16,6 +16,8 @@ import {
   extractStatus,
 } from '@/lib/ai/api-utils';
 import { createAlertSchema } from '@/lib/ai/validation-schemas';
+import { alertService } from '@/lib/ai/services/alert-service';
+import type { AIServiceType, AlertSeverity, AlertStatus } from '@/lib/ai/services/alert-service';
 
 /**
  * GET /api/v1/ai/alerts
@@ -28,30 +30,26 @@ export async function GET(request: NextRequest) {
     const { limit, offset, page } = extractPagination(searchParams);
     const { startDate, endDate } = extractDateRange(searchParams);
 
-    const severity = extractSeverity(searchParams);
-    const status = extractStatus(searchParams);
-    const serviceType = searchParams.get('serviceType');
+    const severity = extractSeverity(searchParams) as AlertSeverity | null;
+    const status = extractStatus(searchParams) as AlertStatus | null;
+    const serviceType = searchParams.get('serviceType') as AIServiceType | null;
 
-    // TODO: Call AIAlertService when available from Team C
-    // const result = await AIAlertService.listAlerts(user.org_id, {
-    //   severity,
-    //   status,
-    //   serviceType,
-    //   startDate,
-    //   endDate,
-    //   limit,
-    //   offset,
-    // });
+    // Call production alert service
+    const result = await alertService.listAlerts(user.org_id, {
+      severity: severity ?? undefined,
+      status: status ?? undefined,
+      serviceType: serviceType ?? undefined,
+      startDate,
+      endDate,
+      limit,
+      offset,
+    });
 
-    // Mock response structure
-    const alerts = [];
-    const total = 0;
-
-    return successResponse(alerts, {
+    return successResponse(result.alerts, {
       page,
       limit,
-      total,
-      hasMore: offset + limit < total,
+      total: result.total,
+      hasMore: offset + limit < result.total,
     });
   } catch (error) {
     return handleAIError(error);
@@ -68,23 +66,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = createAlertSchema.parse(body);
 
-    // TODO: Call AIAlertService when available from Team C
-    // const alert = await AIAlertService.createAlert(user.org_id, validated);
-
-    // Mock response structure
-    const alert = {
-      id: 'alert-123',
-      org_id: user.org_id,
-      service_type: validated.serviceType,
-      severity: validated.severity,
+    // Call production alert service
+    const alert = await alertService.createAlert(user.org_id, {
+      serviceType: validated.serviceType as AIServiceType,
+      severity: validated.severity as AlertSeverity,
       title: validated.title,
       message: validated.message,
-      entity_type: validated.entityType,
-      entity_id: validated.entityId,
-      status: 'pending',
+      entityType: validated.entityType,
+      entityId: validated.entityId,
       metadata: validated.metadata,
-      created_at: new Date().toISOString(),
-    };
+    });
 
     return createdResponse(alert);
   } catch (error) {

@@ -1,20 +1,58 @@
 /**
  * Anomalies Detection API
- * EMERGENCY RECOVERY: Using stable pool connection
+ * Now powered by AI Anomaly Detection Service
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
+import { anomalyService } from '@/lib/ai/services/anomaly-service';
 
+/**
+ * GET /api/analytics/anomalies
+ * Fetch anomalies with optional AI detection
+ */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const organizationId = searchParams.get('organizationId');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const useAI = searchParams.get('useAI') === 'true';
+    const entityType = searchParams.get('entityType') as any;
+    const severity = searchParams.get('severity') as any;
 
-    console.log(`🔍 Fetching anomalies for organization: ${organizationId}`);
+    if (!organizationId) {
+      return NextResponse.json({
+        success: false,
+        error: 'organizationId is required'
+      }, { status: 400 });
+    }
 
-    // Detect inventory anomalies from core.stock_on_hand
+    const orgId = parseInt(organizationId);
+
+    console.log(`🔍 Fetching anomalies for organization: ${orgId} (AI: ${useAI})`);
+
+    if (useAI) {
+      // Use AI-powered anomaly service
+      const result = await anomalyService.listAnomalies(orgId, {
+        entityType,
+        severity,
+        limit,
+        offset: 0,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          anomalies: result.anomalies,
+          total: result.total,
+          timestamp: new Date().toISOString(),
+          organizationId: orgId,
+          aiPowered: true,
+        }
+      });
+    }
+
+    // Legacy: Detect inventory anomalies from core.stock_on_hand
     const inventoryAnomaliesQuery = `
       SELECT
         'inventory' as type,
@@ -30,7 +68,7 @@ export async function GET(request: NextRequest) {
       LIMIT $1
     `;
 
-    // Detect supplier anomalies from core.supplier
+    // Legacy: Detect supplier anomalies from core.supplier
     const supplierAnomaliesQuery = `
       SELECT
         'supplier' as type,
@@ -68,7 +106,8 @@ export async function GET(request: NextRequest) {
         anomalies,
         total: anomalies.length,
         timestamp: new Date().toISOString(),
-        organizationId
+        organizationId: orgId,
+        aiPowered: false,
       }
     });
 
@@ -78,6 +117,48 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch anomalies',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/analytics/anomalies/detect
+ * Run AI-powered anomaly detection
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { organizationId, entityType, entityId, checkTypes, sensitivity } = body;
+
+    if (!organizationId) {
+      return NextResponse.json({
+        success: false,
+        error: 'organizationId is required'
+      }, { status: 400 });
+    }
+
+    console.log(`🤖 Running AI anomaly detection for org: ${organizationId}`);
+
+    const result = await anomalyService.detectAnomalies({
+      organizationId: parseInt(organizationId),
+      entityType,
+      entityId,
+      checkTypes,
+      sensitivity,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+    });
+
+  } catch (error) {
+    console.error('❌ AI Anomaly detection error:', error);
+
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to detect anomalies',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }

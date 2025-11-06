@@ -9,6 +9,7 @@ import {
   authenticateRequest,
   successResponse,
 } from '@/lib/ai/api-utils';
+import { DashboardService } from '@/lib/ai/services/dashboard-service';
 
 /**
  * GET /api/v1/ai/widgets/[id]/data
@@ -27,33 +28,9 @@ export async function GET(
     // Optional refresh parameter to bypass cache
     const forceRefresh = searchParams.get('refresh') === 'true';
 
-    // TODO: Call WidgetDataProvider when available from Team C
-    // const data = await WidgetDataProvider.getWidgetData(user.org_id, id, {
-    //   forceRefresh,
-    // });
+    const result = await DashboardService.getWidgetData(user.org_id, id);
 
-    // Mock response structure based on widget type
-    const data = {
-      widgetId: id,
-      type: 'metric_card',
-      data: {
-        value: 0.87,
-        label: 'Prediction Accuracy',
-        trend: {
-          direction: 'up',
-          change: 0.02,
-          period: '7d',
-        },
-        comparison: {
-          previous: 0.85,
-          target: 0.90,
-        },
-      },
-      lastUpdated: new Date().toISOString(),
-      nextRefresh: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-    };
-
-    return successResponse(data);
+    return successResponse(result);
   } catch (error) {
     return handleAIError(error);
   }

@@ -139,7 +139,7 @@ export interface StockOnHand {
 }
 
 // View Types for Serving Layer
-export interface ProductTableBySupplier extends SupplierProduct {
+export interface ProductTableBySupplier extends Omit<SupplierProduct, 'previous_price' | 'price_change_percent'> {
   current_price: number
   previous_price: number | null
   price_change_percent: number | null

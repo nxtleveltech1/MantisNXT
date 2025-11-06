@@ -11,10 +11,11 @@ import {
   extractPagination,
   requireQueryParams,
 } from '@/lib/ai/api-utils';
+import { conversationService } from '@/lib/ai/services/conversation-service';
 
 /**
  * GET /api/v1/ai/conversations/search?q=search+term
- * Search through conversation messages
+ * Search through conversation messages using PostgreSQL full-text search
  */
 export async function GET(request: NextRequest) {
   try {
@@ -28,22 +29,28 @@ export async function GET(request: NextRequest) {
 
     const conversationId = searchParams.get('conversationId');
 
-    // TODO: Call AIAssistantService when available from Team C
-    // const result = await AIAssistantService.searchConversations(user.id, {
-    //   query,
-    //   conversationId,
-    //   limit,
-    //   offset,
-    // });
+    const orgId = user.organizationId || user.org_id;
+    const userId = user.id;
 
-    // Mock response structure
-    const results = [];
-    const total = 0;
+    // Search conversations
+    const allResults = await conversationService.searchConversations(orgId, userId, query);
+
+    // Filter by conversationId if provided
+    let filteredResults = allResults;
+    if (conversationId) {
+      filteredResults = allResults.filter((result) => result.conversationId === conversationId);
+    }
+
+    // Apply pagination
+    const total = filteredResults.length;
+    const paginatedResults = filteredResults.slice(offset, offset + limit);
 
     return successResponse(
       {
         query,
-        results,
+        conversationId,
+        results: paginatedResults,
+        matches: total,
       },
       {
         page,

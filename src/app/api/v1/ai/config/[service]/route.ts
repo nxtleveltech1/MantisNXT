@@ -14,6 +14,7 @@ import {
   extractServiceType,
 } from '@/lib/ai/api-utils';
 import { updateConfigSchema } from '@/lib/ai/validation-schemas';
+import { getConfig, upsertConfig, deleteConfig } from '../_store';
 
 /**
  * GET /api/v1/ai/config/[service]
@@ -29,21 +30,10 @@ export async function GET(
     const user = await authenticateRequest(request);
     const serviceType = extractServiceType({ service });
 
-    // TODO: Call AIConfigService when available from Team C
-    // const config = await AIConfigService.getConfig(user.org_id, serviceType);
+    const found = (await getConfig(user.org_id, serviceType))
+      || (await upsertConfig(user.org_id, serviceType, { config: {}, enabled: false }))
 
-    // Mock response structure
-    const config = {
-      id: 'config-123',
-      org_id: user.org_id,
-      service_type: serviceType,
-      config: {},
-      enabled: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    return successResponse(config);
+    return successResponse(found);
   } catch (error) {
     return handleAIError(error);
   }
@@ -65,24 +55,12 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateConfigSchema.parse(body);
 
-    // TODO: Call AIConfigService when available from Team C
-    // const config = await AIConfigService.updateConfig(
-    //   user.org_id,
-    //   serviceType,
-    //   validated
-    // );
+    const updated = await upsertConfig(user.org_id, serviceType, {
+      config: validated.config,
+      enabled: validated.enabled,
+    })
 
-    // Mock response structure
-    const config = {
-      id: 'config-123',
-      org_id: user.org_id,
-      service_type: serviceType,
-      config: validated.config || {},
-      enabled: validated.enabled ?? false,
-      updated_at: new Date().toISOString(),
-    };
-
-    return successResponse(config);
+    return successResponse(updated);
   } catch (error) {
     return handleAIError(error);
   }
@@ -102,9 +80,7 @@ export async function DELETE(
     const user = await authenticateRequest(request);
     const serviceType = extractServiceType({ service });
 
-    // TODO: Call AIConfigService when available from Team C
-    // await AIConfigService.deleteConfig(user.org_id, serviceType);
-
+    await deleteConfig(user.org_id, serviceType)
     return noContentResponse();
   } catch (error) {
     return handleAIError(error);

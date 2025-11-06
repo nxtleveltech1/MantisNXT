@@ -130,10 +130,10 @@ async function main() {
     }
     for (const args of combos) {
       try {
-        const res = await client.callTool({ name: sqlTool.name, arguments: args });
+        const res = await client.callTool(sqlTool.name, args);
         const msg = res.structuredContent
           ? JSON.stringify(res.structuredContent)
-          : res.content?.map(c => (typeof c === 'string' ? c : JSON.stringify(c))).join('\n');
+          : (res.content as any[])?.map((c: any) => (typeof c === 'string' ? c : JSON.stringify(c))).join('\n');
         console.log(`[OK] ${label} via ${sqlTool.name} with keys [${Object.keys(args).join(', ')}] -> ${msg ?? 'done'}`);
         return;
       } catch (e) {

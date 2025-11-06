@@ -10,6 +10,7 @@ import {
   successResponse,
 } from '@/lib/ai/api-utils';
 import { cleanupPredictionsSchema } from '@/lib/ai/validation-schemas';
+import { predictionService } from '@/lib/ai/services/prediction-service';
 
 /**
  * POST /api/v1/ai/predictions/cleanup
@@ -21,34 +22,40 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = cleanupPredictionsSchema.parse(body);
 
-    // TODO: Call PredictionService when available from Team C
-    // const result = await PredictionService.cleanupPredictions(user.org_id, {
-    //   olderThan: validated.olderThan,
-    //   serviceType: validated.serviceType,
-    //   dryRun: validated.dryRun,
-    // });
+    // Calculate days old from olderThan date
+    const olderThanDate = new Date(validated.olderThan);
+    const now = new Date();
+    const daysOld = Math.floor((now.getTime() - olderThanDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    // Mock response structure
+    // For dry run, get predictions that would be deleted
+    let affectedPredictions: any[] = [];
+    if (validated.dryRun) {
+      const filters = {
+        serviceType: validated.serviceType,
+        status: 'expired',
+        endDate: olderThanDate,
+        limit: 100,
+        offset: 0,
+      };
+      const result = await predictionService.listPredictions(user.org_id, filters);
+      affectedPredictions = result.predictions.map((p) => ({
+        id: p.id,
+        service_type: p.service_type,
+        created_at: p.created_at,
+      }));
+    }
+
+    // Execute cleanup if not dry run
+    const deletedCount = validated.dryRun
+      ? 0
+      : await predictionService.cleanupExpired(user.org_id, daysOld);
+
     const result = {
       success: true,
       dryRun: validated.dryRun,
-      deletedCount: validated.dryRun ? 0 : 342,
-      affectedPredictions: validated.dryRun
-        ? [
-            { id: 'pred-1', service_type: 'demand_forecasting', created_at: '2024-01-01' },
-            { id: 'pred-2', service_type: 'anomaly_detection', created_at: '2024-01-15' },
-          ]
-        : [],
-      summary: {
-        byService: {
-          demand_forecasting: 200,
-          anomaly_detection: 142,
-        },
-        byStatus: {
-          expired: 300,
-          completed: 42,
-        },
-      },
+      deletedCount,
+      affectedPredictions,
+      cutoffDate: olderThanDate.toISOString(),
       executedAt: new Date().toISOString(),
     };
 

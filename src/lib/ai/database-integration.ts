@@ -129,7 +129,7 @@ KEY RELATIONSHIPS:
 
 export class AIDatabaseService {
   private model = anthropic('claude-3-5-sonnet-20241022');
-  private fallbackModel = openai('gpt-4-turbo');
+  private fallbackModel = openai('gpt-4.1');
 
   /**
    * Convert natural language query to SQL
@@ -344,55 +344,95 @@ Calculate overall health score (1.0 = perfect).`,
   }
 
   /**
-   * Generate predictions
+   * Generate predictions using REAL inventory and sales data
    */
   async generatePredictions(options: {
     type: 'inventory_demand' | 'supplier_performance' | 'price_trends' | 'stock_levels';
-    target_id?: number;
+    target_id?: string; // Changed to string to support UUIDs
     forecast_days?: number;
   }): Promise<z.infer<typeof PredictionSchema>> {
     const forecastDays = options.forecast_days || 30;
 
-    // Fetch historical data based on prediction type
+    // Fetch historical data based on prediction type using REAL tables
     let historicalQuery = '';
+    let productDetailsQuery = '';
+
     switch (options.type) {
       case 'inventory_demand':
+        // Query REAL stock_movements table for historical sales/outbound movements
         historicalQuery = `
-          SELECT date_trunc('day', created_at) as date, SUM(quantity) as value
-          FROM stock_movements
-          WHERE movement_type = 'out'
-          ${options.target_id ? `AND product_id = ${options.target_id}` : ''}
-          GROUP BY date_trunc('day', created_at)
+          SELECT
+            date_trunc('day', sm.timestamp) as date,
+            SUM(CASE WHEN sm.type = 'out' THEN sm.quantity ELSE 0 END) as outbound,
+            SUM(CASE WHEN sm.type = 'in' THEN sm.quantity ELSE 0 END) as inbound,
+            AVG(sm.unit_cost) as avg_cost
+          FROM stock_movements sm
+          ${options.target_id ? `WHERE sm.item_id = $1` : ''}
+          GROUP BY date_trunc('day', sm.timestamp)
           ORDER BY date DESC
           LIMIT 90
         `;
+
+        // Get product details from inventory_items
+        if (options.target_id) {
+          productDetailsQuery = `
+            SELECT
+              ii.id,
+              ii.sku,
+              ii.name,
+              ii.stock_qty,
+              ii.reorder_point,
+              ii.category,
+              ii.brand,
+              ii.supplier_id
+            FROM inventory_items ii
+            WHERE ii.id = $1
+          `;
+        }
         break;
+
       case 'supplier_performance':
         historicalQuery = `
           SELECT date_trunc('day', order_date) as date, COUNT(*) as value
           FROM purchase_orders
           WHERE status = 'completed'
-          ${options.target_id ? `AND supplier_id = ${options.target_id}` : ''}
+          ${options.target_id ? `AND supplier_id = $1` : ''}
           GROUP BY date_trunc('day', order_date)
           ORDER BY date DESC
           LIMIT 90
         `;
         break;
+
       case 'stock_levels':
+        // Use stock_movements to calculate historical stock levels
         historicalQuery = `
-          SELECT date_trunc('day', created_at) as date, AVG(quantity) as value
-          FROM public.inventory_items
-          ${options.target_id ? `AND product_id = ${options.target_id}` : ''}
-          GROUP BY date_trunc('day', created_at)
+          SELECT
+            date_trunc('day', sm.timestamp) as date,
+            SUM(CASE WHEN sm.type = 'in' THEN sm.quantity
+                     WHEN sm.type = 'out' THEN -sm.quantity
+                     ELSE 0 END) as net_change
+          FROM stock_movements sm
+          ${options.target_id ? `WHERE sm.item_id = $1` : ''}
+          GROUP BY date_trunc('day', sm.timestamp)
           ORDER BY date DESC
           LIMIT 90
         `;
         break;
+
       default:
         throw new Error(`Unsupported prediction type: ${options.type}`);
     }
 
-    const historicalData = await query(historicalQuery);
+    // Execute queries with UUID parameter
+    const params = options.target_id ? [options.target_id] : [];
+    const historicalData = await query(historicalQuery, params);
+
+    // Fetch product details if applicable
+    let productDetails = null;
+    if (productDetailsQuery && options.target_id) {
+      const productResult = await query(productDetailsQuery, [options.target_id]);
+      productDetails = productResult.rows[0] || null;
+    }
 
     try {
       const prediction = await generateObject({

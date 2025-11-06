@@ -55,7 +55,7 @@ export default function CustomersDirectoryPage() {
                   <p className="text-sm text-muted-foreground">Total Customers</p>
                   <p className="text-2xl font-bold">{customers.length}</p>
                 </div>
-                <UserCheck className="h-8 w-8 text-blue-500" />
+                <UserCheck className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -185,4 +185,5 @@ export default function CustomersDirectoryPage() {
     </SelfContainedLayout>
   )
 }
+
 

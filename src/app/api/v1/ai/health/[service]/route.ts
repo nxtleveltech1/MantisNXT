@@ -38,7 +38,7 @@ export async function GET(
       enabled: true,
       config: {
         provider: 'openai',
-        model: 'gpt-4',
+        model: 'gpt-4.1',
         temperature: 0.7,
         maxTokens: 2000,
       },

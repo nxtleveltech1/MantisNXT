@@ -188,10 +188,17 @@ export class WooCommerceSyncQueue {
     );
 
     // Log activity
-    await this.logActivity(queueId, lineId, 'customer_sync', 'success', 'Customer synced successfully', {
-      customerId,
-      wasUpdate,
-    });
+    await this.logActivity(
+      queueId,
+      lineId,
+      'customer_sync',
+      'success',
+      'Customer synced successfully',
+      {
+        customerId,
+        wasUpdate,
+      }
+    );
   }
 
   /**
@@ -263,7 +270,12 @@ export class WooCommerceSyncQueue {
     return {
       ...queue,
       progress,
-      processingCount: queue.total_count - queue.draft_count - queue.done_count - queue.failed_count - queue.cancelled_count,
+      processingCount:
+        queue.total_count -
+        queue.draft_count -
+        queue.done_count -
+        queue.failed_count -
+        queue.cancelled_count,
     };
   }
 
@@ -308,9 +320,16 @@ export class WooCommerceSyncQueue {
     const count = result.rows[0]?.count || 0;
 
     // Log the action
-    await this.logActivity(queueId, null, 'force_done', 'completed', `Forced done: ${count} lines cancelled`, {
-      cancelledCount: count,
-    });
+    await this.logActivity(
+      queueId,
+      null,
+      'force_done',
+      'completed',
+      `Forced done: ${count} lines cancelled`,
+      {
+        cancelledCount: count,
+      }
+    );
 
     // Mark queue as done
     await query(

@@ -13,6 +13,7 @@ import {
   noContentResponse,
 } from '@/lib/ai/api-utils';
 import { updateDashboardSchema } from '@/lib/ai/validation-schemas';
+import { DashboardService } from '@/lib/ai/services/dashboard-service';
 
 /**
  * GET /api/v1/ai/dashboards/[id]
@@ -27,22 +28,22 @@ export async function GET(
     const { id } = await context.params;
     const user = await authenticateRequest(request);
 
-    // TODO: Call DashboardService when available from Team C
-    // const dashboard = await DashboardService.getDashboard(user.id, id);
-
-    // Mock response structure
-    const dashboard = {
+    const dashboard = await DashboardService.getDashboard(
+      user.id,
+      user.org_id,
       id,
-      org_id: user.org_id,
-      user_id: user.id,
-      name: 'AI Analytics Dashboard',
-      description: 'Overview of AI service performance',
-      layout: [],
-      is_public: false,
-      widgets: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+      true // includeWidgets
+    );
+
+    if (!dashboard) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Dashboard not found',
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     return successResponse(dashboard);
   } catch (error) {
@@ -65,23 +66,22 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateDashboardSchema.parse(body);
 
-    // TODO: Call DashboardService when available from Team C
-    // const dashboard = await DashboardService.updateDashboard(
-    //   user.id,
-    //   id,
-    //   validated
-    // );
-
-    // Mock response structure
-    const dashboard = {
+    const dashboard = await DashboardService.updateDashboard(
+      user.id,
+      user.org_id,
       id,
-      name: validated.name,
-      description: validated.description,
-      layout: validated.layout,
-      is_public: validated.isPublic,
-      metadata: validated.metadata,
-      updated_at: new Date().toISOString(),
-    };
+      validated
+    );
+
+    if (!dashboard) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Dashboard not found',
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     return successResponse(dashboard);
   } catch (error) {
@@ -102,8 +102,21 @@ export async function DELETE(
     const { id } = await context.params;
     const user = await authenticateRequest(request);
 
-    // TODO: Call DashboardService when available from Team C
-    // await DashboardService.deleteDashboard(user.id, id);
+    const deleted = await DashboardService.deleteDashboard(
+      user.id,
+      user.org_id,
+      id
+    );
+
+    if (!deleted) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Dashboard not found',
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     return noContentResponse();
   } catch (error) {

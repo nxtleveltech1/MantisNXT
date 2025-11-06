@@ -16,9 +16,9 @@ const PROVIDERS: AIProviderId[] = ['openai', 'anthropic', 'vercel', 'openai-comp
 
 const DEFAULT_MODELS: Record<AIProviderId, AIProviderModels> = {
   openai: {
-    default: 'gpt-4o-mini',
+    default: 'gpt-4.1-mini',
     chat: 'gpt-4.1-mini',
-    streaming: 'gpt-4o-mini',
+    streaming: 'gpt-4.1-mini',
     embedding: 'text-embedding-3-large',
     fallback: ['anthropic', 'vercel'],
   },
@@ -29,16 +29,16 @@ const DEFAULT_MODELS: Record<AIProviderId, AIProviderModels> = {
     fallback: ['openai', 'vercel'],
   },
   vercel: {
-    default: 'gpt-4o-mini',
-    chat: 'gpt-4o-mini',
-    streaming: 'gpt-4o-mini',
+    default: 'gpt-4.1-mini',
+    chat: 'gpt-4.1-mini',
+    streaming: 'gpt-4.1-mini',
     embedding: 'text-embedding-3-small',
     fallback: ['openai', 'anthropic'],
   },
   'openai-compatible': {
-    default: 'gpt-3.5-turbo',
-    chat: 'gpt-3.5-turbo',
-    streaming: 'gpt-3.5-turbo',
+    default: 'gpt-4.1-mini',
+    chat: 'gpt-4.1-mini',
+    streaming: 'gpt-4.1-mini',
     embedding: 'text-embedding-ada-002',
     fallback: ['openai', 'vercel'],
   },

@@ -202,30 +202,30 @@ export default function AuditPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-success" />
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+        return <AlertTriangle className="h-4 w-4 text-warning" />
       case 'error':
-        return <XCircle className="h-4 w-4 text-red-500" />
+        return <XCircle className="h-4 w-4 text-destructive" />
       case 'info':
-        return <Info className="h-4 w-4 text-blue-500" />
+        return <Info className="h-4 w-4 text-primary" />
       default:
-        return <Info className="h-4 w-4 text-gray-500" />
+        return <Info className="h-4 w-4 text-muted-foreground" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-green-100 text-green-800'
+        return 'bg-success/10 text-success'
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-warning/10 text-warning'
       case 'error':
-        return 'bg-red-100 text-red-800'
+        return 'bg-destructive/10 text-destructive'
       case 'info':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-primary/10 text-primary'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-secondary text-secondary-foreground'
     }
   }
 
@@ -272,8 +272,8 @@ export default function AuditPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Audit Logs</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-3xl font-bold">Audit Logs</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Monitor system activity and user actions
           </p>
         </div>
@@ -297,65 +297,73 @@ export default function AuditPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-border">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Actions</p>
-                <p className="text-2xl font-bold">{auditLogs.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Actions</p>
+                <p className="text-3xl font-bold mt-2">{auditLogs.length}</p>
               </div>
-              <Activity className="h-8 w-8 text-blue-500" />
+              <div className="h-12 w-12 bg-chart-1/10 rounded-lg flex items-center justify-center">
+                <Activity className="h-6 w-6 text-chart-1" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-border">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Success Rate</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
+                <p className="text-3xl font-bold text-chart-2 mt-2">
                   {Math.round((auditLogs.filter(log => log.status === 'success').length / auditLogs.length) * 100)}%
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <div className="h-12 w-12 bg-chart-2/10 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-chart-2" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-border">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Failed Actions</p>
-                <p className="text-2xl font-bold">{auditLogs.filter(log => log.status === 'error').length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Failed Actions</p>
+                <p className="text-3xl font-bold mt-2">{auditLogs.filter(log => log.status === 'error').length}</p>
               </div>
-              <XCircle className="h-8 w-8 text-red-500" />
+              <div className="h-12 w-12 bg-destructive/10 rounded-lg flex items-center justify-center">
+                <XCircle className="h-6 w-6 text-destructive" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-border">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Unique Users</p>
-                <p className="text-2xl font-bold">{new Set(auditLogs.map(log => log.userId)).size}</p>
+                <p className="text-sm font-medium text-muted-foreground">Unique Users</p>
+                <p className="text-3xl font-bold mt-2">{new Set(auditLogs.map(log => log.userId)).size}</p>
               </div>
-              <User className="h-8 w-8 text-purple-500" />
+              <div className="h-12 w-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
+                <User className="h-6 w-6 text-chart-3" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="border-border">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="relative lg:col-span-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search logs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-border bg-background"
               />
             </div>
 
@@ -413,7 +421,7 @@ export default function AuditPage() {
                   mode="range"
                   defaultMonth={dateRange?.from}
                   selected={dateRange}
-                  onSelect={setDateRange}
+                  onSelect={(range) => setDateRange(range ? { from: range.from, to: range.to } : { from: undefined, to: undefined })}
                   numberOfMonths={2}
                 />
               </PopoverContent>
@@ -433,7 +441,7 @@ export default function AuditPage() {
         <CardContent>
           <div className="space-y-4">
             {filteredLogs.map((log) => (
-              <div key={log.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+              <div key={log.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-secondary/50 transition-colors">
                 <div className="flex items-center gap-2">
                   {getStatusIcon(log.status)}
                   {getActionIcon(log.action)}
@@ -447,12 +455,12 @@ export default function AuditPage() {
                     <Badge variant="outline" className="text-xs">
                       {log.resource.replace('_', ' ')}
                     </Badge>
-                    <span className="text-xs text-gray-500">#{log.resourceId}</span>
+                    <span className="text-xs text-muted-foreground">#{log.resourceId}</span>
                   </div>
 
-                  <p className="text-sm font-medium text-gray-900 mb-1">{log.details}</p>
+                  <p className="text-sm font-medium text-foreground mb-1">{log.details}</p>
 
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Avatar className="h-4 w-4">
                         <AvatarImage src={log.userAvatar} alt={log.userName} />
@@ -470,7 +478,7 @@ export default function AuditPage() {
                       <Database className="h-3 w-3" />
                       {log.organizationName}
                     </div>
-                    <div className="text-gray-400">
+                    <div className="text-muted-foreground">
                       {log.ipAddress}
                     </div>
                   </div>
@@ -489,9 +497,9 @@ export default function AuditPage() {
 
           {filteredLogs.length === 0 && (
             <div className="text-center py-12">
-              <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No audit logs found</h3>
-              <p className="text-gray-500">
+              <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No audit logs found</h3>
+              <p className="text-muted-foreground">
                 {searchTerm || filterAction !== "all" || filterStatus !== "all" || filterResource !== "all"
                   ? "Try adjusting your search or filters"
                   : "Audit logs will appear here as users interact with the system"

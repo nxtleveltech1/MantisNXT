@@ -14,6 +14,7 @@ import {
   validateWidgetType,
 } from '@/lib/ai/api-utils';
 import { updateWidgetSchema } from '@/lib/ai/validation-schemas';
+import { DashboardService } from '@/lib/ai/services/dashboard-service';
 
 /**
  * GET /api/v1/ai/widgets/[id]
@@ -28,30 +29,17 @@ export async function GET(
     const { id } = await context.params;
     const user = await authenticateRequest(request);
 
-    // TODO: Call WidgetService when available from Team C
-    // const widget = await WidgetService.getWidget(user.org_id, id);
+    const widget = await DashboardService.getWidget(user.org_id, id);
 
-    // Mock response structure
-    const widget = {
-      id,
-      org_id: user.org_id,
-      dashboard_id: 'dash-123',
-      type: 'metric_card',
-      title: 'Prediction Accuracy',
-      config: {
-        metric: 'prediction_accuracy',
-        format: 'percentage',
-      },
-      data_source: {
-        type: 'predictions',
-        params: {
-          serviceType: 'demand_forecasting',
-        },
-      },
-      refresh_interval: 300,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    if (!widget) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Widget not found',
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     return successResponse(widget);
   } catch (error) {
@@ -74,19 +62,21 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateWidgetSchema.parse(body);
 
-    // TODO: Call WidgetService when available from Team C
-    // const widget = await WidgetService.updateWidget(user.org_id, id, validated);
-
-    // Mock response structure
-    const widget = {
+    const widget = await DashboardService.updateWidget(
+      user.org_id,
       id,
-      title: validated.title,
-      config: validated.config,
-      data_source: validated.dataSource,
-      refresh_interval: validated.refreshInterval,
-      metadata: validated.metadata,
-      updated_at: new Date().toISOString(),
-    };
+      validated
+    );
+
+    if (!widget) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Widget not found',
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     return successResponse(widget);
   } catch (error) {
@@ -107,8 +97,17 @@ export async function DELETE(
     const { id } = await context.params;
     const user = await authenticateRequest(request);
 
-    // TODO: Call WidgetService when available from Team C
-    // await WidgetService.deleteWidget(user.org_id, id);
+    const deleted = await DashboardService.deleteWidget(user.org_id, id);
+
+    if (!deleted) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Widget not found',
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     return noContentResponse();
   } catch (error) {

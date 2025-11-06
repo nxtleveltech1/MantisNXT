@@ -44,14 +44,15 @@ async function mapWooCustomerToMantis(
   wooOrders: any[]
 ): Promise<any> {
   const lifetimeValue = wooOrders.reduce((sum, order) => sum + parseFloat(order.total || '0'), 0);
-  const completedOrders = wooOrders.filter((order) => order.status === 'completed');
+  const completedOrders = wooOrders.filter(order => order.status === 'completed');
 
   const orderDates = wooOrders
-    .map((order) => new Date(order.date_created || ''))
+    .map(order => new Date(order.date_created || ''))
     .sort((a, b) => a.getTime() - b.getTime());
 
   const acquisitionDate = orderDates.length > 0 ? orderDates[0] : new Date();
-  const lastInteractionDate = orderDates.length > 0 ? orderDates[orderDates.length - 1] : new Date();
+  const lastInteractionDate =
+    orderDates.length > 0 ? orderDates[orderDates.length - 1] : new Date();
 
   // Determine segment
   let segment = 'individual';
@@ -80,7 +81,7 @@ async function mapWooCustomerToMantis(
   };
 
   if (wooCustomer.meta_data) {
-    wooCustomer.meta_data.forEach((meta) => {
+    wooCustomer.meta_data.forEach(meta => {
       metadata[meta.key] = meta.value;
     });
   }
@@ -88,12 +89,16 @@ async function mapWooCustomerToMantis(
   const tags: string[] = ['woocommerce'];
   if (completedOrders.length > 10) tags.push('high-value');
   if (completedOrders.length === 0) tags.push('prospect');
-  if (orderDates.length > 0 && Date.now() - lastInteractionDate.getTime() < 30 * 24 * 60 * 60 * 1000) {
+  if (
+    orderDates.length > 0 &&
+    Date.now() - lastInteractionDate.getTime() < 30 * 24 * 60 * 60 * 1000
+  ) {
     tags.push('active');
   }
 
   return {
-    name: `${wooCustomer.first_name || ''} ${wooCustomer.last_name || ''}`.trim() || wooCustomer.email,
+    name:
+      `${wooCustomer.first_name || ''} ${wooCustomer.last_name || ''}`.trim() || wooCustomer.email,
     email: wooCustomer.email,
     phone: wooCustomer.billing?.phone || wooCustomer.shipping?.phone || null,
     company: wooCustomer.billing?.company || wooCustomer.shipping?.company || null,
@@ -223,13 +228,17 @@ async function syncSingleCustomer(
  * Delay helper for batch processing
  */
 function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
  * Exponential backoff delay
  */
-function getBackoffDelay(attempt: number, initialMs: number = 1000, multiplier: number = 2): number {
+function getBackoffDelay(
+  attempt: number,
+  initialMs: number = 1000,
+  multiplier: number = 2
+): number {
   return initialMs * Math.pow(multiplier, attempt);
 }
 
@@ -276,7 +285,7 @@ export class CustomerSyncService {
       const response = await wooService.getCustomers({ email: options.email });
       wooCustomers = response.data;
     } else {
-      wooCustomers = await wooService.fetchAllPages((params) => wooService.getCustomers(params), {
+      wooCustomers = await wooService.fetchAllPages(params => wooService.getCustomers(params), {
         per_page: 100,
         order: 'desc',
         orderby: 'registered_date',
@@ -344,7 +353,7 @@ export class CustomerSyncService {
         console.log(`Processing batch ${batchNumber}: ${batch.length} customers`);
 
         // Mark lines as processing
-        await WooCommerceSyncQueue.markLinesProcessing(batch.map((b) => b.id));
+        await WooCommerceSyncQueue.markLinesProcessing(batch.map(b => b.id));
 
         // Process each customer in batch
         for (const line of batch) {
@@ -380,8 +389,14 @@ export class CustomerSyncService {
                 retryCount++;
 
                 if (retryCount < maxRetries) {
-                  const backoffMs = getBackoffDelay(retryCount - 1, initialBackoffMs, backoffMultiplier);
-                  console.log(`Retry ${retryCount}/${maxRetries} for customer ${wooCustomer.email}, waiting ${backoffMs}ms`);
+                  const backoffMs = getBackoffDelay(
+                    retryCount - 1,
+                    initialBackoffMs,
+                    backoffMultiplier
+                  );
+                  console.log(
+                    `Retry ${retryCount}/${maxRetries} for customer ${wooCustomer.email}, waiting ${backoffMs}ms`
+                  );
                   await delay(backoffMs);
                 } else {
                   // Max retries exceeded
@@ -394,7 +409,11 @@ export class CustomerSyncService {
               retryCount++;
 
               if (retryCount < maxRetries) {
-                const backoffMs = getBackoffDelay(retryCount - 1, initialBackoffMs, backoffMultiplier);
+                const backoffMs = getBackoffDelay(
+                  retryCount - 1,
+                  initialBackoffMs,
+                  backoffMultiplier
+                );
                 console.log(`Exception retry ${retryCount}/${maxRetries}, waiting ${backoffMs}ms`);
                 await delay(backoffMs);
               } else {
@@ -408,7 +427,9 @@ export class CustomerSyncService {
 
         // Delay between batches
         if (batch.length === batchSize) {
-          console.log(`Batch ${batchNumber} complete. Waiting ${batchDelayMs}ms before next batch...`);
+          console.log(
+            `Batch ${batchNumber} complete. Waiting ${batchDelayMs}ms before next batch...`
+          );
           await delay(batchDelayMs);
         }
 
@@ -417,7 +438,6 @@ export class CustomerSyncService {
 
       // Check if action required (max retries exceeded)
       await WooCommerceSyncQueue.checkQueueActionRequired(queueId);
-
     } finally {
       await WooCommerceSyncQueue.setQueueProcessing(queueId, false);
     }

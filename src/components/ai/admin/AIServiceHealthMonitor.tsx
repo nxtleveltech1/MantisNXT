@@ -247,8 +247,18 @@ export default function AIServiceHealthMonitor() {
             <div className="flex items-center gap-4">
               <Badge className={overallConfig.badge}>{overallStatus.toUpperCase()}</Badge>
               <span className="text-sm text-muted-foreground">
-                {health?.services.filter((s) => s.status === 'healthy').length || 0} /{' '}
-                {health?.services.length || 0} services healthy
+                {Array.isArray(health?.services)
+                  ? health.services.filter((s) => s.status === 'healthy').length
+                  : health?.services
+                  ? Object.values(health.services).filter((s: any) => s.status === 'healthy').length
+                  : 0}{' '}
+                /{' '}
+                {Array.isArray(health?.services)
+                  ? health.services.length
+                  : health?.services
+                  ? Object.keys(health.services).length
+                  : 0}{' '}
+                services healthy
               </span>
             </div>
             <div className="text-sm text-muted-foreground">
@@ -260,7 +270,23 @@ export default function AIServiceHealthMonitor() {
 
       {/* Service Cards Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-        {health?.services.map((service) => {
+        {(Array.isArray(health?.services)
+          ? health.services
+          : health?.services
+          ? Object.entries(health.services).map(([serviceName, serviceData]: [string, any]) => ({
+              service: serviceName,
+              status: serviceData.status,
+              uptime: 0,
+              lastCheck: serviceData.lastUsed || new Date().toISOString(),
+              metrics: {
+                responseTime: parseInt(serviceData.avgLatency) || 0,
+                requestCount: serviceData.requests24h || 0,
+                errorRate: serviceData.errorRate || 0,
+                successRate: 1 - (serviceData.errorRate || 0),
+              },
+            }))
+          : []
+        ).map((service) => {
           const config = getStatusColor(service.status);
           const Icon = config.icon;
           const info = SERVICE_INFO[service.service as keyof typeof SERVICE_INFO];

@@ -1,10 +1,13 @@
 /**
- * AI Conversations API
- * GET  /api/v1/ai/conversations - List conversations
- * POST /api/v1/ai/conversations - Create message
+ * AI Conversations API - List & Save Conversations
+ *
+ * Endpoints:
+ * - GET /api/v1/ai/conversations - List user conversations
+ * - POST /api/v1/ai/conversations - Save a new message
  */
 
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
 import {
   handleAIError,
   authenticateRequest,
@@ -12,11 +15,26 @@ import {
   createdResponse,
   extractPagination,
 } from '@/lib/ai/api-utils';
-import { createMessageSchema } from '@/lib/ai/validation-schemas';
+import { conversationService } from '@/lib/ai/services/conversation-service';
+
+// ============================================================================
+// Validation Schemas
+// ============================================================================
+
+const SaveMessageSchema = z.object({
+  conversationId: z.string().min(1, 'Conversation ID is required'),
+  role: z.enum(['user', 'assistant', 'system']),
+  content: z.string().min(1, 'Message content is required'),
+  context: z.record(z.string(), z.any()).optional(),
+});
+
+// ============================================================================
+// GET - List Conversations
+// ============================================================================
 
 /**
  * GET /api/v1/ai/conversations
- * List user's conversations
+ * List user's conversations with optional search
  */
 export async function GET(request: NextRequest) {
   try {
@@ -24,65 +42,86 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const { limit, offset, page } = extractPagination(searchParams);
 
-    // TODO: Call AIAssistantService when available from Team C
-    // const result = await AIAssistantService.listConversations(user.id, {
-    //   limit,
-    //   offset,
-    // });
+    const search = searchParams.get('search') || undefined;
+    const fromDate = searchParams.get('fromDate')
+      ? new Date(searchParams.get('fromDate')!)
+      : undefined;
+    const toDate = searchParams.get('toDate') ? new Date(searchParams.get('toDate')!) : undefined;
 
-    // Mock response structure
-    const conversations = [];
-    const total = 0;
+    const orgId = user.organizationId || user.org_id;
+    const userId = user.id;
 
-    return successResponse(conversations, {
-      page,
+    // Handle search query
+    if (search) {
+      const results = await conversationService.searchConversations(orgId, userId, search);
+
+      return successResponse(
+        { results, total: results.length },
+        {
+          page: 1,
+          limit: results.length,
+          total: results.length,
+          hasMore: false,
+        },
+      );
+    }
+
+    // List conversations with filters
+    const conversations = await conversationService.listConversations(orgId, userId, {
       limit,
-      total,
-      hasMore: offset + limit < total,
+      offset,
+      fromDate,
+      toDate,
     });
+
+    return successResponse(
+      { conversations, total: conversations.length },
+      {
+        page,
+        limit,
+        total: conversations.length,
+        hasMore: offset + limit < conversations.length,
+      },
+    );
   } catch (error) {
     return handleAIError(error);
   }
 }
 
+// ============================================================================
+// POST - Save Message
+// ============================================================================
+
 /**
  * POST /api/v1/ai/conversations
- * Send a message to AI assistant (create or continue conversation)
+ * Save a message to conversation history
  */
 export async function POST(request: NextRequest) {
   try {
     const user = await authenticateRequest(request);
     const body = await request.json();
-    const validated = createMessageSchema.parse(body);
+    const validated = SaveMessageSchema.parse(body);
 
-    // TODO: Call AIAssistantService when available from Team C
-    // const result = await AIAssistantService.sendMessage(user.id, user.org_id, {
-    //   conversationId: validated.conversationId,
-    //   message: validated.message,
-    //   context: validated.context,
-    //   metadata: validated.metadata,
-    // });
+    const orgId = user.organizationId || user.org_id;
+    const userId = user.id;
 
-    // Mock response structure
-    const result = {
-      conversationId: validated.conversationId || 'conv-123',
-      messageId: 'msg-456',
-      userMessage: {
-        id: 'msg-456',
-        role: 'user',
-        content: validated.message,
-        timestamp: new Date().toISOString(),
-      },
-      assistantMessage: {
-        id: 'msg-457',
-        role: 'assistant',
-        content: 'This is a mock response from the AI assistant.',
-        timestamp: new Date().toISOString(),
-      },
-      context: validated.context,
-    };
+    const message = await conversationService.saveMessage(
+      orgId,
+      userId,
+      validated.conversationId,
+      validated.role,
+      validated.content,
+      validated.context,
+    );
 
-    return createdResponse(result);
+    if (!message) {
+      throw new Error('Failed to save message');
+    }
+
+    return createdResponse({
+      conversationId: message.conversationId,
+      message,
+    });
   } catch (error) {
     return handleAIError(error);
   }

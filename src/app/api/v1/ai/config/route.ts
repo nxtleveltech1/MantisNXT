@@ -13,6 +13,7 @@ import {
   extractPagination,
 } from '@/lib/ai/api-utils';
 import { createConfigSchema } from '@/lib/ai/validation-schemas';
+import { listConfigs, upsertConfig } from './_store';
 
 /**
  * GET /api/v1/ai/config
@@ -34,11 +35,12 @@ export async function GET(request: NextRequest) {
     //   offset,
     // });
 
-    // Mock response structure
-    const configs = [];
-    const total = 0;
+    const configs = await listConfigs(user.org_id);
+    const filtered = serviceType ? configs.filter((config) => config.service_type === serviceType) : configs;
+    const total = filtered.length;
+    const paginated = filtered.slice(offset, offset + limit);
 
-    return successResponse(configs, {
+    return successResponse(paginated, {
       page: Math.floor(offset / limit) + 1,
       limit,
       total,
@@ -62,18 +64,12 @@ export async function POST(request: NextRequest) {
     // TODO: Call AIConfigService when available from Team C
     // const config = await AIConfigService.createConfig(user.org_id, validated);
 
-    // Mock response structure
-    const config = {
-      id: 'config-123',
-      org_id: user.org_id,
-      service_type: validated.serviceType,
+    const created = await upsertConfig(user.org_id, validated.serviceType, {
       config: validated.config,
       enabled: validated.enabled,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    })
 
-    return createdResponse(config);
+    return createdResponse(created);
   } catch (error) {
     return handleAIError(error);
   }

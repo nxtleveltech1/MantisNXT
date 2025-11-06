@@ -58,3 +58,4 @@ END $$;
 \echo '✅ Schema permissions granted successfully!'
 \echo 'Current user:', current_user
 
+

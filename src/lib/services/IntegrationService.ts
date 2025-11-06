@@ -353,10 +353,12 @@ export class IntegrationService {
           password: connector.credentials.password,
         });
 
-        const isConnected = await odooService.testConnection();
+        const connectionResult = await odooService.testConnection();
         return {
-          success: isConnected,
-          message: isConnected ? 'Connection successful' : 'Connection failed',
+          success: connectionResult.success,
+          message: connectionResult.success 
+            ? `Connection successful${connectionResult.version ? ` - Odoo ${connectionResult.version.server_version || connectionResult.version.server_serie || ''}` : ''}` 
+            : connectionResult.error || 'Connection failed',
         };
       } else {
         return { success: false, message: 'Unsupported provider' };

@@ -2,13 +2,15 @@
  * Odoo Sync API
  *
  * Handles synchronization of entities (products, orders, customers, invoices) with Odoo ERP
+ * Now with rate limiting and caching to prevent 429 errors
  *
  * Author: Claude Code
- * Date: 2025-11-02
+ * Date: 2025-11-04 (Updated with rate limiting)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
+import { OdooService } from '@/lib/services/OdooService';
 
 export async function POST(
   request: NextRequest,
@@ -72,139 +74,73 @@ export async function POST(
     const odooModel = modelMap[entityType];
     const connectorId = configResult.rows[0].connector_id;
 
-    // Authenticate with Odoo
-    const authUrl = `${normalizedUrl}/xmlrpc/2/common`;
-    const authPayload = `<?xml version="1.0"?>
-<methodCall>
-  <methodName>authenticate</methodName>
-  <params>
-    <param><value><string>${database_name}</string></value></param>
-    <param><value><string>${username}</string></value></param>
-    <param><value><string>${api_key}</string></value></param>
-    <param><value><struct></struct></value></param>
-  </params>
-</methodCall>`;
-
-    const authResponse = await fetch(authUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml',
-      },
-      body: authPayload,
+    // Use OdooService with rate limiting and caching
+    const odooService = new OdooService({
+      url: normalizedUrl,
+      database: database_name,
+      username: username,
+      password: api_key,
     });
 
-    if (!authResponse.ok) {
+    try {
+      // Get record count using rate-limited service
+      const recordCount = await odooService.searchCount(odooModel);
+
+      // Update integration_connector with successful sync
       await query(
         `UPDATE integration_connector
-         SET error_message = $1,
-             updated_at = NOW()
-         WHERE id = $2`,
-        [`Odoo authentication failed: ${authResponse.status}`, connectorId]
-      );
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to authenticate with Odoo: ${authResponse.status} ${authResponse.statusText}`,
-        },
-        { status: authResponse.status }
-      );
-    }
-
-    const authResponseText = await authResponse.text();
-    const userIdMatch = authResponseText.match(/<int>(\d+)<\/int>/);
-
-    if (!userIdMatch) {
-      await query(
-        `UPDATE integration_connector
-         SET error_message = 'Authentication failed - invalid credentials',
+         SET last_sync_at = NOW(),
+             error_message = NULL,
+             retry_count = 0,
              updated_at = NOW()
          WHERE id = $1`,
         [connectorId]
       );
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Authentication failed. Please check your credentials.',
+      return NextResponse.json({
+        success: true,
+        data: {
+          message: `${entityType} sync initiated successfully`,
+          records_found: recordCount,
         },
-        { status: 401 }
-      );
-    }
+      });
+    } catch (syncError: any) {
+      console.error(`Sync error for ${entityType}:`, syncError);
 
-    const userId = userIdMatch[1];
-
-    // Search for records using XML-RPC
-    const objectUrl = `${normalizedUrl}/xmlrpc/2/object`;
-    const searchPayload = `<?xml version="1.0"?>
-<methodCall>
-  <methodName>execute_kw</methodName>
-  <params>
-    <param><value><string>${database_name}</string></value></param>
-    <param><value><int>${userId}</int></value></param>
-    <param><value><string>${api_key}</string></value></param>
-    <param><value><string>${odooModel}</string></value></param>
-    <param><value><string>search_count</string></value></param>
-    <param>
-      <value>
-        <array>
-          <data>
-            <value><array><data></data></array></value>
-          </data>
-        </array>
-      </value>
-    </param>
-  </params>
-</methodCall>`;
-
-    const searchResponse = await fetch(objectUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml',
-      },
-      body: searchPayload,
-    });
-
-    if (!searchResponse.ok) {
+      // Update connector with error
       await query(
         `UPDATE integration_connector
          SET error_message = $1,
              updated_at = NOW()
          WHERE id = $2`,
-        [`Odoo search failed: ${searchResponse.status}`, connectorId]
+        [syncError.message || 'Sync failed', connectorId]
       );
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to search ${entityType} in Odoo: ${searchResponse.status} ${searchResponse.statusText}`,
-        },
-        { status: searchResponse.status }
-      );
+      // Handle rate limiting
+      if (syncError.message?.includes('rate limited') || syncError.status === 429) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Rate limit reached. Please wait a moment and try again.',
+            retry_after: 60,
+          },
+          { status: 429 }
+        );
+      }
+
+      // Handle circuit breaker
+      if (syncError.message?.includes('Circuit breaker is open')) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Service temporarily unavailable. Please try again later.',
+          },
+          { status: 503 }
+        );
+      }
+
+      throw syncError;
     }
-
-    const searchResponseText = await searchResponse.text();
-    const countMatch = searchResponseText.match(/<int>(\d+)<\/int>/);
-    const recordCount = countMatch ? parseInt(countMatch[1], 10) : 0;
-
-    // Update integration_connector with successful sync
-    await query(
-      `UPDATE integration_connector
-       SET last_sync_at = NOW(),
-           error_message = NULL,
-           retry_count = 0,
-           updated_at = NOW()
-       WHERE id = $1`,
-      [connectorId]
-    );
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        message: `${entityType} sync initiated successfully`,
-        records_found: recordCount,
-      },
-    });
   } catch (error: any) {
     console.error(`Error syncing ${entityType}:`, error);
     return NextResponse.json(

@@ -208,23 +208,38 @@ export default function CustomerDetailsPage() {
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (error) {
+      console.warn('Failed to format date:', dateString, error);
+      return 'N/A';
+    }
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const formatDateTime = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.warn('Failed to format date:', dateString, error);
+      return 'N/A';
+    }
   };
 
   const formatCurrency = (value: number | null) => {
@@ -233,6 +248,12 @@ export default function CustomerDetailsPage() {
       style: 'currency',
       currency: 'USD',
     }).format(value);
+  };
+
+  const formatNumber = (value: number | null | undefined) => {
+    if (value === null || value === undefined || typeof value !== 'number') return '0';
+    if (isNaN(value)) return '0';
+    return value.toLocaleString('en-US');
   };
 
   if (loading) {
@@ -325,23 +346,23 @@ export default function CustomerDetailsPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
+          <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Lifetime Value</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(customer.lifetime_value)}</div>
+              <div className="text-3xl font-bold">{formatCurrency(customer.lifetime_value)}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Loyalty Points</CardTitle>
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loyalty?.points_balance.toLocaleString() || 0}</div>
+              <div className="text-3xl font-bold">{formatNumber(loyalty?.points_balance)}</div>
               {loyalty?.current_tier && (
                 <Badge className={`mt-2 ${getTierColor(loyalty.current_tier)}`}>
                   {loyalty.current_tier}
@@ -350,17 +371,17 @@ export default function CustomerDetailsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Referrals</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loyalty?.referral_count || 0}</div>
+              <div className="text-3xl font-bold">{loyalty?.referral_count || 0}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Last Interaction</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
@@ -380,7 +401,7 @@ export default function CustomerDetailsPage() {
           </TabsList>
 
           <TabsContent value="details" className="space-y-4">
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle>Contact Information</CardTitle>
                 <CardDescription>Customer contact details and communication preferences</CardDescription>
@@ -419,7 +440,7 @@ export default function CustomerDetailsPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle>Address</CardTitle>
                 <CardDescription>Customer location and billing information</CardDescription>
@@ -450,7 +471,7 @@ export default function CustomerDetailsPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle>Timeline</CardTitle>
                 <CardDescription>Key dates and milestones</CardDescription>
@@ -488,7 +509,7 @@ export default function CustomerDetailsPage() {
             </Card>
 
             {customer.tags && customer.tags.length > 0 && (
-              <Card>
+              <Card className="border-border">
                 <CardHeader>
                   <CardTitle>Tags</CardTitle>
                   <CardDescription>Customer classifications and labels</CardDescription>
@@ -507,7 +528,7 @@ export default function CustomerDetailsPage() {
             )}
 
             {customer.metadata && Object.keys(customer.metadata).length > 0 && (
-              <Card>
+              <Card className="border-border">
                 <CardHeader>
                   <CardTitle>Additional Information</CardTitle>
                   <CardDescription>Custom metadata and properties</CardDescription>
@@ -531,7 +552,7 @@ export default function CustomerDetailsPage() {
           <TabsContent value="loyalty" className="space-y-4">
             {loyalty ? (
               <>
-                <Card>
+                <Card className="border-border">
                   <CardHeader>
                     <CardTitle>Loyalty Tier Status</CardTitle>
                     <CardDescription>Current tier and qualification details</CardDescription>
@@ -555,7 +576,7 @@ export default function CustomerDetailsPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="border-border">
                   <CardHeader>
                     <CardTitle>Points Summary</CardTitle>
                     <CardDescription>Lifetime points activity and current balance</CardDescription>
@@ -565,24 +586,24 @@ export default function CustomerDetailsPage() {
                       <div className="space-y-2">
                         <p className="text-sm font-medium">Total Earned</p>
                         <p className="text-2xl font-bold text-green-600">
-                          +{loyalty.total_points_earned.toLocaleString()}
+                          +{formatNumber(loyalty.total_points_earned)}
                         </p>
                       </div>
                       <div className="space-y-2">
                         <p className="text-sm font-medium">Total Redeemed</p>
                         <p className="text-2xl font-bold text-blue-600">
-                          -{loyalty.total_points_redeemed.toLocaleString()}
+                          -{formatNumber(loyalty.total_points_redeemed)}
                         </p>
                       </div>
                       <div className="space-y-2">
                         <p className="text-sm font-medium">Current Balance</p>
-                        <p className="text-2xl font-bold">{loyalty.points_balance.toLocaleString()}</p>
+                        <p className="text-2xl font-bold">{formatNumber(loyalty.points_balance)}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="border-border">
                   <CardHeader>
                     <CardTitle>Referral Activity</CardTitle>
                     <CardDescription>Customer referral performance</CardDescription>
@@ -599,7 +620,7 @@ export default function CustomerDetailsPage() {
                 </Card>
 
                 {loyalty.lifetime_value !== null && (
-                  <Card>
+                  <Card className="border-border">
                     <CardHeader>
                       <CardTitle>Loyalty Lifetime Value</CardTitle>
                       <CardDescription>Total value from loyalty program participation</CardDescription>
@@ -617,7 +638,7 @@ export default function CustomerDetailsPage() {
                 )}
               </>
             ) : (
-              <Card>
+              <Card className="border-border">
                 <CardContent className="pt-6">
                   <div className="text-center space-y-2">
                     <Award className="h-12 w-12 text-muted-foreground mx-auto" />
@@ -629,7 +650,7 @@ export default function CustomerDetailsPage() {
           </TabsContent>
 
           <TabsContent value="transactions" className="space-y-4">
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle>Loyalty Transactions</CardTitle>
                 <CardDescription>
@@ -650,7 +671,7 @@ export default function CustomerDetailsPage() {
                             </Badge>
                             <span className="text-sm font-medium">
                               {transaction.points_amount > 0 ? '+' : ''}
-                              {transaction.points_amount.toLocaleString()} points
+                              {formatNumber(transaction.points_amount)} points
                             </span>
                           </div>
                           {transaction.description && (
@@ -687,7 +708,7 @@ export default function CustomerDetailsPage() {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle>Customer Insights</CardTitle>
                 <CardDescription>Key metrics and performance indicators</CardDescription>
@@ -738,7 +759,7 @@ export default function CustomerDetailsPage() {
             </Card>
 
             {loyalty && (
-              <Card>
+              <Card className="border-border">
                 <CardHeader>
                   <CardTitle>Loyalty Metrics</CardTitle>
                   <CardDescription>Engagement and rewards performance</CardDescription>
@@ -768,7 +789,7 @@ export default function CustomerDetailsPage() {
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                         <p className="text-sm font-medium">Available Points</p>
                       </div>
-                      <p className="text-2xl font-bold">{loyalty.points_balance.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">{formatNumber(loyalty.points_balance)}</p>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
@@ -784,7 +805,7 @@ export default function CustomerDetailsPage() {
               </Card>
             )}
 
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle>Activity Summary</CardTitle>
                 <CardDescription>Recent customer activity overview</CardDescription>

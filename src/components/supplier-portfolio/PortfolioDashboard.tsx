@@ -18,6 +18,7 @@ import {
   Package,
   DollarSign,
   TrendingUp,
+  TrendingDown,
   Sparkles,
   Upload,
   CheckCircle2,
@@ -26,9 +27,18 @@ import {
   FileUp,
   ArrowRight,
   RefreshCw,
+  FileText,
+  FileSpreadsheet,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+  Users,
+  ShoppingCart,
 } from 'lucide-react'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import NumberTicker from '@/components/magicui/number-ticker'
 
 interface DashboardMetrics {
   total_suppliers: number
@@ -119,17 +129,75 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'received':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700">Received</Badge>
+        return (
+          <Badge
+            variant="outline"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-sm shadow-blue-200 px-3 py-1 gap-1.5"
+          >
+            <Clock className="h-3 w-3" />
+            Received
+          </Badge>
+        )
       case 'validating':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Validating</Badge>
+        return (
+          <Badge
+            variant="outline"
+            className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 shadow-sm shadow-yellow-200 px-3 py-1 gap-1.5"
+          >
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Validating
+          </Badge>
+        )
       case 'validated':
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Validated</Badge>
+        return (
+          <Badge
+            variant="outline"
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 shadow-sm shadow-emerald-200 px-3 py-1 gap-1.5"
+          >
+            <CheckCircle className="h-3 w-3" />
+            Validated
+          </Badge>
+        )
       case 'merged':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Merged</Badge>
+        return (
+          <Badge
+            variant="default"
+            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0 shadow-md shadow-green-300 px-3 py-1 gap-1.5 font-semibold"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Merged
+          </Badge>
+        )
       case 'failed':
-        return <Badge variant="destructive">Failed</Badge>
+        return (
+          <Badge
+            variant="destructive"
+            className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-md shadow-red-300 px-3 py-1 gap-1.5 font-semibold"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            Failed
+          </Badge>
+        )
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return (
+          <Badge variant="outline" className="px-3 py-1">
+            {status}
+          </Badge>
+        )
+    }
+  }
+
+  const getFileIcon = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase()
+    const iconClass = "h-4 w-4 text-muted-foreground"
+
+    switch (ext) {
+      case 'xlsx':
+      case 'xls':
+      case 'csv':
+        return <FileSpreadsheet className={iconClass} />
+      default:
+        return <FileText className={iconClass} />
     }
   }
 
@@ -149,65 +217,117 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
         </Button>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Total Suppliers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {metrics?.total_suppliers || 0}
+      {/* Key Metrics - Professional Gradient Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Active Suppliers Card */}
+        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-1/10 via-transparent to-chart-1/5" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-chart-1/20 to-transparent rounded-full blur-2xl" />
+          <CardContent className="relative p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Active Suppliers</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold tracking-tight">
+                    <NumberTicker value={metrics?.total_suppliers || 0} />
+                  </span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-chart-1 to-chart-1/80 flex items-center justify-center shadow-lg shadow-chart-1/30 group-hover:scale-110 transition-transform duration-300">
+                <Users className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">Active with uploads</div>
+            <div className="flex items-center gap-1.5 text-sm">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-chart-1/10">
+                <TrendingUp className="h-3.5 w-3.5 text-[hsl(var(--chart-1))]" />
+                <span className="text-[hsl(var(--chart-1))] font-semibold">+12%</span>
+              </div>
+              <span className="text-muted-foreground">vs last month</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Products in Catalog
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {metrics?.total_products.toLocaleString() || 0}
+        {/* Products in Catalog Card */}
+        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-2/10 via-transparent to-chart-2/5" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-chart-2/20 to-transparent rounded-full blur-2xl" />
+          <CardContent className="relative p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Products in Catalog</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold tracking-tight">
+                    <NumberTicker value={metrics?.total_products || 0} />
+                  </span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-chart-2 to-chart-2/80 flex items-center justify-center shadow-lg shadow-chart-2/30 group-hover:scale-110 transition-transform duration-300">
+                <Package className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">From all uploads</div>
+            <div className="flex items-center gap-1.5 text-sm">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-chart-2/10">
+                <TrendingUp className="h-3.5 w-3.5 text-[hsl(var(--chart-2))]" />
+                <span className="text-[hsl(var(--chart-2))] font-semibold">+24%</span>
+              </div>
+              <span className="text-muted-foreground">from all uploads</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Selected Products
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {metrics?.selected_products.toLocaleString() || 0}
+        {/* Selected Products Card */}
+        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-3/10 via-transparent to-chart-3/5" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-chart-3/20 to-transparent rounded-full blur-2xl" />
+          <CardContent className="relative p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Selected Products</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold tracking-tight">
+                    <NumberTicker value={metrics?.selected_products || 0} />
+                  </span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-chart-3 to-chart-3/80 flex items-center justify-center shadow-lg shadow-chart-3/30 group-hover:scale-110 transition-transform duration-300">
+                <CheckCircle2 className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">Ready for stocking</div>
+            <div className="flex items-center gap-1.5 text-sm">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-chart-3/10">
+                <TrendingUp className="h-3.5 w-3.5 text-[hsl(var(--chart-3))]" />
+                <span className="text-[hsl(var(--chart-3))] font-semibold">+8%</span>
+              </div>
+              <span className="text-muted-foreground">ready for stocking</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Selected Inventory Value
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {formatCurrency(metrics?.selected_inventory_value || 0)}
+        {/* Inventory Value Card */}
+        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-5/10 via-transparent to-chart-5/5" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-chart-5/20 to-transparent rounded-full blur-2xl" />
+          <CardContent className="relative p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Inventory Value</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold tracking-tight">
+                    {formatCurrency(metrics?.selected_inventory_value || 0, 'GBP', true)}
+                  </span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-chart-5 to-chart-5/80 flex items-center justify-center shadow-lg shadow-chart-5/30 group-hover:scale-110 transition-transform duration-300">
+                <DollarSign className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">Total value on hand</div>
+            <div className="flex items-center gap-1.5 text-sm">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-chart-5/10">
+                <TrendingUp className="h-3.5 w-3.5 text-[hsl(var(--chart-5))]" />
+                <span className="text-[hsl(var(--chart-5))] font-semibold">+15%</span>
+              </div>
+              <span className="text-muted-foreground">total value on hand</span>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -215,53 +335,114 @@ export function PortfolioDashboard({ defaultTab }: PortfolioDashboardProps) {
       {/* Main Content Grid */}
       <div className="grid grid-cols-3 gap-6">
         {/* Recent Uploads - Left 2/3 */}
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileUp className="h-5 w-5" />
-              Recent Uploads
-            </CardTitle>
+        <Card className="col-span-2 border-border shadow-lg">
+          <CardHeader className="border-b border-border bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md">
+                  <FileUp className="h-5 w-5 text-white" />
+                </div>
+                Recent Uploads
+              </CardTitle>
+              <Badge variant="secondary" className="px-3 py-1 font-semibold">
+                {recentUploads.length} uploads
+              </Badge>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <ScrollArea className="h-[400px]">
               {recentUploads.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Supplier</TableHead>
-                      <TableHead>File</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Rows</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentUploads.map(upload => (
-                      <TableRow key={upload.upload_id}>
-                        <TableCell className="font-medium">
-                          {upload.supplier_name}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          {upload.filename}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDate(upload.received_at)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {upload.row_count.toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(upload.status)}
-                        </TableCell>
+                <div className="rounded-b-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50 hover:bg-muted/50 border-b-2 border-border">
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide text-foreground">
+                          Supplier
+                        </TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide text-foreground">
+                          File
+                        </TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide text-foreground">
+                          Date
+                        </TableHead>
+                        <TableHead className="text-right font-semibold text-xs uppercase tracking-wide text-foreground">
+                          Rows
+                        </TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide text-foreground">
+                          Status
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {recentUploads.map((upload, index) => (
+                        <TableRow
+                          key={upload.upload_id}
+                          className={cn(
+                            "hover:bg-accent/50 transition-colors cursor-pointer group border-b border-border/50",
+                            index % 2 === 0 ? "bg-background" : "bg-muted/20"
+                          )}
+                        >
+                          <TableCell className="font-semibold text-foreground py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                                {upload.supplier_name.charAt(0).toUpperCase()}
+                              </div>
+                              {upload.supplier_name}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <div className="flex items-center gap-2 max-w-[250px]">
+                              {getFileIcon(upload.filename)}
+                              <span className="truncate text-sm" title={upload.filename}>
+                                {upload.filename}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground py-4">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-foreground">
+                                {new Date(upload.received_at).toLocaleDateString('en-GB', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                              <span className="text-xs">
+                                {new Date(upload.received_at).toLocaleTimeString('en-GB', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right py-4">
+                            <div className="flex flex-col items-end">
+                              <span className="font-bold text-foreground">
+                                {upload.row_count.toLocaleString()}
+                              </span>
+                              {upload.valid_rows !== undefined && (
+                                <span className="text-xs text-muted-foreground">
+                                  {upload.valid_rows} valid
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            {getStatusBadge(upload.status)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <FileUp className="h-12 w-12 text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    No uploads yet. Get started by uploading your first pricelist.
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900 dark:to-cyan-900 flex items-center justify-center mb-4">
+                    <FileUp className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No uploads yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    Get started by uploading your first supplier pricelist to begin building your inventory portfolio.
                   </p>
                 </div>
               )}

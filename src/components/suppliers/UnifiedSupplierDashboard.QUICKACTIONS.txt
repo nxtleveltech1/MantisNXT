@@ -1,0 +1,92 @@
+/**
+ * INTEGRATION CODE FOR UNIFIED SUPPLIER DASHBOARD
+ *
+ * This file contains the code snippets needed to integrate the Quick Actions sidebar.
+ * Follow the instructions in INTEGRATION_INSTRUCTIONS.md
+ */
+
+// ========================================
+// SECTION 1: IMPORT (Add after line 59)
+// ========================================
+import SupplierQuickActions from "./SupplierQuickActions"
+
+
+// ========================================
+// SECTION 2: REPLACE MAIN WRAPPER
+// Find this around line 780:
+//   <div className="space-y-6">
+// Replace with:
+// ========================================
+<div className="flex flex-col lg:flex-row gap-6">
+  {/* Main Content */}
+  <div className="flex-1 space-y-6">
+
+
+// ========================================
+// SECTION 3: ADD BEFORE FINAL CLOSING DIVS
+// Find this around line 1584 (before </TooltipProvider> and </SelfContainedLayout>):
+// Add this BEFORE the closing tags:
+// ========================================
+      </div>
+
+      {/* Quick Actions Sidebar */}
+      <aside className="lg:w-80 xl:w-96 shrink-0">
+        <div className="sticky top-4 space-y-4">
+          <SupplierQuickActions
+            onUploadPricelist={() => setShowPricelistUpload(true)}
+            onRefreshData={() => {
+              refresh()
+            }}
+            onExportReport={() => handleExport('csv')}
+            onViewAnalytics={() => setActiveTab('analytics')}
+          />
+        </div>
+      </aside>
+    </div>
+
+
+// ========================================
+// FINAL STRUCTURE SHOULD BE:
+// ========================================
+/*
+<TooltipProvider>
+  <div className="flex flex-col lg:flex-row gap-6">
+
+    {/* Main Content *\/}
+    <div className="flex-1 space-y-6">
+      {/* Header *\/}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        ...
+      </div>
+
+      {/* Metrics Cards *\/}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        ...
+      </div>
+
+      {/* Main Content Tabs *\/}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        ...
+      </Tabs>
+
+      {/* Modals *\/}
+      <Dialog>...</Dialog>
+      <Dialog>...</Dialog>
+      <Dialog>...</Dialog>
+    </div>
+
+    {/* Quick Actions Sidebar *\/}
+    <aside className="lg:w-80 xl:w-96 shrink-0">
+      <div className="sticky top-4 space-y-4">
+        <SupplierQuickActions
+          onUploadPricelist={() => setShowPricelistUpload(true)}
+          onRefreshData={() => refresh()}
+          onExportReport={() => handleExport('csv')}
+          onViewAnalytics={() => setActiveTab('analytics')}
+        />
+      </div>
+    </aside>
+
+  </div>
+</TooltipProvider>
+*/

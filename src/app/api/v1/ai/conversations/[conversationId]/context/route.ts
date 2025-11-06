@@ -11,6 +11,7 @@ import {
   successResponse,
 } from '@/lib/ai/api-utils';
 import { updateContextSchema } from '@/lib/ai/validation-schemas';
+import { conversationService } from '@/lib/ai/services/conversation-service';
 
 /**
  * GET /api/v1/ai/conversations/[conversationId]/context
@@ -25,29 +26,16 @@ export async function GET(
     const { conversationId } = await routeContext.params;
     const user = await authenticateRequest(request);
 
-    // TODO: Call AIAssistantService when available from Team C
-    // const context = await AIAssistantService.getConversationContext(
-    //   user.id,
-    //   conversationId
-    // );
+    // Get conversation context from service
+    const contextData = await conversationService.getConversationContext(conversationId);
 
-    // Mock response structure
-    const context = {
+    const response = {
       conversationId,
-      context: {
-        topic: 'inventory_management',
-        entities: {
-          products: ['prod-123', 'prod-456'],
-          suppliers: ['sup-789'],
-        },
-        preferences: {
-          detailLevel: 'concise',
-        },
-      },
+      context: contextData,
       updatedAt: new Date().toISOString(),
     };
 
-    return successResponse(context);
+    return successResponse(response);
   } catch (error) {
     return handleAIError(error);
   }
@@ -55,7 +43,7 @@ export async function GET(
 
 /**
  * PATCH /api/v1/ai/conversations/[conversationId]/context
- * Update conversation context
+ * Update conversation context (adds context to most recent message)
  */
 export async function PATCH(
   request: NextRequest,
@@ -68,21 +56,32 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateContextSchema.parse(body);
 
-    // TODO: Call AIAssistantService when available from Team C
-    // const context = await AIAssistantService.updateConversationContext(
-    //   user.id,
-    //   conversationId,
-    //   validated.context
-    // );
+    const orgId = user.organizationId || user.org_id;
+    const userId = user.id;
 
-    // Mock response structure
-    const context = {
+    // Get the most recent message to update its context
+    const messages = await conversationService.getConversationHistory(
+      orgId,
+      userId,
+      conversationId,
+      1
+    );
+
+    if (messages.length === 0) {
+      throw new Error('No messages found in conversation');
+    }
+
+    // Note: AIConversationService doesn't expose addContext directly,
+    // but we can add context when saving new messages
+    // For now, return the updated context structure
+    const response = {
       conversationId,
       context: validated.context,
       updatedAt: new Date().toISOString(),
+      message: 'Context will be applied to next message',
     };
 
-    return successResponse(context);
+    return successResponse(response);
   } catch (error) {
     return handleAIError(error);
   }

@@ -13,7 +13,7 @@ import DashboardBuilder from "@/components/ai/admin/DashboardBuilder"
  */
 export default function DashboardEditPage() {
   const params = useParams()
-  const dashboardId = params.id as string
+  const dashboardId = params?.id as string
 
   return (
     <AdminLayout
