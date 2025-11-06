@@ -200,17 +200,8 @@
 }
 
 @layer base {
-  @font-face {
-    font-family: 'Inter';
-    font-style: normal;
-    font-weight: 100 900;
-    font-display: swap;
-    src:
-      local('Inter'), local('Inter-Regular'), local('system-ui'),
-      local('-apple-system'), local('BlinkMacSystemFont'), local('Segoe UI'),
-      local('Roboto'), local('Helvetica Neue'), local('Arial'),
-      local('sans-serif');
-  }
+  /* Inter font is loaded via next/font/google in layout.tsx */
+  /* Font variables are set via CSS custom properties below */
 }
 
 @layer base {
@@ -247,9 +238,9 @@
     --sidebar-accent-foreground: oklch(0.3863 0.0518 262.4741);
     --sidebar-border: oklch(0.9301 0.0075 260.7315);
     --sidebar-ring: oklch(0.6315 0.2014 278.9491);
-    --font-sans: Alexandria, ui-sans-serif, sans-serif, system-ui;
-    --font-serif: ABeeZee, ui-sans-serif, sans-serif, system-ui;
-    --font-mono: ABeeZee, ui-sans-serif, sans-serif, system-ui;
+    --font-sans: var(--font-inter), 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-serif: var(--font-inter), 'Inter', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
     --radius: 0.5rem;
     --shadow-x: 0px;
     --shadow-y: 4px;
@@ -313,9 +304,9 @@
     --sidebar-accent-foreground: oklch(0.9301 0.0075 260.7315);
     --sidebar-border: oklch(0.4674 0.0440 258.3431);
     --sidebar-ring: oklch(0.7471 0.1322 279.3617);
-    --font-sans: Alexandria, ui-sans-serif, sans-serif, system-ui;
-    --font-serif: ABeeZee, ui-sans-serif, sans-serif, system-ui;
-    --font-mono: ABeeZee, ui-sans-serif, sans-serif, system-ui;
+    --font-sans: var(--font-inter), 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-serif: var(--font-inter), 'Inter', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
     --radius: 0.5rem;
     --shadow-x: 0px;
     --shadow-y: 4px;
@@ -425,9 +416,9 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Font Inter utility class */
+  /* Font Inter utility class - uses CSS variable from next/font/google */
   .font-inter {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-inter), 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
   /* Typography Scale - Responsive with clamp() */

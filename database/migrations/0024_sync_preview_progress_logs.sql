@@ -41,17 +41,11 @@
 
 BEGIN;
 
-RAISE NOTICE '';
-RAISE NOTICE '🚀 ============================================================';
-RAISE NOTICE '🚀 APPLYING MIGRATION 0024: SYNC PREVIEW, PROGRESS & LOGGING';
-RAISE NOTICE '🚀 ============================================================';
-RAISE NOTICE '';
 
 -- ============================================================================
 -- PART 1: ENUM TYPES FOR SYNC OPERATIONS
 -- ============================================================================
 
-RAISE NOTICE '📋 Part 1/7: Creating enum types...';
 
 -- Sync type (system integration source)
 DO $$ BEGIN
@@ -114,7 +108,6 @@ END $$;
 -- TTL: 1 hour (configurable via expires_at)
 -- ============================================================================
 
-RAISE NOTICE '📋 Part 2/7: Creating sync_preview_cache table...';
 
 CREATE TABLE IF NOT EXISTS sync_preview_cache (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -164,7 +157,6 @@ CREATE INDEX idx_sync_preview_cache_key ON sync_preview_cache(cache_key) WHERE c
 -- Updates: Every item processed triggers update, elapsed_seconds auto-calculated
 -- ============================================================================
 
-RAISE NOTICE '📋 Part 3/7: Creating sync_progress table...';
 
 CREATE TABLE IF NOT EXISTS sync_progress (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -228,7 +220,6 @@ CREATE INDEX idx_sync_progress_entity ON sync_progress(org_id, entity_type, star
 -- Partitioning: Monthly by created_at (efficiency for large-scale operations)
 -- ============================================================================
 
-RAISE NOTICE '📋 Part 4/7: Creating sync_activity_log table (partitioned)...';
 
 -- Create parent table (RANGE partition by created_at)
 CREATE TABLE IF NOT EXISTS sync_activity_log (
@@ -290,7 +281,6 @@ ALTER TABLE sync_activity_log ADD CONSTRAINT fk_sync_activity_user
 -- Purpose: Enforce organization isolation for multi-tenant safety
 -- ============================================================================
 
-RAISE NOTICE '📋 Part 5/7: Enabling RLS and creating security policies...';
 
 -- Enable RLS on all three tables
 ALTER TABLE sync_preview_cache ENABLE ROW LEVEL SECURITY;
@@ -450,8 +440,6 @@ CREATE POLICY sync_activity_log_delete ON sync_activity_log
 -- ============================================================================
 -- PART 6: TRIGGER FUNCTIONS FOR AUTOMATION
 -- ============================================================================
-
-RAISE NOTICE '📋 Part 6/7: Creating trigger functions...';
 
 -- ============================================================================
 -- Function 1: auto_cleanup_preview_cache
@@ -619,7 +607,6 @@ CREATE TRIGGER sync_progress_log_completion
 -- PART 7: PERMISSIONS & GRANTS
 -- ============================================================================
 
-RAISE NOTICE '📋 Part 7/7: Granting permissions to authenticated users...';
 
 -- Grant table permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON sync_preview_cache TO authenticated;
@@ -640,26 +627,6 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 -- FINAL SUMMARY & VALIDATION
 -- ============================================================================
 
-RAISE NOTICE '';
-RAISE NOTICE '✅ MIGRATION 0024 COMPLETED SUCCESSFULLY';
-RAISE NOTICE '';
-RAISE NOTICE 'Tables created:';
-RAISE NOTICE '  - sync_preview_cache (with 1-hour TTL)';
-RAISE NOTICE '  - sync_progress (with auto-elapsed calculation)';
-RAISE NOTICE '  - sync_activity_log (monthly partitioned)';
-RAISE NOTICE '';
-RAISE NOTICE 'Triggers installed:';
-RAISE NOTICE '  - auto_cleanup_preview_cache (manual execution)';
-RAISE NOTICE '  - update_sync_progress_elapsed (automatic)';
-RAISE NOTICE '  - validate_sync_progress_totals (automatic)';
-RAISE NOTICE '  - update_sync_progress_timestamp (automatic)';
-RAISE NOTICE '  - auto_log_sync_activity_on_progress_change (automatic)';
-RAISE NOTICE '';
-RAISE NOTICE 'RLS Policies: ENABLED on all tables';
-RAISE NOTICE 'Organization Isolation: ENFORCED via org_id (multi-tenant safe)';
-RAISE NOTICE '';
-RAISE NOTICE '🚀 Ready for production use!';
-RAISE NOTICE '';
 
 COMMIT;
 

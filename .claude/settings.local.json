@@ -33,7 +33,15 @@
       "Bash(dir \"K:\\00Project\\MantisNXT\\scripts\" /B)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require\" npx tsx:*)",
       "Bash(dir:*)",
-      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require\" psql:*)"
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require\" psql:*)",
+      "Bash(psql \"$DATABASE_URL\")",
+      "Bash(jobs)",
+      "Bash(curl -s \"postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require\" -X GET)",
+      "Bash(pkill:*)",
+      "Bash(npm run db:migrate:*)",
+      "Bash(npm ls:*)",
+      "Bash(node execute-migration.js:*)",
+      "Bash(node verify-migration.js:*)"
     ],
     "deny": [],
     "ask": []
