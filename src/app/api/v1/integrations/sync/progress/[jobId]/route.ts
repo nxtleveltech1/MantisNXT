@@ -34,16 +34,16 @@ import { authenticateRequest, handleError } from '@/lib/auth/middleware';
 import { syncProgressTracker } from '@/lib/services/SyncProgressTracker';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     jobId: string;
-  };
+  }>;
 }
 
 /**
  * SSE Endpoint: Stream real-time progress updates
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { jobId } = params;
+  const { jobId } = await params;
 
   // Validate jobId format (UUID)
   if (!jobId || !/^[0-9a-f-]{36}$/i.test(jobId)) {

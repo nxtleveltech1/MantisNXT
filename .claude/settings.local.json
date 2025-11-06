@@ -41,7 +41,9 @@
       "Bash(npm run db:migrate:*)",
       "Bash(npm ls:*)",
       "Bash(node execute-migration.js:*)",
-      "Bash(node verify-migration.js:*)"
+      "Bash(node verify-migration.js:*)",
+      "Bash(git push:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
