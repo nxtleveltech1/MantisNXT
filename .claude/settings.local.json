@@ -24,7 +24,16 @@
       "Bash(cat:*)",
       "Bash(find:*)",
       "Bash(git log:*)",
-      "mcp__plugin_supabase-toolkit_supabase__apply_migration"
+      "mcp__plugin_supabase-toolkit_supabase__apply_migration",
+      "mcp__plugin_supabase-toolkit_supabase__list_tables",
+      "mcp__plugin_supabase-toolkit_supabase__list_migrations",
+      "mcp__postgres__query",
+      "mcp__plugin_supabase-toolkit_supabase__execute_sql",
+      "mcp__plugin_supabase-toolkit_supabase__get_publishable_keys",
+      "Bash(dir \"K:\\00Project\\MantisNXT\\scripts\" /B)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require\" npx tsx:*)",
+      "Bash(dir:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require\" psql:*)"
     ],
     "deny": [],
     "ask": []

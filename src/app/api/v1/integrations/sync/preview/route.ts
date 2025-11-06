@@ -449,7 +449,14 @@ async function logRequest(
       [orgId, activityType, status, JSON.stringify(details || {})]
     );
   } catch (error: any) {
+    // Handle missing table gracefully - this is non-fatal
+    if (error.message?.includes('does not exist') || 
+        error.message?.includes('relation') ||
+        error.code === '42P01') {
+      console.warn('[Sync Preview] Activity log table does not exist, skipping log:', activityType);
+      return;
+    }
     console.error('[Sync Preview] Error logging request:', error);
-    // Non-fatal error
+    // Non-fatal error - don't throw
   }
 }
