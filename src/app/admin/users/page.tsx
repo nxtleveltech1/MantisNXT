@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Upload, Plus, Users, Activity, Shield, User } from 'lucide-react'
+import { Download, Upload, Plus, Users, Activity, Shield, User as UserIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -309,7 +309,7 @@ export default function UsersPage() {
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Administrators</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
+              <UserIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">

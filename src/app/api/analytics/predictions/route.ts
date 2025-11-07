@@ -16,7 +16,15 @@ export async function GET(request: NextRequest) {
 
     console.log(`🔮 Generating predictions for organization: ${organizationId}, type: ${type}`);
 
-    const predictions = [];
+    const predictions: Array<{
+      type: string
+      title: string
+      prediction: string
+      confidence: number
+      timeline: string
+      description: string
+      action_required: boolean
+    }> = [];
 
     // Stock level predictions based on historical data
     if (type === 'all' || type === 'inventory') {
@@ -141,11 +149,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Predictions API error:', error);
 
-    return NextResponse.json(await getOrSet(cacheKey, async () => ({
+    return NextResponse.json({
       success: false,
       error: 'Failed to generate predictions',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })));
+    }, { status: 500 });
   }
 }
 

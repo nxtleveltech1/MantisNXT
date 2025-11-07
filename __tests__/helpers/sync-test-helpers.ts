@@ -27,26 +27,26 @@ export const createMockDatabase = () => {
           name: params?.[1],
           ...params?.slice(3).reduce((acc, val, idx) => acc, {}),
         });
-        return { rows: [{ id: customerId }] };
+        return { rows: [{ id: customerId } as T] };
       }
 
       // Simulate SELECT operations
       if (sql.includes('SELECT * FROM customer WHERE email')) {
         const email = params?.[0];
         return {
-          rows: data.customer.filter((c) => c.email === email),
+          rows: data.customer.filter((c) => c.email === email) as T[],
         };
       }
 
       if (sql.includes('SELECT * FROM woo_customer_sync_queue WHERE id')) {
         const id = params?.[0];
         return {
-          rows: data.woo_customer_sync_queue.filter((q) => q.id === id),
+          rows: data.woo_customer_sync_queue.filter((q) => q.id === id) as T[],
         };
       }
 
       if (sql.includes('SELECT COUNT(*) FROM')) {
-        return { rows: [{ count: Math.floor(Math.random() * 1000) }] };
+        return { rows: [{ count: Math.floor(Math.random() * 1000) } as T] };
       }
 
       return { rows: [] };

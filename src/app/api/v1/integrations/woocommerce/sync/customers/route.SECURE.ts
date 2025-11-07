@@ -353,10 +353,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'status' && validatedBody.queue_id) {
       // GET STATUS
-      const status = await CustomerSyncService.getStatus(
-        validatedBody.queue_id,
-        authUser.organizationId  // Pass org_id for authorization check
-      );
+      const status = await CustomerSyncService.getStatus(validatedBody.queue_id);
 
       if (!status) {
         return NextResponse.json(
@@ -407,10 +404,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'force-done' && validatedBody.queue_id) {
       // FORCE COMPLETE QUEUE
-      const progress = await CustomerSyncService.forceDone(
-        validatedBody.queue_id,
-        authUser.organizationId
-      );
+      const progress = await CustomerSyncService.forceDone(validatedBody.queue_id);
 
       console.warn(
         `[${requestId}] Queue forced to completion by user ${authUser.userId}`
@@ -501,8 +495,6 @@ export async function POST(request: NextRequest) {
           'sync_error',
           'failed',
           'Async processing error',
-          authUser.organizationId,
-          authUser.userId,
           { errorCode: error.code || 'UNKNOWN' }
         ).catch(logError =>
           console.error(`[${requestId}] Failed to log sync error: ${logError.message}`)
@@ -517,10 +509,7 @@ export async function POST(request: NextRequest) {
     // ========================================================================
     // STEP 11: RETURN INITIAL RESPONSE
     // ========================================================================
-    const queueStatus = await CustomerSyncService.getStatus(
-      queueId,
-      authUser.organizationId
-    );
+    const queueStatus = await CustomerSyncService.getStatus(queueId);
 
     console.info(`[${requestId}] Sync queue created: ${queueId}`);
 

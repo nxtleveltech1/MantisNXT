@@ -16,7 +16,19 @@ export async function GET(request: NextRequest) {
 
     console.log(`💡 Generating recommendations for organization: ${organizationId}, category: ${category}`);
 
-    const recommendations = [];
+    interface Recommendation {
+      id: string
+      category: string
+      priority: 'high' | 'medium' | 'low'
+      title: string
+      description: string
+      impact: string
+      effort: string
+      action: string
+      created_at: string
+    }
+
+    const recommendations: Recommendation[] = [];
 
     // Inventory optimization recommendations
     if (category === 'all' || category === 'inventory') {
@@ -33,18 +45,21 @@ export async function GET(request: NextRequest) {
       `;
 
       const inventoryResult = await pool.query(inventoryQuery);
-      recommendations.push(...inventoryResult.rows.map(row => ({
-        id: `inv_${row.product_name?.replace(/\s+/g, '_')}`,
-        category: 'inventory',
-        priority: row.recommendation_type === 'urgent_reorder' ? 'high' :
-                 row.recommendation_type === 'schedule_reorder' ? 'medium' : 'low',
-        title: `Optimize ${row.product_name} Inventory`,
-        description: getInventoryDescription(row),
-        impact: 'medium',
-        effort: 'low',
-        action: getInventoryAction(row),
-        created_at: new Date().toISOString()
-      })));
+      recommendations.push(...inventoryResult.rows.map(row => {
+        const priority: 'high' | 'medium' | 'low' = row.recommendation_type === 'urgent_reorder' ? 'high' :
+                 row.recommendation_type === 'schedule_reorder' ? 'medium' : 'low';
+        return {
+          id: `inv_${row.product_name?.replace(/\s+/g, '_')}`,
+          category: 'inventory',
+          priority,
+          title: `Optimize ${row.product_name} Inventory`,
+          description: getInventoryDescription(row),
+          impact: 'medium',
+          effort: 'low',
+          action: getInventoryAction(row),
+          created_at: new Date().toISOString()
+        };
+      }));
     }
 
     // Supplier optimization recommendations
@@ -86,18 +101,21 @@ export async function GET(request: NextRequest) {
       `;
 
       const supplierResult = await pool.query(supplierQuery);
-      recommendations.push(...supplierResult.rows.map(row => ({
-        id: `sup_${row.supplier_name?.replace(/\s+/g, '_')}`,
-        category: 'suppliers',
-        priority: row.payment_terms_days > 60 ? 'high' :
-                 row.payment_terms_days > 45 ? 'medium' : 'low',
-        title: `Optimize ${row.supplier_name} Terms`,
-        description: `Payment terms are ${row.payment_terms_days} days. Consider negotiating better terms.`,
-        impact: 'high',
-        effort: 'medium',
-        action: `Negotiate payment terms from ${row.payment_terms_days} days to 30 days`,
-        created_at: new Date().toISOString()
-      })));
+      recommendations.push(...supplierResult.rows.map(row => {
+        const priority: 'high' | 'medium' | 'low' = row.payment_terms_days > 60 ? 'high' :
+                 row.payment_terms_days > 45 ? 'medium' : 'low';
+        return {
+          id: `sup_${row.supplier_name?.replace(/\s+/g, '_')}`,
+          category: 'suppliers',
+          priority,
+          title: `Optimize ${row.supplier_name} Terms`,
+          description: `Payment terms are ${row.payment_terms_days} days. Consider negotiating better terms.`,
+          impact: 'high',
+          effort: 'medium',
+          action: `Negotiate payment terms from ${row.payment_terms_days} days to 30 days`,
+          created_at: new Date().toISOString()
+        };
+      }));
     }
 
     // Financial optimization recommendations
@@ -162,9 +180,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Sort recommendations by priority
-    const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+    const priorityOrder: Record<'high' | 'medium' | 'low', number> = { 'high': 3, 'medium': 2, 'low': 1 };
     recommendations.sort((a, b) =>
-      (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0)
+      priorityOrder[b.priority] - priorityOrder[a.priority]
     );
 
     console.log(`✅ Generated ${recommendations.length} recommendations`);
@@ -183,11 +201,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Recommendations API error:', error);
 
-    return NextResponse.json(await getOrSet(cacheKey, async () => ({
+    return NextResponse.json({
       success: false,
       error: 'Failed to generate recommendations',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })));
+    }, { status: 500 });
   }
 }
 

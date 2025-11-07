@@ -22,20 +22,6 @@ const chatService = new AIChatService({
   tags: ['api', 'analysis', 'advisor'],
 })
 
-// Define explicit types to avoid circular references
-interface ResolvedSchedule {
-  enabled: boolean
-  frequency: 'adhoc' | 'daily' | 'weekly' | 'monthly' | 'quarterly'
-  nextRun: string
-  timezone: string
-}
-
-interface VisualizationSuggestion {
-  type: string
-  metric: string
-  reason: string
-}
-
 interface AnalysisHistoryRecord {
   id: string
   analysisType: AnalysisType
@@ -67,6 +53,10 @@ type DataSourceInput = z.infer<typeof DataSourceSchema>
 type RuntimeOptions = z.infer<typeof RuntimeOptionsSchema>
 
 type CacheOptions = z.infer<typeof CacheOptionsSchema>
+
+type ResolvedSchedule = ReturnType<typeof resolveSchedule>
+
+type VisualizationSuggestion = ReturnType<typeof generateVisualizationSuggestions>[number]
 
 type AlertConfiguration = z.infer<typeof AlertSchema>
 
@@ -179,11 +169,11 @@ const AnalysisQuerySchema = z.object({
   format: z.enum(['json', 'csv']).optional(),
 })
 
-const postHandler = ApiMiddleware.withValidation(
-  AnalysisRequestSchema,
-  { validateBody: true },
-  { requiredPermissions: ['read'], requiredRole: 'manager', rateLimitType: 'aiAnalyze' }
-)(async (request: NextRequest, context: RequestContext, payload: AnalysisRequest) => {
+const postHandler = ApiMiddleware.withValidation(AnalysisRequestSchema, {
+  requiredPermissions: ['read'],
+  requiredRole: 'manager',
+  rateLimitType: 'aiAnalyze',
+})(async (request: NextRequest, context: RequestContext, payload: AnalysisRequest) => {
   try {
     const baseOptions = buildAnalysisOptions(payload)
     const schedule = payload.schedule ? resolveSchedule(payload.schedule) : null
@@ -263,43 +253,24 @@ const postHandler = ApiMiddleware.withValidation(
     )
   } catch (error) {
     console.error('AI analysis POST error:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to complete analysis request',
-        meta: {
-          timestamp: new Date().toISOString(),
-          requestId: `err_${Date.now()}`,
-          version: '1.0.0',
-          processingTime: 0,
-        },
-      },
-      { status: 500 }
+    return ApiMiddleware.createErrorResponse(
+      error instanceof Error ? error.message : 'Failed to complete analysis request',
+      500
     )
   }
 })
 
-const getHandler = ApiMiddleware.withValidation(
-  AnalysisQuerySchema,
-  { validateQuery: true, validateBody: false },
-  { requiredPermissions: ['read'], requiredRole: 'manager', rateLimitType: 'aiAnalyze' }
-)(async (_request: NextRequest, _context: RequestContext, query) => {
+const getHandler = ApiMiddleware.withValidation(AnalysisQuerySchema, {
+  validateQuery: true,
+  validateBody: false,
+  requiredPermissions: ['read'],
+  requiredRole: 'manager',
+  rateLimitType: 'aiAnalyze',
+})(async (_request: NextRequest, _context: RequestContext, query) => {
   if (query.historyId) {
     const record = analysisHistory.get(query.historyId)
     if (!record) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Analysis history not found',
-          meta: {
-            timestamp: new Date().toISOString(),
-            requestId: `err_${Date.now()}`,
-            version: '1.0.0',
-            processingTime: 0,
-          },
-        },
-        { status: 404 }
-      )
+      return ApiMiddleware.createErrorResponse('Analysis history not found', 404)
     }
     return ApiMiddleware.createSuccessResponse(record, 'Analysis history item retrieved')
   }
@@ -496,14 +467,14 @@ function generateVisualizationSuggestions(dataSources: DataSourceInput[]): Visua
     if (source.metrics?.some((metric) => /trend|time|period/i.test(metric))) {
       suggestions.push({
         type: 'line',
-        metric: source.metrics?.join(', ') ?? '',
+        metric: source.metrics.join(', '),
         reason: 'Time-based metrics are suitable for line charts to highlight trends',
       })
     }
     if (source.metrics?.some((metric) => /distribution|category|mix/i.test(metric))) {
       suggestions.push({
         type: 'bar',
-        metric: source.metrics?.join(', ') ?? '',
+        metric: source.metrics.join(', '),
         reason: 'Categorical comparisons benefit from bar charts to compare segments',
       })
     }
@@ -612,13 +583,12 @@ function resolveSchedule(schedule: z.infer<typeof ScheduleSchema>): ResolvedSche
         break
     }
   }
-  const result: ResolvedSchedule = {
+  return {
     enabled: schedule.enabled,
     frequency: schedule.frequency,
     nextRun: nextRun.toISOString(),
     timezone: schedule.timezone ?? 'UTC',
   }
-  return result
 }
 
 function buildMeta(response: { requestId: string; durationMs: number; provider: string }): Record<string, any> {
@@ -806,3 +776,5 @@ function toAnalysisCsv(records: AnalysisHistoryRecord[]): string {
 function sha(value: string): string {
   return createHash('sha256').update(value).digest('hex')
 }
+
+

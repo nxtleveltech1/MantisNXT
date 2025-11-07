@@ -210,7 +210,7 @@ export const mockWooCommerceResponse = (type: string = 'customers') => {
   return responses[type] || responses.customers;
 };
 
-export const mockApiResponse = (success: boolean = true, data: any = null, error: string = null) => {
+export const mockApiResponse = (success: boolean = true, data: any = null, error: string | null = null) => {
   return {
     status: success ? 200 : 400,
     data: {

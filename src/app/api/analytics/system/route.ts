@@ -55,7 +55,14 @@ export async function GET(request: NextRequest) {
       validatedParams.endDate
     )
 
-    const analytics = {
+    const analytics: {
+      timeframe: string
+      period: { start: string; end: string; duration: string }
+      metrics: Record<string, any>
+      comparisons?: Record<string, any>
+      forecasts?: Record<string, any>
+      generatedAt: string
+    } = {
       timeframe: validatedParams.timeframe,
       period: {
         start: timeBounds.start,
@@ -73,14 +80,14 @@ export async function GET(request: NextRequest) {
       switch (metric) {
         case 'inventory':
           analytics.metrics.inventory = await getInventoryAnalytics(timeBounds, validatedParams.groupBy)
-          if (validatedParams.includeComparisons) {
+          if (validatedParams.includeComparisons && analytics.comparisons) {
             analytics.comparisons.inventory = await getInventoryComparisons(timeBounds)
           }
           break
 
         case 'suppliers':
           analytics.metrics.suppliers = await getSupplierAnalytics(timeBounds, validatedParams.groupBy)
-          if (validatedParams.includeComparisons) {
+          if (validatedParams.includeComparisons && analytics.comparisons) {
             analytics.comparisons.suppliers = await getSupplierComparisons(timeBounds)
           }
           break
@@ -194,7 +201,7 @@ export async function POST(request: NextRequest) {
 /**
  * Get inventory analytics
  */
-async function getInventoryAnalytics(timeBounds: any, groupBy?: string) {
+async function getInventoryAnalytics(timeBounds: any, groupBy?: string): Promise<Record<string, any>> {
   const baseQuery = `
     SELECT
       COUNT(*) as total_items,
@@ -215,7 +222,7 @@ async function getInventoryAnalytics(timeBounds: any, groupBy?: string) {
 
   const result = await query(baseQuery, [timeBounds.start, timeBounds.end])
 
-  const analytics = {
+  const analytics: Record<string, any> = {
     overview: result.rows[0] ? {
       totalItems: parseInt(result.rows[0].total_items),
       activeItems: parseInt(result.rows[0].active_items),
@@ -291,7 +298,7 @@ async function getInventoryAnalytics(timeBounds: any, groupBy?: string) {
 /**
  * Get supplier analytics
  */
-async function getSupplierAnalytics(timeBounds: any, groupBy?: string) {
+async function getSupplierAnalytics(timeBounds: any, groupBy?: string): Promise<Record<string, any>> {
   const baseQuery = `
     SELECT
       COUNT(*) as total_suppliers,
@@ -308,7 +315,7 @@ async function getSupplierAnalytics(timeBounds: any, groupBy?: string) {
 
   const result = await query(baseQuery, [timeBounds.start, timeBounds.end])
 
-  const analytics = {
+  const analytics: Record<string, any> = {
     overview: result.rows[0] ? {
       totalSuppliers: parseInt(result.rows[0].total_suppliers),
       activeSuppliers: parseInt(result.rows[0].active_suppliers),
@@ -383,7 +390,7 @@ async function getSupplierAnalytics(timeBounds: any, groupBy?: string) {
 /**
  * Get stock movement analytics
  */
-async function getMovementAnalytics(timeBounds: any, groupBy?: string) {
+async function getMovementAnalytics(timeBounds: any, groupBy?: string): Promise<Record<string, any>> {
   const baseQuery = `
     SELECT
       COUNT(*) as total_movements,
@@ -402,7 +409,7 @@ async function getMovementAnalytics(timeBounds: any, groupBy?: string) {
 
   const result = await query(baseQuery, [timeBounds.start, timeBounds.end])
 
-  const analytics = {
+  const analytics: Record<string, any> = {
     overview: result.rows[0] ? {
       totalMovements: parseInt(result.rows[0].total_movements),
       inboundMovements: parseInt(result.rows[0].inbound_movements),

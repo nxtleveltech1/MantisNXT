@@ -104,22 +104,31 @@
 @utility btn-primary {
   /* Button Enhancements */
   @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200;
-  @apply shadow-xs hover:shadow-md active:scale-[0.98];
+  @apply shadow-md hover:shadow-lg active:scale-[0.98];
+  @apply rounded-md px-4 py-2 font-medium;
 }
 
 @utility btn-secondary {
   @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all duration-200;
-  @apply shadow-xs hover:shadow-md active:scale-[0.98];
+  @apply shadow-sm hover:shadow-md active:scale-[0.98];
+  @apply rounded-md px-4 py-2 font-medium;
 }
 
 @utility card-hover {
   /* Card Enhancements */
-  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
+  @apply border border-border/50;
 }
 
 @utility card-interactive {
   @apply cursor-pointer transition-all duration-200;
-  @apply hover:shadow-md hover:border-primary/50 active:scale-[0.99];
+  @apply hover:shadow-md hover:border-primary/30 active:scale-[0.99];
+  @apply border border-border;
+}
+
+@utility card-modern {
+  @apply rounded-lg border border-border bg-card shadow-sm;
+  @apply transition-all duration-200;
 }
 
 @utility skeleton {
@@ -414,6 +423,30 @@
     letter-spacing: var(--tracking-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Modern Input Styling */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    @apply rounded-md border border-input bg-background px-3 py-2;
+    @apply text-sm placeholder:text-muted-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply transition-colors duration-200;
+  }
+
+  /* Modern Card Styling */
+  .card-clean {
+    @apply rounded-xl border border-border bg-card shadow-sm;
+    @apply transition-shadow duration-200;
+  }
+
+  .card-clean:hover {
+    @apply shadow-md;
   }
 
   /* Font Inter utility class - uses CSS variable from next/font/google */

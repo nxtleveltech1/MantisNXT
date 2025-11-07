@@ -329,42 +329,49 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
 
   // Load initial data and set up polling
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
+    let cancelled = false
+    let lastErrorKey = ''
+    async function loadData() {
+      setLoading(true)
       try {
-        // First try to load from API
-        const response = await fetch(
-          `/api/v1/integrations/sync/activity?orgId=${orgId}`,
-          { method: 'GET' }
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            saveActivityLog(orgId, result.data);
-            setEntries(result.data);
+        const res = await fetch(`/api/v1/integrations/sync/activity?orgId=${orgId}`)
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({} as any))
+          const key = `${res.status}:${body?.error || ''}`
+          // stop repeated hammering when circuit is open
+          if (key === lastErrorKey) {
+            setLoading(false)
+            return
           }
-        } else {
-          // Fall back to localStorage
-          const stored = loadActivityLog(orgId);
-          setEntries(stored);
+          lastErrorKey = key
+          throw new Error(body?.error || `HTTP ${res.status}`)
         }
-      } catch (error) {
-        console.error('Failed to load activity log:', error);
-        // Fall back to localStorage
-        const stored = loadActivityLog(orgId);
-        setEntries(stored);
+        const json = await res.json()
+        const entries = (json.data || []).map((row: any) => {
+          const a = String(row.action || '').toLowerCase()
+          const action = a.includes('preview') ? 'preview' : a.includes('orchestrate') ? 'orchestrate' : a.includes('cancel') ? 'cancel' : 'sync'
+          return {
+            id: String(row.id ?? crypto.randomUUID()),
+            timestamp: row.started_at || row.created_at || new Date().toISOString(),
+            action,
+            entityType: row.entity_type || 'unknown',
+            syncType: row.sync_type || 'unknown',
+            status: (row.status || 'completed'),
+            recordCount: row.record_count || 0,
+            duration: row.duration_ms || 0,
+            errorMessage: row.error_message || undefined,
+          }
+        })
+        if (!cancelled) setEntries(entries)
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || 'Failed to load activity')
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false)
       }
-    };
-
-    loadData();
-
-    // Set up polling
-    const interval = setInterval(loadData, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [orgId]);
+    }
+    loadData()
+    return () => { cancelled = true }
+  }, [orgId])
 
   // Filter entries based on criteria
   const filteredEntries = useMemo(() => {

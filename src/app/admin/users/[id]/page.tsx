@@ -5,9 +5,12 @@ import { useParams, useRouter } from 'next/navigation'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { User } from '@/types/auth'
 import { authProvider } from '@/lib/auth/mock-provider'
-import { useForm } from 'react-hook-form'
+import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { updateUserFormSchema, UpdateUserFormData } from '@/lib/auth/validation'
+import { updateUserFormSchema } from '@/lib/auth/validation'
+import type { z } from 'zod'
+
+type UpdateUserFormData = z.infer<typeof updateUserFormSchema>
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -57,13 +60,6 @@ export default function UserProfilePage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
 
-  const form = useForm<UpdateUserFormData>({
-    resolver: zodResolver(updateUserFormSchema),
-    defaultValues: {
-      permissions: [],
-    },
-  })
-
   const {
     register,
     handleSubmit,
@@ -71,7 +67,9 @@ export default function UserProfilePage() {
     setValue,
     watch,
     formState: { errors, isDirty },
-  } = form
+  } = useForm({
+    resolver: zodResolver(updateUserFormSchema),
+  })
 
   useEffect(() => {
     loadUser()
@@ -121,10 +119,12 @@ export default function UserProfilePage() {
       setError(null)
       setSuccess(null)
 
+      // Extract permissions from data and pass the rest
+      const { permissions, ...updateData } = data
       await authProvider.updateUser(userId, {
-        ...data,
+        ...updateData,
         role: data.role as any,
-      })
+      } as Partial<User>)
       setSuccess('User updated successfully')
       setIsEditing(false)
       await loadUser()

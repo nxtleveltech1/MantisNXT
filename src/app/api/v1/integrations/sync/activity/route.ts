@@ -34,103 +34,34 @@ interface ActivityLogEntry {
 /**
  * GET - Fetch activity log entries
  */
-export async function GET(request: NextRequest) {
+export async function GET(req: Request) {
   try {
-    const url = new URL(request.url);
-    const orgId = url.searchParams.get('orgId') || 'org-default';
+    const { searchParams } = new URL(req.url)
+    const orgId = searchParams.get('orgId')
+    if (!orgId) {
+      return new Response(JSON.stringify({ error: 'orgId is required' }), { status: 400 })
+    }
 
-    // Query activity log from database
-    // Handle both UUID and VARCHAR org_id formats, and both schema versions
-    // Use COALESCE and NULL handling for columns that might not exist
+    // Use action::text to avoid enum coercion when rows contain unexpected/null values
     const sql = `
       SELECT
         id,
         org_id,
-        COALESCE(action, 'sync') as action,
-        COALESCE(status, 'completed') as status,
-        entity_type,
-        sync_id,
-        COALESCE(record_count, 0) as record_count,
-        duration_seconds,
-        error_message,
-        created_at as timestamp,
-        COALESCE(details, '{}'::jsonb) as details
-      FROM sync_activity_log
-      WHERE org_id::text = $1
-      ORDER BY created_at DESC
-      LIMIT 1000
-    `;
+        (action)::text as action,
+        status,
+        started_at,
+        finished_at,
+        COALESCE(error_message, '') as error_message
+      FROM integration_sync_activity
+      WHERE org_id = $1
+      ORDER BY started_at DESC
+      LIMIT 100
+    `
 
-    let result;
-    try {
-      result = await query<any>(sql, [orgId]);
-    } catch (dbError: any) {
-      // If table doesn't exist or has schema issues, return empty array
-      // This allows the frontend to fall back to localStorage
-      if (dbError.message?.includes('does not exist') || 
-          dbError.message?.includes('column') ||
-          dbError.message?.includes('relation') ||
-          dbError.code === '42P01' ||
-          dbError.code === '42703') {
-        console.warn('[Sync Activity] Table or column not found, returning empty array:', dbError.message);
-        return NextResponse.json({
-          success: true,
-          data: [],
-        });
-      }
-      throw dbError;
-    }
-
-    // Transform database rows to ActivityLogEntry format
-    const entries: ActivityLogEntry[] = result.rows.map((row: any) => {
-      const details = row.details || {};
-      
-      // Extract entity type and sync type from columns or details
-      const entityType = row.entity_type || details.entityType || details.entity_type || 'unknown';
-      const syncType = details.syncType || details.sync_type || 
-                      (row.sync_id?.includes('woocommerce') ? 'woocommerce' : 
-                       row.sync_id?.includes('odoo') ? 'odoo' : 'unknown');
-      
-      // Map action to expected format
-      let action: ActivityLogEntry['action'] = 'sync';
-      if (row.action) {
-        const actionStr = String(row.action).toLowerCase();
-        if (actionStr.includes('preview')) action = 'preview';
-        else if (actionStr.includes('orchestrate')) action = 'orchestrate';
-        else if (actionStr.includes('cancel')) action = 'cancel';
-        else action = 'sync';
-      }
-
-      return {
-        id: String(row.id),
-        timestamp: row.timestamp,
-        action,
-        entityType: String(entityType),
-        syncType: syncType as ActivityLogEntry['syncType'],
-        status: (row.status || 'completed') as ActivityLogEntry['status'],
-        recordCount: row.record_count || details.recordCount || details.record_count || 0,
-        createdCount: details.createdCount || details.created_count,
-        updatedCount: details.updatedCount || details.updated_count,
-        deletedCount: details.deletedCount || details.deleted_count,
-        failedCount: details.failedCount || details.failed_count,
-        duration: row.duration_seconds ? Math.round(row.duration_seconds * 1000) : (details.duration || 0),
-        errorMessage: row.error_message || details.errorMessage || details.error_message,
-      };
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: entries,
-    });
-  } catch (error: any) {
-    console.error('[Sync Activity] Error fetching activity log:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to fetch activity log',
-      },
-      { status: 500 }
-    );
+    const rows = await query(sql, [orgId])
+    return new Response(JSON.stringify({ data: rows }), { status: 200 })
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err?.message || 'Internal error' }), { status: 500 })
   }
 }
 

@@ -129,7 +129,35 @@ const AlertActionSchema = z.object({
 });
 
 // Generate real alerts from inventory data - FIXED VERSION
-async function generateRealTimeAlerts() {
+async function generateRealTimeAlerts(): Promise<Array<{
+  id: string
+  type: string
+  severity: string
+  title: string
+  message: string
+  itemId: string
+  itemName: string
+  itemSku: string
+  currentValue: number
+  threshold: number
+  supplierName: string | null
+  status: string
+  isRead: boolean
+  isActive: boolean
+  priority: number
+  createdAt: Date
+  updatedAt: Date
+  warehouseId: string | null
+  warehouseName: string | null
+  assignedTo: string | null
+  assignedToName: string | null
+  acknowledgedBy: string | null
+  acknowledgedAt: Date | null
+  resolvedBy: string | null
+  resolvedAt: Date | null
+  snoozedUntil: Date | null
+  escalationLevel: number
+}>> {
   try {
     console.log("🚨 Generating real-time alerts from inventory data");
 
@@ -170,7 +198,35 @@ async function generateRealTimeAlerts() {
       pool.query(outOfStockQuery),
     ]);
 
-    const alerts = [];
+    const alerts: Array<{
+      id: string
+      type: string
+      severity: string
+      title: string
+      message: string
+      itemId: string
+      itemName: string
+      itemSku: string
+      currentValue: number
+      threshold: number
+      supplierName: string | null
+      status: string
+      isRead: boolean
+      isActive: boolean
+      priority: number
+      createdAt: Date
+      updatedAt: Date
+      warehouseId: string | null
+      warehouseName: string | null
+      assignedTo: string | null
+      assignedToName: string | null
+      acknowledgedBy: string | null
+      acknowledgedAt: Date | null
+      resolvedBy: string | null
+      resolvedAt: Date | null
+      snoozedUntil: Date | null
+      escalationLevel: number
+    }> = [];
 
     // Create low stock alerts
     lowStockResult.rows.forEach((item) => {
@@ -279,17 +335,17 @@ export async function GET(request: NextRequest) {
     let filteredAlerts = realAlerts.filter((alert) => {
       // Type filter
       if (validatedParams.type && validatedParams.type.length > 0) {
-        if (!validatedParams.type.includes(alert.type)) return false;
+        if (!validatedParams.type.includes(alert.type as any)) return false;
       }
 
       // Severity filter
       if (validatedParams.severity && validatedParams.severity.length > 0) {
-        if (!validatedParams.severity.includes(alert.severity)) return false;
+        if (!validatedParams.severity.includes(alert.severity as any)) return false;
       }
 
       // Status filter
       if (validatedParams.status && validatedParams.status.length > 0) {
-        if (!validatedParams.status.includes(alert.status)) return false;
+        if (!validatedParams.status.includes(alert.status as any)) return false;
       }
 
       // Item filter
@@ -338,7 +394,8 @@ export async function GET(request: NextRequest) {
 
     // Apply sorting
     filteredAlerts.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number | Date;
+      let bValue: string | number | Date;
 
       switch (validatedParams.sortBy) {
         case "createdAt":
@@ -346,23 +403,23 @@ export async function GET(request: NextRequest) {
           bValue = b.createdAt;
           break;
         case "severity":
-          const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
-          aValue = severityOrder[a.severity as keyof typeof severityOrder];
-          bValue = severityOrder[b.severity as keyof typeof severityOrder];
+          const severityOrder: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+          aValue = severityOrder[a.severity] || 0;
+          bValue = severityOrder[b.severity] || 0;
           break;
         case "type":
           aValue = a.type;
           bValue = b.type;
           break;
         case "status":
-          const statusOrder = {
+          const statusOrder: Record<string, number> = {
             active: 1,
             acknowledged: 2,
             snoozed: 3,
             resolved: 4,
           };
-          aValue = statusOrder[a.status as keyof typeof statusOrder];
-          bValue = statusOrder[b.status as keyof typeof statusOrder];
+          aValue = statusOrder[a.status] || 0;
+          bValue = statusOrder[b.status] || 0;
           break;
         case "priority":
           aValue = a.priority;

@@ -36,25 +36,25 @@ export async function POST(request: NextRequest) {
     });
 
     // Apply filters if provided
-    let filteredSuppliers = result.suppliers;
+    let filteredSuppliers = result.suppliers || [];
 
     if (body.filters?.existingSuppliers === false) {
       // Filter out existing suppliers (placeholder logic)
-      filteredSuppliers = result.suppliers.filter(s => !s.id.startsWith('existing_'));
+      filteredSuppliers = filteredSuppliers.filter((s: { id: string }) => !s.id.startsWith('existing_'));
     }
 
     if (body.filters?.verified) {
-      filteredSuppliers = filteredSuppliers.filter(s => s.riskScore < 0.5);
+      filteredSuppliers = filteredSuppliers.filter((s: { riskScore: number }) => s.riskScore < 0.5);
     }
 
     if (body.filters?.riskLevel) {
-      const riskThresholds = {
+      const riskThresholds: Record<string, number> = {
         'low': 0.3,
         'medium': 0.6,
         'high': 1.0
       };
-      const maxRisk = riskThresholds[body.filters.riskLevel];
-      filteredSuppliers = filteredSuppliers.filter(s => s.riskScore <= maxRisk);
+      const maxRisk = riskThresholds[body.filters.riskLevel as string];
+      filteredSuppliers = filteredSuppliers.filter((s: { riskScore: number }) => s.riskScore <= maxRisk);
     }
 
     console.log(`✅ Found ${filteredSuppliers.length} matching suppliers`);
@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
         searchMetadata: {
           queryProcessed: body.query,
           totalResults: filteredSuppliers.length,
-          searchTime: result.metadata.processingTime,
-          confidence: result.metadata.searchConfidence
+          searchTime: result.metadata?.processingTime || 0,
+          confidence: result.metadata?.searchConfidence || result.metadata?.confidence || 0
         },
         filters: body.filters || {},
         timestamp: new Date().toISOString()

@@ -772,4 +772,57 @@ export class PredictiveAnalyticsService {
   private calculateProjectedRisk(forecast: any[]): number {
     return 0.25; // Simplified
   }
+
+  /**
+   * Monitor supplier risk in real-time
+   */
+  async monitorSupplierRisk(supplierId: string): Promise<{
+    currentRisk: number
+    riskTrend: 'increasing' | 'decreasing' | 'stable'
+    alerts: Array<{
+      severity: 'low' | 'medium' | 'high' | 'critical'
+      message: string
+      timestamp: string
+    }>
+    riskFactors: Array<{
+      factor: string
+      impact: number
+      trend: string
+    }>
+  }> {
+    try {
+      // Placeholder implementation - would integrate with actual risk monitoring
+      const currentRisk = Math.random() * 0.4 + 0.3 // Random between 0.3 and 0.7
+
+      const alerts = []
+      if (currentRisk > 0.6) {
+        alerts.push({
+          severity: 'high' as const,
+          message: 'Elevated risk level detected',
+          timestamp: new Date().toISOString()
+        })
+      }
+
+      return {
+        currentRisk,
+        riskTrend: currentRisk > 0.5 ? 'increasing' : 'stable',
+        alerts,
+        riskFactors: [
+          {
+            factor: 'Financial stability',
+            impact: 0.3,
+            trend: 'stable'
+          },
+          {
+            factor: 'Delivery performance',
+            impact: 0.2,
+            trend: 'improving'
+          }
+        ]
+      }
+    } catch (error) {
+      console.error('Risk monitoring failed:', error)
+      throw new Error('Failed to monitor supplier risk')
+    }
+  }
 }

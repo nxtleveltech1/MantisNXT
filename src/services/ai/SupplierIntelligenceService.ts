@@ -7,12 +7,20 @@ import { SupplierFormData } from '@/types/supplier'
 export interface WebDiscoveryResult {
   success: boolean
   data: any[]
+  suppliers?: Array<{
+    id: string
+    name: string
+    riskScore: number
+    [key: string]: any
+  }>
   error?: string
   metadata?: {
     searchType: 'query' | 'website'
     totalResults: number
     confidence: number
     sources: string[]
+    processingTime?: number
+    searchConfidence?: number
   }
 }
 
@@ -57,7 +65,13 @@ export class SupplierIntelligenceService {
   /**
    * Perform web search to discover suppliers
    */
-  async discoverSuppliers(query: string, options?: {
+  async discoverSuppliers(params: {
+    query: string
+    category?: string[]
+    location?: string
+    certifications?: string[]
+    capacity?: { min: number; max: number }
+    priceRange?: { min: number; max: number }
     maxResults?: number
     filters?: {
       industry?: string
@@ -66,10 +80,10 @@ export class SupplierIntelligenceService {
     }
   }): Promise<WebDiscoveryResult> {
     try {
-      const { maxResults = 10, filters = {} } = options || {}
-      
+      const { query, maxResults = 10, filters = {} } = params
+
       console.log(`🔍 SupplierIntelligenceService: Starting discovery for "${query}"`)
-      
+
       // Step 1: Search the web for supplier information
       const searchResults = await this.webSearchService.searchSuppliers(query, {
         maxResults,
@@ -106,17 +120,28 @@ export class SupplierIntelligenceService {
       // Step 3: Calculate overall confidence and metadata
       const confidence = this.calculateOverallConfidence(extractedData)
       const sources = searchResults.map(r => r.source || 'Unknown')
-      
+
       console.log(`🎯 Overall confidence: ${confidence}%, Sources: ${sources.length}`)
-      
+
+      // Transform extracted data to supplier format
+      const suppliers = extractedData.map((data, index) => ({
+        id: `discovered_${Date.now()}_${index}`,
+        name: data.companyName || 'Unknown Supplier',
+        riskScore: (100 - this.calculateConfidence(data)) / 100, // Convert confidence to risk score
+        ...data
+      }))
+
       return {
         success: extractedData.length > 0,
         data: extractedData,
+        suppliers,
         metadata: {
           searchType: 'query',
           totalResults: extractedData.length,
           confidence,
-          sources: [...new Set(sources)]
+          sources: [...new Set(sources)],
+          processingTime: 0, // Would be calculated from actual timing
+          searchConfidence: confidence
         }
       }
 
@@ -588,6 +613,61 @@ export class SupplierIntelligenceService {
       issues,
       suggestions
     }
+  }
+
+  /**
+   * Analyze supplier performance and metrics
+   */
+  async analyzeSupplier(supplierId: string): Promise<{
+    performanceScore: number
+    recommendations: string[]
+    metrics: Record<string, number>
+  }> {
+    // Placeholder implementation - would integrate with actual performance data
+    return {
+      performanceScore: Math.random() * 0.5 + 0.5, // Random score between 0.5 and 1.0
+      recommendations: [
+        'Strong delivery performance',
+        'Good quality metrics',
+        'Responsive communication'
+      ],
+      metrics: {
+        onTimeDelivery: 0.92,
+        qualityScore: 0.88,
+        responsiveness: 0.85
+      }
+    }
+  }
+
+  /**
+   * Find similar suppliers based on characteristics
+   */
+  async findSimilarSuppliers(supplierId: string, options?: {
+    maxResults?: number
+    minSimilarity?: number
+  }): Promise<Array<{
+    id: string
+    name: string
+    similarity: number
+    matchingAttributes: string[]
+  }>> {
+    // Placeholder implementation - would use actual similarity algorithms
+    const { maxResults = 5, minSimilarity = 0.7 } = options || {}
+
+    return [
+      {
+        id: 'similar_1',
+        name: 'Similar Supplier 1',
+        similarity: 0.85,
+        matchingAttributes: ['industry', 'location', 'certifications']
+      },
+      {
+        id: 'similar_2',
+        name: 'Similar Supplier 2',
+        similarity: 0.78,
+        matchingAttributes: ['industry', 'services']
+      }
+    ].slice(0, maxResults)
   }
 }
 

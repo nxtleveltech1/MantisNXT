@@ -17,6 +17,8 @@ import {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
+  SidebarMenuAction,
+  SidebarMenuBadge,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,6 +61,7 @@ import {
   BookOpen,
   UserCheck
 } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface ViewportAdminLayoutProps {
   children: React.ReactNode
@@ -175,118 +178,143 @@ const sidebarNavigation = [
 ]
 
 const AdminSidebar: React.FC = () => {
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/'
+
+  const allItems = sidebarNavigation.flatMap(g => g.items)
+  const [query, setQuery] = React.useState('')
+  const filtered = React.useMemo(() => {
+    if (!query) return sidebarNavigation
+    const q = query.toLowerCase()
+    return sidebarNavigation
+      .map(group => ({
+        ...group,
+        items: group.items.filter(it => it.title.toLowerCase().includes(q))
+      }))
+      .filter(group => group.items.length)
+  }, [query])
+
+  const [pinned, setPinned] = React.useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('ui.pinned') || '[]') } catch { return [] }
+  })
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') localStorage.setItem('ui.pinned', JSON.stringify(pinned))
+  }, [pinned])
+
+  const togglePin = React.useCallback((title: string) => {
+    setPinned(prev => prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title])
+  }, [])
+
+  const groups = query ? filtered : sidebarNavigation
+
   return (
-    <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="h-4 w-4" />
+    <Sidebar collapsible="icon" className="border-r">
+      <SidebarHeader className="border-b px-3 py-3">
+        <div className="flex items-center gap-2">
+          <SidebarTrigger className="size-7" />
+          <div className="h-8 w-8 rounded-md bg-primary text-primary-foreground grid place-items-center">
+            <LayoutDashboard className="h-4 w-4" />
           </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">MantisNXT</span>
-            <span className="truncate text-xs text-muted-foreground">
-              Supplier Management
-            </span>
+          <div className="min-w-0 group-data-[collapsible=icon]:hidden">
+            <div className="text-sm font-semibold leading-tight truncate">MantisNXT</div>
+            <div className="text-xs text-muted-foreground leading-tight">Procurement Platform</div>
           </div>
         </div>
       </SidebarHeader>
+      <SidebarRail />
 
-      <SidebarContent>
-        {sidebarNavigation.map((group) => (
-          <SidebarGroup key={group.title}>
-            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+      <SidebarContent className="gap-2">
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <div className="px-2 group-data-[collapsible=icon]:hidden">
+              <Input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search navigation…" className="h-8" />
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {pinned.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Pinned</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={item.isActive}
-                      tooltip={item.title}
-                    >
-                      <a href={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                        {item.badge && (
-                          <Badge
-                            variant="secondary"
-                            className="ml-auto h-5 w-auto min-w-5 text-xs"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {allItems.filter(i => pinned.includes(i.title)).map(item => {
+                  const Icon = item.icon
+                  const isActive = pathname === item.url
+                  return (
+                    <SidebarMenuItem key={`pinned-${item.title}`}>
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                        <a href={item.url}>
+                          <Icon />
+                          <span>{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                      <SidebarMenuAction aria-label="Unpin" title="Unpin" onClick={() => togglePin(item.title)} />
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {groups.map((section) => (
+          <SidebarGroup key={section.title}>
+            <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => {
+                  const Icon = item.icon
+                  const isActive = pathname === item.url
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                        <a href={item.url}>
+                          <Icon />
+                          <span>{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                      {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                    <User className="h-4 w-4" />
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">John Doe</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      Administrator
-                    </span>
-                  </div>
-                  <ChevronDown className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                <SidebarMenuButton className="h-12">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-muted grid place-items-center">
                       <User className="h-4 w-4" />
                     </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">John Doe</span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        john.doe@company.com
-                      </span>
+                    <div className="min-w-0 group-data-[collapsible=icon]:hidden">
+                      <div className="text-sm font-medium leading-tight truncate">You</div>
+                      <div className="text-xs text-muted-foreground leading-tight truncate">user@example.com</div>
                     </div>
                   </div>
-                </DropdownMenuLabel>
+                  <ChevronDown className="h-4 w-4 group-data-[collapsible=icon]:hidden" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="end" className="w-56">
+                <DropdownMenuLabel>Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  Help & Support
-                </DropdownMenuItem>
+                <DropdownMenuItem asChild><a href="/admin/users">Profile</a></DropdownMenuItem>
+                <DropdownMenuItem asChild><a href="/admin/settings/general">Settings</a></DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive">Sign out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
+        <div className="px-2 group-data-[collapsible=icon]:hidden">
+          <ThemeToggle />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

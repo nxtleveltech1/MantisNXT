@@ -18,6 +18,7 @@ import SyncPreview from "@/components/integrations/SyncPreview";
 import ProgressTracker from "@/components/integrations/ProgressTracker";
 import ActivityLog from "@/components/integrations/ActivityLog";
 import { useSyncManager } from "@/hooks/useSyncManager";
+import { useAuth } from '@/lib/auth/auth-context'
 
 interface WooCommerceConfig {
   id?: string;
@@ -99,22 +100,23 @@ export default function WooCommercePage() {
 
   // Sync preview and progress management
   const syncManager = useSyncManager();
-  const [orgId, setOrgId] = useState<string>('org-default');
+  const { user, isLoading } = useAuth()
+  const [orgId, setOrgId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isLoading) return
+    if (user?.org_id) {
+      setOrgId(user.org_id)
+      return
+    }
+    // Fallback: use default org or stored org to avoid 404/HTML parse
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('orgId') : null
+    setOrgId(stored || 'org-default')
+  }, [user, isLoading])
 
   useEffect(() => {
     fetchConfiguration();
     loadSyncHistory();
-    // Get org ID from user context (if available)
-    const loadOrgId = async () => {
-      try {
-        const response = await fetch('/api/auth/user');
-        const data = await response.json();
-        if (data?.orgId) setOrgId(data.orgId);
-      } catch (error) {
-        console.error('Failed to load org ID:', error);
-      }
-    };
-    loadOrgId();
   }, []);
 
   const fetchConfiguration = async () => {
@@ -1034,7 +1036,7 @@ export default function WooCommercePage() {
             <TabsTrigger value="activity">Activity Log</TabsTrigger>
           </TabsList>
           <TabsContent value="activity">
-            <ActivityLog orgId={orgId} entityType="woocommerce" />
+            <ActivityLog orgId={orgId || 'org-default'} entityType="woocommerce" />
           </TabsContent>
         </Tabs>
       </div>

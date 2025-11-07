@@ -264,7 +264,7 @@ async function generateSupplierInsights(supplierId: string, focusAreas: string[]
             type: 'risk_reduction'
           },
           confidence: 0.88,
-          evidence: riskMonitoring.alerts.map(alert => alert.message),
+          evidence: riskMonitoring.alerts.map((alert: { message: string }) => alert.message),
           relatedEntities: [{
             type: 'supplier',
             id: supplierId,

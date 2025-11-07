@@ -15,12 +15,19 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SidebarMenuAction,
+  SidebarMenuBadge,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -37,6 +44,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Activity,
@@ -48,6 +60,7 @@ import {
   BookOpen,
   Building2,
   ChevronDown,
+  ChevronRight,
   CreditCard,
   Database,
   DollarSign,
@@ -61,7 +74,9 @@ import {
   LifeBuoy,
   LogOut,
   MessageSquare,
+  MoreHorizontal,
   Package,
+  Pin,
   Plug,
   PieChart,
   Search,
@@ -72,6 +87,7 @@ import {
   User,
   UserCheck,
   Users,
+  X,
 } from "lucide-react"
 import ChatAssistant from "@/components/ai/assistant/ChatAssistant"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
@@ -85,197 +101,176 @@ interface AdminLayoutProps {
   }>
 }
 
+// Navigation structure with collapsible groups
 const sidebarNavigation = [
   {
     title: "Overview",
     items: [
       {
-        title: "Dashboard (AI)",
+        title: "Dashboard",
         url: "/",
         icon: LayoutDashboard,
-        isActive: false,
       },
       {
         title: "Analytics",
         url: "/analytics",
         icon: TrendingUp,
-        isActive: false,
+      },
+      {
+        title: "System Health",
+        url: "/system-health",
+        icon: Activity,
       },
     ],
   },
   {
-    title: "Business Directories",
-    items: [
-      // Customers removed; Suppliers moved under Suppliers as Supplier Directory
-    ],
-  },
-  {
     title: "Suppliers",
+    collapsible: true,
     items: [
       {
-        title: "Supplier Dashboard",
+        title: "Dashboard",
         url: "/suppliers",
         icon: Building2,
-        isActive: false,
       },
       {
         title: "Performance",
         url: "/suppliers/performance",
         icon: TrendingUp,
-        isActive: false,
       },
       {
-        title: "Supplier Inventory Portfolio",
+        title: "Inventory Portfolio",
         url: "/nxt-spp",
         icon: Package,
-        isActive: false,
       },
       {
-        title: "Supplier Directory",
+        title: "Directory",
         url: "/directories/suppliers",
         icon: Building2,
-        isActive: false,
       },
     ],
   },
   {
-    title: "Inventory Management",
+    title: "Inventory",
+    collapsible: true,
     items: [
-      { title: "Inventory Management", url: "/inventory", icon: Package, isActive: false },
+      {
+        title: "Management",
+        url: "/inventory",
+        icon: Package,
+      },
       {
         title: "Pricing & Optimization",
         url: "/operations/pricing",
-        icon: TrendingUp,
-        isActive: false,
+        icon: DollarSign,
       },
       {
-        title: "Category Management",
+        title: "Categories",
         url: "/catalog/categories",
-        icon: Settings,
-        isActive: false,
+        icon: Layout,
       },
     ],
   },
   {
-    title: "Customer Engagement",
+    title: "Customers",
+    collapsible: true,
     items: [
       {
         title: "All Customers",
         url: "/customers",
         icon: Users,
-        isActive: false,
       },
       {
         title: "Add Customer",
         url: "/customers/new",
         icon: UserCheck,
-        isActive: false,
       },
     ],
   },
   {
     title: "Loyalty & Rewards",
+    collapsible: true,
     items: [
       {
         title: "Programs",
         url: "/admin/loyalty/programs",
         icon: Award,
-        isActive: false,
       },
       {
         title: "Rewards",
         url: "/admin/loyalty/rewards",
         icon: Gift,
-        isActive: false,
       },
       {
         title: "Rules",
         url: "/admin/loyalty/rules",
         icon: Settings,
-        isActive: false,
       },
       {
         title: "Redemptions",
         url: "/admin/loyalty/redemptions",
         icon: ShoppingCart,
-        isActive: false,
       },
       {
         title: "Analytics",
         url: "/admin/loyalty/analytics",
         icon: BarChart,
-        isActive: false,
       },
     ],
   },
   {
     title: "AI Services",
+    collapsible: true,
     items: [
       {
         title: "Configuration",
         url: "/admin/ai/config",
         icon: Settings,
-        isActive: false,
       },
       {
         title: "Assistant",
         url: "/admin/ai/assistant",
         icon: Bot,
-        isActive: false,
       },
       {
         title: "Conversations",
         url: "/admin/ai/conversations",
         icon: MessageSquare,
-        isActive: false,
       },
       {
         title: "Predictions",
         url: "/admin/ai/predictions",
         icon: TrendingUp,
-        isActive: false,
       },
       {
         title: "Forecasts",
         url: "/admin/ai/forecasts",
         icon: Activity,
-        isActive: false,
       },
       {
         title: "Anomaly Detection",
         url: "/admin/ai/anomalies",
         icon: AlertTriangle,
-        isActive: false,
       },
       {
         title: "Alerts",
         url: "/admin/ai/alerts",
         icon: Bell,
-        isActive: false,
       },
       {
         title: "Metrics",
         url: "/admin/ai/metrics",
         icon: PieChart,
-        isActive: false,
       },
       {
         title: "Dashboards",
         url: "/admin/ai/dashboards",
         icon: Layout,
-        isActive: false,
       },
       {
         title: "Health Monitor",
         url: "/admin/ai/health",
         icon: Heart,
-        isActive: false,
       },
-    ],
-  },
-  {
-    title: "Financial",
-    items: [
     ],
   },
   {
@@ -285,174 +280,373 @@ const sidebarNavigation = [
         title: "Messages",
         url: "/messages",
         icon: MessageSquare,
-        isActive: false,
         badge: "3",
       },
     ],
   },
   {
-    title: "System Integration",
+    title: "Integrations",
+    collapsible: true,
     items: [
       {
-        title: "Integrations Overview",
+        title: "Overview",
         url: "/integrations",
         icon: Plug,
-        isActive: false,
       },
       {
         title: "WooCommerce",
         url: "/integrations/woocommerce",
         icon: ShoppingBag,
-        isActive: false,
       },
       {
         title: "Odoo ERP",
         url: "/integrations/odoo",
         icon: Database,
-        isActive: false,
       },
     ],
   },
   {
-    title: "Modules Coming",
+    title: "Administration",
+    collapsible: true,
     items: [
       {
-        title: "Purchase Orders",
-        url: "/purchase-orders",
-        icon: ShoppingCart,
-        isActive: false,
-        badge: "12",
+        title: "Users",
+        url: "/admin/users",
+        icon: Users,
       },
       {
-        title: "Invoices",
-        url: "/invoices",
-        icon: CreditCard,
-        isActive: false,
-        badge: "8",
+        title: "Organizations",
+        url: "/admin/organizations",
+        icon: Building2,
       },
       {
-        title: "Payments",
-        url: "/payments",
-        icon: DollarSign,
-        isActive: false,
+        title: "Roles & Permissions",
+        url: "/admin/roles",
+        icon: Settings,
+      },
+      {
+        title: "Audit Logs",
+        url: "/admin/audit",
+        icon: FileText,
+      },
+      {
+        title: "Security",
+        url: "/admin/security",
+        icon: Settings,
+      },
+    ],
+  },
+  {
+    title: "Support",
+    items: [
+      {
+        title: "Help Center",
+        url: "/help",
+        icon: BookOpen,
+      },
+      {
+        title: "Contact Support",
+        url: "/support",
+        icon: LifeBuoy,
       },
     ],
   },
 ]
 
 const AdminSidebar: React.FC = () => {
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/'
+
+  // Flattened items for search and active detection
+  const allItems = sidebarNavigation.flatMap(g => g.items)
+
+  const [query, setQuery] = React.useState('')
+  const filtered = React.useMemo(() => {
+    if (!query) return sidebarNavigation
+    const q = query.toLowerCase()
+    return sidebarNavigation
+      .map(group => ({
+        ...group,
+        items: group.items.filter(it => it.title.toLowerCase().includes(q))
+      }))
+      .filter(group => group.items.length)
+  }, [query])
+
+  // Persisted pinned items
+  const [pinned, setPinned] = React.useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('ui.pinned') || '[]') } catch { return [] }
+  })
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') localStorage.setItem('ui.pinned', JSON.stringify(pinned))
+  }, [pinned])
+
+  const togglePin = React.useCallback((title: string) => {
+    setPinned(prev => prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title])
+  }, [])
+
+  // Collapsible state for groups
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      return JSON.parse(localStorage.getItem('ui.openGroups') || '{}')
+    } catch {
+      return {}
+    }
+  })
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ui.openGroups', JSON.stringify(openGroups))
+    }
+  }, [openGroups])
+
+  const toggleGroup = React.useCallback((title: string) => {
+    setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }))
+  }, [])
+
+  const groups = query ? filtered : sidebarNavigation
+
   return (
-    <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="h-4 w-4" />
+    <Sidebar collapsible="icon" className="border-r">
+      <SidebarHeader className="border-b px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+            <Building2 className="h-5 w-5" />
           </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">MantisNXT</span>
-            <span className="truncate text-xs text-muted-foreground">
-              Supplier Management
-            </span>
+          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+            <span className="text-base font-semibold tracking-tight">MantisNXT</span>
+            <span className="text-xs text-muted-foreground">Procurement Platform</span>
           </div>
         </div>
       </SidebarHeader>
+      <SidebarRail />
 
-      <SidebarContent>
-        {sidebarNavigation.map((group) => (
-          <SidebarGroup key={group.title}>
-            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+      <SidebarContent className="px-2 py-2">
+        {/* Quick search */}
+        <SidebarGroup className="py-0">
+          <SidebarGroupContent>
+            <div className="px-1 group-data-[collapsible=icon]:hidden">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Search..."
+                  className="h-9 pl-8 text-sm"
+                />
+              </div>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Pinned */}
+        {pinned.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-semibold">
+              <Pin className="h-3.5 w-3.5 mr-1" />
+              Pinned
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={item.isActive}
-                      tooltip={item.title}
-                    >
-                      <a href={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                        {item.badge && (
-                          <Badge
-                            variant="secondary"
-                            className="ml-auto h-5 w-auto min-w-5 text-xs"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {allItems.filter(i => pinned.includes(i.title)).map(item => {
+                  const ActiveIcon = item.icon
+                  const isActive = pathname === item.url
+                  return (
+                    <SidebarMenuItem key={`pinned-${item.title}`}>
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                        <a href={item.url} className="flex items-center gap-3">
+                          <ActiveIcon className="h-4 w-4" />
+                          <span className="flex-1">{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                      <SidebarMenuAction
+                        aria-label="Unpin"
+                        title="Unpin"
+                        onClick={() => togglePin(item.title)}
+                        showOnHover
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </SidebarMenuAction>
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ))}
+        )}
+
+        {/* Navigation sections with collapsible groups */}
+        {groups.map((section) => {
+          const isCollapsible = section.collapsible
+          const isOpen = openGroups[section.title] !== false // default to open
+
+          if (isCollapsible) {
+            return (
+              <Collapsible
+                key={section.title}
+                open={isOpen}
+                onOpenChange={() => toggleGroup(section.title)}
+                className="group/collapsible"
+              >
+                <SidebarGroup>
+                  <SidebarGroupLabel asChild>
+                    <CollapsibleTrigger className="flex w-full items-center justify-between text-xs font-semibold hover:bg-accent rounded-md px-2">
+                      <span>{section.title}</span>
+                      <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </CollapsibleTrigger>
+                  </SidebarGroupLabel>
+                  <CollapsibleContent>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {section.items.map((item) => {
+                          const Icon = item.icon
+                          const isActive = pathname === item.url
+                          return (
+                            <SidebarMenuItem key={item.title}>
+                              <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                                <a href={item.url} className="flex items-center gap-3">
+                                  <Icon className="h-4 w-4" />
+                                  <span className="flex-1">{item.title}</span>
+                                  {item.badge && (
+                                    <Badge variant="secondary" className="h-5 min-w-[20px] rounded-full px-1.5 text-xs">
+                                      {item.badge}
+                                    </Badge>
+                                  )}
+                                </a>
+                              </SidebarMenuButton>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <SidebarMenuAction showOnHover aria-label="More">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </SidebarMenuAction>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="right" align="start" className="w-48">
+                                  <DropdownMenuItem onClick={() => togglePin(item.title)}>
+                                    <Pin className="h-4 w-4 mr-2" />
+                                    {pinned.includes(item.title) ? 'Unpin' : 'Pin to top'}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                    <a href={item.url}>
+                                      <ChevronRight className="h-4 w-4 mr-2" />
+                                      Open
+                                    </a>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </SidebarMenuItem>
+                          )
+                        })}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </CollapsibleContent>
+                </SidebarGroup>
+              </Collapsible>
+            )
+          }
+
+          // Non-collapsible group
+          return (
+            <SidebarGroup key={section.title}>
+              <SidebarGroupLabel className="text-xs font-semibold">{section.title}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {section.items.map((item) => {
+                    const Icon = item.icon
+                    const isActive = pathname === item.url
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                          <a href={item.url} className="flex items-center gap-3">
+                            <Icon className="h-4 w-4" />
+                            <span className="flex-1">{item.title}</span>
+                            {item.badge && (
+                              <Badge variant="secondary" className="h-5 min-w-[20px] rounded-full px-1.5 text-xs">
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </a>
+                        </SidebarMenuButton>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <SidebarMenuAction showOnHover aria-label="More">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </SidebarMenuAction>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent side="right" align="start" className="w-48">
+                            <DropdownMenuItem onClick={() => togglePin(item.title)}>
+                              <Pin className="h-4 w-4 mr-2" />
+                              {pinned.includes(item.title) ? 'Unpin' : 'Pin to top'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <a href={item.url}>
+                                <ChevronRight className="h-4 w-4 mr-2" />
+                                Open
+                              </a>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )
+        })}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                    <User className="h-4 w-4" />
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
+                <SidebarMenuButton size="lg" className="data-[state=open]:bg-accent">
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+                    <AvatarFallback className="rounded-lg">JD</AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-semibold">John Doe</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      Administrator
-                    </span>
+                    <span className="truncate text-xs text-muted-foreground">john@example.com</span>
                   </div>
-                  <ChevronDown className="ml-auto size-4" />
+                  <ChevronDown className="ml-auto h-4 w-4 group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">John Doe</span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        john.doe@company.com
-                      </span>
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
+              <DropdownMenuContent side="top" align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
+                <DropdownMenuItem asChild>
+                  <a href="/admin/users">
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </a>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                <DropdownMenuItem asChild>
+                  <a href="/admin/settings/general">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </a>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  Help & Support
+                <DropdownMenuItem asChild>
+                  <a href="/billing">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Billing
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
+                <DropdownMenuItem className="text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
+        
+        {/* Theme Toggle in footer */}
+        <div className="px-2 py-1 group-data-[collapsible=icon]:hidden">
+          <ThemeToggle />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
