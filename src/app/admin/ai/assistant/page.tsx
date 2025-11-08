@@ -1,11 +1,11 @@
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import ChatAssistant from "@/components/ai/assistant/ChatAssistant"
 
 export default function AIAssistantPage() {
   return (
-    <AdminLayout breadcrumbs={[{ label: 'AI Services', href: '/admin/ai/config' }, { label: 'Assistant' }] }>
+    <AppLayout breadcrumbs={[{ label: 'AI Services', href: '/admin/ai/config' }, { label: 'Assistant' }] }>
       <ChatAssistant />
-    </AdminLayout>
+    </AppLayout>
   )
 }
 

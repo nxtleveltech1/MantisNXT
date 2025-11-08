@@ -5,7 +5,7 @@ import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepos
 import { SupplierService } from '@/lib/suppliers/services/SupplierService'
 import { CacheInvalidator } from '@/lib/cache/invalidation'
 import type { UpdateSupplierData } from '@/lib/suppliers/types/SupplierDomain'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 
 const repository = new PostgreSQLSupplierRepository()
 const supplierService = new SupplierService(repository)
@@ -200,7 +200,7 @@ export default async function EditSupplierPage({ params }: EditSupplierPageProps
   }
 
           return (
-            <SelfContainedLayout
+            <AppLayout
               title="Edit Supplier"
               breadcrumbs={[
                 { label: 'Suppliers', href: '/suppliers' },
@@ -211,6 +211,6 @@ export default async function EditSupplierPage({ params }: EditSupplierPageProps
                 supplier={supplier}
                 onSubmit={handleSubmit}
               />
-            </SelfContainedLayout>
+            </AppLayout>
           )
 }

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import EnhancedInventoryDashboard from '@/components/inventory/EnhancedInventoryDashboard'
 import AsyncBoundary from '@/components/ui/AsyncBoundary'
 import InventoryManagement from '@/components/inventory/InventoryManagement'
@@ -18,7 +18,7 @@ export default function InventoryPage() {
   ]
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Comprehensive Inventory Management"
       breadcrumbs={breadcrumbs}
     >
@@ -89,6 +89,6 @@ export default function InventoryPage() {
           />
         )}
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }

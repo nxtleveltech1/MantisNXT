@@ -21,7 +21,7 @@ import {
   Activity,
   Tag,
 } from "lucide-react";
-import SelfContainedLayout from "@/components/layout/SelfContainedLayout";
+import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -258,7 +258,7 @@ export default function CustomerDetailsPage() {
 
   if (loading) {
     return (
-      <SelfContainedLayout
+      <AppLayout
         title="Customer Details"
         breadcrumbs={[
           { label: "Customers", href: "/customers" },
@@ -268,13 +268,13 @@ export default function CustomerDetailsPage() {
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
         </div>
-      </SelfContainedLayout>
+      </AppLayout>
     );
   }
 
   if (!customer) {
     return (
-      <SelfContainedLayout
+      <AppLayout
         title="Customer Details"
         breadcrumbs={[
           { label: "Customers", href: "/customers" },
@@ -288,12 +288,12 @@ export default function CustomerDetailsPage() {
             Back to Customers
           </Button>
         </div>
-      </SelfContainedLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title={customer.name}
       breadcrumbs={[
         { label: "Customers", href: "/customers" },
@@ -836,6 +836,6 @@ export default function CustomerDetailsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

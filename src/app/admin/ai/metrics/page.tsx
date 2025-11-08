@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import AIMetricsMonitor from "@/components/ai/admin/AIMetricsMonitor"
 
 /**
@@ -13,7 +13,7 @@ import AIMetricsMonitor from "@/components/ai/admin/AIMetricsMonitor"
  */
 export default function AIMetricsPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "AI Services", href: "/admin/ai" },
         { label: "Metrics" },
@@ -29,6 +29,6 @@ export default function AIMetricsPage() {
 
         <AIMetricsMonitor />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

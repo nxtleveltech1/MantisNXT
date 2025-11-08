@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import AdminLayout from '@/components/layout/AdminLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import { User, USER_ROLES } from '@/types/auth'
 import { authProvider } from '@/lib/auth/mock-provider'
 
@@ -102,7 +102,7 @@ export default function UserRolesPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout
+      <AppLayout
         breadcrumbs={[
           { label: 'Admin', href: '/admin' },
           { label: 'Users', href: '/admin/users' },
@@ -113,13 +113,13 @@ export default function UserRolesPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      </AdminLayout>
+      </AppLayout>
     )
   }
 
   if (!user) {
     return (
-      <AdminLayout
+      <AppLayout
         breadcrumbs={[
           { label: 'Admin', href: '/admin' },
           { label: 'Users', href: '/admin/users' },
@@ -129,7 +129,7 @@ export default function UserRolesPage() {
         <Alert variant="destructive">
           <AlertDescription>User not found</AlertDescription>
         </Alert>
-      </AdminLayout>
+      </AppLayout>
     )
   }
 
@@ -187,7 +187,7 @@ export default function UserRolesPage() {
   }
 
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: 'Admin', href: '/admin' },
         { label: 'Users', href: '/admin/users' },
@@ -454,6 +454,6 @@ export default function UserRolesPage() {
           </Card>
         )}
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

@@ -1,229 +1,55 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(
-  amount: number,
-  currency: string = "ZAR",
-  locale: string = "en-US"
-): string {
-  const formatted = new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "USD", // Use USD for consistent formatting, then replace
+export function formatCurrency(value: number | string | null | undefined): string {
+  if (value === null || value === undefined || value === '') {
+    return 'R0.00';
+  }
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) {
+    return 'R0.00';
+  }
+  return new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount)
-
-  // Replace $ with R for ZAR currency
-  return currency === "ZAR" ? formatted.replace('$', 'R') : formatted
+  }).format(numValue);
 }
 
-export function formatNumber(
-  value: number,
-  locale: string = "en-ZA"
-): string {
-  return new Intl.NumberFormat(locale).format(value)
-}
-
-// Format with space thousands and 2 decimals, e.g., 9 998.00
-export function formatCostAmount(value: number | string | null | undefined): string {
-  const num = Number(value ?? 0)
-  const sign = num < 0 ? '-' : ''
-  const abs = Math.abs(num)
-  const fixed = abs.toFixed(2)
-  const [intPart, decPart] = fixed.split('.')
-  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-  return `${sign}${withSpaces}.${decPart}`
+export function formatDate(date: Date | string | null | undefined): string {
+  if (!date) {
+    return 'N/A';
+  }
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) {
+    return 'N/A';
+  }
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(dateObj);
 }
 
 export function formatPercentage(
-  value: number,
+  value: number | string | null | undefined,
   decimals: number = 1
 ): string {
-  return `${value.toFixed(decimals)}%`
-}
-
-export function formatDate(
-  date: Date | string,
-  options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+  if (value === null || value === undefined || value === '') {
+    return '0%';
   }
-): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date
-  return dateObj.toLocaleDateString("en-ZA", options)
-}
-
-export function formatDateTime(date: Date | string): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date
-  return dateObj.toLocaleDateString("en-ZA", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
-export function getStatusColor(status: string): string {
-  const statusColors: Record<string, string> = {
-    // Supplier statuses
-    active: "bg-green-100 text-green-800 border-green-200",
-    inactive: "bg-gray-100 text-gray-800 border-gray-200",
-    pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    suspended: "bg-red-100 text-red-800 border-red-200",
-
-    // Purchase Order statuses
-    draft: "bg-gray-100 text-gray-800 border-gray-200",
-    sent: "bg-blue-100 text-blue-800 border-blue-200",
-    acknowledged: "bg-cyan-100 text-cyan-800 border-cyan-200",
-    in_progress: "bg-orange-100 text-orange-800 border-orange-200",
-    shipped: "bg-purple-100 text-purple-800 border-purple-200",
-    delivered: "bg-green-100 text-green-800 border-green-200",
-    completed: "bg-green-100 text-green-800 border-green-200",
-    cancelled: "bg-red-100 text-red-800 border-red-200",
-
-    // Contract statuses
-    review: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    negotiation: "bg-orange-100 text-orange-800 border-orange-200",
-    approved: "bg-green-100 text-green-800 border-green-200",
-    signed: "bg-green-100 text-green-800 border-green-200",
-    expired: "bg-red-100 text-red-800 border-red-200",
-    terminated: "bg-red-100 text-red-800 border-red-200",
-
-    // Priority levels
-    low: "bg-gray-100 text-gray-800 border-gray-200",
-    medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    high: "bg-orange-100 text-orange-800 border-orange-200",
-    urgent: "bg-red-100 text-red-800 border-red-200",
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) {
+    return '0%';
   }
-
-  return statusColors[status.toLowerCase()] || "bg-gray-100 text-gray-800 border-gray-200"
-}
-
-export function getTierColor(tier: string): string {
-  const tierColors: Record<string, string> = {
-    strategic: "bg-purple-100 text-purple-800 border-purple-200",
-    preferred: "bg-green-100 text-green-800 border-green-200",
-    approved: "bg-blue-100 text-blue-800 border-blue-200",
-    conditional: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  }
-
-  return tierColors[tier.toLowerCase()] || "bg-gray-100 text-gray-800 border-gray-200"
-}
-
-export function calculateDaysUntil(date: Date | string): number {
-  const targetDate = typeof date === "string" ? new Date(date) : date
-  const today = new Date()
-  const diffTime = targetDate.getTime() - today.getTime()
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-}
-
-export function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text
-  return text.substring(0, maxLength) + "..."
-}
-
-export function generateSupplierCode(name: string): string {
-  const cleanName = name.replace(/[^a-zA-Z\s]/g, "").trim()
-  const words = cleanName.split(/\s+/)
-
-  if (words.length === 1) {
-    return words[0].substring(0, 6).toUpperCase()
-  }
-
-  const initials = words.map(word => word.charAt(0)).join("")
-  const timestamp = Date.now().toString().slice(-3)
-
-  return (initials + timestamp).substring(0, 8).toUpperCase()
-}
-
-export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
-
-export function validatePhone(phone: string): boolean {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
-  const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, "")
-  return phoneRegex.test(cleanPhone)
-}
-
-export function calculatePerformanceScore(performance: {
-  qualityRating: number
-  deliveryRating: number
-  serviceRating: number
-  priceRating: number
-}): number {
-  const weights = {
-    quality: 0.3,
-    delivery: 0.3,
-    service: 0.2,
-    price: 0.2,
-  }
-
-  return (
-    performance.qualityRating * weights.quality +
-    performance.deliveryRating * weights.delivery +
-    performance.serviceRating * weights.service +
-    performance.priceRating * weights.price
-  )
-}
-
-export function getPerformanceGrade(score: number): string {
-  if (score >= 4.5) return "A+"
-  if (score >= 4.0) return "A"
-  if (score >= 3.5) return "B+"
-  if (score >= 3.0) return "B"
-  if (score >= 2.5) return "C+"
-  if (score >= 2.0) return "C"
-  return "D"
-}
-
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => func(...args), wait)
-  }
-}
-
-// Timestamp utilities for consistent API serialization
-export function ensureTimestampSerialization(timestamp: Date | string | undefined | null): string {
-  if (!timestamp) return new Date().toISOString()
-
-  if (timestamp instanceof Date) {
-    return timestamp.toISOString()
-  }
-
-  // If it's already a string, validate it's a proper ISO string
-  try {
-    return new Date(timestamp).toISOString()
-  } catch (error) {
-    console.warn('Invalid timestamp provided, using current time:', timestamp)
-    return new Date().toISOString()
-  }
-}
-
-export function parseTimestampSafely(timestamp: Date | string | undefined | null): Date | null {
-  if (!timestamp) return null
-
-  if (timestamp instanceof Date) {
-    return isNaN(timestamp.getTime()) ? null : timestamp
-  }
-
-  try {
-    const parsed = new Date(timestamp)
-    return isNaN(parsed.getTime()) ? null : parsed
-  } catch (error) {
-    console.warn('Failed to parse timestamp:', timestamp)
-    return null
-  }
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(numValue / 100);
 }

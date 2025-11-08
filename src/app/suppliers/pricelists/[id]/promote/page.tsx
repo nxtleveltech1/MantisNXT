@@ -2,7 +2,7 @@
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import ProductSelectionWizard from '@/components/suppliers/ProductSelectionWizard'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 
 export default function PromotePricelistPage() {
   const params = useParams()
@@ -25,7 +25,7 @@ export default function PromotePricelistPage() {
 
   if (!supplierId) {
     return (
-      <SelfContainedLayout>
+      <AppLayout>
         <div className="max-w-2xl mx-auto p-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Missing Supplier Information</h1>
           <p className="text-gray-600 mb-6">
@@ -38,12 +38,12 @@ export default function PromotePricelistPage() {
             Go Back
           </button>
         </div>
-      </SelfContainedLayout>
+      </AppLayout>
     )
   }
 
   return (
-    <SelfContainedLayout>
+    <AppLayout>
       <ProductSelectionWizard
         pricelistId={pricelistId}
         supplierId={supplierId}
@@ -51,6 +51,6 @@ export default function PromotePricelistPage() {
         onComplete={handleComplete}
         onCancel={handleCancel}
       />
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }

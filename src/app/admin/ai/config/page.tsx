@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import AIServiceConfiguration from "@/components/ai/admin/AIServiceConfiguration"
 
 /**
@@ -12,7 +12,7 @@ import AIServiceConfiguration from "@/components/ai/admin/AIServiceConfiguration
  */
 export default function AIConfigPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "AI Services", href: "/admin/ai" },
         { label: "Configuration" },
@@ -28,6 +28,6 @@ export default function AIConfigPage() {
 
         <AIServiceConfiguration />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

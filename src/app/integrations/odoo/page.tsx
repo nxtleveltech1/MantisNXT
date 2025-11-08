@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Database, RefreshCw, Settings, History, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, FileText, Eye, X, Loader2, Clock, XCircle, Play, Square } from "lucide-react";
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -303,7 +303,7 @@ export default function OdooPage() {
 
   if (loading) {
     return (
-      <SelfContainedLayout
+      <AppLayout
         title="Odoo ERP Integration"
         breadcrumbs={[
           { label: "Integrations", href: "/integrations" },
@@ -313,12 +313,12 @@ export default function OdooPage() {
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
         </div>
-      </SelfContainedLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Odoo ERP Integration"
       breadcrumbs={[
         { label: "Integrations", href: "/integrations" },
@@ -909,6 +909,6 @@ export default function OdooPage() {
           onCancel={() => syncManager.hideProgress()}
         />
       )}
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

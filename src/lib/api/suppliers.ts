@@ -1,53 +1,57 @@
-import { query, withTransaction } from '@/lib/database/unified-connection'
-import type { Supplier, SupplierSearchFilters, DashboardMetrics } from '@/types/supplier'
-import { sanitizeUrl } from '@/lib/utils/url-validation'
-import { listSuppliers as ssotList, getSupplierById as ssotGet, upsertSupplier as ssotUpsert, deactivateSupplier as ssotDeactivate } from '@/services/ssot/supplierService'
+import { query, withTransaction } from '@/lib/database/unified-connection';
+import type { Supplier, SupplierSearchFilters, DashboardMetrics } from '@/types/supplier';
+import { sanitizeUrl } from '@/lib/utils/url-validation';
+import {
+  listSuppliers as ssotList,
+  getSupplierById as ssotGet,
+  upsertSupplier as ssotUpsert,
+  deactivateSupplier as ssotDeactivate,
+} from '@/services/ssot/supplierService';
 
 export interface CreateSupplierData {
-  name: string
-  code: string
-  legalName: string
-  website?: string
-  industry: string
-  tier: 'strategic' | 'preferred' | 'approved' | 'conditional'
-  status: 'active' | 'inactive' | 'pending' | 'suspended'
-  category: string
-  subcategory?: string
-  tags: string[]
+  name: string;
+  code: string;
+  legalName: string;
+  website?: string;
+  industry: string;
+  tier: 'strategic' | 'preferred' | 'approved' | 'conditional';
+  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  categories: string[]; // Changed from category to categories (array)
+  tags: string[];
 
   // Contact information
   primaryContact: {
-    name: string
-    title: string
-    email: string
-    phone: string
-    department?: string
-  }
+    name: string;
+    title: string;
+    email: string;
+    phone: string;
+    department?: string;
+  };
 
   // Business information
-  taxId: string
-  registrationNumber: string
-  foundedYear?: number
-  employeeCount?: number
-  annualRevenue?: number
-  currency: string
+  taxId: string;
+  registrationNumber: string;
+  foundedYear?: number;
+  employeeCount?: number;
+  annualRevenue?: number;
+  currency: string;
 
   // Address information
   address: {
-    street: string
-    city: string
-    state: string
-    postalCode: string
-    country: string
-  }
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
 
   // Capabilities
-  products: string[]
-  services: string[]
-  certifications: string[]
-  leadTime: number
-  minimumOrderValue?: number
-  paymentTerms: string
+  products: string[];
+  services: string[];
+  certifications: string[];
+  leadTime: number;
+  minimumOrderValue?: number;
+  paymentTerms: string;
 }
 
 export class SupplierAPI {
@@ -59,25 +63,27 @@ export class SupplierAPI {
       page: 1,
       limit: 1000,
       sortBy: 'name',
-      sortOrder: 'asc'
-    })
-    return res.data.map(row => this.mapRowToSupplier({
-      id: row.id,
-      name: row.name,
-      supplier_code: row.code,
-      company_name: row.name,
-      status: row.status,
-      performance_tier: 'approved',
-      primary_category: '',
-      created_at: row.createdAt,
-      updated_at: row.updatedAt
-    } as any))
+      sortOrder: 'asc',
+    });
+    return res.data.map(row =>
+      this.mapRowToSupplier({
+        id: row.id,
+        name: row.name,
+        supplier_code: row.code,
+        company_name: row.name,
+        status: row.status,
+        performance_tier: 'approved',
+        primary_category: '',
+        created_at: row.createdAt,
+        updated_at: row.updatedAt,
+      } as any)
+    );
   }
 
   // Get supplier by ID
   static async getSupplierById(id: string): Promise<Supplier | null> {
-    const s = await ssotGet(id)
-    if (!s) return null
+    const s = await ssotGet(id);
+    if (!s) return null;
     return this.mapRowToSupplier({
       id: s.id,
       name: s.name,
@@ -87,31 +93,40 @@ export class SupplierAPI {
       performance_tier: 'approved',
       primary_category: '',
       created_at: s.createdAt,
-      updated_at: s.updatedAt
-    } as any)
+      updated_at: s.updatedAt,
+    } as any);
   }
 
   // Create new supplier
   static async createSupplier(data: CreateSupplierData): Promise<Supplier> {
     // Use withTransaction for atomic supplier creation
-    const created = await ssotUpsert({ name: data.name, code: data.code, status: data.status, contact: { email: data.primaryContact.email, phone: data.primaryContact.phone, website: data.website } })
-    const s = await this.getSupplierById(created.id)
-    if (!s) throw new Error('Failed to retrieve created supplier')
-    return s
+    const created = await ssotUpsert({
+      name: data.name,
+      code: data.code,
+      status: data.status,
+      contact: {
+        email: data.primaryContact.email,
+        phone: data.primaryContact.phone,
+        website: data.website,
+      },
+    });
+    const s = await this.getSupplierById(created.id);
+    if (!s) throw new Error('Failed to retrieve created supplier');
+    return s;
   }
 
   // Update supplier
   static async updateSupplier(id: string, data: Partial<CreateSupplierData>): Promise<Supplier> {
     // Use withTransaction for atomic supplier update
-    await ssotUpsert({ id, name: data.name, code: data.code, status: data.status })
-    const s = await this.getSupplierById(id)
-    if (!s) throw new Error('Failed to retrieve updated supplier')
-    return s
+    await ssotUpsert({ id, name: data.name, code: data.code, status: data.status });
+    const s = await this.getSupplierById(id);
+    if (!s) throw new Error('Failed to retrieve updated supplier');
+    return s;
   }
 
   // Delete supplier
   static async deleteSupplier(id: string): Promise<void> {
-    await ssotDeactivate(id)
+    await ssotDeactivate(id);
   }
 
   // OPTIMIZED: Get dashboard metrics - Combined from 4 queries to 1 CTE (60-70% faster)
@@ -151,9 +166,9 @@ export class SupplierAPI {
         FROM metrics m
         CROSS JOIN performance_metrics pm
         CROSS JOIN contract_metrics cm
-      `)
+      `);
 
-      const row = result.rows[0]
+      const row = result.rows[0];
 
       return {
         totalSuppliers: parseInt(row.total_suppliers) || 0,
@@ -163,11 +178,11 @@ export class SupplierAPI {
         avgPerformanceRating: parseFloat(row.avg_performance_rating) || 0,
         totalPurchaseValue: parseFloat(row.total_purchase_value) || 0,
         onTimeDeliveryRate: parseFloat(row.on_time_delivery_rate) || 0,
-        qualityAcceptanceRate: parseFloat(row.quality_acceptance_rate) || 0
-      }
+        qualityAcceptanceRate: parseFloat(row.quality_acceptance_rate) || 0,
+      };
     } catch (error) {
-      console.error('Error fetching dashboard metrics:', error)
-      throw new Error('Failed to fetch dashboard metrics')
+      console.error('Error fetching dashboard metrics:', error);
+      throw new Error('Failed to fetch dashboard metrics');
     }
   }
 
@@ -179,35 +194,38 @@ export class SupplierAPI {
       code: row.supplier_code,
       status: row.status,
       tier: row.performance_tier,
-      category: row.primary_category,
-      subcategory: '',
+      categories: row.primary_category ? [row.primary_category] : [], // Convert single category to array
       tags: [],
 
-      contacts: [{
-        id: 'primary',
-        type: 'primary',
-        name: row.contact_person || '',
-        title: '',
-        email: row.contact_email || row.email || '',
-        phone: row.phone || '',
-        department: '',
-        isPrimary: true,
-        isActive: true
-      }],
+      contacts: [
+        {
+          id: 'primary',
+          type: 'primary',
+          name: row.contact_person || '',
+          title: '',
+          email: row.contact_email || row.email || '',
+          phone: row.phone || '',
+          department: '',
+          isPrimary: true,
+          isActive: true,
+        },
+      ],
 
-      addresses: [{
-        id: 'primary',
-        type: 'headquarters',
-        name: 'Headquarters',
-        addressLine1: row.address || '',
-        addressLine2: '',
-        city: '',
-        state: row.geographic_region || '',
-        postalCode: '',
-        country: 'South Africa',
-        isPrimary: true,
-        isActive: true
-      }],
+      addresses: [
+        {
+          id: 'primary',
+          type: 'headquarters',
+          name: 'Headquarters',
+          addressLine1: row.address || '',
+          addressLine2: '',
+          city: '',
+          state: row.geographic_region || '',
+          postalCode: '',
+          country: 'South Africa',
+          isPrimary: true,
+          isActive: true,
+        },
+      ],
 
       businessInfo: {
         legalName: row.company_name || row.name,
@@ -218,7 +236,7 @@ export class SupplierAPI {
         foundedYear: null,
         employeeCount: null,
         annualRevenue: parseFloat(row.spend_last_12_months || '0'),
-        currency: row.currency || 'ZAR'
+        currency: row.currency || 'ZAR',
       },
 
       capabilities: {
@@ -228,7 +246,7 @@ export class SupplierAPI {
         capacityPerMonth: null,
         leadTime: row.payment_terms_days || 30,
         minimumOrderValue: null,
-        paymentTerms: row.payment_terms || 'Net 30'
+        paymentTerms: row.payment_terms || 'Net 30',
       },
 
       performance: {
@@ -242,18 +260,18 @@ export class SupplierAPI {
           qualityAcceptanceRate: parseFloat(row.ai_performance_score || '0'),
           responseTime: 0,
           defectRate: 0,
-          leadTimeVariance: 0
+          leadTimeVariance: 0,
         },
         kpis: [],
         lastEvaluationDate: row.evaluation_date ? new Date(row.evaluation_date) : new Date(),
-        nextEvaluationDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days from now
+        nextEvaluationDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
       },
 
       financial: {
         creditRating: row.credit_rating,
         paymentTerms: row.payment_terms || 'Net 30',
         currency: row.currency || 'ZAR',
-        bankDetails: undefined
+        bankDetails: undefined,
       },
 
       createdAt: new Date(row.created_at),
@@ -261,7 +279,7 @@ export class SupplierAPI {
       createdBy: row.created_by || 'system',
       lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
       nextReviewDate: row.next_review_date ? new Date(row.next_review_date) : undefined,
-      notes: row.notes || ''
-    }
+      notes: row.notes || '',
+    };
   }
 }

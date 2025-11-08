@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -219,7 +219,7 @@ const SystemHealth: React.FC = () => {
   }
 
   return (
-    <SelfContainedLayout title="System Health" breadcrumbs={[]}>
+    <AppLayout title="System Health" breadcrumbs={[]}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -690,7 +690,7 @@ const SystemHealth: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }
 

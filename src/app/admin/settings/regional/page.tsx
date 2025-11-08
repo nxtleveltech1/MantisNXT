@@ -23,7 +23,7 @@ import {
   CheckCircle,
   Settings
 } from 'lucide-react'
-import AdminLayout from '@/components/layout/AdminLayout'
+import AppLayout from '@/components/layout/AppLayout'
 
 interface RegionalSettings {
   country: string;
@@ -188,7 +188,7 @@ export default function RegionalSettingsPage() {
   }
 
   return (
-    <AdminLayout>
+    <AppLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -659,6 +659,6 @@ export default function RegionalSettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </AppLayout>
   );
 }

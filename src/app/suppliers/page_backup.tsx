@@ -1,11 +1,11 @@
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import SupplierDirectory from '@/components/suppliers/SupplierDirectory'
 import EnhancedSupplierDashboard from '@/components/suppliers/EnhancedSupplierDashboard'
 
 export default function SuppliersPage() {
   return (
-    <SelfContainedLayout title="Suppliers" breadcrumbs={[]}>
+    <AppLayout title="Suppliers" breadcrumbs={[]}>
       <EnhancedSupplierDashboard />
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }

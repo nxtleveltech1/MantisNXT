@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import ConversationHistory from "@/components/ai/admin/ConversationHistory"
 
 /**
@@ -12,7 +12,7 @@ import ConversationHistory from "@/components/ai/admin/ConversationHistory"
  */
 export default function AIConversationsPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "AI Services", href: "/admin/ai" },
         { label: "Conversations" },
@@ -28,6 +28,6 @@ export default function AIConversationsPage() {
 
         <ConversationHistory />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

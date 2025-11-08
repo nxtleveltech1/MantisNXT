@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Info, Package, Upload, RefreshCw, Keyboard, LayoutDashboard, Table, FileUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import { PortfolioDashboard } from '@/components/spp/PortfolioDashboard';
 import { EnhancedPricelistUpload } from '@/components/supplier-portfolio/EnhancedPricelistUpload';
 import { CatalogTable } from '@/components/catalog/CatalogTable';
@@ -96,7 +96,7 @@ function NxtSppContent() {
   });
 
   return (
-    <SelfContainedLayout>
+    <AppLayout>
       <div className="space-y-8">
         {/* Enhanced Page Header with Gradient */}
         <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30 dark:from-blue-950/20 dark:via-background dark:to-purple-950/10 p-8 shadow-sm">
@@ -234,21 +234,21 @@ function NxtSppContent() {
           {/* Selections and Stock Reports removed from NXT-SPP surface */}
         </Tabs>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }
 
 export default function NxtSppPage() {
   return (
     <Suspense fallback={
-      <SelfContainedLayout>
+      <AppLayout>
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-sm text-muted-foreground">Loading...</p>
           </div>
         </div>
-      </SelfContainedLayout>
+      </AppLayout>
     }>
       <NxtSppContent />
     </Suspense>

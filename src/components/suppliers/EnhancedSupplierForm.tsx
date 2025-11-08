@@ -33,6 +33,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -105,8 +106,7 @@ const supplierSchema = z.object({
   code: z.string().optional(),
   status: z.enum(["active", "inactive", "pending", "suspended"]).optional(),
   tier: z.enum(["strategic", "preferred", "approved", "conditional"]).optional(),
-  category: z.string().optional(),
-  subcategory: z.string().optional(),
+  categories: z.array(z.string()).default([]), // Changed from category to categories (array)
   tags: z.array(z.string()).default([]),
   brands: z.array(z.string()).default([]),
 
@@ -117,9 +117,9 @@ const supplierSchema = z.object({
     taxId: z.string().optional().or(z.literal("")),
     registrationNumber: z.string().optional().or(z.literal("")),
     website: z.string().url("Invalid website URL").optional().or(z.literal("")),
-    foundedYear: z.number().min(1800).max(new Date().getFullYear()).optional(),
-    employeeCount: z.number().min(1).optional(),
-    annualRevenue: z.number().min(0).optional(),
+    foundedYear: z.number().min(1800).max(new Date().getFullYear()).nullish(),
+    employeeCount: z.number().min(1).nullish(),
+    annualRevenue: z.number().min(0).nullish(),
     currency: z.string().optional(),
   }).optional(),
 
@@ -210,25 +210,39 @@ const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
 }) => {
   // Handle web discovery data transformation
   const handleWebDataFound = (webData: any) => {
-    // Transform web discovery data to form format
+    // Transform web discovery data to form format - comprehensive mapping
     const transformedData: Partial<SupplierFormData> = {
-      name: webData.companyName,
+      name: webData.companyName || webData.name,
+      code: webData.code,
+      categories: webData.categories || (webData.category ? [webData.category] : []) || [],
+      tags: webData.tags || [],
+      brands: webData.brands || webData.products?.slice(0, 5) || [], // Use products as brands if brands not available
       businessInfo: {
-        legalName: webData.companyName,
-        website: webData.website,
+        legalName: webData.legalName || webData.companyName,
+        tradingName: webData.tradingName || webData.companyName,
+        website: webData.website || webData.url || '',
         foundedYear: webData.founded ? parseInt(webData.founded) : undefined,
         employeeCount: webData.employees ? parseInt(webData.employees.replace(/[^0-9]/g, '')) : undefined,
+        annualRevenue: webData.revenue ? parseFloat(webData.revenue.replace(/[^0-9.]/g, '')) : undefined,
+        currency: webData.currency || 'ZAR',
+        taxId: webData.taxId || '',
+        registrationNumber: webData.registrationNumber || '',
       },
       capabilities: {
         products: webData.products || [],
         services: webData.services || [],
+        paymentTerms: webData.paymentTerms,
+        leadTime: webData.leadTime,
       },
       addresses: webData.addresses?.map((addr: any, index: number) => ({
-        type: index === 0 ? "headquarters" : "shipping",
-        addressLine1: addr.street,
-        city: addr.city,
-        country: addr.country,
-        postalCode: addr.postalCode,
+        type: addr.type || (index === 0 ? "headquarters" : "shipping"),
+        name: addr.name || (index === 0 ? "Head Office" : `Address ${index + 1}`),
+        addressLine1: addr.street || addr.addressLine1 || '',
+        addressLine2: addr.addressLine2 || '',
+        city: addr.city || '',
+        state: addr.state || '',
+        country: addr.country || 'South Africa',
+        postalCode: addr.postalCode || '',
         isPrimary: index === 0,
         isActive: true,
       })) || [],
@@ -238,12 +252,21 @@ const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
     if (webData.contactEmail || webData.contactPhone) {
       transformedData.contacts = [{
         type: "primary",
-        name: "", // Could be extracted from contact info
-        email: webData.contactEmail,
-        phone: webData.contactPhone,
+        name: webData.contactPerson || webData.contactName || "",
+        email: webData.contactEmail || "",
+        phone: webData.contactPhone || "",
+        mobile: webData.contactMobile || "",
         isPrimary: true,
         isActive: true,
       }]
+    }
+
+    // Add financial info if available
+    if (webData.currency || webData.paymentTerms) {
+      transformedData.financial = {
+        currency: webData.currency || 'ZAR',
+        paymentTerms: webData.paymentTerms,
+      }
     }
 
     onDataFound(transformedData)
@@ -251,25 +274,10 @@ const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">Web Supplier Discovery</h3>
-        </div>
-        {onClose && (
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Close Discovery
-          </Button>
-        )}
-      </div>
-      
-      <WebSupplierDiscovery
-        onDataFound={handleWebDataFound}
-        initialQuery={initialQuery}
-        onClose={onClose}
-      />
-    </div>
+    <WebSupplierDiscovery
+      onDataFound={handleWebDataFound}
+      initialQuery={initialQuery}
+    />
   )
 }
 
@@ -308,6 +316,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("basic")
   const [tagInput, setTagInput] = useState("")
+  const [categoryInput, setCategoryInput] = useState("")
   const [brandInput, setBrandInput] = useState("")
   const [productInput, setProductInput] = useState("")
   const [serviceInput, setServiceInput] = useState("")
@@ -320,11 +329,14 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
     resolver: zodResolver(supplierSchema),
     defaultValues: supplier ? {
       ...supplier,
-      subcategory: supplier.subcategory || "",
+      categories: supplier.categories || (supplier.category ? [supplier.category] : []),
       businessInfo: {
         ...supplier.businessInfo,
-        website: supplier.businessInfo.website || "",
-        tradingName: supplier.businessInfo.tradingName || "",
+        website: supplier.businessInfo?.website || "",
+        tradingName: supplier.businessInfo?.tradingName || "",
+        foundedYear: supplier.businessInfo?.foundedYear ?? undefined,
+        employeeCount: supplier.businessInfo?.employeeCount ?? undefined,
+        annualRevenue: supplier.businessInfo?.annualRevenue ?? undefined,
       },
       contacts: supplier.contacts.map((contact: any) => ({
         ...contact,
@@ -342,8 +354,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
       code: "",
       status: "pending",
       tier: "approved",
-      category: undefined,
-      subcategory: "",
+      categories: [],
       tags: [],
       brands: [],
       businessInfo: {
@@ -385,6 +396,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
   })
 
   const watchedTags = form.watch("tags")
+  const watchedCategories = form.watch("categories")
   const watchedBrands = form.watch("brands")
   const watchedProducts = form.watch("capabilities.products")
   const watchedServices = form.watch("capabilities.services")
@@ -495,6 +507,18 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
     form.setValue("tags", watchedTags.filter(tag => tag !== tagToRemove))
   }
 
+  // Category management (same as tags)
+  const addCategory = () => {
+    if (categoryInput.trim() && !watchedCategories.includes(categoryInput.trim())) {
+      form.setValue("categories", [...watchedCategories, categoryInput.trim()])
+      setCategoryInput("")
+    }
+  }
+
+  const removeCategory = (categoryToRemove: string) => {
+    form.setValue("categories", watchedCategories.filter(cat => cat !== categoryToRemove))
+  }
+
   // Brand management
   const addBrand = () => {
     if (brandInput.trim() && !watchedBrands.includes(brandInput.trim())) {
@@ -566,15 +590,15 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
     <TooltipProvider>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onCancel ? onCancel() : router.push('/suppliers')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5 h-7 px-2 text-xs text-muted-foreground hover:text-foreground w-fit"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-3 w-3" />
               Back to Suppliers
             </Button>
             <div>
@@ -660,6 +684,12 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                 initialQuery={form.watch("name")}
                 onClose={() => setShowWebDiscovery(false)}
               />
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowWebDiscovery(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         )}
@@ -690,31 +720,33 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               setSubmitError('Please check the form for validation errors')
             })(e)
           }} className="space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="business">Business</TabsTrigger>
-                <TabsTrigger value="contacts">Contacts</TabsTrigger>
-                <TabsTrigger value="addresses">Addresses</TabsTrigger>
-                <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
-              </TabsList>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
+              <div className="p-1.5 bg-muted rounded-lg">
+                <TabsList className="grid w-full grid-cols-5 h-auto p-0.5 bg-transparent">
+                  <TabsTrigger value="basic" className="h-9">Basic Info</TabsTrigger>
+                  <TabsTrigger value="business" className="h-9">Business</TabsTrigger>
+                  <TabsTrigger value="contacts" className="h-9">Contacts</TabsTrigger>
+                  <TabsTrigger value="addresses" className="h-9">Addresses</TabsTrigger>
+                  <TabsTrigger value="capabilities" className="h-9">Capabilities</TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* Basic Information */}
-              <TabsContent value="basic" className="space-y-6">
-                <Card>
-                  <CardHeader>
+              <TabsContent value="basic" className="space-y-6 mt-3">
+                <Card className="gap-2">
+                  <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2">
                       <Building2 className="h-5 w-5" />
                       Basic Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <CardContent className="space-y-3 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <FormField
                         control={form.control}
                         name="name"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="The primary name used to identify this supplier">
                                 Supplier Name
@@ -739,7 +771,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="code"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Unique code automatically generated from supplier name">
                                 Supplier Code
@@ -764,7 +796,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="status"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Current operational status of the supplier">
                                 Status
@@ -795,7 +827,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="tier"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Business relationship tier indicating partnership level">
                                 Tier
@@ -822,159 +854,153 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="category"
-                        render={({ field }) => (
-                          <FormItem>
+                      {/* Categories - Same as Tags */}
+                          <FormItem className="gap-4">
                             <FormLabel>
-                              <FieldTooltip content="Primary business category for this supplier">
-                                Category
+                        <FieldTooltip content="Product categories this supplier specializes in. Categories are automatically extracted from supplier data, but you can add or remove them manually.">
+                          Categories
                               </FieldTooltip>
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""}>
-                              <FormControl>
-                                <SelectTrigger aria-describedby="category-help">
-                                  <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Technology">Technology</SelectItem>
-                                <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                                <SelectItem value="Logistics">Logistics</SelectItem>
-                                <SelectItem value="Services">Services</SelectItem>
-                                <SelectItem value="Materials">Materials</SelectItem>
-                                <SelectItem value="Musical Instruments">Musical Instruments</SelectItem>
-                                <SelectItem value="Electronics">Electronics</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormDescription id="category-help">
-                              Primary business category
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="subcategory"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              <FieldTooltip content="More specific categorization within the main category">
-                                Subcategory
-                              </FieldTooltip>
-                            </FormLabel>
-                            <FormControl>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
                               <Input
-                                placeholder="Enter subcategory"
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                                aria-describedby="subcategory-help"
-                              />
-                            </FormControl>
-                            <FormDescription id="subcategory-help">
-                              Optional: More specific category
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
+                            placeholder="Add a category"
+                            value={categoryInput}
+                            onChange={(e) => setCategoryInput(e.target.value)}
+                            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addCategory())}
+                            aria-label="Add new category"
+                          />
+                          <Button
+                            type="button"
+                            onClick={addCategory}
+                            variant="outline"
+                            aria-label="Add category"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {watchedCategories.map((category, index) => (
+                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                              {category}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0.5 hover:bg-transparent"
+                                onClick={() => removeCategory(category)}
+                                aria-label={`Remove category ${category}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                        {watchedCategories.length === 0 && (
+                          <p className="text-sm text-muted-foreground">
+                            No categories added yet. Categories will be automatically extracted from supplier data, or you can add them manually.
+                          </p>
                         )}
-                      />
+                      </div>
+                          </FormItem>
                     </div>
 
                     {/* Tags */}
-                    <div className="space-y-3">
+                    <FormItem className="gap-4">
                       <FormLabel>
                         <FieldTooltip content="Keywords to help categorize and search for this supplier">
                           Tags
                         </FieldTooltip>
                       </FormLabel>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add a tag"
-                          value={tagInput}
-                          onChange={(e) => setTagInput(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                          aria-label="Add new tag"
-                        />
-                        <Button
-                          type="button"
-                          onClick={addTag}
-                          variant="outline"
-                          aria-label="Add tag"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Add a tag"
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                            aria-label="Add new tag"
+                          />
+                          <Button
+                            type="button"
+                            onClick={addTag}
+                            variant="outline"
+                            aria-label="Add tag"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {watchedTags.map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                              {tag}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0.5 hover:bg-transparent"
+                                onClick={() => removeTag(tag)}
+                                aria-label={`Remove tag ${tag}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {watchedTags.map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                            {tag}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto p-0.5 hover:bg-transparent"
-                              onClick={() => removeTag(tag)}
-                              aria-label={`Remove tag ${tag}`}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+                    </FormItem>
 
                     {/* Brands */}
-                    <div className="space-y-3">
+                    <FormItem className="gap-4">
                       <FormLabel>
                         <FieldTooltip content="Brands or product lines associated with this supplier">
                           Supplier Brands
                         </FieldTooltip>
                       </FormLabel>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add a brand"
-                          value={brandInput}
-                          onChange={(e) => setBrandInput(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addBrand())}
-                          aria-label="Add new brand"
-                        />
-                        <Button
-                          type="button"
-                          onClick={addBrand}
-                          variant="outline"
-                          aria-label="Add brand"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Add a brand"
+                            value={brandInput}
+                            onChange={(e) => setBrandInput(e.target.value)}
+                            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addBrand())}
+                            aria-label="Add new brand"
+                          />
+                          <Button
+                            type="button"
+                            onClick={addBrand}
+                            variant="outline"
+                            aria-label="Add brand"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {watchedBrands.map((brand, index) => (
+                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                              {brand}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0.5 hover:bg-transparent"
+                                onClick={() => removeBrand(brand)}
+                                aria-label={`Remove brand ${brand}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {watchedBrands.map((brand, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                            {brand}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto p-0.5 hover:bg-transparent"
-                              onClick={() => removeBrand(brand)}
-                              aria-label={`Remove brand ${brand}`}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+                    </FormItem>
 
                     {/* Notes */}
                     <FormField
                       control={form.control}
                       name="notes"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="gap-4">
                           <FormLabel>
                             <FieldTooltip content="Additional notes or comments about this supplier">
                               Notes
@@ -982,7 +1008,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                           </FormLabel>
                           <FormControl>
                             <textarea
-                              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="flex min-h-[80px] w-full rounded-sm border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               placeholder="Additional notes about this supplier..."
                               value={field.value || ""}
                               onChange={field.onChange}
@@ -1001,21 +1027,21 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               </TabsContent>
 
               {/* Business Information Tab */}
-              <TabsContent value="business" className="space-y-6">
-                <Card>
-                  <CardHeader>
+              <TabsContent value="business" className="space-y-6 mt-3">
+                <Card className="gap-2">
+                  <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5" />
                       Business Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <CardContent className="space-y-3 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <FormField
                         control={form.control}
                         name="businessInfo.legalName"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Official registered business name">
                                 Legal Name
@@ -1040,7 +1066,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="businessInfo.tradingName"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Name used for day-to-day business operations">
                                 Trading Name
@@ -1066,7 +1092,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="businessInfo.taxId"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Tax identification number">
                                 Tax ID
@@ -1091,7 +1117,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="businessInfo.registrationNumber"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Official business registration number">
                                 Registration Number
@@ -1116,7 +1142,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="businessInfo.website"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Company website URL">
                                 Website
@@ -1141,7 +1167,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="businessInfo.foundedYear"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Year the company was established">
                                 Founded Year
@@ -1151,7 +1177,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                               <Input
                                 type="number"
                                 placeholder="e.g., 2010"
-                                value={field.value?.toString() || ""}
+                                value={field.value != null ? field.value.toString() : ""}
                                 onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                                 aria-describedby="founded-year-help"
                               />
@@ -1168,7 +1194,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="businessInfo.employeeCount"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Number of employees">
                                 Employee Count
@@ -1178,7 +1204,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                               <Input
                                 type="number"
                                 placeholder="Number of employees"
-                                value={field.value?.toString() || ""}
+                                value={field.value != null ? field.value.toString() : ""}
                                 onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                                 aria-describedby="employee-count-help"
                               />
@@ -1195,7 +1221,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="businessInfo.currency"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Primary currency for transactions">
                                 Currency
@@ -1228,9 +1254,9 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               </TabsContent>
 
               {/* Contacts Tab */}
-              <TabsContent value="contacts" className="space-y-6">
-                <Card>
-                  <CardHeader>
+              <TabsContent value="contacts" className="space-y-6 mt-3">
+                <Card className="gap-2">
+                  <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
                         <User className="h-5 w-5" />
@@ -1274,7 +1300,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.type`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Contact Type</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                   <FormControl>
@@ -1299,7 +1325,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.name`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Full Name</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1317,7 +1343,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.title`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Job Title</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1335,7 +1361,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.department`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Department</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1354,7 +1380,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.email`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1373,7 +1399,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.phone`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Phone</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1391,7 +1417,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`contacts.${index}.mobile`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Mobile</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1453,9 +1479,9 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               </TabsContent>
 
               {/* Addresses Tab */}
-              <TabsContent value="addresses" className="space-y-6">
-                <Card>
-                  <CardHeader>
+              <TabsContent value="addresses" className="space-y-6 mt-3">
+                <Card className="gap-2">
+                  <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
                         <MapPin className="h-5 w-5" />
@@ -1499,7 +1525,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`addresses.${index}.type`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Address Type</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                   <FormControl>
@@ -1524,7 +1550,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`addresses.${index}.name`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Location Name</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1580,7 +1606,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`addresses.${index}.city`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>City</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1598,7 +1624,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`addresses.${index}.state`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>State/Province</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1616,7 +1642,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`addresses.${index}.postalCode`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Postal Code</FormLabel>
                                 <FormControl>
                                   <Input
@@ -1634,7 +1660,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                             control={form.control}
                             name={`addresses.${index}.country`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="gap-4">
                                 <FormLabel>Country</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                   <FormControl>
@@ -1705,9 +1731,9 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
               </TabsContent>
 
               {/* Capabilities Tab */}
-              <TabsContent value="capabilities" className="space-y-6">
-                <Card>
-                  <CardHeader>
+              <TabsContent value="capabilities" className="space-y-6 mt-3">
+                <Card className="gap-2">
+                  <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2">
                       <Settings className="h-5 w-5" />
                       Capabilities & Financial
@@ -1805,7 +1831,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="capabilities.leadTime"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Expected delivery time in days">
                                 Lead Time (days)
@@ -1832,7 +1858,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="capabilities.paymentTerms"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Payment terms for transactions">
                                 Payment Terms
@@ -1866,7 +1892,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="financial.creditRating"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Credit rating assessment">
                                 Credit Rating
@@ -1900,7 +1926,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                         control={form.control}
                         name="financial.currency"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="gap-4">
                             <FormLabel>
                               <FieldTooltip content="Primary transaction currency">
                                 Financial Currency

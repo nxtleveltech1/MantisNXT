@@ -13,7 +13,7 @@ import {
   Activity,
   X,
 } from 'lucide-react';
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import { CustomerTable } from '@/components/customers/CustomerTable';
 import { ColumnSelector, ColumnDefinition } from '@/components/customers/ColumnSelector';
 import { FilterPanel, FilterValue } from '@/components/customers/FilterPanel';
@@ -328,19 +328,19 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-      <SelfContainedLayout title="Customers" breadcrumbs={[{ label: 'Customers' }]}>
+      <AppLayout title="Customers" breadcrumbs={[{ label: 'Customers' }]}>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading customers...</p>
           </div>
         </div>
-      </SelfContainedLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Customers"
       breadcrumbs={[{ label: 'Customer Engagement', href: '/' }, { label: 'Customers' }]}
     >
@@ -555,6 +555,6 @@ export default function CustomersPage() {
           onRefresh={handleRefresh}
         />
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

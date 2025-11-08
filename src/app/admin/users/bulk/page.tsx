@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import AdminLayout from '@/components/layout/AdminLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import { authProvider } from '@/lib/auth/mock-provider'
 import { USER_ROLES } from '@/types/auth'
 
@@ -175,7 +175,7 @@ export default function BulkOperationsPage() {
   }
 
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: 'Admin', href: '/admin' },
         { label: 'Users', href: '/admin/users' },
@@ -496,7 +496,7 @@ export default function BulkOperationsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }
 

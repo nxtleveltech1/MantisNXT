@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import AILoyaltyAnalytics from "@/components/loyalty/admin/AILoyaltyAnalytics"
 import LoyaltyLeaderboard from "@/components/loyalty/admin/LoyaltyLeaderboard"
 
@@ -21,7 +21,7 @@ import LoyaltyLeaderboard from "@/components/loyalty/admin/LoyaltyLeaderboard"
  */
 export default function LoyaltyAnalyticsPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "Loyalty & Rewards", href: "/admin/loyalty" },
         { label: "AI Analytics" },
@@ -31,6 +31,6 @@ export default function LoyaltyAnalyticsPage() {
         <AILoyaltyAnalytics />
         <LoyaltyLeaderboard />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

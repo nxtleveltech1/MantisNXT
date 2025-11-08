@@ -37,7 +37,7 @@ import {
   Download,
   Upload
 } from 'lucide-react'
-import AdminLayout from '@/components/layout/AdminLayout'
+import AppLayout from '@/components/layout/AppLayout'
 
 export default function CurrencySettingsPage() {
   const [config, setConfig] = useState<CurrencyConfig>(DEFAULT_CURRENCY_CONFIG)
@@ -107,7 +107,7 @@ export default function CurrencySettingsPage() {
   const vatPreview = getVATPreview()
 
   return (
-    <AdminLayout>
+    <AppLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -555,6 +555,6 @@ export default function CurrencySettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

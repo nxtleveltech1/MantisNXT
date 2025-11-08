@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useParams } from "next/navigation"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from '@/components/layout/AppLayout'
 import CustomerLoyaltyProfile from "@/components/loyalty/admin/CustomerLoyaltyProfile"
 
 /**
@@ -16,7 +16,7 @@ export default function CustomerLoyaltyProfilePage() {
   const customerId = params?.id as string
 
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "Loyalty & Rewards", href: "/admin/loyalty" },
         { label: "Customers", href: "/admin/loyalty/customers" },
@@ -33,6 +33,6 @@ export default function CustomerLoyaltyProfilePage() {
 
         <CustomerLoyaltyProfile customerId={customerId} />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

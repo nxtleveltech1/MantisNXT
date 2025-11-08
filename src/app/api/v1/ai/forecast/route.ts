@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { DemandForecastingService } from '@/lib/ai/services/DemandForecastingService';
+import { ensureServiceRuntime } from '@/lib/ai/runtime/ensure-service-runtime';
 import { z } from 'zod';
 
 const forecastRequestSchema = z.object({
@@ -33,6 +34,8 @@ export async function POST(request: NextRequest) {
 
     // Check if batch or single forecast
     if (body.productIds && Array.isArray(body.productIds)) {
+      // Ensure service runtime config (active provider, credentials)
+      await ensureServiceRuntime(session.user.orgId, 'demand_forecasting');
       // Batch forecast
       const validated = batchForecastSchema.parse(body);
       const service = new DemandForecastingService();
@@ -59,6 +62,8 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
+      // Ensure service runtime config (active provider, credentials)
+      await ensureServiceRuntime(session.user.orgId, 'demand_forecasting');
       // Single forecast
       const validated = forecastRequestSchema.parse(body);
       const service = new DemandForecastingService();

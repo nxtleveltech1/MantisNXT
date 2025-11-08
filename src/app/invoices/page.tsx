@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import {
   Search,
   Filter,
@@ -440,7 +440,7 @@ export default function InvoicesPage() {
   )
 
   return (
-    <SelfContainedLayout title="Invoices" breadcrumbs={[{ label: "Invoice Management" }]}>
+    <AppLayout title="Invoices" breadcrumbs={[{ label: "Invoice Management" }]}>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -984,7 +984,7 @@ export default function InvoicesPage() {
         </DialogContent>
       </Dialog>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }
 

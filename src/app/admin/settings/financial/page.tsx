@@ -30,7 +30,7 @@ import {
   Banknote,
   Calendar
 } from 'lucide-react'
-import AdminLayout from '@/components/layout/AdminLayout'
+import AppLayout from '@/components/layout/AppLayout'
 
 interface FinancialSettings {
   vat: {
@@ -230,7 +230,7 @@ export default function FinancialSettingsPage() {
   const totalBEEScore = Object.entries(settings.bee.scoreElements).reduce((sum, [, value]) => sum + value, 0)
 
   return (
-    <AdminLayout>
+    <AppLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -1013,6 +1013,6 @@ export default function FinancialSettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </AppLayout>
   );
 }

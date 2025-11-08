@@ -11,7 +11,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +51,7 @@ export default function PricingDashboardPage() {
   };
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Pricing & Optimization"
       breadcrumbs={[
         { label: 'Operations', href: '/' },
@@ -271,6 +271,6 @@ export default function PricingDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

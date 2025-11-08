@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useParams } from "next/navigation"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from '@/components/layout/AppLayout'
 import DashboardBuilder from "@/components/ai/admin/DashboardBuilder"
 
 /**
@@ -16,7 +16,7 @@ export default function DashboardEditPage() {
   const dashboardId = params?.id as string
 
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "AI Services", href: "/admin/ai" },
         { label: "Dashboards", href: "/admin/ai/dashboards" },
@@ -33,6 +33,6 @@ export default function DashboardEditPage() {
 
         <DashboardBuilder dashboardId={dashboardId} />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

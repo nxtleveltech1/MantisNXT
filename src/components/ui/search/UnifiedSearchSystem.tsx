@@ -689,7 +689,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
       <select
         value={selectedField}
         onChange={(e) => setSelectedField(e.target.value)}
-        className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
+        className="px-3 py-2 border border-border rounded-sm bg-background text-foreground"
       >
         <option value="">Select field...</option>
         {fields
@@ -706,7 +706,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
           <select
             value={selectedOperator}
             onChange={(e) => setSelectedOperator(e.target.value as SearchFilter['operator'])}
-            className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
+            className="px-3 py-2 border border-border rounded-sm bg-background text-foreground"
           >
             {operators.map(op => (
               <option key={op.value} value={op.value}>
@@ -719,7 +719,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
             <select
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
-              className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
+              className="px-3 py-2 border border-border rounded-sm bg-background text-foreground"
             >
               <option value="">Select value...</option>
               {selectedFieldObj.options.map(option => (
@@ -734,7 +734,7 @@ export const FilterBuilder: React.FC<FilterBuilderProps> = ({
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
               placeholder="Enter value..."
-              className="px-3 py-2 border border-border rounded-md bg-background text-foreground"
+              className="px-3 py-2 border border-border rounded-sm bg-background text-foreground"
             />
           )}
 

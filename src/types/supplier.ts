@@ -5,8 +5,7 @@ export interface Supplier {
   code: string;
   status: 'active' | 'inactive' | 'pending' | 'suspended';
   tier: 'strategic' | 'preferred' | 'approved' | 'conditional';
-  category: string;
-  subcategory?: string;
+  category: string[];
   tags: string[];
 
   // Contact Information
@@ -142,7 +141,15 @@ export interface PurchaseOrder {
   orderNumber: string;
   supplierId: string;
   supplier: Supplier;
-  status: 'draft' | 'sent' | 'acknowledged' | 'in_progress' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
+  status:
+    | 'draft'
+    | 'sent'
+    | 'acknowledged'
+    | 'in_progress'
+    | 'shipped'
+    | 'delivered'
+    | 'completed'
+    | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'urgent';
 
   // Order Details
@@ -204,7 +211,13 @@ export interface SupplierContract {
   supplier: Supplier;
 
   // Contract Details
-  type: 'master_agreement' | 'service_agreement' | 'purchase_agreement' | 'nda' | 'framework' | 'other';
+  type:
+    | 'master_agreement'
+    | 'service_agreement'
+    | 'purchase_agreement'
+    | 'nda'
+    | 'framework'
+    | 'other';
   title: string;
   description: string;
 
@@ -215,7 +228,15 @@ export interface SupplierContract {
   renewalDate?: Date;
 
   // Status
-  status: 'draft' | 'review' | 'negotiation' | 'approved' | 'signed' | 'active' | 'expired' | 'terminated';
+  status:
+    | 'draft'
+    | 'review'
+    | 'negotiation'
+    | 'approved'
+    | 'signed'
+    | 'active'
+    | 'expired'
+    | 'terminated';
 
   // Terms
   autoRenewal: boolean;
@@ -402,7 +423,14 @@ export interface SupplierSearchFilters {
 }
 
 export interface SupplierSortOptions {
-  field: 'name' | 'code' | 'status' | 'tier' | 'performanceRating' | 'lastContactDate' | 'createdAt';
+  field:
+    | 'name'
+    | 'code'
+    | 'status'
+    | 'tier'
+    | 'performanceRating'
+    | 'lastContactDate'
+    | 'createdAt';
   direction: 'asc' | 'desc';
 }
 
@@ -420,7 +448,13 @@ export interface DashboardMetrics {
 
 export interface DashboardActivity {
   id: string;
-  type: 'supplier_added' | 'contract_signed' | 'order_placed' | 'delivery_received' | 'payment_made' | 'performance_review';
+  type:
+    | 'supplier_added'
+    | 'contract_signed'
+    | 'order_placed'
+    | 'delivery_received'
+    | 'payment_made'
+    | 'performance_review';
   title: string;
   description: string;
   supplierId?: string;

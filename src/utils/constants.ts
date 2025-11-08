@@ -101,6 +101,41 @@ export const COMMUNICATION_PRIORITY = {
   URGENT: 'urgent',
 } as const;
 
+/**
+ * Product categories for suppliers
+ * Based on Pro Audio and similar supplier categories
+ * Used for supplier categorization, filtering, and AI extraction
+ */
+export const SUPPLIER_PRODUCT_CATEGORIES = [
+  'DJ Equipment',
+  'Mixers',
+  'Musical Instruments',
+  'Studio Microphones',
+  'Turntables',
+  'Headphones',
+  'Speakers',
+  'Audio Interfaces',
+  'Studio Monitors',
+  'Recording Equipment',
+  'Live Sound Equipment',
+  'Lighting Equipment',
+  'Cables & Accessories',
+  'Software',
+  'Controllers',
+  'Synthesizers',
+  'Keyboards',
+  'Guitars & Basses',
+  'Drums & Percussion',
+  'Wind Instruments',
+  'String Instruments',
+  'Amplifiers',
+  'Effects & Pedals',
+  'Cases & Bags',
+  'Other',
+] as const;
+
+export type SupplierProductCategory = (typeof SUPPLIER_PRODUCT_CATEGORIES)[number];
+
 export const INVOICE_STATUS = {
   RECEIVED: 'received',
   APPROVED: 'approved',
@@ -196,7 +231,19 @@ export const FILE_UPLOAD = {
     'text/plain',
     'text/csv',
   ],
-  EXTENSIONS: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.gif', '.txt', '.csv'],
+  EXTENSIONS: [
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.xls',
+    '.xlsx',
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.txt',
+    '.csv',
+  ],
 } as const;
 
 // Validation constraints

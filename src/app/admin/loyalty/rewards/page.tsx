@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import RewardCatalogManager from "@/components/loyalty/admin/RewardCatalogManager"
 
 /**
@@ -12,7 +12,7 @@ import RewardCatalogManager from "@/components/loyalty/admin/RewardCatalogManage
  */
 export default function RewardCatalogPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "Loyalty & Rewards", href: "/admin/loyalty" },
         { label: "Rewards" },
@@ -28,6 +28,6 @@ export default function RewardCatalogPage() {
 
         <RewardCatalogManager />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

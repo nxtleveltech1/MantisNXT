@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -347,7 +347,7 @@ export default function SupplierContactsDirectoryPage() {
   const primaryContacts = contacts.filter(c => c.isPrimary).length
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Supplier Contacts Directory"
       breadcrumbs={[
         { label: 'Business Directories', href: '/directories' },
@@ -998,6 +998,6 @@ export default function SupplierContactsDirectoryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }

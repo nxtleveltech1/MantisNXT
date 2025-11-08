@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Plus, X } from 'lucide-react';
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 
 export default function NewCustomerPage() {
   const router = useRouter();
@@ -150,7 +150,7 @@ export default function NewCustomerPage() {
   };
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Add New Customer"
       breadcrumbs={[
         { label: 'Customers', href: '/customers' },
@@ -555,6 +555,6 @@ export default function NewCustomerPage() {
           </form>
         </div>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

@@ -15,6 +15,7 @@ import {
 } from '@/lib/ai/api-utils';
 import { generateForecastSchema } from '@/lib/ai/validation-schemas';
 import { demandForecastService, ForecastHorizon } from '@/lib/ai/services/forecast-service';
+import { ensureServiceRuntime } from '@/lib/ai/runtime/ensure-service-runtime';
 
 /**
  * GET /api/v1/ai/forecasts
@@ -60,6 +61,9 @@ export async function POST(request: NextRequest) {
     const user = await authenticateRequest(request);
     const body = await request.json();
     const validated = generateForecastSchema.parse(body);
+
+    // Ensure service runtime config (active provider, credentials)
+    await ensureServiceRuntime(user.org_id, 'demand_forecasting');
 
     // Generate forecast using AI-powered service
     const forecasts = await demandForecastService.generateForecast(user.org_id, {

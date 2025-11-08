@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import RuleEngineBuilder from "@/components/loyalty/admin/RuleEngineBuilder"
 
 /**
@@ -12,7 +12,7 @@ import RuleEngineBuilder from "@/components/loyalty/admin/RuleEngineBuilder"
  */
 export default function LoyaltyRulesPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "Loyalty & Rewards", href: "/admin/loyalty" },
         { label: "Rules" },
@@ -28,6 +28,6 @@ export default function LoyaltyRulesPage() {
 
         <RuleEngineBuilder />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

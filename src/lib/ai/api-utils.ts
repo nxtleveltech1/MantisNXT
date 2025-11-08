@@ -182,11 +182,8 @@ export function noContentResponse(): NextResponse {
 /**
  * Validate required query parameters
  */
-export function requireQueryParams(
-  searchParams: URLSearchParams,
-  params: string[]
-): void {
-  const missing = params.filter((param) => !searchParams.has(param));
+export function requireQueryParams(searchParams: URLSearchParams, params: string[]): void {
+  const missing = params.filter(param => !searchParams.has(param));
   if (missing.length > 0) {
     throw new Error(`Missing required parameters: ${missing.join(', ')}`);
   }
@@ -197,25 +194,43 @@ export function requireQueryParams(
  */
 export function extractServiceType(
   params: unknown
-): 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'assistant' {
+):
+  | 'demand_forecasting'
+  | 'anomaly_detection'
+  | 'supplier_scoring'
+  | 'assistant'
+  | 'supplier_discovery' {
   const serviceType = (params as { service?: string })?.service;
 
   if (!serviceType) {
     throw new ConfigurationError('Service type is required', 'unknown');
   }
 
-  const validTypes = ['demand_forecasting', 'anomaly_detection', 'supplier_scoring', 'assistant'];
+  const validTypes = [
+    'demand_forecasting',
+    'anomaly_detection',
+    'supplier_scoring',
+    'assistant',
+    'supplier_discovery',
+  ];
   if (!validTypes.includes(serviceType)) {
     throw new ConfigurationError(`Invalid service type: ${serviceType}`, serviceType);
   }
 
-  return serviceType as 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'assistant';
+  return serviceType as
+    | 'demand_forecasting'
+    | 'anomaly_detection'
+    | 'supplier_scoring'
+    | 'assistant'
+    | 'supplier_discovery';
 }
 
 /**
  * Extract alert severity filter
  */
-export function extractSeverity(searchParams: URLSearchParams): 'critical' | 'high' | 'medium' | 'low' | null {
+export function extractSeverity(
+  searchParams: URLSearchParams
+): 'critical' | 'high' | 'medium' | 'low' | null {
   const severity = searchParams.get('severity');
   if (!severity) return null;
 
@@ -245,15 +260,15 @@ export function extractStatus(searchParams: URLSearchParams): string | null {
  * Mock authentication - replace with actual auth
  * TODO: Integrate with project authentication system
  */
-const FALLBACK_ORG_ID = '00000000-0000-0000-0000-000000000000'
-const DEFAULT_ORG_ID = process.env.DEFAULT_ORG_ID ?? FALLBACK_ORG_ID
-const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+const FALLBACK_ORG_ID = '00000000-0000-0000-0000-000000000000';
+const DEFAULT_ORG_ID = process.env.DEFAULT_ORG_ID ?? FALLBACK_ORG_ID;
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 function normalizeOrgId(value?: string | null): string {
   if (value && UUID_REGEX.test(value)) {
-    return value
+    return value;
   }
-  return DEFAULT_ORG_ID
+  return DEFAULT_ORG_ID;
 }
 
 export async function authenticateRequest(_request: NextRequest) {
@@ -264,7 +279,7 @@ export async function authenticateRequest(_request: NextRequest) {
       org_id: DEFAULT_ORG_ID,
       email: 'dev@mantisnxt.com',
       role: 'admin',
-    } as const
+    } as const;
   }
 
   // Placeholder for production authentication
@@ -273,7 +288,7 @@ export async function authenticateRequest(_request: NextRequest) {
     org_id: normalizeOrgId('org-456'),
     email: 'user@example.com',
     role: 'admin',
-  } as const
+  } as const;
 }
 
 /**
@@ -287,12 +302,10 @@ export async function checkRateLimit(
 ): Promise<void> {
   // Placeholder for rate limiting logic
   // Implement Redis-based rate limiting or similar
-
   // Example rate limit structure:
   // - demand_forecasting: 100 requests/hour
   // - anomaly_detection: 200 requests/hour
   // - assistant: 50 requests/hour
-
   // For now, this is a no-op
   // When implementing, throw RateLimitError if limit exceeded
 }

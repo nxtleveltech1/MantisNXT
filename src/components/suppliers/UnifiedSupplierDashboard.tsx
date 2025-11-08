@@ -2,10 +2,8 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MagicCard } from "@/components/magicui/magic-card"
-import Particles from "@/components/magicui/particles"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -488,6 +486,33 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
     }
   }, [refresh])
 
+  // Fetch supplier activities
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setActivitiesLoading(true)
+        const response = await fetch('/api/activities/recent?limit=10')
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success && result.data) {
+            // Filter for supplier-related activities
+            const supplierRelated = result.data.filter((activity: any) => 
+              activity.entityType === 'supplier' || 
+              activity.type?.includes('supplier') ||
+              activity.metadata?.category === 'supplier_management'
+            )
+            setSupplierActivities(supplierRelated.slice(0, 5))
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch activities:', error)
+      } finally {
+        setActivitiesLoading(false)
+      }
+    }
+    fetchActivities()
+  }, [])
+
   // Convert API suppliers to component format
   const suppliers = useMemo(() => {
     return apiSuppliers.map((supplier: any) => transformDatabaseSupplierToSupplierData(supplier))
@@ -566,6 +591,8 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   const [isExporting, setIsExporting] = useState(false)
   const [showAIDiscovery, setShowAIDiscovery] = useState(false)
   const [showPricelistUpload, setShowPricelistUpload] = useState(false)
+  const [supplierActivities, setSupplierActivities] = useState<any[]>([])
+  const [activitiesLoading, setActivitiesLoading] = useState(true)
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("")
@@ -776,38 +803,19 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   ]
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Suppliers"
       breadcrumbs={breadcrumbs}
     >
-      {/* Page-Level Gradient Overlay */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/30 to-pink-50/30 dark:from-blue-950/10 dark:via-purple-950/10 dark:to-pink-950/10" />
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
-
-      {/* Particles Background */}
-      <Particles
-        className="fixed inset-0 -z-10 pointer-events-none"
-        quantity={35}
-        color="#3b82f6"
-        staticity={50}
-        ease={50}
-      />
-
       <TooltipProvider>
         <div className="flex flex-col lg:flex-row gap-6 relative z-0">
           {/* Main Content */}
           <div className="flex-1 space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 relative">
-          <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl blur-xl -z-10" />
-          <div className="relative">
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Supplier Management
-            </h1>
-            <p className="text-muted-foreground">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Supplier Management</h1>
+            <p className="text-muted-foreground mt-1">
               Comprehensive supplier relationship and performance management
             </p>
           </div>
@@ -818,9 +826,8 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setShowAIDiscovery(true)}
-              className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
             >
-              <Sparkles className="h-4 w-4 mr-2 text-blue-600" />
+              <Sparkles className="h-4 w-4 mr-2" />
               AI Discovery
             </Button>
 
@@ -862,7 +869,6 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
               onClick={() => setShowPricelistUpload(true)}
               size="sm"
               variant="outline"
-              className="hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload Pricelist
@@ -870,7 +876,6 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
             <Button
               onClick={navigateToNewSupplier}
               size="sm"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Supplier
@@ -880,148 +885,183 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MagicCard
-            gradientSize={200}
-            gradientColor="#3b82f6"
-            gradientOpacity={0.15}
-            className="transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 border-t-2 border-t-blue-500/30"
-          >
-            <CardContent className="p-4">
+          <Card className="bg-card border border-border">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Suppliers</p>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
+                  <p className="text-3xl font-bold tracking-tight mt-1">
                     {dashboardMetrics.totalSuppliers}
                   </p>
-                  <p className="text-xs text-green-600">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {dashboardMetrics.activeSuppliers} active
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/10">
-                  <Building2 className="h-8 w-8 text-blue-500" />
+                <div className="p-3 rounded-lg bg-muted">
+                  <Building2 className="h-6 w-6 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>
-          </MagicCard>
+          </Card>
 
-          <MagicCard
-            gradientSize={200}
-            gradientColor="#10b981"
-            gradientOpacity={0.15}
-            className="transition-all duration-300 hover:shadow-lg hover:shadow-green-500/20 border-t-2 border-t-green-500/30"
-          >
-            <CardContent className="p-4">
+          <Card className="bg-card border border-border">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Spend</p>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+                  <p className="text-3xl font-bold tracking-tight mt-1">
                     {formatCurrency(dashboardMetrics.totalSpend)}
                   </p>
-                  <p className="text-xs text-blue-600">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Avg: {formatCurrency(dashboardMetrics.totalSpend / dashboardMetrics.totalSuppliers)}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/10">
-                  <DollarSign className="h-8 w-8 text-green-500" />
+                <div className="p-3 rounded-lg bg-muted">
+                  <DollarSign className="h-6 w-6 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>
-          </MagicCard>
+          </Card>
 
-          <MagicCard
-            gradientSize={200}
-            gradientColor="#f97316"
-            gradientOpacity={0.15}
-            className="transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 border-t-2 border-t-orange-500/30"
-          >
-            <CardContent className="p-4">
+          <Card className="bg-card border border-border">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">On-Time Delivery</p>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent">
+                  <p className="text-3xl font-bold tracking-tight mt-1">
                     {dashboardMetrics.avgOnTimeDelivery.toFixed(1)}%
                   </p>
-                  <p className="text-xs text-orange-600">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Industry avg: 85%
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/10">
-                  <Clock className="h-8 w-8 text-orange-500" />
+                <div className="p-3 rounded-lg bg-muted">
+                  <Clock className="h-6 w-6 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>
-          </MagicCard>
+          </Card>
 
-          <MagicCard
-            gradientSize={200}
-            gradientColor="#a855f7"
-            gradientOpacity={0.15}
-            className="transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 border-t-2 border-t-purple-500/30"
-          >
-            <CardContent className="p-4">
+          <Card className="bg-card border border-border">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Avg Rating</p>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent">
+                  <p className="text-3xl font-bold tracking-tight mt-1">
                     {dashboardMetrics.avgRating.toFixed(1)}/5
                   </p>
-                  <p className="text-xs text-purple-600">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {dashboardMetrics.riskDistribution.low} low risk
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/10">
-                  <Star className="h-8 w-8 text-yellow-500" />
+                <div className="p-3 rounded-lg bg-muted">
+                  <Star className="h-6 w-6 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>
-          </MagicCard>
+          </Card>
         </div>
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-lg blur-sm -z-10" />
-          <TabsList className="grid w-full grid-cols-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-lg border border-white/20">
-            <TabsTrigger
-              value="overview"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="directory"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300"
-            >
-              Directory
-            </TabsTrigger>
-            <TabsTrigger
-              value="performance"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300"
-            >
-              Performance
-            </TabsTrigger>
-            <TabsTrigger
-              value="analytics"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300"
-            >
-              Analytics
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="directory">Directory</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-6 mt-6">
+            {/* Supplier Management Activity */}
+            <Card className="bg-card border border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-muted-foreground" />
+                  Supplier Management Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activitiesLoading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30 animate-pulse">
+                        <div className="w-8 h-8 rounded-lg bg-muted" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-muted rounded w-3/4" />
+                          <div className="h-3 bg-muted rounded w-1/4" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : supplierActivities.length > 0 ? (
+                  <div className="space-y-3">
+                    {supplierActivities.map((activity) => {
+                      const getActivityIcon = () => {
+                        if (activity.type?.includes('upload')) return Upload
+                        if (activity.type?.includes('update')) return RefreshCw
+                        if (activity.type?.includes('order')) return ShoppingCart
+                        if (activity.type?.includes('added')) return Building2
+                        return Activity
+                      }
+                      const getActivityColor = () => {
+                        if (activity.type?.includes('upload')) return 'text-green-600 bg-green-50 border-green-200'
+                        if (activity.type?.includes('update')) return 'text-blue-600 bg-blue-50 border-blue-200'
+                        if (activity.type?.includes('order')) return 'text-purple-600 bg-purple-50 border-purple-200'
+                        if (activity.type?.includes('added')) return 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                        return 'text-muted-foreground bg-muted border-border'
+                      }
+                      const Icon = getActivityIcon()
+                      const formatTime = (timestamp: string) => {
+                        const date = new Date(timestamp)
+                        const now = new Date()
+                        const diffMs = now.getTime() - date.getTime()
+                        const diffMins = Math.floor(diffMs / 60000)
+                        const diffHours = Math.floor(diffMins / 60)
+                        const diffDays = Math.floor(diffHours / 24)
+                        if (diffDays > 0) return `${diffDays}d ago`
+                        if (diffHours > 0) return `${diffHours}h ago`
+                        if (diffMins > 0) return `${diffMins}m ago`
+                        return 'Just now'
+                      }
+                      return (
+                        <div
+                          key={activity.id}
+                          className="flex items-start gap-3 p-3 rounded-lg border bg-white hover:bg-muted/50 transition-colors"
+                        >
+                          <div className={cn(
+                            "flex items-center justify-center w-8 h-8 rounded-lg border shrink-0",
+                            getActivityColor()
+                          )}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">
+                              {activity.title || activity.description}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatTime(activity.timestamp)}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No recent activities</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Risk Distribution */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <MagicCard
-                gradientSize={200}
-                gradientColor="#ef4444"
-                gradientOpacity={0.12}
-                className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-l-4 border-l-red-500/50 shadow-lg"
-              >
+              <Card className="bg-card border border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-red-500/10 to-red-600/10">
-                      <Target className="h-5 w-5 text-red-500" />
-                    </div>
+                    <Target className="h-5 w-5 text-muted-foreground" />
                     Risk Distribution
                   </CardTitle>
                 </CardHeader>
@@ -1048,19 +1088,12 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                     ))}
                   </div>
                 </CardContent>
-              </MagicCard>
+              </Card>
 
-              <MagicCard
-                gradientSize={200}
-                gradientColor="#10b981"
-                gradientOpacity={0.12}
-                className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-l-4 border-l-green-500/50 shadow-lg"
-              >
+              <Card className="bg-card border border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/10 to-green-600/10">
-                      <TrendingUp className="h-5 w-5 text-green-500" />
-                    </div>
+                    <TrendingUp className="h-5 w-5 text-muted-foreground" />
                     Performance Trends
                   </CardTitle>
                 </CardHeader>
@@ -1083,21 +1116,14 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                     </div>
                   </div>
                 </CardContent>
-              </MagicCard>
+              </Card>
             </div>
 
             {/* Top Performers */}
-            <MagicCard
-              gradientSize={250}
-              gradientColor="#f59e0b"
-              gradientOpacity={0.12}
-              className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-t-4 border-t-yellow-500/50 shadow-xl"
-            >
+            <Card className="bg-card border border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-600/10">
-                    <Award className="h-5 w-5 text-yellow-500" />
-                  </div>
+                  <Award className="h-5 w-5 text-muted-foreground" />
                   Top Performing Suppliers
                 </CardTitle>
               </CardHeader>
@@ -1109,15 +1135,14 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                     .map((supplier, index) => (
                       <div
                         key={supplier.id}
-                        className="group relative flex items-center justify-between p-4 border rounded-lg transition-all duration-300 hover:shadow-lg hover:border-yellow-500/30 hover:bg-gradient-to-r hover:from-yellow-50/50 hover:to-orange-50/50 dark:hover:from-yellow-950/20 dark:hover:to-orange-950/20"
+                        className="group relative flex items-center justify-between p-4 border rounded-lg transition-colors hover:bg-muted"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/0 to-orange-500/0 group-hover:from-yellow-500/5 group-hover:to-orange-500/5 rounded-lg transition-all duration-300 pointer-events-none" />
-                        <div className="flex items-center gap-3 relative z-10">
+                        <div className="flex items-center gap-3">
                           <div className={cn(
-                            "flex items-center justify-center w-10 h-10 rounded-full font-bold transition-all duration-300",
-                            index === 0 && "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg shadow-yellow-500/30",
-                            index === 1 && "bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-lg shadow-gray-500/30",
-                            index === 2 && "bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-500/30"
+                            "flex items-center justify-center w-10 h-10 rounded-full font-bold bg-muted",
+                            index === 0 && "bg-primary text-primary-foreground",
+                            index === 1 && "bg-muted",
+                            index === 2 && "bg-muted"
                           )}>
                             <span className="text-sm">#{index + 1}</span>
                           </div>
@@ -1144,13 +1169,13 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                     ))}
                 </div>
               </CardContent>
-            </MagicCard>
+            </Card>
           </TabsContent>
 
           {/* Directory Tab */}
           <TabsContent value="directory" className="space-y-6">
             {/* Search and Filters */}
-            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 border-t-2 border-t-blue-500/30 shadow-lg">
+            <Card className="bg-card border border-border">
               <CardContent className="p-4">
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex-1">
@@ -1280,9 +1305,8 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
             </div>
 
             {/* Suppliers Table */}
-            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 border-t-2 border-t-gradient-to-r from-blue-500/30 to-purple-500/30 shadow-xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none" />
-              <CardContent className="p-0 relative">
+            <Card className="bg-card border border-border overflow-hidden">
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1325,7 +1349,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
+                            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
                               {supplier.name.charAt(0)}
                             </div>
                             <div>
@@ -1417,16 +1441,13 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
           <TabsContent value="performance" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {filteredSuppliers.slice(0, 4).map((supplier) => (
-                <MagicCard
+                <Card
                   key={supplier.id}
-                  gradientSize={180}
-                  gradientColor="#6366f1"
-                  gradientOpacity={0.15}
-                  className="backdrop-blur-sm bg-white/85 dark:bg-gray-900/85 border-l-2 border-l-indigo-500/40 shadow-lg hover:shadow-indigo-500/20 transition-all duration-300"
+                  className="bg-card border border-border"
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      <span>
                         {supplier.name}
                       </span>
                       <Badge variant="outline" className={getTierColor(supplier.tier)}>
@@ -1475,7 +1496,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                       </div>
                     </div>
                   </CardContent>
-                </MagicCard>
+                </Card>
               ))}
             </div>
           </TabsContent>
@@ -1483,17 +1504,10 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <MagicCard
-                gradientSize={200}
-                gradientColor="#8b5cf6"
-                gradientOpacity={0.15}
-                className="backdrop-blur-sm bg-white/85 dark:bg-gray-900/85 border-t-2 border-t-purple-500/40 shadow-xl"
-              >
+              <Card className="bg-card border border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-600/10">
-                      <DollarSign className="h-5 w-5 text-purple-500" />
-                    </div>
+                    <DollarSign className="h-5 w-5 text-muted-foreground" />
                     Spend Analysis
                   </CardTitle>
                 </CardHeader>
@@ -1513,19 +1527,12 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                     ))}
                   </div>
                 </CardContent>
-              </MagicCard>
+              </Card>
 
-              <MagicCard
-                gradientSize={200}
-                gradientColor="#ec4899"
-                gradientOpacity={0.15}
-                className="backdrop-blur-sm bg-white/85 dark:bg-gray-900/85 border-t-2 border-t-pink-500/40 shadow-xl"
-              >
+              <Card className="bg-card border border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-pink-500/10 to-pink-600/10">
-                      <BarChart3 className="h-5 w-5 text-pink-500" />
-                    </div>
+                    <BarChart3 className="h-5 w-5 text-muted-foreground" />
                     Performance Distribution
                   </CardTitle>
                 </CardHeader>
@@ -1547,7 +1554,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                     ))}
                   </div>
                 </CardContent>
-              </MagicCard>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
@@ -1747,7 +1754,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
       </aside>
     </div>
     </TooltipProvider>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }
 

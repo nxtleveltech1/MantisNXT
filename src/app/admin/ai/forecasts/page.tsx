@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import ForecastViewer from "@/components/ai/admin/ForecastViewer"
 
 /**
@@ -12,7 +12,7 @@ import ForecastViewer from "@/components/ai/admin/ForecastViewer"
  */
 export default function ForecastsPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "AI Services", href: "/admin/ai" },
         { label: "Forecasts" },
@@ -28,6 +28,6 @@ export default function ForecastsPage() {
 
         <ForecastViewer />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

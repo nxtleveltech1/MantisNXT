@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -66,7 +66,7 @@ export default function TestAuthPage() {
   ]
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Authentication Test"
       breadcrumbs={breadcrumbs}
     >
@@ -137,7 +137,7 @@ export default function TestAuthPage() {
           </CardContent>
         </Card>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }
 

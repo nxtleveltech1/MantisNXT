@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import {
   Search,
   Filter,
@@ -746,7 +746,7 @@ export default function PurchaseOrdersPage() {
   )
 
   return (
-    <SelfContainedLayout title="Purchase Orders" breadcrumbs={[{ label: "Purchase Order Management" }]}>
+    <AppLayout title="Purchase Orders" breadcrumbs={[{ label: "Purchase Order Management" }]}>
       <TooltipProvider>
         <div className="space-y-6">
         {/* Header */}
@@ -1425,7 +1425,7 @@ export default function PurchaseOrdersPage() {
         </Dialog>
         </div>
       </TooltipProvider>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }
 

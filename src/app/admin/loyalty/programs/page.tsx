@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,7 +25,7 @@ import {
  */
 export default function LoyaltyProgramsPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "Loyalty & Rewards", href: "/admin/loyalty" },
         { label: "Programs" },
@@ -312,6 +312,6 @@ export default function LoyaltyProgramsPage() {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

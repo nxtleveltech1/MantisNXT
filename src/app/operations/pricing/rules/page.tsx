@@ -10,12 +10,12 @@
 'use client';
 
 import React from 'react';
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import { PricingRuleManager } from '@/components/pricing/PricingRuleManager';
 
 export default function PricingRulesPage() {
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Pricing Rules"
       breadcrumbs={[
         { label: 'Operations', href: '/operations' },
@@ -32,6 +32,6 @@ export default function PricingRulesPage() {
 
         <PricingRuleManager />
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import AdminLayout from '@/components/layout/AdminLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Download, Upload, Plus, Users, Activity, Shield, User as UserIcon } from 'lucide-react'
@@ -211,7 +211,7 @@ export default function UsersPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout
+      <AppLayout
         breadcrumbs={[
           { label: 'Admin', href: '/admin' },
           { label: 'Users' },
@@ -220,12 +220,12 @@ export default function UsersPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      </AdminLayout>
+      </AppLayout>
     )
   }
 
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: 'Admin', href: '/admin' },
         { label: 'Users' },
@@ -348,6 +348,6 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

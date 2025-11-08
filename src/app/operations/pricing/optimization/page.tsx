@@ -10,7 +10,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -91,7 +91,7 @@ export default function OptimizationPage() {
   };
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Pricing Optimization"
       breadcrumbs={[
         { label: 'Operations', href: '/operations' },
@@ -196,6 +196,6 @@ export default function OptimizationPage() {
           )}
         </div>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

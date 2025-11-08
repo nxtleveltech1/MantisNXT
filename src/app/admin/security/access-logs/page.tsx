@@ -186,14 +186,14 @@ export default function AccessLogsPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <select className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <select className="px-3 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500">
                   <option value="">All Actions</option>
                   <option value="VIEW">View</option>
                   <option value="EXPORT">Export</option>
                   <option value="UPDATE">Update</option>
                   <option value="DELETE">Delete</option>
                 </select>
-                <select className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <select className="px-3 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500">
                   <option value="">Last 24 hours</option>
                   <option value="7d">Last 7 days</option>
                   <option value="30d">Last 30 days</option>

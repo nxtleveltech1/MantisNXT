@@ -3,85 +3,99 @@
  * Replaces all conflicting supplier endpoints with single, robust API
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import type {
-  APIResponse,
-  PaginatedAPIResponse
-} from '@/lib/suppliers/types/SupplierDomain'
-import { listSuppliers, upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService'
-import { CacheInvalidator } from '@/lib/cache/invalidation'
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import type { APIResponse, PaginatedAPIResponse } from '@/lib/suppliers/types/SupplierDomain';
+import { listSuppliers, upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService';
+import { CacheInvalidator } from '@/lib/cache/invalidation';
 
 // SSOT services used directly
 
 // Validation Schemas - All fields optional to match form
 const CreateSupplierSchema = z.object({
-  name: z.string().optional().or(z.literal("")),
-  code: z.string().optional().or(z.literal("")),
+  name: z.string().optional().or(z.literal('')),
+  code: z.string().optional().or(z.literal('')),
   status: z.enum(['active', 'inactive', 'pending', 'suspended']).optional(),
   tier: z.enum(['strategic', 'preferred', 'approved', 'conditional']).optional(),
-  category: z.string().optional().or(z.literal("")),
-  subcategory: z.string().optional().or(z.literal("")),
+  categories: z.array(z.string()).default([]), // Changed from category to categories (array)
   tags: z.array(z.string()).default([]),
   brands: z.array(z.string()).default([]),
 
-  businessInfo: z.object({
-    legalName: z.string().optional().or(z.literal("")),
-    tradingName: z.string().optional().or(z.literal("")),
-    taxId: z.string().optional().or(z.literal("")),
-    registrationNumber: z.string().optional().or(z.literal("")),
-    website: z.string().url().optional().or(z.literal("")),
-    foundedYear: z.number().min(1800).max(new Date().getFullYear()).optional(),
-    employeeCount: z.number().min(1).optional(),
-    annualRevenue: z.number().min(0).optional(),
-    currency: z.string().optional().or(z.literal(""))
-  }).optional(),
+  businessInfo: z
+    .object({
+      legalName: z.string().optional().or(z.literal('')),
+      tradingName: z.string().optional().or(z.literal('')),
+      taxId: z.string().optional().or(z.literal('')),
+      registrationNumber: z.string().optional().or(z.literal('')),
+      website: z.string().url().optional().or(z.literal('')),
+      foundedYear: z.number().min(1800).max(new Date().getFullYear()).optional(),
+      employeeCount: z.number().min(1).optional(),
+      annualRevenue: z.number().min(0).optional(),
+      currency: z.string().optional().or(z.literal('')),
+    })
+    .optional(),
 
-  contacts: z.array(z.object({
-    type: z.enum(['primary', 'billing', 'technical', 'sales', 'support']).optional(),
-    name: z.string().optional().or(z.literal("")),
-    title: z.string().optional().or(z.literal("")),
-    email: z.string().email('Invalid email address').optional().or(z.literal("")),
-    phone: z.string().optional().or(z.literal("")),
-    mobile: z.string().optional().or(z.literal("")),
-    department: z.string().optional().or(z.literal("")),
-    isPrimary: z.boolean().default(false),
-    isActive: z.boolean().default(true)
-  })).optional().default([]),
+  contacts: z
+    .array(
+      z.object({
+        type: z.enum(['primary', 'billing', 'technical', 'sales', 'support']).optional(),
+        name: z.string().optional().or(z.literal('')),
+        title: z.string().optional().or(z.literal('')),
+        email: z.string().email('Invalid email address').optional().or(z.literal('')),
+        phone: z.string().optional().or(z.literal('')),
+        mobile: z.string().optional().or(z.literal('')),
+        department: z.string().optional().or(z.literal('')),
+        isPrimary: z.boolean().default(false),
+        isActive: z.boolean().default(true),
+      })
+    )
+    .optional()
+    .default([]),
 
-  addresses: z.array(z.object({
-    type: z.enum(['headquarters', 'billing', 'shipping', 'warehouse', 'manufacturing']).optional(),
-    name: z.string().optional().or(z.literal("")),
-    addressLine1: z.string().optional().or(z.literal("")),
-    addressLine2: z.string().optional().or(z.literal("")),
-    city: z.string().optional().or(z.literal("")),
-    state: z.string().optional().or(z.literal("")),
-    postalCode: z.string().optional().or(z.literal("")),
-    country: z.string().optional().or(z.literal("")),
-    isPrimary: z.boolean().default(false),
-    isActive: z.boolean().default(true)
-  })).optional().default([]),
+  addresses: z
+    .array(
+      z.object({
+        type: z
+          .enum(['headquarters', 'billing', 'shipping', 'warehouse', 'manufacturing'])
+          .optional(),
+        name: z.string().optional().or(z.literal('')),
+        addressLine1: z.string().optional().or(z.literal('')),
+        addressLine2: z.string().optional().or(z.literal('')),
+        city: z.string().optional().or(z.literal('')),
+        state: z.string().optional().or(z.literal('')),
+        postalCode: z.string().optional().or(z.literal('')),
+        country: z.string().optional().or(z.literal('')),
+        isPrimary: z.boolean().default(false),
+        isActive: z.boolean().default(true),
+      })
+    )
+    .optional()
+    .default([]),
 
-  capabilities: z.object({
-    products: z.array(z.string()).default([]),
-    services: z.array(z.string()).default([]),
-    leadTime: z.number().optional(),
-    paymentTerms: z.string().optional().or(z.literal(""))
-  }).optional(),
+  capabilities: z
+    .object({
+      products: z.array(z.string()).default([]),
+      services: z.array(z.string()).default([]),
+      leadTime: z.number().optional(),
+      paymentTerms: z.string().optional().or(z.literal('')),
+    })
+    .optional(),
 
-  financial: z.object({
-    creditRating: z.string().optional().or(z.literal("")),
-    paymentTerms: z.string().optional().or(z.literal("")),
-    currency: z.string().optional().or(z.literal(""))
-  }).optional(),
+  financial: z
+    .object({
+      creditRating: z.string().optional().or(z.literal('')),
+      paymentTerms: z.string().optional().or(z.literal('')),
+      currency: z.string().optional().or(z.literal('')),
+    })
+    .optional(),
 
-  notes: z.string().optional().or(z.literal(""))
-})
+  notes: z.string().optional().or(z.literal('')),
+});
 
-const UpdateSupplierSchema = CreateSupplierSchema.partial()
+const UpdateSupplierSchema = CreateSupplierSchema.partial();
 
-const STATUS_VALUES = ['active', 'inactive', 'pending', 'suspended'] as const
-const TIER_VALUES = ['strategic', 'preferred', 'approved', 'conditional'] as const
+const STATUS_VALUES = ['active', 'inactive', 'pending', 'suspended'] as const;
+const TIER_VALUES = ['strategic', 'preferred', 'approved', 'conditional'] as const;
 
 const SupplierFiltersSchema = z.object({
   search: z.string().optional(),
@@ -99,8 +113,8 @@ const SupplierFiltersSchema = z.object({
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(1000).default(50),
   sortBy: z.enum(['name', 'code', 'status', 'tier', 'rating', 'createdAt']).default('name'),
-  sortOrder: z.enum(['asc', 'desc']).default('asc')
-})
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
 
 // Error handling utility
 function createErrorResponse(message: string, status: number = 400, details?: any): NextResponse {
@@ -108,14 +122,14 @@ function createErrorResponse(message: string, status: number = 400, details?: an
     success: false,
     data: null,
     error: message,
-    timestamp: new Date().toISOString()
-  }
+    timestamp: new Date().toISOString(),
+  };
 
   if (details) {
-    response.details = details
+    response.details = details;
   }
 
-  return NextResponse.json(response, { status })
+  return NextResponse.json(response, { status });
 }
 
 function createSuccessResponse<T>(data: T, message?: string): NextResponse {
@@ -123,10 +137,10 @@ function createSuccessResponse<T>(data: T, message?: string): NextResponse {
     success: true,
     data,
     message,
-    timestamp: new Date().toISOString()
-  }
+    timestamp: new Date().toISOString(),
+  };
 
-  return NextResponse.json(response)
+  return NextResponse.json(response);
 }
 
 function createPaginatedResponse<T>(data: T, pagination: any, message?: string): NextResponse {
@@ -135,24 +149,32 @@ function createPaginatedResponse<T>(data: T, pagination: any, message?: string):
     data,
     message,
     timestamp: new Date().toISOString(),
-    pagination
-  }
+    pagination,
+  };
 
-  return NextResponse.json(response)
+  return NextResponse.json(response);
 }
 
 // GET /api/suppliers/v3 - List suppliers with filtering
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(request.url);
 
     // Parse and normalize query parameters (tolerate tier values in status)
-    const rawStatus = (searchParams.get('status')?.split(',') || []).filter(Boolean)
-    const rawTier = (searchParams.get('tier')?.split(',') || []).filter(Boolean)
-    const statusOnly = rawStatus.filter((v) => (STATUS_VALUES as readonly string[]).includes(v)) as typeof STATUS_VALUES[number][]
-    const tierFromStatus = rawStatus.filter((v) => (TIER_VALUES as readonly string[]).includes(v)) as typeof TIER_VALUES[number][]
-    const tierOnly = rawTier.filter((v) => (TIER_VALUES as readonly string[]).includes(v)) as typeof TIER_VALUES[number][]
-    const tierNormalized = Array.from(new Set([...tierOnly, ...tierFromStatus])) as typeof TIER_VALUES[number][]
+    const rawStatus = (searchParams.get('status')?.split(',') || []).filter(Boolean);
+    const rawTier = (searchParams.get('tier')?.split(',') || []).filter(Boolean);
+    const statusOnly = rawStatus.filter(v =>
+      (STATUS_VALUES as readonly string[]).includes(v)
+    ) as (typeof STATUS_VALUES)[number][];
+    const tierFromStatus = rawStatus.filter(v =>
+      (TIER_VALUES as readonly string[]).includes(v)
+    ) as (typeof TIER_VALUES)[number][];
+    const tierOnly = rawTier.filter(v =>
+      (TIER_VALUES as readonly string[]).includes(v)
+    ) as (typeof TIER_VALUES)[number][];
+    const tierNormalized = Array.from(
+      new Set([...tierOnly, ...tierFromStatus])
+    ) as (typeof TIER_VALUES)[number][];
 
     const rawFilters = {
       search: searchParams.get('search') || undefined,
@@ -163,27 +185,27 @@ export async function GET(request: NextRequest) {
       country: searchParams.get('country')?.split(',') || undefined,
       state: searchParams.get('state')?.split(',') || undefined,
       city: searchParams.get('city')?.split(',') || undefined,
-      minRating: searchParams.get('minRating') ? parseFloat(searchParams.get('minRating')!) : undefined,
-      maxRating: searchParams.get('maxRating') ? parseFloat(searchParams.get('maxRating')!) : undefined,
+      minRating: searchParams.get('minRating')
+        ? parseFloat(searchParams.get('minRating')!)
+        : undefined,
+      maxRating: searchParams.get('maxRating')
+        ? parseFloat(searchParams.get('maxRating')!)
+        : undefined,
       createdAfter: searchParams.get('createdAfter') || undefined,
       createdBefore: searchParams.get('createdBefore') || undefined,
       page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50,
       sortBy: searchParams.get('sortBy') || 'name',
-      sortOrder: searchParams.get('sortOrder') || 'asc'
-    }
+      sortOrder: searchParams.get('sortOrder') || 'asc',
+    };
 
-    const validationResult = SupplierFiltersSchema.safeParse(rawFilters)
+    const validationResult = SupplierFiltersSchema.safeParse(rawFilters);
     if (!validationResult.success) {
-      return createErrorResponse(
-        'Invalid query parameters',
-        400,
-        validationResult.error.issues
-      )
+      return createErrorResponse('Invalid query parameters', 400, validationResult.error.issues);
     }
 
-    const page = validationResult.data.page
-    const limit = validationResult.data.limit
+    const page = validationResult.data.page;
+    const limit = validationResult.data.limit;
     const result = await listSuppliers({
       search: validationResult.data.search,
       status: validationResult.data.status as any,
@@ -191,7 +213,7 @@ export async function GET(request: NextRequest) {
       limit,
       sortBy: validationResult.data.sortBy as any,
       sortOrder: validationResult.data.sortOrder,
-    })
+    });
 
     return createPaginatedResponse(
       result.data,
@@ -201,32 +223,26 @@ export async function GET(request: NextRequest) {
         total: result.total,
         totalPages: Math.ceil(result.total / limit),
         hasNext: page * limit < result.total,
-        hasPrev: page > 1
+        hasPrev: page > 1,
       },
       `Retrieved ${result.data.length} suppliers`
-    )
+    );
   } catch (error) {
-    console.error('Error fetching suppliers:', error)
-    return createErrorResponse(
-      'Failed to fetch suppliers',
-      500,
-      { error: error instanceof Error ? error.message : 'Unknown error' }
-    )
+    console.error('Error fetching suppliers:', error);
+    return createErrorResponse('Failed to fetch suppliers', 500, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
 // POST /api/suppliers/v3 - Create new supplier
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
-    const validationResult = CreateSupplierSchema.safeParse(body)
+    const validationResult = CreateSupplierSchema.safeParse(body);
     if (!validationResult.success) {
-      return createErrorResponse(
-        'Validation failed',
-        400,
-        validationResult.error.issues
-      )
+      return createErrorResponse('Validation failed', 400, validationResult.error.issues);
     }
 
     const created = await upsertSupplier({
@@ -234,105 +250,100 @@ export async function POST(request: NextRequest) {
       code: validationResult.data.code || 'TEMP-' + Date.now(),
       status: validationResult.data.status || 'pending',
       currency: validationResult.data.businessInfo?.currency || 'ZAR',
-      contact: validationResult.data.contacts?.[0] && validationResult.data.contacts[0].email
-        ? {
-            email: validationResult.data.contacts[0].email,
-            phone: validationResult.data.contacts[0].phone || '',
-            website: validationResult.data.businessInfo?.website || '',
-          }
-        : undefined,
-    })
+      contact:
+        validationResult.data.contacts?.[0] && validationResult.data.contacts[0].email
+          ? {
+              email: validationResult.data.contacts[0].email,
+              phone: validationResult.data.contacts[0].phone || '',
+              website: validationResult.data.businessInfo?.website || '',
+            }
+          : undefined,
+    });
 
     // Invalidate cache after creating supplier
-    CacheInvalidator.invalidateSupplier(created.id, created.name)
+    CacheInvalidator.invalidateSupplier(created.id, created.name);
 
-    return createSuccessResponse(created, 'Supplier created in canonical layer')
+    return createSuccessResponse(created, 'Supplier created in canonical layer');
   } catch (error) {
-    console.error('Error creating supplier:', error)
+    console.error('Error creating supplier:', error);
 
     // Handle specific business errors
     if (error instanceof Error) {
       if (error.message.includes('already exists')) {
-        return createErrorResponse('Supplier code already exists', 409)
+        return createErrorResponse('Supplier code already exists', 409);
       }
       if (error.message.includes('validation')) {
-        return createErrorResponse('Validation error', 400, { error: error.message })
+        return createErrorResponse('Validation error', 400, { error: error.message });
       }
     }
 
-    return createErrorResponse(
-      'Failed to create supplier',
-      500,
-      { error: error instanceof Error ? error.message : 'Unknown error' }
-    )
+    return createErrorResponse('Failed to create supplier', 500, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
 // PUT /api/suppliers/v3 - Batch operations
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
     // Handle different batch operation types
     if (body.operation === 'bulk_update') {
-      const { updates } = body
+      const { updates } = body;
 
       if (!Array.isArray(updates)) {
-        return createErrorResponse('Updates must be an array')
+        return createErrorResponse('Updates must be an array');
       }
 
-      const updated: any[] = []
+      const updated: any[] = [];
       for (const u of updates) {
-        const res = await upsertSupplier({ id: u.id, name: u.data?.name, status: u.data?.status })
-        updated.push(res)
+        const res = await upsertSupplier({ id: u.id, name: u.data?.name, status: u.data?.status });
+        updated.push(res);
       }
-      return createSuccessResponse(updated, `Updated ${updated.length} suppliers`)
+      return createSuccessResponse(updated, `Updated ${updated.length} suppliers`);
     }
 
     if (body.operation === 'bulk_delete') {
-      const { ids } = body
+      const { ids } = body;
 
       if (!Array.isArray(ids)) {
-        return createErrorResponse('IDs must be an array')
+        return createErrorResponse('IDs must be an array');
       }
 
       for (const id of ids) {
-        await deactivateSupplier(id)
+        await deactivateSupplier(id);
       }
-      return createSuccessResponse(null, `Deactivated ${ids.length} suppliers`)
+      return createSuccessResponse(null, `Deactivated ${ids.length} suppliers`);
     }
 
-    return createErrorResponse('Unknown batch operation')
+    return createErrorResponse('Unknown batch operation');
   } catch (error) {
-    console.error('Error in batch operation:', error)
-    return createErrorResponse(
-      'Batch operation failed',
-      500,
-      { error: error instanceof Error ? error.message : 'Unknown error' }
-    )
+    console.error('Error in batch operation:', error);
+    return createErrorResponse('Batch operation failed', 500, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
 // DELETE /api/suppliers/v3 - Batch delete (alternative to PUT)
 export async function DELETE(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { ids } = body
+    const body = await request.json();
+    const { ids } = body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
-      return createErrorResponse('Must provide array of supplier IDs to delete')
+      return createErrorResponse('Must provide array of supplier IDs to delete');
     }
 
     for (const id of ids) {
-      await deactivateSupplier(id)
+      await deactivateSupplier(id);
     }
-    return createSuccessResponse(null, `Deactivated ${ids.length} suppliers`)
+    return createSuccessResponse(null, `Deactivated ${ids.length} suppliers`);
   } catch (error) {
-    console.error('Error deleting suppliers:', error)
-    return createErrorResponse(
-      'Failed to delete suppliers',
-      500,
-      { error: error instanceof Error ? error.message : 'Unknown error' }
-    )
+    console.error('Error deleting suppliers:', error);
+    return createErrorResponse('Failed to delete suppliers', 500, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }

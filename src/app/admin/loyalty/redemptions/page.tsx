@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import RedemptionQueue from "@/components/loyalty/admin/RedemptionQueue"
 
 /**
@@ -12,7 +12,7 @@ import RedemptionQueue from "@/components/loyalty/admin/RedemptionQueue"
  */
 export default function RedemptionsQueuePage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "Loyalty & Rewards", href: "/admin/loyalty" },
         { label: "Redemptions" },
@@ -28,6 +28,6 @@ export default function RedemptionsQueuePage() {
 
         <RedemptionQueue />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

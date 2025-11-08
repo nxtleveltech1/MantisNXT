@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Plus, Plug, ShoppingBag, Database, CheckCircle2, XCircle, AlertCircle, Clock } from "lucide-react";
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +96,7 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="System Integrations"
       breadcrumbs={[
         { label: "Integrations" },
@@ -314,6 +314,6 @@ export default function IntegrationsPage() {
           </CardContent>
         </Card>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
-import AdminLayout from '@/components/layout/AdminLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import AnomalyDetector from '@/components/ai/admin/AnomalyDetector';
 import {
   Breadcrumb,
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function AnomaliesPage() {
   return (
-    <AdminLayout>
+    <AppLayout>
       <div className="flex-1 space-y-6 p-8 pt-6">
         {/* Breadcrumbs */}
         <Breadcrumb>
@@ -94,6 +94,6 @@ export default function AnomaliesPage() {
         {/* Main Component */}
         <AnomalyDetector />
       </div>
-    </AdminLayout>
+    </AppLayout>
   );
 }

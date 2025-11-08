@@ -47,7 +47,8 @@ import {
   ArrowRight,
   Loader,
   Zap,
-  Package
+  Package,
+  Layers
 } from "lucide-react"
 
 interface WebSearchResult {
@@ -68,6 +69,8 @@ interface WebSearchResult {
   products?: string[]
   certifications?: string[]
   tags?: string[]
+  categories?: string[]
+  brands?: string[]
   addresses?: {
     type: string
     street: string
@@ -85,13 +88,11 @@ interface WebSearchResult {
 interface WebSupplierDiscoveryProps {
   onDataFound: (data: any) => void
   initialQuery?: string
-  onClose?: () => void
 }
 
 const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
   onDataFound,
-  initialQuery = "",
-  onClose
+  initialQuery = ""
 }) => {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [websiteUrl, setWebsiteUrl] = useState("")
@@ -187,6 +188,8 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
         products: item.products || [],
         certifications: item.certifications || [],
         tags: item.tags || [],
+        categories: item.categories || [],
+        brands: item.brands || [],
         addresses: item.addresses || [],
         socialMedia: item.socialMedia || {}
       }))
@@ -228,47 +231,31 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl">
-              <Globe className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Web Supplier Discovery</h2>
-              <p className="text-gray-600">Search the web or analyze websites to discover supplier information</p>
-            </div>
-          </div>
-          {onClose && (
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-          )}
-        </div>
-
         {/* Search Type Selection */}
-        <Tabs value={searchType} onValueChange={(value) => setSearchType(value as 'query' | 'website')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="query" className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Search Query
-            </TabsTrigger>
-            <TabsTrigger value="website" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Website URL
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={searchType} onValueChange={(value) => setSearchType(value as 'query' | 'website')} className="space-y-3">
+          <div className="p-1.5 bg-muted rounded-lg">
+            <TabsList className="grid w-full grid-cols-2 h-auto p-0.5 bg-transparent">
+              <TabsTrigger value="query" className="flex items-center gap-2 h-9">
+                <Search className="h-4 w-4" />
+                Search Query
+              </TabsTrigger>
+              <TabsTrigger value="website" className="flex items-center gap-2 h-9">
+                <Globe className="h-4 w-4" />
+                Website URL
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Search Query Tab */}
-          <TabsContent value="query" className="space-y-4">
-            <Card>
-              <CardHeader>
+          <TabsContent value="query" className="space-y-4 mt-3">
+            <Card className="gap-2">
+              <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Search className="h-5 w-5" />
                   Web Search Discovery
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-2">
                 <div className="flex gap-2">
                   <div className="flex-1 relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -308,15 +295,15 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
           </TabsContent>
 
           {/* Website URL Tab */}
-          <TabsContent value="website" className="space-y-4">
-            <Card>
-              <CardHeader>
+          <TabsContent value="website" className="space-y-4 mt-3">
+            <Card className="gap-2">
+              <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5" />
                   Website Analysis
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-2">
                 <div className="flex gap-2">
                   <div className="flex-1 relative">
                     <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -654,6 +641,42 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Categories and Brands */}
+                {(selectedResult.categories?.length || selectedResult.brands?.length) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedResult.categories && selectedResult.categories.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <Layers className="h-4 w-4" />
+                          Categories
+                        </h4>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedResult.categories.map((category, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {category}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedResult.brands && selectedResult.brands.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          Brands
+                        </h4>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedResult.brands.map((brand, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {brand}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Services and Products */}
                 {(selectedResult.services?.length || selectedResult.products?.length) && (

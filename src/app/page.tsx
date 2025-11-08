@@ -1,58 +1,37 @@
 "use client"
 
-import React from "react"
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import {
-  Building2,
-  CheckCircle,
-  Star,
-  Award,
-  TrendingUp,
-  Activity,
-  Plus,
-  UserCog,
-  Shield,
-  Settings,
-  Monitor,
-  Database,
-  Lock
-} from "lucide-react"
+import * as React from "react"
+import Link from "next/link"
 
-// MagicUI Dashboard - Animated components with stunning effects
+import { AppSidebar } from "@/components/app-sidebar"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 import MagicDashboard from '@/components/dashboard/MagicDashboard'
 import AsyncBoundary from '@/components/ui/AsyncBoundary'
+import { Separator } from "@/components/ui/separator"
 
 export default function Home() {
-  const breadcrumbs = [
-    { label: "Live Dashboard" }
-  ]
-
   return (
-    <SelfContainedLayout
-      title="MantisNXT Dashboard"
-      breadcrumbs={breadcrumbs}
-    >
-      {/* MagicUI Dashboard - Animated and Interactive */}
-      <AsyncBoundary>
-        <MagicDashboard />
-      </AsyncBoundary>
-
-      {/* Floating Action Button for Quick Actions */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          className="h-12 w-12 rounded-full shadow-lg"
-          size="icon"
-          asChild
-        >
-          <a href="/suppliers/new">
-            <Plus className="h-5 w-5" />
-          </a>
-        </Button>
-      </div>
-    </SelfContainedLayout>
+    <SidebarProvider defaultOpen>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-semibold">MantisNXT Dashboard</span>
+            <Link href="/">Live Dashboard</Link>
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <AsyncBoundary>
+            <MagicDashboard />
+          </AsyncBoundary>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

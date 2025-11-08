@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -24,13 +25,16 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings, TestTube, Save, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Settings, TestTube, Save, CheckCircle, XCircle, Loader2, Globe, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSupportedModels } from '@/lib/ai/model-utils';
+import ProviderRegistryPanel from '@/components/ai/admin/providers/ProviderRegistryPanel';
+import CustomServicesPanel from '@/components/ai/admin/providers/CustomServicesPanel';
+import UnifiedServicePanel from '@/components/ai/admin/UnifiedServicePanel';
 
 interface AIServiceConfig {
   id: string;
-  service_type: 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'assistant';
+  service_type: 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'assistant' | 'supplier_discovery';
   config: {
     provider?: string;
     model?: string;
@@ -43,6 +47,21 @@ interface AIServiceConfig {
       openai?: { enabled?: boolean; apiKey?: string; baseUrl?: string; model?: string };
       anthropic?: { enabled?: boolean; apiKey?: string; baseUrl?: string; model?: string };
       openai_compatible?: { enabled?: boolean; apiKey?: string; baseUrl?: string; model?: string };
+    };
+    // Web Search API Keys
+    webSearch?: {
+      serperApiKey?: string;
+      tavilyApiKey?: string;
+      googleSearchApiKey?: string;
+      googleSearchEngineId?: string;
+      // Custom providers - dynamic key-value pairs
+      customProviders?: Record<string, {
+        apiKey: string;
+        apiUrl?: string;
+        model?: string;
+        description?: string;
+        enabled?: boolean;
+      }>;
     };
     [key: string]: any;
   };
@@ -78,6 +97,13 @@ const SERVICE_INFO = {
     description: 'Conversational AI for business insights',
     icon: '💬',
     providers: ['openai', 'anthropic'],
+    defaultModel: 'claude-3-5-sonnet',
+  },
+  supplier_discovery: {
+    name: 'Supplier Discovery',
+    description: 'AI-powered web search and data extraction for supplier information',
+    icon: '🌐',
+    providers: ['openai', 'anthropic', 'openai_compatible'],
     defaultModel: 'claude-3-5-sonnet',
   },
 };
@@ -134,12 +160,116 @@ const filterOpenRouterModels = (models: string[], enabled: boolean): string[] =>
 
 export default function AIServiceConfiguration() {
   const queryClient = useQueryClient();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<{ displayName: string; provider: 'openai' | 'anthropic' | 'openai_compatible'; baseUrl: string; apiKey: string; model: string }>({
+    displayName: '',
+    provider: 'openai',
+    baseUrl: '',
+    apiKey: '',
+    model: '',
+  });
+  // Org-wide provider presets
+  const { data: providerPresets = [] } = useQuery<{ id: string; name: string; provider_type: string; base_url?: string; default_model?: string }[]>({
+    queryKey: ['ai-provider-registry'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/v1/ai/providers');
+        const data = await res.json().catch(() => ({}));
+        return data?.data || [];
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  const createConfigMutation = useMutation({
+    mutationFn: async () => {
+      if (!createForm.displayName?.trim()) {
+        throw new Error('Service Label is required');
+      }
+      console.log('[Create Service] Starting with:', { label: createForm.displayName, provider: createForm.provider });
+      
+      // 1) Create a custom service with label
+      const serviceRes = await fetch('/api/v1/ai/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: createForm.displayName.trim() }),
+      });
+      
+      if (!serviceRes.ok) {
+        const errorText = await serviceRes.text();
+        console.error('[Create Service] Failed to create service:', errorText);
+        throw new Error(`Failed to create service: ${errorText}`);
+      }
+      
+      const serviceData = await serviceRes.json();
+      console.log('[Create Service] Service created:', serviceData);
+      const serviceId = serviceData?.data?.id;
+      if (!serviceId) {
+        console.error('[Create Service] No service ID returned:', serviceData);
+        throw new Error('Service created without id');
+      }
+
+      // 2) Attach initial provider config
+      const prov = createForm.provider;
+      const config: any = {
+        provider: prov,
+        activeProvider: prov,
+        ...(createForm.baseUrl ? { baseUrl: createForm.baseUrl } : {}),
+        ...(createForm.apiKey ? { apiKey: createForm.apiKey } : {}),
+        ...(createForm.model ? { model: createForm.model } : {}),
+        providers: { [prov]: { enabled: true, ...(createForm.baseUrl ? { baseUrl: createForm.baseUrl } : {}), ...(createForm.apiKey ? { apiKey: createForm.apiKey } : {}), ...(createForm.model ? { model: createForm.model } : {}) } },
+      };
+      
+      console.log('[Create Service] Saving config for service:', serviceId, config);
+      const cfgRes = await fetch(`/api/v1/ai/services/${serviceId}/config`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config, enabled: true }),
+      });
+      
+      if (!cfgRes.ok) {
+        const errorText = await cfgRes.text();
+        console.error('[Create Service] Failed to save config:', errorText);
+        throw new Error(`Failed to save configuration: ${errorText}`);
+      }
+      
+      const cfgData = await cfgRes.json();
+      console.log('[Create Service] Config saved:', cfgData);
+      return cfgData;
+    },
+    onSuccess: () => {
+      console.log('[Create Service] Success - refreshing queries');
+      toast.success('AI service created');
+      setIsCreateOpen(false);
+      setCreateForm({ displayName: '', provider: 'openai', baseUrl: '', apiKey: '', model: '' });
+      // Refresh any service/config queries the page might use
+      queryClient.invalidateQueries({ queryKey: ['ai-provider-registry'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-configs'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-services'] });
+    },
+    onError: (e: any) => {
+      console.error('[Create Service] Error:', e);
+      toast.error(e?.message || 'Failed to create service');
+    },
+  });
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [dynamicModels, setDynamicModels] = useState<Record<string, string[]>>({});
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [pendingAdvanced, setPendingAdvanced] = useState<Record<string, string>>({});
   const [openRouterFilters, setOpenRouterFilters] = useState<Record<string, boolean>>({});
+  // Local state for custom providers to enable immediate UI updates
+  const [customProvidersLocal, setCustomProvidersLocal] = useState<Record<string, Record<string, any>>>({});
+  // Local state for web search API keys to enable immediate UI updates
+  const [webSearchKeysLocal, setWebSearchKeysLocal] = useState<Record<string, {
+    serperApiKey?: string;
+    tavilyApiKey?: string;
+    googleSearchApiKey?: string;
+    googleSearchEngineId?: string;
+  }>>({});
+  // Refs to track debounce timeouts for each input field
+  const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
 
   // Helper: fetch models for a service/provider combination and cache locally
   async function fetchModelsFor(service: string, cfg: any) {
@@ -173,6 +303,50 @@ export default function AIServiceConfiguration() {
       return data.data || [];
     },
   });
+
+  // Sync local web search keys state with server data (only on initial load)
+  useEffect(() => {
+    // Only initialize if we don't have local state yet
+    if (Object.keys(webSearchKeysLocal).length > 0) return;
+    
+    const newLocalState: Record<string, {
+      serperApiKey?: string;
+      tavilyApiKey?: string;
+      googleSearchApiKey?: string;
+      googleSearchEngineId?: string;
+    }> = {};
+    configs.forEach((c) => {
+      if (c.service_type === 'supplier_discovery' && c.config?.webSearch) {
+        newLocalState[c.service_type] = {
+          serperApiKey: c.config.webSearch.serperApiKey || '',
+          tavilyApiKey: c.config.webSearch.tavilyApiKey || '',
+          googleSearchApiKey: c.config.webSearch.googleSearchApiKey || '',
+          googleSearchEngineId: c.config.webSearch.googleSearchEngineId || '',
+        };
+      }
+    });
+    if (Object.keys(newLocalState).length > 0) {
+      setWebSearchKeysLocal(newLocalState);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configs.length]); // Only run when configs first loads
+
+  // Sync local custom providers state with server data (only on initial load)
+  useEffect(() => {
+    // Only initialize if we don't have local state yet
+    if (Object.keys(customProvidersLocal).length > 0) return;
+    
+    const newLocalState: Record<string, Record<string, any>> = {};
+    configs.forEach((c) => {
+      if (c.config?.webSearch?.customProviders) {
+        newLocalState[c.service_type] = c.config.webSearch.customProviders;
+      }
+    });
+    if (Object.keys(newLocalState).length > 0) {
+      setCustomProvidersLocal(newLocalState);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configs.length]); // Only run when configs first loads
 
   // On initial load, try to pre-populate model lists for configured providers
   useEffect(() => {
@@ -264,7 +438,139 @@ export default function AIServiceConfiguration() {
     <div className="space-y-6">
       {/* Section heading removed to avoid duplication with page title */}
 
-      <div className="grid gap-6 grid-cols-1">
+      {/* Add New AI Service */}
+      <div className="flex items-center justify-between">
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New AI Service
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add AI Service</DialogTitle>
+              <DialogDescription>Create and configure a new AI service with provider, endpoint, API key, and model.</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 md:col-span-2">
+                <Label>Service Label <span className="text-red-500">*</span></Label>
+                <Input
+                  placeholder="e.g. Demand Forecasting"
+                  value={createForm.displayName}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, displayName: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Provider</Label>
+                <Select value={createForm.provider} onValueChange={(v) => setCreateForm((p) => ({ ...p, provider: v as any }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['openai','anthropic','openai_compatible'].map((p) => (
+                      <SelectItem key={p} value={p}>{p.replace('_',' ').replace(/\b\w/g,(c)=>c.toUpperCase())}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Import from Preset</Label>
+                <Select onValueChange={(presetId) => {
+                  const preset: any = providerPresets.find((x:any) => x.id === presetId);
+                  if (!preset) return;
+                  const prov = preset.provider_type === 'openai' || preset.provider_type === 'anthropic' ? preset.provider_type : 'openai_compatible';
+                  setCreateForm((p) => ({
+                    ...p,
+                    provider: prov,
+                    baseUrl: preset.base_url || p.baseUrl,
+                    model: preset.default_model || p.model,
+                  }));
+                  toast.success(`Imported preset "${preset.name}"`);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={providerPresets.length ? 'Choose preset…' : 'No presets available'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providerPresets.map((p:any) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Endpoint URL</Label>
+                <Input
+                  placeholder={createForm.provider === 'openai' ? 'https://api.openai.com/v1' : createForm.provider === 'anthropic' ? 'https://api.anthropic.com' : 'https://your-compatible-base/v1'}
+                  value={createForm.baseUrl}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, baseUrl: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>API Key</Label>
+                <Input
+                  type="password"
+                  placeholder={`Enter ${createForm.provider.replace('_',' ')} API key`}
+                  value={createForm.apiKey}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, apiKey: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Model</Label>
+                <div className="flex items-center gap-2">
+                  <Select value={createForm.model} onValueChange={(v) => setCreateForm((p) => ({ ...p, model: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-64 overflow-auto">
+                      {(dynamicModels[`assistant:${createForm.provider}`] || MODEL_OPTIONS[createForm.provider] || []).map((m: any) => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const cfg = { provider: createForm.provider, activeProvider: createForm.provider, baseUrl: createForm.baseUrl, apiKey: createForm.apiKey } as any;
+                      await fetchModelsFor('assistant', cfg);
+                      toast.success('Loaded models');
+                    }}
+                  >
+                    Load models
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+              <Button disabled={createConfigMutation.isPending || !createForm.displayName.trim() || !createForm.provider} onClick={() => createConfigMutation.mutate()}>
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Org-wide Provider Registry */}
+      <ProviderRegistryPanel />
+
+      <Separator />
+
+      {/* Built-in AI Services */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Built-in AI Services</h2>
+        <UnifiedServicePanel />
+      </div>
+
+      <Separator />
+
+      {/* Custom Services (named) */}
+      <CustomServicesPanel />
+
+      <div className="grid gap-6 grid-cols-1" style={{ display: 'none' }}>
         {Object.entries(SERVICE_INFO).map(([serviceType, info]) => {
           const config = getServiceConfig(serviceType);
           const isEnabled = config?.enabled || false;
@@ -368,6 +674,34 @@ export default function AIServiceConfiguration() {
                       <SelectContent>
                         {['openai', 'anthropic', 'openai_compatible'].map((p) => (
                           <SelectItem key={p} value={p}>{p.replace('_',' ').replace(/\b\w/g, (c) => c.toUpperCase())}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Import defaults from Registry preset */}
+                  <div className="space-y-2">
+                    <Label>Import from Preset</Label>
+                    <Select onValueChange={async (presetId) => {
+                      const preset = providerPresets.find((p:any) => p.id === presetId);
+                      if (!preset) return;
+                      const prov = preset.provider_type === 'openai' || preset.provider_type === 'anthropic' ? preset.provider_type : 'openai_compatible';
+                      const nextCfg: any = {
+                        ...config?.config,
+                        provider: prov,
+                        activeProvider: prov,
+                        baseUrl: preset.base_url || config?.config?.baseUrl,
+                        model: preset.default_model || config?.config?.model,
+                      };
+                      updateConfigMutation.mutate({ service: serviceType, updates: { config: nextCfg } });
+                      try { await fetchModelsFor(serviceType, nextCfg) } catch {}
+                      toast.success(`Imported preset "${preset.name}"`);
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={providerPresets.length ? 'Choose preset…' : 'No presets available'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {providerPresets.map((p:any) => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -573,6 +907,703 @@ export default function AIServiceConfiguration() {
                   )
                 })}
 
+                {/* Web Search API Configuration - Only for Supplier Discovery */}
+                {serviceType === 'supplier_discovery' && (
+                  <>
+                    {/* Model Selection for Supplier Discovery */}
+                    <Card className="border-2 border-purple-200 bg-purple-50/50">
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Settings className="h-5 w-5" />
+                          AI Model Configuration
+                        </CardTitle>
+                        <CardDescription>
+                          Configure the AI model used for data extraction and analysis
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`${serviceType}-ai-model`}>AI Model</Label>
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={config?.config?.model || ''}
+                                onValueChange={(value) =>
+                                  updateConfigMutation.mutate({
+                                    service: serviceType,
+                                    updates: { config: { ...config?.config, model: value } },
+                                  })
+                                }
+                              >
+                                <SelectTrigger id={`${serviceType}-ai-model`}>
+                                  <SelectValue placeholder="Select model" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-64 overflow-auto">
+                                  {availableModels.length > 0 ? (
+                                    availableModels.map((m) => (
+                                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                                    ))
+                                  ) : (
+                                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                                      No models available. Configure provider first.
+                                    </div>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`${serviceType}-ai-model-manual`}>Or Enter Model Name</Label>
+                            <Input
+                              id={`${serviceType}-ai-model-manual`}
+                              type="text"
+                              placeholder="e.g., gpt-4, claude-3-5-sonnet"
+                              value={config?.config?.model || ''}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                updateConfigMutation.mutate({
+                                  service: serviceType,
+                                  updates: { config: { ...config?.config, model: newValue } },
+                                });
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Select a model from the dropdown or manually enter a model name. The model will be used for extracting supplier information from web content.
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Web Search APIs Card */}
+                    <Card className="border-2 border-blue-200 bg-blue-50/50">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Globe className="h-5 w-5" />
+                        Web Search APIs
+                      </CardTitle>
+                      <CardDescription>
+                        Configure web search providers for supplier discovery. At least one API key is recommended.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Serper API */}
+                        <div className="space-y-2">
+                          <Label htmlFor={`${serviceType}-serper-key`}>
+                            Serper API Key
+                            <span className="text-xs text-muted-foreground ml-2">(Recommended)</span>
+                          </Label>
+                          <Input
+                            id={`${serviceType}-serper-key`}
+                            type="password"
+                            placeholder="sk_xxxxxxxxxxxxxxxxxxxxx"
+                            value={webSearchKeysLocal[serviceType]?.serperApiKey ?? config?.config?.webSearch?.serperApiKey ?? ''}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              
+                              // Update local state immediately for instant UI feedback
+                              setWebSearchKeysLocal(prev => ({
+                                ...prev,
+                                [serviceType]: {
+                                  ...(prev[serviceType] || {}),
+                                  serperApiKey: newValue,
+                                },
+                              }));
+                              
+                              // Debounce the mutation
+                              const timeoutKey = `${serviceType}-serper-key`;
+                              if (debounceTimeouts.current[timeoutKey]) {
+                                clearTimeout(debounceTimeouts.current[timeoutKey]);
+                              }
+                              debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+                                const webSearch = {
+                                  ...(config?.config?.webSearch || {}),
+                                  serperApiKey: newValue,
+                                };
+                                updateConfigMutation.mutate({
+                                  service: serviceType,
+                                  updates: {
+                                    config: {
+                                      ...config?.config,
+                                      webSearch,
+                                    },
+                                  },
+                                });
+                                delete debounceTimeouts.current[timeoutKey];
+                              }, 500);
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Get API key from{' '}
+                            <a href="https://serper.dev" target="_blank" rel="noopener noreferrer" className="underline">
+                              serper.dev
+                            </a>
+                          </p>
+                        </div>
+
+                        {/* Tavily API */}
+                        <div className="space-y-2">
+                          <Label htmlFor={`${serviceType}-tavily-key`}>Tavily API Key</Label>
+                          <Input
+                            id={`${serviceType}-tavily-key`}
+                            type="password"
+                            placeholder="tvly-xxxxxxxxxxxxxxxxxxxxx"
+                            value={webSearchKeysLocal[serviceType]?.tavilyApiKey ?? config?.config?.webSearch?.tavilyApiKey ?? ''}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              
+                              // Update local state immediately
+                              setWebSearchKeysLocal(prev => ({
+                                ...prev,
+                                [serviceType]: {
+                                  ...(prev[serviceType] || {}),
+                                  tavilyApiKey: newValue,
+                                },
+                              }));
+                              
+                              // Debounce the mutation
+                              const timeoutKey = `${serviceType}-tavily-key`;
+                              if (debounceTimeouts.current[timeoutKey]) {
+                                clearTimeout(debounceTimeouts.current[timeoutKey]);
+                              }
+                              debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+                                const webSearch = {
+                                  ...(config?.config?.webSearch || {}),
+                                  tavilyApiKey: newValue,
+                                };
+                                updateConfigMutation.mutate({
+                                  service: serviceType,
+                                  updates: {
+                                    config: {
+                                      ...config?.config,
+                                      webSearch,
+                                    },
+                                  },
+                                });
+                                delete debounceTimeouts.current[timeoutKey];
+                              }, 500);
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Get API key from{' '}
+                            <a href="https://tavily.com" target="_blank" rel="noopener noreferrer" className="underline">
+                              tavily.com
+                            </a>
+                          </p>
+                        </div>
+
+                        {/* Google Search API Key */}
+                        <div className="space-y-2">
+                          <Label htmlFor={`${serviceType}-google-key`}>Google Search API Key</Label>
+                          <Input
+                            id={`${serviceType}-google-key`}
+                            type="password"
+                            placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxx"
+                            value={webSearchKeysLocal[serviceType]?.googleSearchApiKey ?? config?.config?.webSearch?.googleSearchApiKey ?? ''}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              
+                              // Update local state immediately
+                              setWebSearchKeysLocal(prev => ({
+                                ...prev,
+                                [serviceType]: {
+                                  ...(prev[serviceType] || {}),
+                                  googleSearchApiKey: newValue,
+                                },
+                              }));
+                              
+                              // Debounce the mutation
+                              const timeoutKey = `${serviceType}-google-key`;
+                              if (debounceTimeouts.current[timeoutKey]) {
+                                clearTimeout(debounceTimeouts.current[timeoutKey]);
+                              }
+                              debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+                                const webSearch = {
+                                  ...(config?.config?.webSearch || {}),
+                                  googleSearchApiKey: newValue,
+                                };
+                                updateConfigMutation.mutate({
+                                  service: serviceType,
+                                  updates: {
+                                    config: {
+                                      ...config?.config,
+                                      webSearch,
+                                    },
+                                  },
+                                });
+                                delete debounceTimeouts.current[timeoutKey];
+                              }, 500);
+                            }}
+                          />
+                        </div>
+
+                        {/* Google Search Engine ID */}
+                        <div className="space-y-2">
+                          <Label htmlFor={`${serviceType}-google-cx`}>Google Search Engine ID</Label>
+                          <Input
+                            id={`${serviceType}-google-cx`}
+                            type="text"
+                            placeholder="xxxxxxxxxxxxxxxxxxxxx"
+                            value={webSearchKeysLocal[serviceType]?.googleSearchEngineId ?? config?.config?.webSearch?.googleSearchEngineId ?? ''}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              
+                              // Update local state immediately
+                              setWebSearchKeysLocal(prev => ({
+                                ...prev,
+                                [serviceType]: {
+                                  ...(prev[serviceType] || {}),
+                                  googleSearchEngineId: newValue,
+                                },
+                              }));
+                              
+                              // Debounce the mutation
+                              const timeoutKey = `${serviceType}-google-cx`;
+                              if (debounceTimeouts.current[timeoutKey]) {
+                                clearTimeout(debounceTimeouts.current[timeoutKey]);
+                              }
+                              debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+                                const webSearch = {
+                                  ...(config?.config?.webSearch || {}),
+                                  googleSearchEngineId: newValue,
+                                };
+                                updateConfigMutation.mutate({
+                                  service: serviceType,
+                                  updates: {
+                                    config: {
+                                      ...config?.config,
+                                      webSearch,
+                                    },
+                                  },
+                                });
+                                delete debounceTimeouts.current[timeoutKey];
+                              }, 500);
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Required if using Google Search API
+                          </p>
+                        </div>
+                      </div>
+                      <div className="rounded-md bg-blue-100 p-3 text-sm text-blue-800">
+                        <strong>Note:</strong> If no API keys are configured, the system will use DuckDuckGo (free, no API key required) as a fallback.
+                      </div>
+
+                      {/* Custom Providers Section */}
+                      <Separator className="my-4" />
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-sm font-semibold">Custom Service Providers</h4>
+                            <p className="text-xs text-muted-foreground">
+                              Add any service provider with custom API keys
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const currentProviders = customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {};
+                              const newProviderName = `provider_${Date.now()}`;
+                              const newProvider = {
+                                apiKey: '',
+                                apiUrl: '',
+                                model: '',
+                                description: '',
+                                enabled: true,
+                              };
+                              
+                              // Update local state immediately
+                              setCustomProvidersLocal(prev => ({
+                                ...prev,
+                                [serviceType]: {
+                                  ...currentProviders,
+                                  [newProviderName]: newProvider,
+                                },
+                              }));
+                              
+                              // Then sync with server
+                              const webSearch = {
+                                ...(config?.config?.webSearch || {}),
+                                customProviders: {
+                                  ...currentProviders,
+                                  [newProviderName]: newProvider,
+                                },
+                              };
+                              updateConfigMutation.mutate({
+                                service: serviceType,
+                                updates: {
+                                  config: {
+                                    ...config?.config,
+                                    webSearch,
+                                  },
+                                },
+                              });
+                            }}
+                            disabled={updateConfigMutation.isPending}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Provider
+                          </Button>
+                        </div>
+
+                        {/* List of custom providers */}
+                        {Object.entries(customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {}).map(([providerName, provider]: [string, any]) => {
+                          // Use local state if available, otherwise fall back to server data
+                          const localProvider = customProvidersLocal[serviceType]?.[providerName];
+                          const displayProvider = localProvider || provider;
+                          
+                          return (
+                            <Card key={providerName} className="border border-dashed">
+                              <CardContent className="pt-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <Input
+                                      placeholder="Provider Name (e.g., CustomSearchAPI)"
+                                      value={providerName}
+                                      onChange={(e) => {
+                                        const currentProviders = customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {};
+                                        const newName = e.target.value.trim() || providerName;
+                                        if (newName !== providerName && newName) {
+                                          const { [providerName]: oldProvider, ...rest } = currentProviders;
+                                          
+                                          // Update local state immediately
+                                          setCustomProvidersLocal(prev => ({
+                                            ...prev,
+                                            [serviceType]: {
+                                              ...rest,
+                                              [newName]: oldProvider,
+                                            },
+                                          }));
+                                          
+                                          // Then sync with server
+                                          const webSearch = {
+                                            ...(config?.config?.webSearch || {}),
+                                            customProviders: {
+                                              ...rest,
+                                              [newName]: oldProvider,
+                                            },
+                                          };
+                                          updateConfigMutation.mutate({
+                                            service: serviceType,
+                                            updates: {
+                                              config: {
+                                                ...config?.config,
+                                                webSearch,
+                                              },
+                                            },
+                                          });
+                                        }
+                                      }}
+                                      className="font-semibold"
+                                    />
+                                    <Switch
+                                      checked={displayProvider.enabled !== false}
+                                      onCheckedChange={(enabled) => {
+                                        const currentProviders = customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {};
+                                        
+                                        // Update local state immediately
+                                        setCustomProvidersLocal(prev => ({
+                                          ...prev,
+                                          [serviceType]: {
+                                            ...currentProviders,
+                                            [providerName]: {
+                                              ...displayProvider,
+                                              enabled,
+                                            },
+                                          },
+                                        }));
+                                        
+                                        // Then sync with server
+                                        const webSearch = {
+                                          ...(config?.config?.webSearch || {}),
+                                          customProviders: {
+                                            ...currentProviders,
+                                            [providerName]: {
+                                              ...displayProvider,
+                                              enabled,
+                                            },
+                                          },
+                                        };
+                                        updateConfigMutation.mutate({
+                                          service: serviceType,
+                                          updates: {
+                                            config: {
+                                              ...config?.config,
+                                              webSearch,
+                                            },
+                                          },
+                                        });
+                                      }}
+                                    />
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const currentProviders = customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {};
+                                      const updatedProviders = { ...currentProviders };
+                                      delete updatedProviders[providerName];
+                                      
+                                      // Update local state immediately
+                                      setCustomProvidersLocal(prev => ({
+                                        ...prev,
+                                        [serviceType]: updatedProviders,
+                                      }));
+                                      
+                                      // Then sync with server
+                                      const webSearch = {
+                                        ...(config?.config?.webSearch || {}),
+                                        customProviders: updatedProviders,
+                                      };
+                                      updateConfigMutation.mutate({
+                                        service: serviceType,
+                                        updates: {
+                                          config: {
+                                            ...config?.config,
+                                            webSearch,
+                                          },
+                                        },
+                                      });
+                                    }}
+                                    disabled={updateConfigMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`${serviceType}-custom-${providerName}-key`}>API Key</Label>
+                                    <Input
+                                      id={`${serviceType}-custom-${providerName}-key`}
+                                      type="password"
+                                      placeholder="Enter API key"
+                                      value={displayProvider.apiKey || ''}
+                                      onChange={(e) => {
+                                        const currentProviders = customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {};
+                                        const newValue = e.target.value;
+                                        
+                                        // Update local state immediately for instant UI feedback
+                                        setCustomProvidersLocal(prev => ({
+                                          ...prev,
+                                          [serviceType]: {
+                                            ...currentProviders,
+                                            [providerName]: {
+                                              ...displayProvider,
+                                              apiKey: newValue,
+                                            },
+                                          },
+                                        }));
+                                        
+                                      // Debounce server sync (update after user stops typing)
+                                      const timeoutKey = `${serviceType}-${providerName}-apiKey`;
+                                      if (debounceTimeouts.current[timeoutKey]) {
+                                        clearTimeout(debounceTimeouts.current[timeoutKey]);
+                                      }
+                                      debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+                                        const webSearch = {
+                                          ...(config?.config?.webSearch || {}),
+                                          customProviders: {
+                                            ...currentProviders,
+                                            [providerName]: {
+                                              ...displayProvider,
+                                              apiKey: newValue,
+                                            },
+                                          },
+                                        };
+                                        updateConfigMutation.mutate({
+                                          service: serviceType,
+                                          updates: {
+                                            config: {
+                                              ...config?.config,
+                                              webSearch,
+                                            },
+                                          },
+                                        });
+                                        delete debounceTimeouts.current[timeoutKey];
+                                      }, 500);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`${serviceType}-custom-${providerName}-url`}>API URL</Label>
+                                    <Input
+                                      id={`${serviceType}-custom-${providerName}-url`}
+                                      type="text"
+                                      placeholder="https://api.example.com/v1"
+                                      value={displayProvider.apiUrl || ''}
+                                      onChange={(e) => {
+                                        const currentProviders = customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {};
+                                        const newValue = e.target.value;
+                                        
+                                        // Update local state immediately
+                                        setCustomProvidersLocal(prev => ({
+                                          ...prev,
+                                          [serviceType]: {
+                                            ...currentProviders,
+                                            [providerName]: {
+                                              ...displayProvider,
+                                              apiUrl: newValue,
+                                            },
+                                          },
+                                        }));
+                                        
+                                      // Debounce server sync
+                                      const timeoutKey = `${serviceType}-${providerName}-apiUrl`;
+                                      if (debounceTimeouts.current[timeoutKey]) {
+                                        clearTimeout(debounceTimeouts.current[timeoutKey]);
+                                      }
+                                      debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+                                        const webSearch = {
+                                          ...(config?.config?.webSearch || {}),
+                                          customProviders: {
+                                            ...currentProviders,
+                                            [providerName]: {
+                                              ...displayProvider,
+                                              apiUrl: newValue,
+                                            },
+                                          },
+                                        };
+                                        updateConfigMutation.mutate({
+                                          service: serviceType,
+                                          updates: {
+                                            config: {
+                                              ...config?.config,
+                                              webSearch,
+                                            },
+                                          },
+                                        });
+                                        delete debounceTimeouts.current[timeoutKey];
+                                      }, 500);
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor={`${serviceType}-custom-${providerName}-model`}>Model</Label>
+                                  <Input
+                                    id={`${serviceType}-custom-${providerName}-model`}
+                                    type="text"
+                                    placeholder="e.g., gpt-4, claude-3-5-sonnet, llama-3.1-70b"
+                                    value={displayProvider.model || ''}
+                                    onChange={(e) => {
+                                      const currentProviders = customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {};
+                                      const newValue = e.target.value;
+                                      
+                                      // Update local state immediately
+                                      setCustomProvidersLocal(prev => ({
+                                        ...prev,
+                                        [serviceType]: {
+                                          ...currentProviders,
+                                          [providerName]: {
+                                            ...displayProvider,
+                                            model: newValue,
+                                          },
+                                        },
+                                      }));
+                                      
+                                      // Debounce server sync
+                                      const timeoutKey = `${serviceType}-${providerName}-model`;
+                                      if (debounceTimeouts.current[timeoutKey]) {
+                                        clearTimeout(debounceTimeouts.current[timeoutKey]);
+                                      }
+                                      debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+                                        const webSearch = {
+                                          ...(config?.config?.webSearch || {}),
+                                          customProviders: {
+                                            ...currentProviders,
+                                            [providerName]: {
+                                              ...displayProvider,
+                                              model: newValue,
+                                            },
+                                          },
+                                        };
+                                        updateConfigMutation.mutate({
+                                          service: serviceType,
+                                          updates: {
+                                            config: {
+                                              ...config?.config,
+                                              webSearch,
+                                            },
+                                          },
+                                        });
+                                        delete debounceTimeouts.current[timeoutKey];
+                                      }, 500);
+                                    }}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor={`${serviceType}-custom-${providerName}-desc`}>Description (Optional)</Label>
+                                  <Input
+                                    id={`${serviceType}-custom-${providerName}-desc`}
+                                    type="text"
+                                    placeholder="Brief description of this provider"
+                                    value={displayProvider.description || ''}
+                                    onChange={(e) => {
+                                      const currentProviders = customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {};
+                                      const newValue = e.target.value;
+                                      
+                                      // Update local state immediately
+                                      setCustomProvidersLocal(prev => ({
+                                        ...prev,
+                                        [serviceType]: {
+                                          ...currentProviders,
+                                          [providerName]: {
+                                            ...displayProvider,
+                                            description: newValue,
+                                          },
+                                        },
+                                      }));
+                                      
+                                      // Debounce server sync
+                                      const timeoutKey = `${serviceType}-${providerName}-description`;
+                                      if (debounceTimeouts.current[timeoutKey]) {
+                                        clearTimeout(debounceTimeouts.current[timeoutKey]);
+                                      }
+                                      debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+                                        const webSearch = {
+                                          ...(config?.config?.webSearch || {}),
+                                          customProviders: {
+                                            ...currentProviders,
+                                            [providerName]: {
+                                              ...displayProvider,
+                                              description: newValue,
+                                            },
+                                          },
+                                        };
+                                        updateConfigMutation.mutate({
+                                          service: serviceType,
+                                          updates: {
+                                            config: {
+                                              ...config?.config,
+                                              webSearch,
+                                            },
+                                          },
+                                        });
+                                        delete debounceTimeouts.current[timeoutKey];
+                                      }, 500);
+                                    }}
+                                  />
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+
+                        {Object.keys(customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {}).length === 0 && (
+                          <div className="text-center py-8 text-sm text-muted-foreground border border-dashed rounded-lg">
+                            No custom providers added yet. Click "Add Provider" to add one.
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  </>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor={`${serviceType}-rate-limit`}>Rate Limit (requests/min)</Label>
                   <Input
@@ -699,6 +1730,7 @@ export default function AIServiceConfiguration() {
     </div>
   );
 }
+
 
 
 

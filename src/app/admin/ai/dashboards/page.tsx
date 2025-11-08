@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import DashboardBuilder from "@/components/ai/admin/DashboardBuilder"
 
 /**
@@ -12,7 +12,7 @@ import DashboardBuilder from "@/components/ai/admin/DashboardBuilder"
  */
 export default function DashboardsPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "AI Services", href: "/admin/ai" },
         { label: "Dashboards" },
@@ -28,6 +28,6 @@ export default function DashboardsPage() {
 
         <DashboardBuilder />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import PredictionMonitor from "@/components/ai/admin/PredictionMonitor"
 
 /**
@@ -12,7 +12,7 @@ import PredictionMonitor from "@/components/ai/admin/PredictionMonitor"
  */
 export default function PredictionsPage() {
   return (
-    <AdminLayout
+    <AppLayout
       breadcrumbs={[
         { label: "AI Services", href: "/admin/ai" },
         { label: "Predictions" },
@@ -28,6 +28,6 @@ export default function PredictionsPage() {
 
         <PredictionMonitor />
       </div>
-    </AdminLayout>
+    </AppLayout>
   )
 }

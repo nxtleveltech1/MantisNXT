@@ -5,12 +5,21 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierIntelligenceService } from '@/services/ai/SupplierIntelligenceService';
-
-// Initialize the AI service
-const supplierIntelligence = new SupplierIntelligenceService();
+import { authenticateRequest } from '@/lib/ai/api-utils';
+import { getSupplierDiscoveryConfig } from '@/lib/ai/supplier-discovery-config';
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate and get organization ID
+    const user = await authenticateRequest(request);
+    const orgId = user.org_id;
+
+    // Load configuration from database
+    const config = await getSupplierDiscoveryConfig(orgId);
+
+    // Initialize the AI service with config
+    const supplierIntelligence = new SupplierIntelligenceService(config);
+
     const body = await request.json();
 
     // Validate request

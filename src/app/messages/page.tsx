@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import SelfContainedLayout from "@/components/layout/SelfContainedLayout"
+import AppLayout from "@/components/layout/AppLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -651,7 +651,7 @@ export default function MessagesPage() {
   ]
 
   return (
-    <SelfContainedLayout title="Messages" breadcrumbs={breadcrumbs}>
+    <AppLayout title="Messages" breadcrumbs={breadcrumbs}>
       <Card className="h-[calc(100vh-12rem)]">
         <div className="flex h-full">
           {/* Conversation List */}
@@ -675,6 +675,6 @@ export default function MessagesPage() {
           </div>
         </div>
       </Card>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }

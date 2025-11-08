@@ -11,7 +11,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +40,7 @@ export default function PricingAnalyticsPage() {
   };
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Pricing Analytics"
       breadcrumbs={[
         { label: 'Operations', href: '/operations' },
@@ -239,6 +239,6 @@ export default function PricingAnalyticsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   );
 }

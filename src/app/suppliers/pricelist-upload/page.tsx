@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import SupplierPricelistUpload from '@/components/suppliers/SupplierPricelistUpload'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -14,7 +14,7 @@ export default function PricelistUploadPage() {
   ]
 
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Supplier Pricelist Upload"
       breadcrumbs={breadcrumbs}
     >
@@ -46,7 +46,7 @@ export default function PricelistUploadPage() {
           </CardContent>
         </Card>
       </div>
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }
 

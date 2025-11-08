@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 import { BuildSafeErrorBoundary, SafeLazyWrapper } from '@/components/ui/BuildSafeErrorBoundary'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -212,7 +212,7 @@ export default function AnalyticsPage() {
 
   return (
     <BuildSafeErrorBoundary level="page">
-      <SelfContainedLayout>
+      <AppLayout>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
           <div className="container mx-auto px-4 py-8 space-y-8">
             {/* Header */}
@@ -390,7 +390,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
-      </SelfContainedLayout>
+      </AppLayout>
     </BuildSafeErrorBoundary>
   )
 }

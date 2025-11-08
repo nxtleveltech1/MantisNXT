@@ -129,21 +129,19 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
   return (
     <div className={cn("space-y-4", className)}>
       {/* Primary Action - Upload Pricelist */}
-      <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <CardContent className="p-4">
-          <ShimmerButton
-            onClick={onUploadPricelist}
-            className="w-full h-11 text-base font-semibold"
-            shimmerColor="#ffffff"
-            shimmerSize="0.1em"
-            background="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-            borderRadius="0.75rem"
-          >
-            <Upload className="h-5 w-5 mr-2" />
-            Upload Pricelist
-          </ShimmerButton>
-        </CardContent>
-      </Card>
+      <div className="w-full">
+        <ShimmerButton
+          onClick={onUploadPricelist}
+          className="w-full h-11 text-base font-semibold"
+          shimmerColor="#ffffff"
+          shimmerSize="0.1em"
+          background="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          borderRadius="0.75rem"
+        >
+          <Upload className="h-5 w-5 mr-2" />
+          Upload Pricelist
+        </ShimmerButton>
+      </div>
 
       {/* Quick Action Buttons */}
       <Card className="border border-gray-200 shadow-md rounded-xl">

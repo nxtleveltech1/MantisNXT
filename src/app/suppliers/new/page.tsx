@@ -1,9 +1,9 @@
 import EnhancedSupplierForm from '@/components/suppliers/EnhancedSupplierForm'
-import SelfContainedLayout from '@/components/layout/SelfContainedLayout'
+import AppLayout from '@/components/layout/AppLayout'
 
 export default function NewSupplierPage() {
   return (
-    <SelfContainedLayout
+    <AppLayout
       title="Add New Supplier"
       breadcrumbs={[
         { label: 'Suppliers', href: '/suppliers' },
@@ -11,6 +11,6 @@ export default function NewSupplierPage() {
       ]}
     >
       <EnhancedSupplierForm />
-    </SelfContainedLayout>
+    </AppLayout>
   )
 }
