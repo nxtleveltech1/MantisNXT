@@ -333,7 +333,9 @@ export class WebScrapingService {
       },
     };
 
-    const profile = industryProfiles[industryData.industry] || industryProfiles['Technology'];
+    const profile =
+      industryProfiles[industryData.industry as keyof typeof industryProfiles] ||
+      industryProfiles['Technology'];
 
     return {
       title: `${profile.companyName} - ${industryData.subcategory}`,
@@ -913,7 +915,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
       }
     };
 
-    const candidateContainers = new Set<cheerio.Cheerio<cheerio.Element>>();
+    const candidateContainers = new Set<cheerio.Cheerio>();
     $('[class*="brand" i], [id*="brand" i]').each((_, el) => {
       candidateContainers.add($(el));
     });
@@ -925,7 +927,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
       }
     });
 
-    const processContainer = ($container: cheerio.Cheerio<cheerio.Element>) => {
+    const processContainer = ($container: cheerio.Cheerio) => {
       const heading = $container.find('h1,h2,h3,h4').first().text().toLowerCase();
 
       $container.find('a').each((_, anchorEl) => {

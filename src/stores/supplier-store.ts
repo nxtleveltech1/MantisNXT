@@ -8,7 +8,7 @@ import type {
   DashboardActivity,
   PurchaseOrder,
   SupplierContract,
-  SupplierCommunication
+  SupplierCommunication,
 } from '@/types/supplier';
 
 interface SupplierState {
@@ -78,12 +78,12 @@ const initialFilters: SupplierSearchFilters = {
   category: [],
   location: [],
   tags: [],
-  hasActiveContracts: undefined
+  hasActiveContracts: undefined,
 };
 
 const initialSort: SupplierSortOptions = {
   field: 'name',
-  direction: 'asc'
+  direction: 'asc',
 };
 
 export const useSupplierStore = create<SupplierState>()(
@@ -104,164 +104,149 @@ export const useSupplierStore = create<SupplierState>()(
       sortOptions: initialSort,
 
       // Data Actions
-      setSuppliers: (suppliers) => set({ suppliers }, false, 'setSuppliers'),
+      setSuppliers: suppliers => set({ suppliers }, false, 'setSuppliers'),
 
-      addSupplier: (supplier) => set(
-        (state) => ({ suppliers: [...state.suppliers, supplier] }),
-        false,
-        'addSupplier'
-      ),
+      addSupplier: supplier =>
+        set(state => ({ suppliers: [...state.suppliers, supplier] }), false, 'addSupplier'),
 
-      updateSupplier: (id, updatedSupplier) => set(
-        (state) => ({
-          suppliers: state.suppliers.map(supplier =>
-            supplier.id === id ? { ...supplier, ...updatedSupplier } : supplier
-          )
-        }),
-        false,
-        'updateSupplier'
-      ),
+      updateSupplier: (id, updatedSupplier) =>
+        set(
+          state => ({
+            suppliers: state.suppliers.map(supplier =>
+              supplier.id === id ? { ...supplier, ...updatedSupplier } : supplier
+            ),
+          }),
+          false,
+          'updateSupplier'
+        ),
 
-      removeSupplier: (id) => set(
-        (state) => ({
-          suppliers: state.suppliers.filter(supplier => supplier.id !== id),
-          selectedSuppliers: state.selectedSuppliers.filter(supplierId => supplierId !== id)
-        }),
-        false,
-        'removeSupplier'
-      ),
+      removeSupplier: id =>
+        set(
+          state => ({
+            suppliers: state.suppliers.filter(supplier => supplier.id !== id),
+            selectedSuppliers: state.selectedSuppliers.filter(supplierId => supplierId !== id),
+          }),
+          false,
+          'removeSupplier'
+        ),
 
-      setMetrics: (metrics) => set({ metrics }, false, 'setMetrics'),
+      setMetrics: metrics => set({ metrics }, false, 'setMetrics'),
 
-      setActivities: (activities) => set({ activities }, false, 'setActivities'),
+      setActivities: activities => set({ activities }, false, 'setActivities'),
 
-      addActivity: (activity) => set(
-        (state) => ({
-          activities: [activity, ...state.activities.slice(0, 49)] // Keep latest 50
-        }),
-        false,
-        'addActivity'
-      ),
+      addActivity: activity =>
+        set(
+          state => ({
+            activities: [activity, ...state.activities.slice(0, 49)], // Keep latest 50
+          }),
+          false,
+          'addActivity'
+        ),
 
-      setPurchaseOrders: (orders) => set(
-        { purchaseOrders: orders },
-        false,
-        'setPurchaseOrders'
-      ),
+      setPurchaseOrders: orders => set({ purchaseOrders: orders }, false, 'setPurchaseOrders'),
 
-      addPurchaseOrder: (order) => set(
-        (state) => ({
-          purchaseOrders: [order, ...state.purchaseOrders]
-        }),
-        false,
-        'addPurchaseOrder'
-      ),
+      addPurchaseOrder: order =>
+        set(
+          state => ({
+            purchaseOrders: [order, ...state.purchaseOrders],
+          }),
+          false,
+          'addPurchaseOrder'
+        ),
 
-      updatePurchaseOrder: (id, updatedOrder) => set(
-        (state) => ({
-          purchaseOrders: state.purchaseOrders.map(order =>
-            order.id === id ? { ...order, ...updatedOrder } : order
-          )
-        }),
-        false,
-        'updatePurchaseOrder'
-      ),
+      updatePurchaseOrder: (id, updatedOrder) =>
+        set(
+          state => ({
+            purchaseOrders: state.purchaseOrders.map(order =>
+              order.id === id ? { ...order, ...updatedOrder } : order
+            ),
+          }),
+          false,
+          'updatePurchaseOrder'
+        ),
 
-      setContracts: (contracts) => set(
-        { contracts },
-        false,
-        'setContracts'
-      ),
+      setContracts: contracts => set({ contracts }, false, 'setContracts'),
 
-      addContract: (contract) => set(
-        (state) => ({
-          contracts: [contract, ...state.contracts]
-        }),
-        false,
-        'addContract'
-      ),
+      addContract: contract =>
+        set(
+          state => ({
+            contracts: [contract, ...state.contracts],
+          }),
+          false,
+          'addContract'
+        ),
 
-      updateContract: (id, updatedContract) => set(
-        (state) => ({
-          contracts: state.contracts.map(contract =>
-            contract.id === id ? { ...contract, ...updatedContract } : contract
-          )
-        }),
-        false,
-        'updateContract'
-      ),
+      updateContract: (id, updatedContract) =>
+        set(
+          state => ({
+            contracts: state.contracts.map(contract =>
+              contract.id === id ? { ...contract, ...updatedContract } : contract
+            ),
+          }),
+          false,
+          'updateContract'
+        ),
 
-      setCommunications: (communications) => set(
-        { communications },
-        false,
-        'setCommunications'
-      ),
+      setCommunications: communications => set({ communications }, false, 'setCommunications'),
 
-      addCommunication: (communication) => set(
-        (state) => ({
-          communications: [communication, ...state.communications]
-        }),
-        false,
-        'addCommunication'
-      ),
+      addCommunication: communication =>
+        set(
+          state => ({
+            communications: [communication, ...state.communications],
+          }),
+          false,
+          'addCommunication'
+        ),
 
       // Selection Actions
-      selectSupplier: (id) => set(
-        (state) => ({
-          selectedSuppliers: state.selectedSuppliers.includes(id)
-            ? state.selectedSuppliers
-            : [...state.selectedSuppliers, id]
-        }),
-        false,
-        'selectSupplier'
-      ),
+      selectSupplier: id =>
+        set(
+          state => ({
+            selectedSuppliers: state.selectedSuppliers.includes(id)
+              ? state.selectedSuppliers
+              : [...state.selectedSuppliers, id],
+          }),
+          false,
+          'selectSupplier'
+        ),
 
-      deselectSupplier: (id) => set(
-        (state) => ({
-          selectedSuppliers: state.selectedSuppliers.filter(supplierId => supplierId !== id)
-        }),
-        false,
-        'deselectSupplier'
-      ),
+      deselectSupplier: id =>
+        set(
+          state => ({
+            selectedSuppliers: state.selectedSuppliers.filter(supplierId => supplierId !== id),
+          }),
+          false,
+          'deselectSupplier'
+        ),
 
-      selectAllSuppliers: () => set(
-        (state) => ({
-          selectedSuppliers: state.suppliers.map(supplier => supplier.id)
-        }),
-        false,
-        'selectAllSuppliers'
-      ),
+      selectAllSuppliers: () =>
+        set(
+          state => ({
+            selectedSuppliers: state.suppliers.map(supplier => supplier.id),
+          }),
+          false,
+          'selectAllSuppliers'
+        ),
 
-      clearSelection: () => set(
-        { selectedSuppliers: [] },
-        false,
-        'clearSelection'
-      ),
+      clearSelection: () => set({ selectedSuppliers: [] }, false, 'clearSelection'),
 
       // Filter & Sort Actions
-      setFilters: (newFilters) => set(
-        (state) => ({
-          filters: { ...state.filters, ...newFilters }
-        }),
-        false,
-        'setFilters'
-      ),
+      setFilters: newFilters =>
+        set(
+          state => ({
+            filters: { ...state.filters, ...newFilters },
+          }),
+          false,
+          'setFilters'
+        ),
 
-      clearFilters: () => set(
-        { filters: initialFilters },
-        false,
-        'clearFilters'
-      ),
+      clearFilters: () => set({ filters: initialFilters }, false, 'clearFilters'),
 
-      setSortOptions: (sortOptions) => set(
-        { sortOptions },
-        false,
-        'setSortOptions'
-      ),
+      setSortOptions: sortOptions => set({ sortOptions }, false, 'setSortOptions'),
 
       // UI State Actions
-      setLoading: (loading) => set({ loading }, false, 'setLoading'),
-      setError: (error) => set({ error }, false, 'setError'),
+      setLoading: loading => set({ loading }, false, 'setLoading'),
+      setError: error => set({ error }, false, 'setError'),
 
       // Computed Getters
       getFilteredSuppliers: () => {
@@ -271,28 +256,25 @@ export const useSupplierStore = create<SupplierState>()(
         // Apply filters
         if (filters.query) {
           const query = filters.query.toLowerCase();
-          filtered = filtered.filter(supplier =>
-            supplier.name.toLowerCase().includes(query) ||
-            supplier.code.toLowerCase().includes(query) ||
-            supplier.businessInfo.legalName.toLowerCase().includes(query)
+          filtered = filtered.filter(
+            supplier =>
+              supplier.name.toLowerCase().includes(query) ||
+              supplier.code.toLowerCase().includes(query) ||
+              supplier.businessInfo.legalName.toLowerCase().includes(query)
           );
         }
 
         if (filters.status && filters.status.length > 0) {
-          filtered = filtered.filter(supplier =>
-            filters.status!.includes(supplier.status)
-          );
+          filtered = filtered.filter(supplier => filters.status!.includes(supplier.status));
         }
 
         if (filters.tier && filters.tier.length > 0) {
-          filtered = filtered.filter(supplier =>
-            filters.tier!.includes(supplier.tier)
-          );
+          filtered = filtered.filter(supplier => filters.tier!.includes(supplier.tier));
         }
 
         if (filters.category && filters.category.length > 0) {
           filtered = filtered.filter(supplier =>
-            filters.category!.includes(supplier.category)
+            supplier.category.some(category => filters.category!.includes(category))
           );
         }
 
@@ -342,17 +324,17 @@ export const useSupplierStore = create<SupplierState>()(
         return filtered;
       },
 
-      getSupplierById: (id) => {
+      getSupplierById: id => {
         const { suppliers } = get();
         return suppliers.find(supplier => supplier.id === id);
       },
 
-      getSupplierPurchaseOrders: (supplierId) => {
+      getSupplierPurchaseOrders: supplierId => {
         const { purchaseOrders } = get();
         return purchaseOrders.filter(order => order.supplierId === supplierId);
       },
 
-      getSupplierContracts: (supplierId) => {
+      getSupplierContracts: supplierId => {
         const { contracts } = get();
         return contracts.filter(contract => contract.supplierId === supplierId);
       },
@@ -360,10 +342,10 @@ export const useSupplierStore = create<SupplierState>()(
       getSelectedSuppliers: () => {
         const { suppliers, selectedSuppliers } = get();
         return suppliers.filter(supplier => selectedSuppliers.includes(supplier.id));
-      }
+      },
     }),
     {
-      name: 'supplier-store'
+      name: 'supplier-store',
     }
   )
 );

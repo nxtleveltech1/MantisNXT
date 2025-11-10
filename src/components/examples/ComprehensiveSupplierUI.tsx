@@ -5,10 +5,10 @@ import { motion } from 'framer-motion';
 import { Package, Upload, Search, Filter, Eye, Settings } from 'lucide-react';
 
 // Import all our perfected components
-import { ProductCatalogGrid } from '../products/ProductCatalogGrid';
-import { EnhancedPricelistUploadWizard } from '../supplier/EnhancedPricelistUploadWizard';
-import { EnhancedDataTable, ColumnDef } from '../ui/data-table/EnhancedDataTable';
-import { LoadingStates } from '../ui/loading/LoadingStates';
+import ProductCatalogGrid from '../products/ProductCatalogGrid';
+import SupplierPricelistUpload from '../suppliers/SupplierPricelistUpload';
+import EnhancedDataTable, { ColumnDef } from '../ui/data-table/EnhancedDataTable';
+import { DataTableLoader } from '../ui/loading/LoadingStates';
 import { AccessibilityProvider } from '../ui/accessibility/AccessibilityProvider';
 import { UnifiedSearch, createProductSearchConfig, createSupplierSearchConfig } from '../ui/search/UnifiedSearchSystem';
 import { DataFreshnessDashboard, DataFreshnessInfo } from '../ui/indicators/DataFreshnessIndicators';
@@ -184,141 +184,162 @@ export const ComprehensiveSupplierUI: React.FC = () => {
   const productColumns: ColumnDef<Product>[] = [
     {
       id: 'sku',
+      key: 'sku',
       header: 'SKU',
       type: 'text',
-      accessor: 'sku',
       sortable: true,
       filterable: true,
       width: 120
     },
     {
       id: 'name',
+      key: 'name',
       header: 'Product Name',
       type: 'text',
-      accessor: 'name',
       sortable: true,
       filterable: true,
       width: 200
     },
     {
       id: 'category',
+      key: 'category',
       header: 'Category',
       type: 'badge',
-      accessor: 'category',
       sortable: true,
       filterable: true,
       width: 120
     },
     {
       id: 'price',
+      key: 'price',
       header: 'Price',
       type: 'currency',
-      accessor: 'price',
       sortable: true,
       filterable: true,
-      width: 100
+      width: 100,
+      metadata: {
+        currency: 'USD'
+      }
     },
     {
       id: 'stock',
+      key: 'stock',
       header: 'Stock',
       type: 'number',
-      accessor: 'stock',
       sortable: true,
       filterable: true,
       width: 80
     },
     {
       id: 'supplier',
+      key: 'supplier',
       header: 'Supplier',
       type: 'text',
-      accessor: 'supplier.name',
       sortable: true,
       filterable: true,
-      width: 150
+      width: 150,
+      accessor: (row) => row.supplier.name
     },
     {
       id: 'status',
+      key: 'status',
       header: 'Status',
       type: 'badge',
-      accessor: 'status',
       sortable: true,
       filterable: true,
       width: 100
     },
     {
-      id: 'actions',
-      header: 'Actions',
-      type: 'actions',
-      width: 120,
-      actions: [
-        { label: 'View', icon: Eye, onClick: (item: Product) => console.log('View', item) },
-        { label: 'Edit', icon: Settings, onClick: (item: Product) => console.log('Edit', item) }
-      ]
+      id: 'lastUpdated',
+      key: 'lastUpdated',
+      header: 'Last Updated',
+      type: 'date',
+      sortable: true,
+      filterable: true,
+      width: 160,
+      accessor: (row) => row.lastUpdated,
+      metadata: {
+        dateFormat: 'MMM dd, yyyy'
+      }
     }
   ];
 
   const supplierColumns: ColumnDef<Supplier>[] = [
     {
       id: 'code',
+      key: 'code',
       header: 'Code',
       type: 'text',
-      accessor: 'code',
       sortable: true,
       filterable: true,
       width: 100
     },
     {
       id: 'name',
+      key: 'name',
       header: 'Supplier Name',
       type: 'text',
-      accessor: 'name',
       sortable: true,
       filterable: true,
       width: 200
     },
     {
       id: 'contactPerson',
+      key: 'contactPerson',
       header: 'Contact',
       type: 'text',
-      accessor: 'contactPerson',
       sortable: true,
       filterable: true,
       width: 150
     },
     {
       id: 'email',
+      key: 'email',
       header: 'Email',
       type: 'text',
-      accessor: 'email',
       sortable: true,
       filterable: true,
       width: 200
     },
     {
       id: 'category',
+      key: 'category',
       header: 'Category',
       type: 'badge',
-      accessor: 'category',
       sortable: true,
       filterable: true,
       width: 120
     },
     {
       id: 'productsCount',
+      key: 'productsCount',
       header: 'Products',
       type: 'number',
-      accessor: 'productsCount',
       sortable: true,
+      filterable: true,
       width: 100
     },
     {
       id: 'status',
+      key: 'status',
       header: 'Status',
       type: 'badge',
-      accessor: 'status',
       sortable: true,
       filterable: true,
       width: 100
+    },
+    {
+      id: 'createdAt',
+      key: 'createdAt',
+      header: 'Created',
+      type: 'date',
+      sortable: true,
+      filterable: true,
+      width: 140,
+      accessor: (row) => row.createdAt,
+      metadata: {
+        dateFormat: 'MMM dd, yyyy'
+      }
     }
   ];
 
@@ -470,12 +491,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
         <div className="content">
           {isLoading && (
             <div className="mb-6">
-              <LoadingStates
-                variant="skeleton-table"
-                rows={10}
-                showProgress={true}
-                message="Refreshing data..."
-              />
+              <DataTableLoader rows={10} columns={6} />
             </div>
           )}
 
@@ -529,19 +545,39 @@ export const ComprehensiveSupplierUI: React.FC = () => {
 
               {/* Suppliers Data Table */}
               <div className="data-section">
-                <EnhancedDataTable
-                  data={searchResults.length > 0 ? searchResults : mockSuppliers}
-                  columns={supplierColumns}
-                  enableSorting={true}
-                  enableFiltering={true}
-                  enableGrouping={true}
-                  enableExport={true}
-                  enableColumnResizing={true}
-                  enableRowSelection={true}
-                  enableVirtualization={true}
-                  pageSize={25}
-                  className="p-6"
-                />
+                <div className="p-6">
+                  <EnhancedDataTable<Supplier>
+                    data={(searchResults.length > 0 ? searchResults : mockSuppliers) as Supplier[]}
+                    columns={supplierColumns}
+                    sorting={{ enabled: true, multiSort: true }}
+                    grouping={{ enabled: true, defaultGroupBy: 'category', showAggregates: false }}
+                    pagination={{
+                      enabled: true,
+                      pageSize: 25,
+                      pageSizeOptions: [10, 25, 50, 100],
+                      showInfo: true,
+                      showSizeSelector: true
+                    }}
+                    selection={{ enabled: true, mode: 'multiple', showSelectAll: true }}
+                    actions={{
+                      export: { enabled: true, formats: ['csv', 'xlsx', 'json'] },
+                      row: [
+                        {
+                          id: 'view',
+                          label: 'View',
+                          icon: Eye,
+                          handler: (supplier: Supplier) => console.log('View', supplier)
+                        },
+                        {
+                          id: 'edit',
+                          label: 'Edit',
+                          icon: Settings,
+                          handler: (supplier: Supplier) => console.log('Edit', supplier)
+                        }
+                      ]
+                    }}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -550,15 +586,13 @@ export const ComprehensiveSupplierUI: React.FC = () => {
           {activeTab === 'upload' && !isLoading && (
             <div className="space-y-6">
               <div className="data-section">
-                <EnhancedPricelistUploadWizard
-                  supplierId="supplier-1"
-                  onUploadComplete={handleUploadComplete}
-                  enableAIMapping={true}
-                  enableValidation={true}
-                  supportedFormats={['.xlsx', '.csv', '.json']}
-                  maxFileSize={10}
-                  className="p-6"
-                />
+                <div className="p-6">
+                  <SupplierPricelistUpload
+                    supplierId="supplier-1"
+                    onUploadComplete={handleUploadComplete}
+                    onCancel={() => console.log('Upload cancelled')}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -569,19 +603,40 @@ export const ComprehensiveSupplierUI: React.FC = () => {
               <div className="data-section">
                 <div className="p-6">
                   <h3 className="text-lg font-semibold mb-4">Product Analytics</h3>
-                  <EnhancedDataTable
+                  <EnhancedDataTable<Product>
                     data={mockProducts}
                     columns={productColumns}
-                    enableSorting={true}
-                    enableFiltering={true}
-                    enableGrouping={true}
-                    enableExport={true}
-                    enableColumnResizing={true}
-                    enableRowSelection={true}
-                    enableVirtualization={true}
-                    pageSize={50}
-                    groupBy="category"
-                    initialSort={{ column: 'price', direction: 'desc' }}
+                    sorting={{
+                      enabled: true,
+                      multiSort: true,
+                      defaultSort: [{ column: 'price', direction: 'desc', priority: 0 }]
+                    }}
+                    grouping={{ enabled: true, defaultGroupBy: 'category', showAggregates: true }}
+                    pagination={{
+                      enabled: true,
+                      pageSize: 50,
+                      pageSizeOptions: [25, 50, 100, 200],
+                      showInfo: true,
+                      showSizeSelector: true
+                    }}
+                    selection={{ enabled: true, mode: 'multiple', showSelectAll: true }}
+                    actions={{
+                      export: { enabled: true, formats: ['csv', 'xlsx', 'json'] },
+                      row: [
+                        {
+                          id: 'view',
+                          label: 'View',
+                          icon: Eye,
+                          handler: (product: Product) => console.log('View', product)
+                        },
+                        {
+                          id: 'edit',
+                          label: 'Edit',
+                          icon: Settings,
+                          handler: (product: Product) => console.log('Edit', product)
+                        }
+                      ]
+                    }}
                   />
                 </div>
               </div>

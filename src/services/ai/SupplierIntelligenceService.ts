@@ -3,10 +3,10 @@ import { WebSearchService } from './WebSearchService';
 import { WebScrapingService } from './WebScrapingService';
 import { DataExtractionEngine } from './DataExtractionEngine';
 import { createAIWebSearchService } from './AIWebSearchService';
-import {
-  createAIDataExtractionService,
-  ExtractedSupplierData as AIExtractedSupplierData,
-} from './AIDataExtractionService';
+import { createAIDataExtractionService } from './AIDataExtractionService';
+import type { ExtractedSupplierData as AIExtractedSupplierData } from './AIDataExtractionService';
+import type { ExtractedSupplierData, SupplierBrandLink } from './ExtractedSupplierData';
+export type { ExtractedSupplierData } from './ExtractedSupplierData';
 import { SupplierFormData } from '@/types/supplier';
 import type { SupplierDiscoveryConfig } from '@/lib/ai/supplier-discovery-config';
 
@@ -28,42 +28,6 @@ export interface WebDiscoveryResult {
     processingTime?: number;
     searchConfidence?: number;
   };
-}
-
-type SupplierBrandLink = {
-  name: string;
-  url?: string;
-  logo?: string;
-};
-
-export interface ExtractedSupplierData {
-  companyName?: string;
-  description?: string;
-  industry?: string;
-  location?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  website?: string;
-  employees?: string;
-  founded?: string;
-  socialMedia?: {
-    linkedin?: string;
-    twitter?: string;
-    facebook?: string;
-  };
-  certifications?: string[];
-  services?: string[];
-  products?: string[];
-  brands?: string[]; // Supplier brands - brands they carry/distribute
-  categories?: string[]; // Product categories inferred from content/brands
-  brandLinks?: SupplierBrandLink[];
-  addresses?: {
-    type: string;
-    street: string;
-    city: string;
-    country: string;
-    postalCode?: string;
-  }[];
 }
 
 export class SupplierIntelligenceService {
@@ -260,6 +224,13 @@ export class SupplierIntelligenceService {
       revenue: aiData.revenue,
       businessType: aiData.businessType,
       tags: aiData.tags,
+      taxId: aiData.taxId,
+      registrationNumber: aiData.registrationNumber,
+      vatNumber: aiData.vatNumber,
+      currency: aiData.currency,
+      paymentTerms: aiData.paymentTerms,
+      leadTime: aiData.leadTime,
+      minimumOrderValue: aiData.minimumOrderValue,
     };
   }
 
