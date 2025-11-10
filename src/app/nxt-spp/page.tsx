@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Info, Package, Upload, RefreshCw, Keyboard, LayoutDashboard, Table, FileUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/components/layout/AppLayout';
 import { PortfolioDashboard } from '@/components/spp/PortfolioDashboard';
 import { EnhancedPricelistUpload } from '@/components/supplier-portfolio/EnhancedPricelistUpload';
@@ -98,52 +99,65 @@ function NxtSppContent() {
   return (
     <AppLayout>
       <div className="space-y-8">
-        {/* Enhanced Page Header with Gradient */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30 dark:from-blue-950/20 dark:via-background dark:to-purple-950/10 p-8 shadow-sm">
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,transparent,black)] dark:bg-grid-slate-700/25" />
-
+        {/* Enhanced Page Header */}
+        <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
           <div className="relative space-y-6">
             {/* Title Area with Icon */}
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25 ring-4 ring-blue-500/10">
-                <Package className="h-7 w-7" />
-              </div>
-
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
-                    Supplier Inventory Portfolio
-                  </h1>
-                  <Badge variant="secondary" className="px-3 py-1 text-xs font-medium">
-                    SIP System
-                  </Badge>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4 flex-1">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25">
+                  <Package className="h-7 w-7" />
                 </div>
 
-                <p className="text-base text-muted-foreground max-w-3xl leading-relaxed">
-                  Comprehensive supplier portfolio management: Upload pricelists, manage catalog, and optimize inventory workflows with intelligent automation.
-                </p>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+                      Supplier Inventory Portfolio
+                    </h1>
+                    <Badge variant="secondary" className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 border-gray-200">
+                      SIP System
+                    </Badge>
+                  </div>
+
+                  <p className="text-base text-gray-600 max-w-3xl leading-relaxed">
+                    Comprehensive supplier portfolio management: Upload pricelists, manage catalog, and optimize inventory workflows with intelligent automation.
+                  </p>
+                </div>
+              </div>
+
+              {/* Upload Pricelist Button */}
+              <div className="flex-shrink-0">
+                <Button
+                  onClick={() => {
+                    setUploadOpen(true);
+                    handleTabChange('upload');
+                  }}
+                  className="h-11 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Upload Pricelist</span>
+                </Button>
               </div>
             </div>
 
             {/* Keyboard Shortcuts Section */}
-            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border/50">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
                 <Keyboard className="h-4 w-4" />
                 <span>Quick Actions:</span>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-card/50 hover:bg-card transition-colors">
-                  <Upload className="h-3.5 w-3.5 text-primary" />
-                  <kbd className="font-mono text-xs font-semibold">Ctrl+U</kbd>
-                  <span className="text-xs">Upload</span>
+                <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-white hover:bg-gray-50 border-gray-200 transition-colors">
+                  <Upload className="h-3.5 w-3.5 text-blue-600" />
+                  <kbd className="font-mono text-xs font-semibold text-gray-700">Ctrl+U</kbd>
+                  <span className="text-xs text-gray-600">Upload</span>
                 </Badge>
 
-                <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-card/50 hover:bg-card transition-colors">
-                  <RefreshCw className="h-3.5 w-3.5 text-success" />
-                  <kbd className="font-mono text-xs font-semibold">Ctrl+R</kbd>
-                  <span className="text-xs">Refresh</span>
+                <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-white hover:bg-gray-50 border-gray-200 transition-colors">
+                  <RefreshCw className="h-3.5 w-3.5 text-green-600" />
+                  <kbd className="font-mono text-xs font-semibold text-gray-700">Ctrl+R</kbd>
+                  <span className="text-xs text-gray-600">Refresh</span>
                 </Badge>
               </div>
             </div>

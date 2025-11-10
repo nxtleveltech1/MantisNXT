@@ -67,6 +67,9 @@ import {
   Download,
   RefreshCw,
   AlertTriangle,
+  Brain,
+  Check,
+  X,
 } from 'lucide-react'
 import { cn, formatDate, formatCostAmount } from '@/lib/utils'
 
@@ -170,6 +173,15 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
   const [detailsProduct, setDetailsProduct] = useState<SelectionProduct | null>(null)
   const [sortColumn, setSortColumn] = useState<string>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  
+  // AI categorization state
+  const [aiSuggestions, setAiSuggestions] = useState<Map<string, {
+    category_id: string
+    category_name: string
+    confidence: number
+    reasoning?: string
+  }>>(new Map())
+  const [loadingSuggestions, setLoadingSuggestions] = useState<Set<string>>(new Set())
 
   // Fetch products for the selection
   const fetchProducts = useCallback(async () => {
@@ -233,6 +245,111 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
+
+  // AI categorization handlers
+  const handleGetSuggestion = async (supplierProductId: string) => {
+    setLoadingSuggestions(prev => new Set(prev).add(supplierProductId))
+    try {
+      const res = await fetch("/api/category/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_ids: [supplierProductId] }),
+      })
+      const result = await res.json()
+      
+      if (result.success && result.suggestions.length > 0) {
+        const suggestion = result.suggestions[0]
+        if (suggestion.suggestion) {
+          setAiSuggestions(prev => {
+            const next = new Map(prev)
+            next.set(supplierProductId, suggestion.suggestion)
+            return next
+          })
+        }
+      }
+    } catch (error) {
+      console.error("Failed to get AI suggestion:", error)
+    } finally {
+      setLoadingSuggestions(prev => {
+        const next = new Set(prev)
+        next.delete(supplierProductId)
+        return next
+      })
+    }
+  }
+
+  const handleAcceptSuggestion = async (supplierProductId: string, categoryId: string) => {
+    try {
+      const res = await fetch("/api/category/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplierProductId,
+          categoryId,
+          method: "ai_manual_accept",
+        }),
+      })
+      const result = await res.json()
+      
+      if (result.success) {
+        setAiSuggestions(prev => {
+          const next = new Map(prev)
+          next.delete(supplierProductId)
+          return next
+        })
+        // Refresh products to show updated category
+        fetchProducts()
+      }
+    } catch (error) {
+      console.error("Failed to assign category:", error)
+    }
+  }
+
+  // Bulk AI categorization for selected products
+  const handleBulkCategorize = async () => {
+    if (selectedRows.size === 0) return
+    
+    const uncategorizedSelected = filteredProducts.filter(
+      p => selectedRows.has(p.supplier_product_id) && !p.category_id
+    )
+    
+    if (uncategorizedSelected.length === 0) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const productIds = uncategorizedSelected.map(p => p.supplier_product_id)
+      const res = await fetch("/api/category/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_ids: productIds,
+          batch_size: 50, // Use batch processing with dynamic sizing
+          batch_delay: 2000, // 2 second delay between batches
+        }),
+      })
+      const result = await res.json()
+      
+      if (result.success) {
+        const suggestionsMap = new Map<string, any>()
+        result.suggestions.forEach((s: any) => {
+          if (s.suggestion) {
+            suggestionsMap.set(s.supplier_product_id, s.suggestion)
+          }
+        })
+        setAiSuggestions(prev => {
+          const merged = new Map(prev)
+          suggestionsMap.forEach((v, k) => merged.set(k, v))
+          return merged
+        })
+      }
+    } catch (error) {
+      console.error("Failed to get bulk suggestions:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Apply filters and sorting
   useEffect(() => {
@@ -478,6 +595,19 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Bulk AI Categorize */}
+              {selectedRows.size > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkCategorize}
+                  disabled={loading}
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  AI Categorize ({selectedRows.size})
+                </Button>
+              )}
+
               {/* Refresh */}
               <Button
                 variant="outline"
@@ -606,16 +736,77 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                       }
 
                       if (col.id === 'category') {
+                        const suggestion = aiSuggestions.get(product.supplier_product_id)
                         return (
                           <TableCell key={col.id}>
                             {product.category_name ? (
                               <Badge variant="outline">
                                 {product.category_name}
                               </Badge>
+                            ) : suggestion ? (
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                                  <Brain className="h-3 w-3 mr-1" />
+                                  {suggestion.category_name}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  {Math.round(suggestion.confidence * 100)}%
+                                </Badge>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    await handleAcceptSuggestion(product.supplier_product_id, suggestion.category_id)
+                                  }}
+                                  title="Accept suggestion"
+                                >
+                                  <Check className="h-3 w-3 text-green-600" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setAiSuggestions(prev => {
+                                      const next = new Map(prev)
+                                      next.delete(product.supplier_product_id)
+                                      return next
+                                    })
+                                  }}
+                                  title="Dismiss suggestion"
+                                >
+                                  <X className="h-3 w-3 text-gray-400" />
+                                </Button>
+                              </div>
                             ) : (
-                              <Badge variant="secondary" className="text-xs">
-                                -
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  -
+                                </Badge>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 px-2 text-xs"
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    await handleGetSuggestion(product.supplier_product_id)
+                                  }}
+                                  disabled={loadingSuggestions.has(product.supplier_product_id)}
+                                  title="Get AI suggestion"
+                                >
+                                  {loadingSuggestions.has(product.supplier_product_id) ? (
+                                    <RefreshCw className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Brain className="h-3 w-3 mr-1" />
+                                      AI
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
                             )}
                           </TableCell>
                         )
@@ -711,6 +902,18 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
+                                {!product.category_id && (
+                                  <DropdownMenuItem
+                                    onClick={async (e) => {
+                                      e.stopPropagation()
+                                      await handleGetSuggestion(product.supplier_product_id)
+                                    }}
+                                    disabled={loadingSuggestions.has(product.supplier_product_id)}
+                                  >
+                                    <Brain className="h-4 w-4 mr-2" />
+                                    Get AI Category Suggestion
+                                  </DropdownMenuItem>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>

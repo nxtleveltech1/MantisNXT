@@ -61,7 +61,7 @@ const data = {
       icon: Activity,
     },
     {
-      title: "Supplier Management",
+      title: "Suppliers",
       url: "/suppliers",
       icon: Building2,
       items: [
@@ -84,7 +84,7 @@ const data = {
       ],
     },
     {
-      title: "Inventory Management",
+      title: "Inventory",
       url: "/inventory",
       icon: Package,
       items: [
@@ -99,12 +99,38 @@ const data = {
       ],
     },
     {
-      title: "Category Management",
+      title: "Categories",
       url: "/catalog/categories",
       icon: Layout,
+      items: [
+        {
+          title: "Dashboard",
+          url: "/catalog/categories",
+        },
+        {
+          title: "AI Categorization",
+          url: "/catalog/categories/ai-categorization",
+        },
+        {
+          title: "Categories",
+          url: "/catalog/categories/categories",
+        },
+        {
+          title: "Tags",
+          url: "/catalog/categories/tags",
+        },
+        {
+          title: "Analytics",
+          url: "/catalog/categories/analytics",
+        },
+        {
+          title: "Exceptions",
+          url: "/catalog/categories/exceptions",
+        },
+      ],
     },
     {
-      title: "Customer Engagement",
+      title: "Customers",
       url: "/customers",
       icon: Users,
       items: [
@@ -119,7 +145,7 @@ const data = {
       ],
     },
     {
-      title: "Loyalty & Rewards",
+      title: "Loyalty",
       url: "/admin/loyalty/programs",
       icon: Gift,
       items: [

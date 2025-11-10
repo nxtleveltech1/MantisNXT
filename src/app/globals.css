@@ -410,6 +410,10 @@
 }
 
 @layer base {
+  html {
+    font-size: 110%;
+  }
+
   * {
     border-color: var(--border);
     transition: background-color 200ms ease-in-out,

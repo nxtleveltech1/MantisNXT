@@ -55,28 +55,28 @@ function MetricCard({
   const TrendIcon = trend?.direction === 'up' ? ArrowUpRight : trend?.direction === 'down' ? ArrowDownRight : Minus;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className="bg-white border border-gray-200 shadow-sm rounded-xl">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
+        <CardTitle className="text-sm font-semibold text-gray-900">
           {title}
         </CardTitle>
-        <div className={cn('p-2 rounded-md', iconColor)}>
+        <div className={cn('p-2 rounded-lg', iconColor)}>
           <Icon className="h-4 w-4" />
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
-            <div className="text-2xl font-bold">{value}</div>
+            <div className="text-3xl font-bold text-gray-900">{value}</div>
             {badge && (
-              <Badge variant={badge.variant} className="text-xs">
+              <Badge variant={badge.variant} className="text-xs bg-gray-100 text-gray-700 border-gray-200">
                 {badge.text}
               </Badge>
             )}
           </div>
 
           {description && (
-            <div className="text-xs text-muted-foreground">{description}</div>
+            <div className="text-xs text-gray-600">{description}</div>
           )}
 
           {trend && (
@@ -84,11 +84,11 @@ function MetricCard({
               'flex items-center gap-1 text-xs font-medium',
               trend.direction === 'up' && 'text-green-600',
               trend.direction === 'down' && 'text-red-600',
-              trend.direction === 'neutral' && 'text-muted-foreground'
+              trend.direction === 'neutral' && 'text-gray-600'
             )}>
               <TrendIcon className="h-3 w-3" />
               <span>{Math.abs(trend.value)}%</span>
-              <span className="text-muted-foreground font-normal">vs last period</span>
+              <span className="text-gray-500 font-normal">vs last period</span>
             </div>
           )}
         </div>
@@ -142,10 +142,10 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
 
       {/* New Products Alert */}
       {newProductsCount > 0 && (
-        <Card className="md:col-span-2 border-blue-200 bg-blue-50">
+        <Card className="md:col-span-2 border border-blue-200 bg-blue-50 shadow-sm rounded-xl">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
-              <div className="p-2 rounded-md bg-blue-100">
+              <div className="p-2 rounded-lg bg-blue-100">
                 <Sparkles className="h-5 w-5 text-blue-600" />
               </div>
               <div className="flex-1">
@@ -161,10 +161,10 @@ export function MetricsDashboard({ metrics, loading, className }: MetricsDashboa
 
       {/* Price Changes Alert */}
       {(metrics?.recent_price_changes_count || 0) > 0 && (
-        <Card className="md:col-span-2 border-amber-200 bg-amber-50">
+        <Card className="md:col-span-2 border border-amber-200 bg-amber-50 shadow-sm rounded-xl">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
-              <div className="p-2 rounded-md bg-amber-100">
+              <div className="p-2 rounded-lg bg-amber-100">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
               </div>
               <div className="flex-1">

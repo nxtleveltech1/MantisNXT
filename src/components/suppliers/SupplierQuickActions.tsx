@@ -3,20 +3,18 @@
 import React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import ShimmerButton from "@/components/magicui/shimmer-button"
 import NumberTicker from "@/components/magicui/number-ticker"
 import { cn } from "@/lib/utils"
 import {
-  Upload,
   RefreshCw,
-  Download,
   BarChart3,
   CheckCircle,
   FileText,
   Package,
   TrendingUp,
   Clock,
-  Activity
+  Activity,
+  Upload
 } from "lucide-react"
 
 interface ActivityItem {
@@ -30,9 +28,7 @@ interface ActivityItem {
 }
 
 interface SupplierQuickActionsProps {
-  onUploadPricelist?: () => void
   onRefreshData?: () => void
-  onExportReport?: () => void
   onViewAnalytics?: () => void
   activities?: ActivityItem[]
   className?: string
@@ -119,30 +115,13 @@ const formatRelativeTime = (timestamp: Date): string => {
 }
 
 const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
-  onUploadPricelist,
   onRefreshData,
-  onExportReport,
   onViewAnalytics,
   activities = defaultActivities,
   className
 }) => {
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Primary Action - Upload Pricelist */}
-      <div className="w-full">
-        <ShimmerButton
-          onClick={onUploadPricelist}
-          className="w-full h-11 text-base font-semibold"
-          shimmerColor="#ffffff"
-          shimmerSize="0.1em"
-          background="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-          borderRadius="0.75rem"
-        >
-          <Upload className="h-5 w-5 mr-2" />
-          Upload Pricelist
-        </ShimmerButton>
-      </div>
-
       {/* Quick Action Buttons */}
       <Card className="border border-gray-200 shadow-md rounded-xl">
         <CardHeader className="pb-3">
@@ -161,17 +140,6 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
               <RefreshCw className="h-4 w-4" />
             </div>
             <span className="text-sm font-medium text-gray-700">Refresh Data</span>
-          </button>
-
-          {/* Export Report */}
-          <button
-            onClick={onExportReport}
-            className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 transition-all duration-200 group"
-          >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-sm group-hover:shadow-md transition-shadow">
-              <Download className="h-4 w-4" />
-            </div>
-            <span className="text-sm font-medium text-gray-700">Export Report</span>
           </button>
 
           {/* View Analytics */}

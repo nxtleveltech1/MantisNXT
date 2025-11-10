@@ -6,7 +6,7 @@
 import { getAIConfig } from '@/lib/ai/config';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
+import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
 
 export interface ExtractedSupplierData {
@@ -55,23 +55,35 @@ export interface ExtractedSupplierData {
 }
 
 // Zod schema for structured data extraction - lenient to handle AI variations
+// Preprocess null values to undefined for optional fields
 const SupplierDataSchema = z.object({
-  companyName: z.string().optional(),
-  description: z.string().optional(),
-  industry: z.string().optional(),
-  location: z.string().optional(),
-  contactEmail: z.string().email().optional().or(z.literal('')),
-  contactPhone: z.string().optional(),
-  website: z.string().optional().or(z.literal('')), // Will be normalized in post-processing
-  employees: z.string().optional(),
-  founded: z.string().optional(),
-  socialMedia: z
-    .object({
+  companyName: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  description: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  industry: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  location: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  contactEmail: z.preprocess((val) => val === null ? undefined : val, z.string().email().optional().or(z.literal(''))),
+  contactPhone: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  website: z.preprocess((val) => val === null ? undefined : val, z.string().optional().or(z.literal(''))),
+  employees: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  founded: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  socialMedia: z.preprocess(
+    (val) => {
+      if (val === null || val === undefined) return undefined;
+      if (typeof val === 'object') {
+        return {
+          linkedin: val.linkedin === null ? undefined : val.linkedin,
+          twitter: val.twitter === null ? undefined : val.twitter,
+          facebook: val.facebook === null ? undefined : val.facebook,
+        };
+      }
+      return val;
+    },
+    z.object({
       linkedin: z.string().url().optional().or(z.literal('')),
       twitter: z.string().url().optional().or(z.literal('')),
       facebook: z.string().url().optional().or(z.literal('')),
-    })
-    .optional(),
+    }).optional()
+  ),
   certifications: z
     .preprocess(
       (val) => {
@@ -85,7 +97,7 @@ const SupplierDataSchema = z.object({
     ),
   services: z.array(z.string()).optional(),
   products: z.array(z.string()).optional(),
-  brands: z.array(z.string()).optional(), // Supplier brands - brands they carry/distribute
+  brands: z.array(z.string()).optional(),
   categories: z.array(z.string()).optional(),
   brandLinks: z
     .array(
@@ -98,26 +110,25 @@ const SupplierDataSchema = z.object({
   addresses: z
     .array(
       z.object({
-        type: z.string().optional().default('headquarters'), // Make optional with default
+        type: z.string().optional().default('headquarters'),
         street: z.string().optional(),
         city: z.string().optional(),
         country: z.string().optional(),
         postalCode: z.string().optional(),
-        state: z.string().optional(), // Add state field
+        state: z.string().optional(),
       })
     )
     .optional(),
-  revenue: z.string().optional(),
-  businessType: z.string().optional(),
+  revenue: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  businessType: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
   tags: z.array(z.string()).optional(),
-  // Additional fields for comprehensive supplier data
-  taxId: z.string().optional(),
-  registrationNumber: z.string().optional(),
-  vatNumber: z.string().optional(),
+  taxId: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  registrationNumber: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  vatNumber: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
   currency: z.string().optional(),
-  paymentTerms: z.string().optional(),
-  leadTime: z.string().optional(),
-  minimumOrderValue: z.string().optional(),
+  paymentTerms: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  leadTime: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
+  minimumOrderValue: z.preprocess((val) => val === null ? undefined : val, z.string().optional()),
 });
 
 export class AIDataExtractionService {
@@ -140,7 +151,8 @@ export class AIDataExtractionService {
     this.anthropicBaseUrl = config?.anthropicBaseUrl;
     this.openaiApiKey = config?.openaiApiKey || process.env.OPENAI_API_KEY;
     this.openaiBaseUrl = config?.openaiBaseUrl;
-    this.openaiModel = config?.openaiModel;
+    // Trim model name to prevent "model not found" errors from whitespace
+    this.openaiModel = config?.openaiModel ? String(config.openaiModel).trim() : undefined;
 
     // Determine which provider to use
     if (this.anthropicApiKey) {
@@ -268,21 +280,157 @@ IMPORTANT FORMATTING RULES:
 Return ONLY the information that can be clearly identified in the content.`;
 
     try {
-      const result = await generateObject({
-        model,
-        schema: SupplierDataSchema,
-        prompt,
-        temperature: 0.1, // Low temperature for consistent extraction
-      });
+      // Try generateObject first (Claude models generally support JSON schema)
+      try {
+        // Reasoning models don't support temperature
+        const generateOptions: any = {
+          model,
+          schema: SupplierDataSchema,
+          prompt,
+        }
+        if (!this.isReasoningModel('claude-3-5-sonnet-20241022')) {
+          generateOptions.temperature = 0.1
+        }
+        
+        const result = await generateObject(generateOptions);
 
-      console.log('✅ AI extraction completed successfully');
+        console.log('✅ AI extraction completed successfully');
 
-      // Post-process and normalize the extracted data
-      return this.postProcessExtractedData(result.object, url);
+        // Post-process and normalize the extracted data
+        return this.postProcessExtractedData(result.object, url);
+      } catch (schemaError: any) {
+        // Fallback to generateText with JSON mode if JSON schema fails
+        // (defensive programming - Claude models should support JSON schema, but handle edge cases)
+        if (
+          schemaError?.message?.includes('json_schema') ||
+          schemaError?.message?.includes('structured') ||
+          schemaError?.responseBody?.includes('json_schema')
+        ) {
+          console.warn(`⚠️ Anthropic model doesn't support JSON schema, using JSON mode fallback`);
+          
+          // Use generateText with JSON mode
+          const jsonPrompt = `${prompt}
+
+IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
+{
+  "companyName": "string or omit",
+  "description": "string or omit",
+  "industry": "string or omit",
+  "location": "string or omit",
+  "contactEmail": "valid email or omit",
+  "contactPhone": "string or omit",
+  "website": "full URL with https:// or omit",
+  "employees": "string or omit",
+  "founded": "string or omit",
+  "socialMedia": {
+    "linkedin": "full URL or omit",
+    "twitter": "full URL or omit",
+    "facebook": "full URL or omit"
+  } or omit,
+  "certifications": ["string"] or omit,
+  "services": ["string"] or omit,
+  "products": ["string"] or omit,
+  "brands": ["string"] or omit,
+  "categories": ["string"] or omit,
+  "brandLinks": [{"name": "string", "url": "string or omit"}] or omit,
+  "addresses": [{"type": "string", "street": "string", "city": "string", "country": "string", "postalCode": "string", "state": "string"}] or omit,
+  "revenue": "string or omit",
+  "businessType": "string or omit",
+  "tags": ["string"] or omit,
+  "taxId": "string or omit",
+  "registrationNumber": "string or omit",
+  "vatNumber": "string or omit",
+  "currency": "string or omit",
+  "paymentTerms": "string or omit",
+  "leadTime": "string or omit",
+  "minimumOrderValue": "string or omit"
+}
+
+Return ONLY the JSON object, no other text.`;
+
+            const textOptions: any = {
+              model,
+              prompt: jsonPrompt,
+            }
+            if (!this.isReasoningModel('claude-3-5-sonnet-20241022')) {
+              textOptions.temperature = 0.1
+            }
+            
+            const textResult = await generateText(textOptions);
+
+          // Parse the JSON response
+          const jsonMatch = textResult.text.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            throw new Error('No JSON found in AI response');
+          }
+
+          const parsedData = JSON.parse(jsonMatch[0]);
+          
+          // Validate against schema
+          const validatedData = SupplierDataSchema.parse(parsedData);
+
+          console.log('✅ AI extraction completed successfully (JSON mode fallback)');
+
+          // Post-process and normalize the extracted data
+          return this.postProcessExtractedData(validatedData, url);
+        }
+        
+        // Re-throw if it's a different error
+        throw schemaError;
+      }
     } catch (error) {
       console.error('❌ Anthropic extraction error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Check if a model is a reasoning model (doesn't support temperature)
+   */
+  private isReasoningModel(modelName: string): boolean {
+    if (!modelName) return false
+    const normalized = modelName.trim().toLowerCase()
+    return /^o1(-|$)/i.test(normalized) || /^o3(-|$)/i.test(normalized)
+  }
+
+  /**
+   * Check if a model supports JSON schema (structured outputs)
+   */
+  private supportsJsonSchema(modelName: string): boolean {
+    if (!modelName) return false;
+    
+    // Models that don't support JSON schema format
+    // These are "responses" models that only support specific output formats
+    // Note: gpt-5-nano DOES support JSON schema, so it's not included here
+    const unsupportedPatterns = [
+      /gpt-5-mini/i,  // gpt-5-mini doesn't support JSON schema
+      /gpt-5-chat/i,   // gpt-5-chat variants don't support JSON schema
+      /^o1(-|$)/i,     // o1, o1-mini, o1-preview, etc. (reasoning models)
+      /^o3(-|$)/i,     // o3, o3-mini, etc. (reasoning models)
+    ];
+    
+    // Check if model name matches any unsupported pattern
+    const normalizedModel = modelName.trim();
+    return !unsupportedPatterns.some(pattern => pattern.test(normalizedModel));
+  }
+
+  /**
+   * Get a fallback model that supports JSON schema
+   */
+  private getCompatibleModel(requestedModel?: string): string {
+    if (!requestedModel) {
+      return 'gpt-4o-mini';
+    }
+    
+    const trimmedModel = requestedModel.trim();
+    
+    // If requested model supports JSON schema, use it
+    if (this.supportsJsonSchema(trimmedModel)) {
+      return trimmedModel;
+    }
+    
+    // Fallback to models that definitely support JSON schema
+    return 'gpt-4o-mini';
   }
 
   /**
@@ -301,8 +449,16 @@ Return ONLY the information that can be clearly identified in the content.`;
       ...(this.openaiBaseUrl ? { baseURL: this.openaiBaseUrl } : {}),
     });
 
-    const modelName = this.openaiModel || 'gpt-4o-mini';
-    const model = openai(modelName);
+    const requestedModel = this.openaiModel || 'gpt-4o-mini';
+    const modelName = this.getCompatibleModel(requestedModel);
+    
+    // Log if we're using a fallback model
+    if (requestedModel !== modelName) {
+      console.warn(`⚠️ Model ${requestedModel} doesn't support JSON schema, falling back to ${modelName}`);
+    }
+    
+    // Model name is already trimmed in constructor and getCompatibleModel, but double-check
+    const model = openai(modelName.trim());
 
     const prompt = `You are an expert data extraction specialist. Extract structured supplier/company information from the following web content.
 
@@ -367,17 +523,162 @@ IMPORTANT FORMATTING RULES:
 Return ONLY the information that can be clearly identified in the content.`;
 
     try {
-      const result = await generateObject({
-        model,
-        schema: SupplierDataSchema,
-        prompt,
-        temperature: 0.1, // Low temperature for consistent extraction
-      });
+      // Try generateObject first (requires JSON schema support)
+      try {
+        // Reasoning models don't support temperature
+        const generateOptions: any = {
+          model,
+          schema: SupplierDataSchema,
+          prompt,
+        }
+        if (!this.isReasoningModel(modelName)) {
+          generateOptions.temperature = 0.1
+        }
+        
+        const result = await generateObject(generateOptions);
 
-      console.log('✅ AI extraction completed successfully');
+        console.log('✅ AI extraction completed successfully');
 
-      // Post-process and normalize the extracted data
-      return this.postProcessExtractedData(result.object, url);
+        // Post-process and normalize the extracted data
+        return this.postProcessExtractedData(result.object, url);
+      } catch (schemaError: any) {
+        // Check if it's a rate limit error - don't retry, return null so other provider can try
+        // Handle both direct rate limit errors and retry errors that contain rate limit errors
+        const isRateLimitError = 
+          schemaError?.statusCode === 429 ||
+          schemaError?.lastError?.statusCode === 429 ||
+          schemaError?.message?.includes('Rate limit') ||
+          schemaError?.message?.includes('rate limit') ||
+          schemaError?.lastError?.message?.includes('Rate limit') ||
+          schemaError?.lastError?.message?.includes('rate limit') ||
+          schemaError?.responseBody?.includes('Rate limit') ||
+          schemaError?.responseBody?.includes('rate limit') ||
+          schemaError?.lastError?.responseBody?.includes('Rate limit') ||
+          schemaError?.lastError?.responseBody?.includes('rate limit');
+        
+        if (isRateLimitError) {
+          const errorSource = schemaError?.lastError || schemaError;
+          const resetTime = errorSource?.responseHeaders?.['x-ratelimit-reset'];
+          const resetDate = resetTime ? new Date(parseInt(resetTime)).toISOString() : 'unknown';
+          console.warn(`⚠️ Rate limit exceeded for model ${modelName}. Reset at: ${resetDate}. Skipping this provider.`);
+          // Return null to allow other provider to handle the request
+          return null;
+        }
+        
+        // Check if it's a model not found error - fallback to compatible model
+        if (
+          schemaError?.message?.includes('model_not_found') ||
+          schemaError?.message?.includes('does not exist') ||
+          schemaError?.responseBody?.includes('model_not_found')
+        ) {
+          console.warn(`⚠️ Model ${modelName} not found, falling back to gpt-4o-mini`);
+          
+          // Try with fallback model
+          const fallbackModel = openai('gpt-4o-mini');
+          try {
+            const fallbackOptions: any = {
+              model: fallbackModel,
+              schema: SupplierDataSchema,
+              prompt,
+            }
+            if (!this.isReasoningModel('gpt-4o-mini')) {
+              fallbackOptions.temperature = 0.1
+            }
+            
+            const result = await generateObject(fallbackOptions);
+            
+            console.log('✅ AI extraction completed successfully (fallback model)');
+            return this.postProcessExtractedData(result.object, url);
+          } catch (fallbackError) {
+            // If fallback also fails, try JSON mode
+            console.warn(`⚠️ Fallback model also failed, using JSON mode`);
+            throw schemaError; // Re-throw to trigger JSON mode fallback
+          }
+        }
+        
+        // If JSON schema is not supported, fall back to generateText with JSON mode
+        if (
+          schemaError?.message?.includes('json_schema') ||
+          schemaError?.message?.includes('text.format') ||
+          schemaError?.responseBody?.includes('json_schema')
+        ) {
+          console.warn(`⚠️ Model ${modelName} doesn't support JSON schema, using JSON mode fallback`);
+          
+          // Use generateText with JSON mode
+          const jsonPrompt = `${prompt}
+
+IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
+{
+  "companyName": "string or omit",
+  "description": "string or omit",
+  "industry": "string or omit",
+  "location": "string or omit",
+  "contactEmail": "valid email or omit",
+  "contactPhone": "string or omit",
+  "website": "full URL with https:// or omit",
+  "employees": "string or omit",
+  "founded": "string or omit",
+  "socialMedia": {
+    "linkedin": "full URL or omit",
+    "twitter": "full URL or omit",
+    "facebook": "full URL or omit"
+  } or omit,
+  "certifications": ["string"] or omit,
+  "services": ["string"] or omit,
+  "products": ["string"] or omit,
+  "brands": ["string"] or omit,
+  "categories": ["string"] or omit,
+  "brandLinks": [{"name": "string", "url": "string or omit"}] or omit,
+  "addresses": [{"type": "string", "street": "string", "city": "string", "country": "string", "postalCode": "string", "state": "string"}] or omit,
+  "revenue": "string or omit",
+  "businessType": "string or omit",
+  "tags": ["string"] or omit,
+  "taxId": "string or omit",
+  "registrationNumber": "string or omit",
+  "vatNumber": "string or omit",
+  "currency": "string or omit",
+  "paymentTerms": "string or omit",
+  "leadTime": "string or omit",
+  "minimumOrderValue": "string or omit"
+}
+
+Return ONLY the JSON object, no other text.`;
+
+          // Try with fallback model if original failed
+          const textModel = modelName.includes('gpt-5-nano') || modelName.includes('gpt-5-mini') 
+            ? openai('gpt-4o-mini') 
+            : model;
+          
+          const textOptions: any = {
+            model: textModel,
+            prompt: jsonPrompt,
+          }
+          if (!this.isReasoningModel(modelName)) {
+            textOptions.temperature = 0.1
+          }
+          
+          const textResult = await generateText(textOptions);
+
+          // Parse the JSON response
+          const jsonMatch = textResult.text.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            throw new Error('No JSON found in AI response');
+          }
+
+          const parsedData = JSON.parse(jsonMatch[0]);
+          
+          // Validate against schema
+          const validatedData = SupplierDataSchema.parse(parsedData);
+
+          console.log('✅ AI extraction completed successfully (JSON mode fallback)');
+
+          // Post-process and normalize the extracted data
+          return this.postProcessExtractedData(validatedData, url);
+        }
+        
+        // Re-throw if it's a different error
+        throw schemaError;
+      }
     } catch (error) {
       console.error('❌ OpenAI extraction error:', error);
       throw error;

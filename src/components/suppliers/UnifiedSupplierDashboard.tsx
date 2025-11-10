@@ -97,8 +97,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
-  Sparkles,
-  Brain,
   Loader2
 } from "lucide-react"
 
@@ -317,98 +315,6 @@ const sampleSuppliers: SupplierData[] = [
   }
 ]
 
-// AI Supplier Discovery Component
-interface AISupplierDiscoveryProps {
-  onSupplierFound: (data: Partial<SupplierData>) => void
-  supplierName?: string
-}
-
-const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
-  onSupplierFound,
-  supplierName = ""
-}) => {
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchQuery, setSearchQuery] = useState(supplierName)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleAISearch = async () => {
-    if (!searchQuery.trim()) return
-
-    setIsSearching(true)
-    setError(null)
-
-    try {
-      // Simulate AI lookup with realistic delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      // Mock AI response based on search query
-      const mockData: Partial<SupplierData> = {
-        name: searchQuery,
-        legalName: `${searchQuery} (Pty) Ltd`,
-        website: `https://www.${searchQuery.toLowerCase().replace(/\s+/g, '')}.co.za`,
-        category: "Technology",
-        address: {
-          city: "Johannesburg",
-          country: "South Africa",
-          full: "123 Business Park, Johannesburg, Gauteng 2000"
-        },
-        primaryContact: {
-          name: "John Smith",
-          email: `info@${searchQuery.toLowerCase().replace(/\s+/g, '')}.co.za`,
-          phone: "+27 11 123 4567",
-          role: "Sales Manager"
-        }
-      }
-
-      onSupplierFound(mockData)
-    } catch (err) {
-      setError("Failed to find supplier information. Please try again.")
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <Input
-            placeholder="Enter supplier name to discover information..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleAISearch()}
-            className="pr-10"
-          />
-        </div>
-        <Button
-          onClick={handleAISearch}
-          disabled={isSearching || !searchQuery.trim()}
-          className="min-w-[140px]"
-        >
-          {isSearching ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Searching...
-            </>
-          ) : (
-            <>
-              <Brain className="h-4 w-4 mr-2" />
-              Find Info
-            </>
-          )}
-        </Button>
-      </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-    </div>
-  )
-}
-
 // Export functionality
 const handleExportSuppliers = async (suppliers: SupplierData[], format: 'csv' | 'xlsx' | 'pdf') => {
   try {
@@ -491,7 +397,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
     const fetchActivities = async () => {
       try {
         setActivitiesLoading(true)
-        const response = await fetch('/api/activities/recent?limit=10')
+        const response = await fetch('/api/activities/recent?limit=20')
         if (response.ok) {
           const result = await response.json()
           if (result.success && result.data) {
@@ -501,7 +407,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
               activity.type?.includes('supplier') ||
               activity.metadata?.category === 'supplier_management'
             )
-            setSupplierActivities(supplierRelated.slice(0, 5))
+            setSupplierActivities(supplierRelated.slice(0, 15))
           }
         }
       } catch (error) {
@@ -589,7 +495,6 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   const [activeTab, setActiveTab] = useState(initialTab)
   const [showFilters, setShowFilters] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const [showAIDiscovery, setShowAIDiscovery] = useState(false)
   const [showPricelistUpload, setShowPricelistUpload] = useState(false)
   const [supplierActivities, setSupplierActivities] = useState<any[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(true)
@@ -823,57 +728,6 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAIDiscovery(true)}
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              AI Discovery
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={isExporting}>
-                  {isExporting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                    </>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Export Format</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleExport('csv')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  CSV File
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('xlsx')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Excel File
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  PDF Report
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              onClick={() => setShowPricelistUpload(true)}
-              size="sm"
-              variant="outline"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Pricelist
-            </Button>
-            <Button
               onClick={navigateToNewSupplier}
               size="sm"
             >
@@ -981,27 +835,30 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                   Supplier Management Activity
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {activitiesLoading ? (
-                  <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30 animate-pulse">
-                        <div className="w-8 h-8 rounded-lg bg-muted" />
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-muted rounded w-3/4" />
-                          <div className="h-3 bg-muted rounded w-1/4" />
+                  <div className="divide-y divide-border">
+                    {Array.from({ length: 15 }).map((_, i) => (
+                      <div key={i} className="flex items-start gap-2 px-4 py-2.5 animate-pulse">
+                        <div className="w-6 h-6 rounded bg-muted shrink-0 mt-0.5" />
+                        <div className="flex-1 space-y-1.5 min-w-0">
+                          <div className="h-3.5 bg-muted rounded w-3/4" />
+                          <div className="h-3 bg-muted rounded w-full" />
+                          <div className="h-2.5 bg-muted rounded w-1/4" />
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : supplierActivities.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="divide-y divide-border max-h-[600px] overflow-y-auto">
                     {supplierActivities.map((activity) => {
                       const getActivityIcon = () => {
                         if (activity.type?.includes('upload')) return Upload
                         if (activity.type?.includes('update')) return RefreshCw
                         if (activity.type?.includes('order')) return ShoppingCart
                         if (activity.type?.includes('added')) return Building2
+                        if (activity.type?.includes('price')) return DollarSign
+                        if (activity.type?.includes('inventory')) return Package
                         return Activity
                       }
                       const getActivityColor = () => {
@@ -1009,6 +866,8 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                         if (activity.type?.includes('update')) return 'text-blue-600 bg-blue-50 border-blue-200'
                         if (activity.type?.includes('order')) return 'text-purple-600 bg-purple-50 border-purple-200'
                         if (activity.type?.includes('added')) return 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                        if (activity.type?.includes('price')) return 'text-amber-600 bg-amber-50 border-amber-200'
+                        if (activity.type?.includes('inventory')) return 'text-indigo-600 bg-indigo-50 border-indigo-200'
                         return 'text-muted-foreground bg-muted border-border'
                       }
                       const Icon = getActivityIcon()
@@ -1024,24 +883,60 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                         if (diffMins > 0) return `${diffMins}m ago`
                         return 'Just now'
                       }
+                      const getActivityDetails = () => {
+                        const details: string[] = []
+                        if (activity.entityName) {
+                          details.push(activity.entityName)
+                        }
+                        if (activity.metadata?.source) {
+                          details.push(`via ${activity.metadata.source}`)
+                        }
+                        if (activity.priority && activity.priority !== 'low') {
+                          details.push(`${activity.priority} priority`)
+                        }
+                        return details.length > 0 ? details.join(' • ') : null
+                      }
                       return (
                         <div
                           key={activity.id}
-                          className="flex items-start gap-3 p-3 rounded-lg border bg-white hover:bg-muted/50 transition-colors"
+                          className="flex items-start gap-2 px-4 py-2.5 hover:bg-muted/30 transition-colors"
                         >
                           <div className={cn(
-                            "flex items-center justify-center w-8 h-8 rounded-lg border shrink-0",
+                            "flex items-center justify-center w-6 h-6 rounded shrink-0 mt-0.5",
                             getActivityColor()
                           )}>
-                            <Icon className="h-4 w-4" />
+                            <Icon className="h-3.5 w-3.5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground">
+                            <p className="text-sm font-medium text-foreground leading-tight">
                               {activity.title || activity.description}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatTime(activity.timestamp)}
-                            </p>
+                            {activity.description && activity.title && (
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                                {activity.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-muted-foreground">
+                                {formatTime(activity.timestamp)}
+                              </span>
+                              {getActivityDetails() && (
+                                <>
+                                  <span className="text-xs text-muted-foreground">•</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {getActivityDetails()}
+                                  </span>
+                                </>
+                              )}
+                              {activity.status && activity.status !== 'completed' && (
+                                <>
+                                  <span className="text-xs text-muted-foreground">•</span>
+                                  <Badge variant="outline" className="h-4 px-1.5 text-xs">
+                                    {activity.status}
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )
@@ -1559,29 +1454,6 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
           </TabsContent>
         </Tabs>
 
-        {/* AI Discovery Modal */}
-        <Dialog open={showAIDiscovery} onOpenChange={setShowAIDiscovery}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-blue-600" />
-                AI Supplier Discovery
-              </DialogTitle>
-              <DialogDescription>
-                Use AI to automatically discover and populate supplier information
-              </DialogDescription>
-            </DialogHeader>
-
-            <AISupplierDiscovery
-              onSupplierFound={(data) => {
-                // Navigate to new supplier form with pre-filled data
-                setShowAIDiscovery(false)
-                navigateToNewSupplier()
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-
         {/* Supplier Detail Modal */}
         {selectedSupplier && (
           <Dialog open={!!selectedSupplier} onOpenChange={() => setSelectedSupplier(null)}>
@@ -1743,11 +1615,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
       <aside className="lg:w-80 xl:w-96 shrink-0">
         <div className="sticky top-4 space-y-4">
           <SupplierQuickActions
-            onUploadPricelist={() => setShowPricelistUpload(true)}
             onRefreshData={() => {
               refresh()
             }}
-            onExportReport={() => handleExport('csv')}
             onViewAnalytics={() => setActiveTab('analytics')}
           />
         </div>

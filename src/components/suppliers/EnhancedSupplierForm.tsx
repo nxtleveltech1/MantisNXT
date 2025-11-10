@@ -612,16 +612,14 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {!supplier && (
-              <Button
-                variant="outline"
-                onClick={() => setShowWebDiscovery(true)}
-                className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200"
-              >
-                <Globe className="h-4 w-4 mr-2" />
-                Web Discovery
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              onClick={() => setShowWebDiscovery(true)}
+              className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200"
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              Web Discovery
+            </Button>
 
             <Button
               variant="outline"

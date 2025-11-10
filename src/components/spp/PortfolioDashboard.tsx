@@ -68,41 +68,41 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
     switch (status) {
       case 'received':
         return (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            <Clock className="h-3 w-3 mr-1" />
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 rounded-full px-2.5 py-0.5">
+            <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mr-1.5" />
             Received
           </Badge>
         );
       case 'validating':
         return (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 rounded-full px-2.5 py-0.5">
             <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
             Validating
           </Badge>
         );
       case 'validated':
         return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            <CheckCircle2 className="h-3 w-3 mr-1" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 rounded-full px-2.5 py-0.5">
+            <div className="w-1.5 h-1.5 bg-green-600 rounded-full mr-1.5" />
             Validated
           </Badge>
         );
       case 'merged':
         return (
-          <Badge className="bg-green-600 text-white">
-            <CheckCircle2 className="h-3 w-3 mr-1" />
+          <Badge className="bg-green-600 text-white rounded-full px-2.5 py-0.5">
+            <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5" />
             Merged
           </Badge>
         );
       case 'failed':
         return (
-          <Badge variant="destructive">
-            <AlertCircle className="h-3 w-3 mr-1" />
+          <Badge variant="destructive" className="rounded-full px-2.5 py-0.5">
+            <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5" />
             Failed
           </Badge>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="rounded-full px-2.5 py-0.5">{status}</Badge>;
     }
   };
 
@@ -121,16 +121,20 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
-          <p className="text-muted-foreground mt-1">Monitor your supplier portfolio and catalog updates</p>
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard Overview</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Monitor your supplier portfolio and catalog updates</p>
         </div>
-        <Button onClick={handleRefresh} variant="outline" size="sm" disabled={loading}>
+        <Button 
+          onClick={handleRefresh} 
+          variant="outline" 
+          size="sm" 
+          disabled={loading}
+          className="border-gray-200 hover:bg-gray-50"
+        >
           <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
           Refresh
         </Button>
       </div>
-
-      {/* Selection UI removed from dashboard */}
 
       {/* Key Metrics */}
       <MetricsDashboard metrics={metrics || null} loading={loading} />
@@ -138,10 +142,10 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Uploads - Left 2/3 */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileUp className="h-5 w-5" />
+        <Card className="lg:col-span-2 bg-white border border-gray-200 shadow-sm rounded-xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <FileUp className="h-5 w-5 text-gray-600" />
               Recent Uploads
             </CardTitle>
           </CardHeader>
@@ -158,28 +162,31 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
               <ScrollArea className="h-[400px]">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Supplier</TableHead>
-                      <TableHead>File</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Rows</TableHead>
-                      <TableHead>Status</TableHead>
+                    <TableRow className="border-b border-gray-200 hover:bg-transparent">
+                      <TableHead className="font-semibold text-gray-900">Supplier</TableHead>
+                      <TableHead className="font-semibold text-gray-900">File</TableHead>
+                      <TableHead className="font-semibold text-gray-900">Date</TableHead>
+                      <TableHead className="text-right font-semibold text-gray-900">Rows</TableHead>
+                      <TableHead className="font-semibold text-gray-900">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {uploads.map((upload) => (
-                      <TableRow key={upload.upload_id}>
-                        <TableCell className="font-medium">
+                      <TableRow 
+                        key={upload.upload_id}
+                        className="border-b border-gray-100 hover:bg-gray-50/50"
+                      >
+                        <TableCell className="font-medium text-gray-900">
                           {/* @ts-ignore - supplier_name added by view */}
                           {upload.supplier_name || 'Unknown'}
                         </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
+                        <TableCell className="max-w-[200px] truncate text-gray-700">
                           {upload.filename}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-sm text-gray-600">
                           {formatDate(upload.received_at)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right text-gray-700">
                           {upload.row_count.toLocaleString()}
                         </TableCell>
                         <TableCell>{getStatusBadge(upload.status)}</TableCell>
@@ -192,34 +199,52 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
           </CardContent>
         </Card>
 
-        {/* Quick Actions - Right 1/3 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              className="w-full justify-start"
-              variant="default"
-              onClick={() => handleNavigate('upload')}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Pricelist
-              <ArrowRight className="h-4 w-4 ml-auto" />
-            </Button>
+        {/* Right Column - Quick Actions & Activity */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card className="bg-white border border-gray-200 shadow-sm rounded-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                className="w-full justify-between bg-gray-900 hover:bg-gray-800 text-white shadow-md"
+                onClick={() => handleNavigate('upload')}
+              >
+                <div className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  <span>Upload Pricelist</span>
+                </div>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
 
-            {/* Selection and Stock controls removed from NXT-SPP dashboard */}
+          {/* Recent Activity */}
+          <Card className="bg-white border border-gray-200 shadow-sm rounded-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {uploads.filter(u => u.status === 'merged').length > 0 && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-green-600 rounded-full mt-1.5 flex-shrink-0" />
+                    <div className="flex-1 text-sm">
+                      <div className="font-medium text-gray-900">Recent Merges</div>
+                      <div className="text-gray-600">
+                        {uploads.filter(u => u.status === 'merged').length} successful uploads
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-            {/* Activity Summary */}
-            <div className="pt-4 border-t mt-6">
-              <h3 className="text-sm font-medium mb-3">Recent Activity</h3>
-              <div className="space-y-3">
                 {metrics && metrics.new_products_count > 0 && (
                   <div className="flex items-start gap-3">
                     <div className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 flex-shrink-0" />
                     <div className="flex-1 text-sm">
-                      <div className="font-medium">New Products</div>
-                      <div className="text-muted-foreground">
+                      <div className="font-medium text-gray-900">New Products</div>
+                      <div className="text-gray-600">
                         {metrics.new_products_count} new products added
                       </div>
                     </div>
@@ -230,47 +255,35 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
                   <div className="flex items-start gap-3">
                     <div className="w-2 h-2 bg-yellow-600 rounded-full mt-1.5 flex-shrink-0" />
                     <div className="flex-1 text-sm">
-                      <div className="font-medium">Price Changes</div>
-                      <div className="text-muted-foreground">
+                      <div className="font-medium text-gray-900">Price Changes</div>
+                      <div className="text-gray-600">
                         {metrics.recent_price_changes_count} products updated
                       </div>
                     </div>
                   </div>
                 )}
-
-                {uploads.filter(u => u.status === 'merged').length > 0 && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-600 rounded-full mt-1.5 flex-shrink-0" />
-                    <div className="flex-1 text-sm">
-                      <div className="font-medium">Recent Merges</div>
-                      <div className="text-muted-foreground">
-                        {uploads.filter(u => u.status === 'merged').length} successful uploads
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Workflow progress simplified to Upload stage only; Selection removed */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Workflow</CardTitle>
+      {/* Workflow */}
+      <Card className="bg-white border border-gray-200 shadow-sm rounded-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-semibold text-gray-900">Workflow</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between gap-8">
+          <div className="flex items-center justify-center gap-8">
             <div className="flex-1 text-center">
-              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-2">
+              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-3">
                 <Upload className="h-8 w-8 text-green-600" />
               </div>
-              <div className="font-medium">Upload</div>
-              <div className="text-2xl font-bold text-green-600 mt-1">
+              <div className="text-lg font-semibold text-gray-900 mb-1">Upload</div>
+              <div className="text-3xl font-bold text-gray-900">
                 {uploads.filter(u => u.status === 'merged').length}
               </div>
-              <div className="text-xs text-muted-foreground">Merged uploads</div>
+              <div className="text-sm text-gray-600 mt-1">Merged uploads</div>
             </div>
           </div>
         </CardContent>

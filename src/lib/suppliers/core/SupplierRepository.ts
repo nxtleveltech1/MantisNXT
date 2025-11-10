@@ -43,8 +43,34 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   constructor() {}
 
   async findById(id: string): Promise<Supplier | null> {
-    // Get supplier - use SELECT * to get all columns that exist
-    const supplierQuery = `
+    // Check if public.suppliers is a view - if so, read from core.supplier directly
+    const tableTypeCheck = await query(`
+      SELECT table_type 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+        AND table_name = 'suppliers'
+    `)
+    
+    const isView = tableTypeCheck.rows.length > 0 && tableTypeCheck.rows[0].table_type === 'VIEW'
+    
+    // Read from the actual table, not the view, to get ALL data
+    const supplierQuery = isView ? `
+      SELECT 
+        s.supplier_id::text as id,
+        s.name,
+        s.code,
+        CASE WHEN s.active THEN 'active'::text ELSE 'inactive'::text END as status,
+        s.default_currency as currency,
+        s.payment_terms,
+        s.contact_info,
+        s.tax_number as tax_id,
+        s.created_at,
+        s.updated_at,
+        s.contact_person
+      FROM core.supplier s
+      WHERE CAST(s.supplier_id AS TEXT) = $1
+      LIMIT 1
+    ` : `
       SELECT *
       FROM public.suppliers s
       WHERE CAST(s.id AS TEXT) = $1
@@ -56,66 +82,120 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     
     const row: any = supplierResult.rows[0]
     
+    // Debug: Log what we're getting from the database
+    console.log('🔍 [findById] Raw database row:', {
+      id: row.id,
+      name: row.name,
+      code: row.code,
+      contact_info: row.contact_info,
+      has_contact_info: !!row.contact_info,
+    })
+    
+    // Extract data from contact_info JSONB if it exists
+    const contactInfo = row.contact_info || {}
+    console.log('🔍 [findById] Extracted contact_info:', contactInfo)
+    
     // Map columns that exist - handle different column name variations
-    row.tier = row.tier || row.performance_tier || 'approved'
-    row.category = row.category || row.primary_category || ''
-    row.subcategory = row.subcategory || ''
-    row.tags = row.tags || []
-    row.brands = row.brands || []
-    row.legal_name = row.legal_name || row.name
-    row.website = row.website || ''
-    row.industry = row.industry || ''
-    row.tax_id = row.tax_id || row.tax_number || ''
-    row.registration_number = row.registration_number || ''
-    row.founded_year = row.founded_year ?? null
-    row.employee_count = row.employee_count ?? null
-    row.annual_revenue = row.annual_revenue ?? null
-    row.currency = row.currency || row.currency_code || 'ZAR'
-    row.notes = row.notes || null
+    // Prioritize JSONB data over column data if both exist
+    row.tier = row.tier || contactInfo.tier || row.performance_tier || 'approved'
+    row.category = row.category || contactInfo.category || row.primary_category || ''
+    row.subcategory = row.subcategory || contactInfo.subcategory || ''
+    row.tags = row.tags || contactInfo.tags || []
+    row.brands = row.brands || contactInfo.brands || []
+    row.legal_name = row.legal_name || contactInfo.legalName || row.name || ''
+    row.trading_name = row.trading_name || contactInfo.tradingName || ''
+    row.website = row.website || contactInfo.website || ''
+    row.industry = row.industry || contactInfo.industry || ''
+    row.tax_id = row.tax_id || row.tax_number || contactInfo.taxId || ''
+    row.registration_number = row.registration_number || contactInfo.registrationNumber || ''
+    row.founded_year = row.founded_year ?? contactInfo.foundedYear ?? null
+    row.employee_count = row.employee_count ?? contactInfo.employeeCount ?? null
+    row.annual_revenue = row.annual_revenue ?? contactInfo.annualRevenue ?? null
+    row.currency = row.currency || row.default_currency || contactInfo.currency || row.currency_code || 'ZAR'
+    row.notes = row.notes || contactInfo.notes || null
     
     // Get contacts
     const contactsQuery = `
       SELECT id, type, name, title, email, phone, mobile, department, is_primary, is_active
       FROM supplier_contacts
-      WHERE CAST(supplier_id AS TEXT) = $1 AND is_active = true
+      WHERE CAST(supplier_id AS TEXT) = $1
     `
     const contactsResult = await query(contactsQuery, [id])
+    console.log('🔍 [findById] Contacts found:', contactsResult.rows.length)
     
     // Get addresses
     const addressesQuery = `
       SELECT id, type, name, address_line1, address_line2, city, state, postal_code, country, is_primary, is_active
       FROM supplier_addresses
-      WHERE CAST(supplier_id AS TEXT) = $1 AND is_active = true
+      WHERE CAST(supplier_id AS TEXT) = $1
     `
     const addressesResult = await query(addressesQuery, [id])
+    console.log('🔍 [findById] Addresses found:', addressesResult.rows.length)
     
     // Map contacts and addresses
     row.contacts = contactsResult.rows.map((c: any) => ({
       id: c.id,
-      type: c.type,
-      name: c.name,
-      title: c.title,
-      email: c.email,
-      phone: c.phone,
-      mobile: c.mobile,
-      department: c.department,
-      isPrimary: c.is_primary,
-      isActive: c.is_active
+      type: c.type || 'primary',
+      name: c.name || contactInfo.contactPerson || contactInfo.name || '',
+      title: c.title || contactInfo.title || '',
+      email: c.email || contactInfo.email || '',
+      phone: c.phone || contactInfo.phone || '',
+      mobile: c.mobile || contactInfo.mobile || '',
+      department: c.department || contactInfo.department || '',
+      isPrimary: c.is_primary ?? true,
+      isActive: c.is_active !== false
     }))
+    
+    // If no contacts exist but we have contact info in JSONB, create a contact from it
+    if (row.contacts.length === 0 && (contactInfo.email || contactInfo.phone)) {
+      row.contacts = [{
+        id: '',
+        type: 'primary',
+        name: contactInfo.contactPerson || contactInfo.name || '',
+        title: contactInfo.title || '',
+        email: contactInfo.email || '',
+        phone: contactInfo.phone || '',
+        mobile: contactInfo.mobile || '',
+        department: contactInfo.department || '',
+        isPrimary: true,
+        isActive: true
+      }]
+    }
+    
+    console.log('🔍 [findById] Mapped contacts:', JSON.stringify(row.contacts, null, 2))
     
     row.addresses = addressesResult.rows.map((a: any) => ({
       id: a.id,
-      type: a.type,
-      name: a.name,
-      addressLine1: a.address_line1,
-      addressLine2: a.address_line2,
-      city: a.city,
-      state: a.state,
-      postalCode: a.postal_code,
-      country: a.country,
-      isPrimary: a.is_primary,
-      isActive: a.is_active
+      type: a.type || 'headquarters',
+      name: a.name || '',
+      addressLine1: a.address_line1 || contactInfo.address?.addressLine1 || contactInfo.address?.street || '',
+      addressLine2: a.address_line2 || contactInfo.address?.addressLine2 || '',
+      city: a.city || contactInfo.address?.city || contactInfo.location?.split(',')[0]?.trim() || '',
+      state: a.state || contactInfo.address?.state || contactInfo.location?.split(',')[1]?.trim() || '',
+      postalCode: a.postal_code || contactInfo.address?.postalCode || '',
+      country: a.country || contactInfo.address?.country || contactInfo.location?.split(',')[2]?.trim() || 'South Africa',
+      isPrimary: a.is_primary ?? true,
+      isActive: a.is_active !== false
     }))
+    
+    // If no addresses exist but we have address info in JSONB, create an address from it
+    if (row.addresses.length === 0 && contactInfo.address) {
+      row.addresses = [{
+        id: '',
+        type: 'headquarters',
+        name: '',
+        addressLine1: contactInfo.address.addressLine1 || contactInfo.address.street || '',
+        addressLine2: contactInfo.address.addressLine2 || '',
+        city: contactInfo.address.city || '',
+        state: contactInfo.address.state || '',
+        postalCode: contactInfo.address.postalCode || '',
+        country: contactInfo.address.country || 'South Africa',
+        isPrimary: true,
+        isActive: true
+      }]
+    }
+    
+    console.log('🔍 [findById] Mapped addresses:', JSON.stringify(row.addresses, null, 2))
     
     return this.mapRowToSupplier(row)
   }
@@ -297,85 +377,160 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
 
   async update(id: string, data: UpdateSupplierData): Promise<Supplier> {
     await withTransaction(async (client: PoolClient) => {
+      // Check if public.suppliers is a view or table
+      const tableTypeCheck = await client.query(`
+        SELECT table_type 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+          AND table_name = 'suppliers'
+      `)
+      
+      const isView = tableTypeCheck.rows.length > 0 && tableTypeCheck.rows[0].table_type === 'VIEW'
+      
+      // Determine which table to update and get its columns
+      const tableSchema = isView ? 'core' : 'public'
+      const tableName = isView ? 'supplier' : 'suppliers'
+      const idColumn = isView ? 'supplier_id' : 'id'
+      
+      const columnCheck = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = $1 
+          AND table_name = $2
+      `, [tableSchema, tableName])
+      const existingColumns = new Set(columnCheck.rows.map((r: any) => r.column_name))
+
       const updateFields: string[] = []
       const params: any[] = []
       let paramIndex = 1
 
       const updateBusinessInfo = data.businessInfo
 
-      if (data.name !== undefined) {
+      if (data.name !== undefined && existingColumns.has('name')) {
         updateFields.push(`name = $${paramIndex++}`)
         params.push(data.name)
       }
-      if (updateBusinessInfo?.legalName !== undefined) {
+      if (data.code !== undefined && existingColumns.has('code')) {
+        updateFields.push(`code = $${paramIndex++}`)
+        params.push(data.code)
+      }
+      if (updateBusinessInfo?.legalName !== undefined && existingColumns.has('legal_name')) {
         updateFields.push(`legal_name = $${paramIndex++}`)
         params.push(updateBusinessInfo.legalName)
       }
-      if (updateBusinessInfo?.website !== undefined) {
+      if (updateBusinessInfo?.website !== undefined && existingColumns.has('website')) {
         updateFields.push(`website = $${paramIndex++}`)
         params.push(updateBusinessInfo.website)
       }
-      if (updateBusinessInfo?.industry !== undefined) {
+      if (updateBusinessInfo?.industry !== undefined && existingColumns.has('industry')) {
         updateFields.push(`industry = $${paramIndex++}`)
         params.push(updateBusinessInfo.industry)
       }
       if (updateBusinessInfo?.taxId !== undefined) {
-        updateFields.push(`tax_id = $${paramIndex++}`)
-        params.push(updateBusinessInfo.taxId)
+        if (existingColumns.has('tax_id')) {
+          updateFields.push(`tax_id = $${paramIndex++}`)
+          params.push(updateBusinessInfo.taxId)
+        } else if (existingColumns.has('tax_number')) {
+          updateFields.push(`tax_number = $${paramIndex++}`)
+          params.push(updateBusinessInfo.taxId)
+        }
       }
-      if (updateBusinessInfo?.registrationNumber !== undefined) {
+      if (updateBusinessInfo?.registrationNumber !== undefined && existingColumns.has('registration_number')) {
         updateFields.push(`registration_number = $${paramIndex++}`)
         params.push(updateBusinessInfo.registrationNumber)
       }
-      if (updateBusinessInfo?.foundedYear !== undefined) {
+      if (updateBusinessInfo?.foundedYear !== undefined && existingColumns.has('founded_year')) {
         updateFields.push(`founded_year = $${paramIndex++}`)
         params.push(updateBusinessInfo.foundedYear)
       }
-      if (updateBusinessInfo?.employeeCount !== undefined) {
+      if (updateBusinessInfo?.employeeCount !== undefined && existingColumns.has('employee_count')) {
         updateFields.push(`employee_count = $${paramIndex++}`)
         params.push(updateBusinessInfo.employeeCount)
       }
-      if (updateBusinessInfo?.annualRevenue !== undefined) {
+      if (updateBusinessInfo?.annualRevenue !== undefined && existingColumns.has('annual_revenue')) {
         updateFields.push(`annual_revenue = $${paramIndex++}`)
         params.push(updateBusinessInfo.annualRevenue)
       }
       if (updateBusinessInfo?.currency !== undefined) {
-        updateFields.push(`currency = $${paramIndex++}`)
-        params.push(updateBusinessInfo.currency)
+        if (existingColumns.has('currency')) {
+          updateFields.push(`currency = $${paramIndex++}`)
+          params.push(updateBusinessInfo.currency)
+        } else if (existingColumns.has('default_currency')) {
+          updateFields.push(`default_currency = $${paramIndex++}`)
+          params.push(updateBusinessInfo.currency)
+        }
       }
       if (data.status !== undefined) {
-        updateFields.push(`status = $${paramIndex++}`)
-        params.push(data.status)
+        if (existingColumns.has('status')) {
+          updateFields.push(`status = $${paramIndex++}`)
+          params.push(data.status)
+        } else if (existingColumns.has('active')) {
+          // Map status string to active boolean
+          updateFields.push(`active = $${paramIndex++}`)
+          params.push(data.status === 'active')
+        }
       }
-      if (data.tier !== undefined) {
+      if (data.tier !== undefined && existingColumns.has('tier')) {
         updateFields.push(`tier = $${paramIndex++}`)
         params.push(data.tier)
       }
-      if (data.category !== undefined) {
+      if (data.category !== undefined && existingColumns.has('category')) {
         updateFields.push(`category = $${paramIndex++}`)
         params.push(data.category)
       }
-      if (data.subcategory !== undefined) {
+      if (data.subcategory !== undefined && existingColumns.has('subcategory')) {
         updateFields.push(`subcategory = $${paramIndex++}`)
         params.push(data.subcategory)
       }
-      if (data.tags !== undefined) {
+      if (data.tags !== undefined && existingColumns.has('tags')) {
         updateFields.push(`tags = $${paramIndex++}`)
         params.push(data.tags)
       }
-      if (data.brands !== undefined) {
+      if (data.brands !== undefined && existingColumns.has('brands')) {
         updateFields.push(`brands = $${paramIndex++}`)
         params.push(data.brands)
+      }
+
+      // If updating core.supplier, store all business info in contact_info JSONB
+      if (isView && updateBusinessInfo && existingColumns.has('contact_info')) {
+        // Get existing contact_info to merge with new data
+        const existingData = await client.query(
+          `SELECT contact_info FROM core.supplier WHERE CAST(supplier_id AS TEXT) = $1`,
+          [id]
+        )
+        const existingContactInfo = existingData.rows[0]?.contact_info || {}
+        
+        // Build updated contact_info with all business fields
+        const updatedContactInfo = {
+          ...existingContactInfo,
+          legalName: updateBusinessInfo.legalName ?? existingContactInfo.legalName,
+          tradingName: updateBusinessInfo.tradingName ?? existingContactInfo.tradingName,
+          website: updateBusinessInfo.website ?? existingContactInfo.website,
+          industry: updateBusinessInfo.industry ?? existingContactInfo.industry,
+          registrationNumber: updateBusinessInfo.registrationNumber ?? existingContactInfo.registrationNumber,
+          foundedYear: updateBusinessInfo.foundedYear ?? existingContactInfo.foundedYear,
+          employeeCount: updateBusinessInfo.employeeCount ?? existingContactInfo.employeeCount,
+          annualRevenue: updateBusinessInfo.annualRevenue ?? existingContactInfo.annualRevenue,
+          notes: data.notes ?? existingContactInfo.notes,
+          category: data.category ?? existingContactInfo.category,
+          subcategory: data.subcategory ?? existingContactInfo.subcategory,
+          tags: data.tags ?? existingContactInfo.tags,
+          brands: data.brands ?? existingContactInfo.brands,
+          tier: data.tier ?? existingContactInfo.tier,
+        }
+        
+        updateFields.push(`contact_info = $${paramIndex++}`)
+        params.push(JSON.stringify(updatedContactInfo))
       }
 
       if (updateFields.length > 0) {
         updateFields.push(`updated_at = NOW()`)
         params.push(id)
-        await client.query(`UPDATE suppliers SET ${updateFields.join(', ')} WHERE id = $${paramIndex}::uuid`, params)
+        await client.query(`UPDATE ${tableSchema}.${tableName} SET ${updateFields.join(', ')} WHERE CAST(${idColumn} AS TEXT) = $${paramIndex}`, params)
       }
 
       if (data.contacts) {
-        await client.query('DELETE FROM supplier_contacts WHERE supplier_id = $1::uuid', [id])
+        await client.query('DELETE FROM supplier_contacts WHERE CAST(supplier_id AS TEXT) = $1', [id])
         if (data.contacts.length > 0) {
           const contactArrays = data.contacts.reduce((acc, contact) => {
             acc.supplierIds.push(id)
@@ -428,7 +583,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       }
 
       if (data.addresses) {
-        await client.query('DELETE FROM supplier_addresses WHERE supplier_id = $1::uuid', [id])
+        await client.query('DELETE FROM supplier_addresses WHERE CAST(supplier_id AS TEXT) = $1', [id])
         if (data.addresses.length > 0) {
           const addressArrays = data.addresses.reduce((acc, address) => {
             acc.supplierIds.push(id)
