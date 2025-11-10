@@ -501,6 +501,3 @@ export default function TagsPage() {
     </AppLayout>
   )
 }
-
-"use client"
-

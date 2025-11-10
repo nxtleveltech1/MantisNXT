@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import AppLayout from "@/components/layout/AppLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -22,6 +22,8 @@ import {
   Line,
 } from "recharts"
 import { TrendingUp, TrendingDown, DollarSign, Package, AlertCircle, Database } from "lucide-react"
+
+type SchemaMode = "core" | "legacy" | "demo"
 
 interface TagAnalytics {
   tagId: string
@@ -48,6 +50,52 @@ interface CategoryData {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D"]
 
+const DEMO_ANALYTICS: TagAnalytics[] = [
+  {
+    tagId: "tag-instruments",
+    tagName: "Instruments",
+    totalSales: 1250,
+    totalTurnover: 125000,
+    totalMargin: 31250,
+    productCount: 45,
+    avgPrice: 899.99,
+  },
+  {
+    tagId: "tag-acoustic",
+    tagName: "Acoustic",
+    totalSales: 680,
+    totalTurnover: 68000,
+    totalMargin: 17000,
+    productCount: 23,
+    avgPrice: 599.99,
+  },
+  {
+    tagId: "tag-electric",
+    tagName: "Electric",
+    totalSales: 420,
+    totalTurnover: 84000,
+    totalMargin: 21000,
+    productCount: 15,
+    avgPrice: 1299.99,
+  },
+]
+
+const DEMO_SEASONALITY: SeasonalityData[] = [
+  { month: "Jan", sales: 120, turnover: 12000, margin: 3000 },
+  { month: "Feb", sales: 98, turnover: 9800, margin: 2450 },
+  { month: "Mar", sales: 145, turnover: 14500, margin: 3625 },
+  { month: "Apr", sales: 167, turnover: 16700, margin: 4175 },
+  { month: "May", sales: 189, turnover: 18900, margin: 4725 },
+  { month: "Jun", sales: 234, turnover: 23400, margin: 5850 },
+]
+
+const DEMO_CATEGORY: CategoryData[] = [
+  { name: "Guitars", value: 45, color: "#0088FE" },
+  { name: "Pianos", value: 25, color: "#00C49F" },
+  { name: "Drums", value: 20, color: "#FFBB28" },
+  { name: "Accessories", value: 10, color: "#FF8042" },
+]
+
 export default function AnalyticsPage() {
   const [tagAnalytics, setTagAnalytics] = useState<TagAnalytics[]>([])
   const [seasonalityData, setSeasonalityData] = useState<SeasonalityData[]>([])
@@ -56,9 +104,10 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
+  const [schemaMode, setSchemaMode] = useState<SchemaMode>("demo")
 
   useEffect(() => {
-    fetchAnalytics()
+    void fetchAnalytics()
   }, [selectedTag])
 
   const fetchAnalytics = async () => {
@@ -76,66 +125,36 @@ export default function AnalyticsPage() {
       setSeasonalityData(data.seasonalityData || [])
       setCategoryData(data.categoryData || [])
       setIsDemoMode(data.isDemoMode || false)
+      setSchemaMode(data.mode ?? (data.isDemoMode ? "demo" : "legacy"))
     } catch (err) {
+      console.error(err)
       setError(err instanceof Error ? err.message : "An error occurred")
-      // Fallback to demo data
-      setTagAnalytics([
-        {
-          tagId: "tag-instruments",
-          tagName: "Instruments",
-          totalSales: 1250,
-          totalTurnover: 125000,
-          totalMargin: 31250,
-          productCount: 45,
-          avgPrice: 899.99,
-        },
-        {
-          tagId: "tag-acoustic",
-          tagName: "Acoustic",
-          totalSales: 680,
-          totalTurnover: 68000,
-          totalMargin: 17000,
-          productCount: 23,
-          avgPrice: 599.99,
-        },
-        {
-          tagId: "tag-electric",
-          tagName: "Electric",
-          totalSales: 420,
-          totalTurnover: 84000,
-          totalMargin: 21000,
-          productCount: 15,
-          avgPrice: 1299.99,
-        },
-      ])
-      setSeasonalityData([
-        { month: "Jan", sales: 120, turnover: 12000, margin: 3000 },
-        { month: "Feb", sales: 98, turnover: 9800, margin: 2450 },
-        { month: "Mar", sales: 145, turnover: 14500, margin: 3625 },
-        { month: "Apr", sales: 167, turnover: 16700, margin: 4175 },
-        { month: "May", sales: 189, turnover: 18900, margin: 4725 },
-        { month: "Jun", sales: 234, turnover: 23400, margin: 5850 },
-      ])
-      setCategoryData([
-        { name: "Guitars", value: 45, color: "#0088FE" },
-        { name: "Pianos", value: 25, color: "#00C49F" },
-        { name: "Drums", value: 20, color: "#FFBB28" },
-        { name: "Accessories", value: 10, color: "#FF8042" },
-      ])
       setIsDemoMode(true)
+      setTagAnalytics(DEMO_ANALYTICS)
+      setSeasonalityData(DEMO_SEASONALITY)
+      setCategoryData(DEMO_CATEGORY)
+      setSchemaMode("demo")
     } finally {
       setLoading(false)
     }
   }
 
-  const totalSales = tagAnalytics.reduce((sum, tag) => sum + tag.totalSales, 0)
-  const totalTurnover = tagAnalytics.reduce((sum, tag) => sum + tag.totalTurnover, 0)
-  const totalMargin = tagAnalytics.reduce((sum, tag) => sum + tag.totalMargin, 0)
-  const avgMarginPercent = totalTurnover > 0 ? (totalMargin / totalTurnover) * 100 : 0
+  const totalAssignments = useMemo(
+    () => tagAnalytics.reduce((sum, tag) => sum + (tag.productCount || 0), 0),
+    [tagAnalytics],
+  )
+  const totalSales = tagAnalytics.reduce((sum, tag) => sum + (tag.totalSales || 0), 0)
+  const totalTurnover = tagAnalytics.reduce((sum, tag) => sum + (tag.totalTurnover || 0), 0)
+  const totalMargin = tagAnalytics.reduce((sum, tag) => sum + (tag.totalMargin || 0), 0)
+  const avgMarginPercent =
+    totalTurnover > 0 && totalMargin > 0 ? Number(((totalMargin / totalTurnover) * 100).toFixed(1)) : 0
 
   if (loading) {
     return (
-      <AppLayout title="Analytics & Insights" breadcrumbs={[{ label: "Category Management", href: "/catalog/categories" }, { label: "Analytics" }]}>
+      <AppLayout
+        title="Analytics & Insights"
+        breadcrumbs={[{ label: "Category Management", href: "/catalog/categories" }, { label: "Analytics" }]}
+      >
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Analytics & Insights</h1>
@@ -181,49 +200,60 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <AppLayout title="Analytics & Insights" breadcrumbs={[{ label: "Category Management", href: "/catalog/categories" }, { label: "Analytics" }]}>
+    <AppLayout
+      title="Analytics & Insights"
+      breadcrumbs={[{ label: "Category Management", href: "/catalog/categories" }, { label: "Analytics" }]}
+    >
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold">Analytics & Insights</h1>
-            <p className="text-muted-foreground">Performance metrics and trends</p>
+            <p className="text-muted-foreground">
+              {schemaMode === "core"
+                ? "Live metrics derived from supplier product tags."
+                : "Sales performance and tag engagement trends."}
+            </p>
           </div>
-          {isDemoMode && (
+          <div className="flex gap-2">
             <Badge variant="outline" className="flex items-center gap-2">
               <Database className="h-3 w-3" />
-              Demo Mode
+              {schemaMode === "core"
+                ? "Core schema"
+                : schemaMode === "legacy"
+                  ? "Legacy schema"
+                  : "Demo mode"}
             </Badge>
-          )}
+            {isDemoMode && (
+              <Badge variant="secondary" className="flex items-center gap-2">
+                <Database className="h-3 w-3" />
+                Demo Data
+              </Badge>
+            )}
+          </div>
         </div>
 
         {error && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}. Showing demo data instead.</AlertDescription>
+            <AlertDescription>{error}. Showing fallback data.</AlertDescription>
           </Alert>
         )}
 
-        {isDemoMode && (
-          <Alert>
-            <Database className="h-4 w-4" />
-            <AlertDescription>
-              You're viewing demo data. Connect your Neon database to see live analytics.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Key Metrics */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {schemaMode === "core" ? "Tag Assignments" : "Total Sales"}
+              </CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalSales.toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                {schemaMode === "core" ? totalAssignments.toLocaleString() : totalSales.toLocaleString()}
+              </div>
               <p className="text-xs text-muted-foreground">
                 <TrendingUp className="inline h-3 w-3 mr-1" />
-                +12% from last month
+                {schemaMode === "core" ? "Current manual & automated assignments" : "+12% from last month"}
               </p>
             </CardContent>
           </Card>
@@ -237,7 +267,7 @@ export default function AnalyticsPage() {
               <div className="text-2xl font-bold">${totalTurnover.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">
                 <TrendingUp className="inline h-3 w-3 mr-1" />
-                +8% from last month
+                {schemaMode === "core" ? "Estimated using latest price data" : "+8% from last month"}
               </p>
             </CardContent>
           </Card>
@@ -248,10 +278,12 @@ export default function AnalyticsPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalMargin.toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                {schemaMode === "core" ? "—" : `$${totalMargin.toLocaleString()}`}
+              </div>
               <p className="text-xs text-muted-foreground">
                 <TrendingDown className="inline h-3 w-3 mr-1" />
-                -2% from last month
+                {schemaMode === "core" ? "Margin tracking requires sales ledger" : "-2% from last month"}
               </p>
             </CardContent>
           </Card>
@@ -262,22 +294,22 @@ export default function AnalyticsPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{avgMarginPercent.toFixed(1)}%</div>
+              <div className="text-2xl font-bold">{schemaMode === "core" ? "—" : `${avgMarginPercent}%`}</div>
               <p className="text-xs text-muted-foreground">
                 <TrendingUp className="inline h-3 w-3 mr-1" />
-                +0.5% from last month
+                {schemaMode === "core" ? "Requires sales data to compute" : "+0.5% from last month"}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Tag Performance */}
           <Card>
             <CardHeader>
               <CardTitle>Tag Performance</CardTitle>
-              <CardDescription>Sales, turnover, and margin by tag</CardDescription>
+              <CardDescription>
+                {schemaMode === "core" ? "Product counts and estimated value per tag" : "Sales, turnover, and margin"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -286,24 +318,42 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="tagName" />
                   <YAxis />
                   <Tooltip
-                    formatter={(value, name) => [
-                      name === "totalSales" ? value : `$${Number(value).toLocaleString()}`,
-                      name === "totalSales" ? "Sales" : name === "totalTurnover" ? "Turnover" : "Margin",
-                    ]}
+                    formatter={(value, name) => {
+                      if (schemaMode === "core") {
+                        if (name === "productCount") return [value, "Products"]
+                        return [`$${Number(value).toLocaleString()}`, "Estimated Value"]
+                      }
+                      return [
+                        name === "totalSales" ? value : `$${Number(value).toLocaleString()}`,
+                        name === "totalSales" ? "Sales" : name === "totalTurnover" ? "Turnover" : "Margin",
+                      ]
+                    }}
                   />
-                  <Bar dataKey="totalSales" fill="#8884d8" name="totalSales" />
-                  <Bar dataKey="totalTurnover" fill="#82ca9d" name="totalTurnover" />
-                  <Bar dataKey="totalMargin" fill="#ffc658" name="totalMargin" />
+                  {schemaMode === "core" ? (
+                    <>
+                      <Bar dataKey="productCount" fill="#8884d8" name="Products" />
+                      <Bar dataKey="totalTurnover" fill="#82ca9d" name="Estimated Value" />
+                    </>
+                  ) : (
+                    <>
+                      <Bar dataKey="totalSales" fill="#8884d8" name="Sales" />
+                      <Bar dataKey="totalTurnover" fill="#82ca9d" name="Turnover" />
+                      <Bar dataKey="totalMargin" fill="#ffc658" name="Margin" />
+                    </>
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Category Breakdown */}
           <Card>
             <CardHeader>
               <CardTitle>Category Breakdown</CardTitle>
-              <CardDescription>Margin contribution by category</CardDescription>
+              <CardDescription>
+                {schemaMode === "core"
+                  ? "Products by category with matching tags"
+                  : "Margin contribution by category"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -329,12 +379,13 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        {/* Seasonality Analysis */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Seasonality Analysis</CardTitle>
-              <CardDescription>Monthly sales trends</CardDescription>
+              <CardDescription>
+                {schemaMode === "core" ? "Monthly tag assignments" : "Monthly sales trends"}
+              </CardDescription>
             </div>
             <Select value={selectedTag} onValueChange={setSelectedTag}>
               <SelectTrigger className="w-48">
@@ -357,10 +408,15 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip
-                  formatter={(value, name) => [
-                    name === "sales" ? value : `$${Number(value).toLocaleString()}`,
-                    name === "sales" ? "Sales" : name === "turnover" ? "Turnover" : "Margin",
-                  ]}
+                  formatter={(value, name) => {
+                    if (schemaMode === "core") {
+                      return [value, name === "sales" ? "Assignments" : "Value"]
+                    }
+                    return [
+                      name === "sales" ? value : `$${Number(value).toLocaleString()}`,
+                      name === "sales" ? "Sales" : name === "turnover" ? "Turnover" : "Margin",
+                    ]
+                  }}
                 />
                 <Line type="monotone" dataKey="sales" stroke="#8884d8" strokeWidth={2} />
                 <Line type="monotone" dataKey="turnover" stroke="#82ca9d" strokeWidth={2} />
@@ -370,7 +426,6 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Tag Details Table */}
         <Card>
           <CardHeader>
             <CardTitle>Tag Performance Details</CardTitle>
@@ -383,7 +438,7 @@ export default function AnalyticsPage() {
                   <tr className="border-b">
                     <th className="text-left p-2">Tag</th>
                     <th className="text-right p-2">Products</th>
-                    <th className="text-right p-2">Sales</th>
+                    <th className="text-right p-2">{schemaMode === "core" ? "Assignments" : "Sales"}</th>
                     <th className="text-right p-2">Turnover</th>
                     <th className="text-right p-2">Margin</th>
                     <th className="text-right p-2">Avg Price</th>
@@ -396,10 +451,16 @@ export default function AnalyticsPage() {
                         <Badge variant="outline">{tag.tagName}</Badge>
                       </td>
                       <td className="text-right p-2">{tag.productCount}</td>
-                      <td className="text-right p-2">{tag.totalSales.toLocaleString()}</td>
+                      <td className="text-right p-2">
+                        {schemaMode === "core" ? tag.productCount.toLocaleString() : tag.totalSales.toLocaleString()}
+                      </td>
                       <td className="text-right p-2">${tag.totalTurnover.toLocaleString()}</td>
-                      <td className="text-right p-2">${tag.totalMargin.toLocaleString()}</td>
-                      <td className="text-right p-2">${tag.avgPrice.toFixed(2)}</td>
+                      <td className="text-right p-2">
+                        {schemaMode === "core" ? "—" : `$${tag.totalMargin.toLocaleString()}`}
+                      </td>
+                      <td className="text-right p-2">
+                        {schemaMode === "core" ? `$${tag.avgPrice.toFixed(2)}` : `$${tag.avgPrice.toFixed(2)}`}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -411,4 +472,3 @@ export default function AnalyticsPage() {
     </AppLayout>
   )
 }
-
