@@ -60,3 +60,4 @@ export interface RecordProposalResult {
   nextStatus: CategorizationStatus;
 }
 
+

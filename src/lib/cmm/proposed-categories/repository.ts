@@ -111,3 +111,4 @@ export function normalizeCategoryLabel(label: string): string {
   return normalizeName(label);
 }
 
+
