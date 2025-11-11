@@ -92,12 +92,6 @@ export interface SortState {
   priority: number
 }
 
-// Selection and Grouping
-export interface GroupBy {
-  column: string
-  expanded: { [key: string]: boolean }
-}
-
 // Data Table Props with Enhanced Features
 export interface EnhancedDataTableProps<T = unknown> {
   data: T[]
@@ -225,8 +219,8 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
   onSelectionChange,
   onSortChange,
   onFilterChange,
-  onColumnResize,
-  onColumnReorder,
+  onColumnResize: _onColumnResize,
+  onColumnReorder: _onColumnReorder,
   accessibilityLabel = 'Data table',
   announceChanges = true,
   keyboardNavigation = true
@@ -239,17 +233,21 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
   const [sortStates, setSortStates] = useState<SortState[]>(sorting.defaultSort || [])
   const [filters, setFilters] = useState<FilterState>({})
-  const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({})
-  const [columnOrder, setColumnOrder] = useState<string[]>(columns.map(col => col.id))
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
   const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set())
-  const [groupBy, setGroupBy] = useState<GroupBy | null>(null)
   const [showColumnSettings, setShowColumnSettings] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   const [changedRows, setChangedRows] = useState<Set<number>>(new Set())
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
-  const [focusedCell, setFocusedCell] = useState<{ row: number; col: string } | null>(null)
+
+  const groupingEnabled = grouping?.enabled ?? false
+  const groupingLabel = groupingEnabled
+    ? `Grouping by ${grouping.defaultGroupBy ?? 'selected column'}`
+    : null
+  const liveAnnouncement = announceChanges && realtime.enabled
+    ? `Last updated ${lastUpdate.toLocaleTimeString()}`
+    : null
 
   // Refs
   const tableRef = useRef<HTMLDivElement>(null)
@@ -430,6 +428,24 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
     }
   }, [paginatedData, startIndex])
 
+  useEffect(() => {
+    if (!onSelectionChange) return
+    const selectedData = Array.from(selectedRows)
+      .map(index => data[index])
+      .filter((row): row is T => Boolean(row))
+    onSelectionChange(selectedData)
+  }, [data, onSelectionChange, selectedRows])
+
+  useEffect(() => {
+    if (!onSortChange) return
+    onSortChange(sortStates)
+  }, [onSortChange, sortStates])
+
+  useEffect(() => {
+    if (!onFilterChange) return
+    onFilterChange(filters)
+  }, [filters, onFilterChange])
+
   // Format cell values
   const formatCellValue = useCallback((column: ColumnDef<T>, value: unknown, row: T) => {
     if (column.formatter) {
@@ -437,22 +453,23 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
     }
 
     switch (column.type) {
-      case 'currency':
+      case 'currency': {
         const currency = column.metadata?.currency || 'USD'
         return new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency
         }).format(Number(value) || 0)
+      }
 
-      case 'percentage':
+      case 'percentage': {
         const precision = column.metadata?.precision || 1
         return `${(Number(value) || 0).toFixed(precision)}%`
+      }
 
       case 'number':
         return (Number(value) || 0).toLocaleString()
 
       case 'date':
-        const dateFormat = column.metadata?.dateFormat || 'MM/dd/yyyy'
         return new Date(value).toLocaleDateString()
 
       case 'boolean':
@@ -518,10 +535,19 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
 
   return (
     <TooltipProvider>
-      <div className={cn(
+      <div
+        className={cn(
         "space-y-4",
         isFullscreen && "fixed inset-0 z-50 bg-white p-6 overflow-auto"
-      )}>
+      )}
+        role="region"
+        aria-label={accessibilityLabel}
+      >
+        {liveAnnouncement && (
+          <span className="sr-only" aria-live="polite">
+            {liveAnnouncement}
+          </span>
+        )}
         {/* Header Controls */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* Search and Filters */}
@@ -569,6 +595,12 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {groupingLabel && (
+              <Badge variant="outline" className="text-xs">
+                {groupingLabel}
+              </Badge>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -748,7 +780,7 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
                             column.sortable !== false && sorting.enabled && "cursor-pointer hover:bg-gray-50"
                           )}
                           style={{
-                            width: columnWidths[column.id] || column.width,
+                            width: column.width,
                             minWidth: column.minWidth,
                             maxWidth: column.maxWidth
                           }}
@@ -836,6 +868,18 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
                         }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.2 }}
+                        tabIndex={keyboardNavigation ? 0 : -1}
+                        aria-selected={selection.enabled ? isSelected : undefined}
+                        onKeyDown={(event) => {
+                          if (!keyboardNavigation) return
+                          if (event.key === 'Enter') {
+                            onRowClick?.(row, absoluteIndex)
+                          }
+                          if (event.key === ' ' && selection.enabled) {
+                            event.preventDefault()
+                            handleRowSelect(absoluteIndex, !isSelected)
+                          }
+                        }}
                         className={cn(
                           "group transition-all duration-200 border-b border-gray-100",
                           appearance.alternatingRows && index % 2 === 1 && "bg-gray-50/50",
@@ -888,7 +932,7 @@ const EnhancedDataTable = <T extends Record<string, unknown>>({
                                   appearance.compactMode ? "py-1 px-2" : "py-3 px-4"
                                 )}
                                 style={{
-                                  width: columnWidths[column.id] || column.width,
+                                  width: column.width,
                                   minWidth: column.minWidth,
                                   maxWidth: column.maxWidth
                                 }}

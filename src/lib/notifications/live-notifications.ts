@@ -299,10 +299,8 @@ export class LiveNotificationSystem extends EventEmitter {
 
   /**
    * Send in-app notification
-   */
+  */
   private async sendNotification(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
-    const { record } = context;
-
     // Process template
     const title = this.processTemplate(action.template, context);
     const message = this.processTemplate(action.data?.message || '', context);
@@ -345,7 +343,11 @@ export class LiveNotificationSystem extends EventEmitter {
    */
   private async sendEmail(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
     // Email sending logic would go here
-    console.log(`📧 Sending email notification for rule ${rule.id}`);
+    console.log(`📧 Sending email notification for rule ${rule.id}`, {
+      template: action.template,
+      recipientCount: action.recipients.length,
+      context
+    });
   }
 
   /**
@@ -353,7 +355,11 @@ export class LiveNotificationSystem extends EventEmitter {
    */
   private async callWebhook(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
     // Webhook calling logic would go here
-    console.log(`🔗 Calling webhook for rule ${rule.id}`);
+    console.log(`🔗 Calling webhook for rule ${rule.id}`, {
+      channels: action.channels,
+      data: action.data,
+      context
+    });
   }
 
   /**
@@ -361,7 +367,10 @@ export class LiveNotificationSystem extends EventEmitter {
    */
   private async createTask(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
     // Task creation logic would go here
-    console.log(`📋 Creating task for rule ${rule.id}`);
+    console.log(`📋 Creating task for rule ${rule.id}`, {
+      template: action.template,
+      context
+    });
   }
 
   /**
@@ -437,7 +446,7 @@ export class LiveNotificationSystem extends EventEmitter {
             userIds.push(recipient.value);
             break;
 
-          case 'role':
+          case 'role': {
             const roleQuery = `
               SELECT u.id FROM users u
               JOIN user_roles ur ON u.id = ur.user_id
@@ -447,8 +456,9 @@ export class LiveNotificationSystem extends EventEmitter {
             const roleResult = await db.query(roleQuery, [recipient.value, organizationId]);
             userIds.push(...roleResult.rows.map(row => row.id));
             break;
+          }
 
-          case 'email':
+          case 'email': {
             const emailQuery = `
               SELECT id FROM users
               WHERE email = $1 AND organization_id = $2
@@ -456,6 +466,7 @@ export class LiveNotificationSystem extends EventEmitter {
             const emailResult = await db.query(emailQuery, [recipient.value, organizationId]);
             userIds.push(...emailResult.rows.map(row => row.id));
             break;
+          }
 
           default:
             console.warn(`Unknown recipient type: ${recipient.type}`);

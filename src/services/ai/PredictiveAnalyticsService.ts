@@ -624,19 +624,37 @@ export class PredictiveAnalyticsService {
       recommendations.push('Address high variability in ' + metric);
     }
 
+    if (predictions.length === 0) {
+      recommendations.push('Collect additional data to improve prediction confidence');
+    }
+
     return recommendations;
   }
 
   // Placeholder implementations for complex methods
   private calculateModelAccuracy(predictions: PredictionResult[]): number {
-    return 0.85; // Placeholder
+    if (predictions.length === 0) {
+      return 0;
+    }
+
+    const accuracyScores = predictions.map(prediction => {
+      const lastValue =
+        prediction.predictedValues[prediction.predictedValues.length - 1]?.value ??
+        prediction.currentValue;
+      const delta = Math.abs(lastValue - prediction.currentValue);
+      const baseline = Math.max(1, Math.abs(prediction.currentValue));
+      return Math.max(0, 1 - delta / baseline);
+    });
+
+    const average = accuracyScores.reduce((sum, score) => sum + score, 0) / accuracyScores.length;
+    return Math.round(average * 100) / 100;
   }
 
   private getTotalDataPoints(predictions: PredictionResult[]): number {
     return predictions.reduce((sum, p) => sum + p.predictedValues.length, 0);
   }
 
-  private async getRecentMetricData(metric: string, request: unknown): Promise<unknown[]> {
+  private async getRecentMetricData(_metric: string, _request: unknown): Promise<unknown[]> {
     // Simplified implementation
     return [
       { timestamp: Date.now(), value: 100 },
@@ -698,11 +716,11 @@ export class PredictiveAnalyticsService {
   }
 
   // Additional placeholder methods
-  private async getSpendData(filters: unknown): Promise<unknown[]> {
+  private async getSpendData(_filters: unknown): Promise<unknown[]> {
     return [];
   }
 
-  private analyzeCurrentTrends(data: unknown[]): unknown {
+  private analyzeCurrentTrends(_data: unknown[]): unknown {
     return {
       totalSpend: 100000,
       avgOrderValue: 5000,
@@ -711,7 +729,7 @@ export class PredictiveAnalyticsService {
     };
   }
 
-  private predictFutureSpend(data: unknown[]): unknown {
+  private predictFutureSpend(_data: unknown[]): unknown {
     return {
       nextQuarterSpend: 125000,
       confidence: 0.8,
@@ -719,7 +737,7 @@ export class PredictiveAnalyticsService {
     };
   }
 
-  private identifySpendOpportunities(data: unknown[], trends: unknown): unknown[] {
+  private identifySpendOpportunities(_data: unknown[], _trends: unknown): unknown[] {
     return [
       {
         type: 'cost_saving',
@@ -730,7 +748,7 @@ export class PredictiveAnalyticsService {
     ];
   }
 
-  private async analyzeMarketTrends(category: string): Promise<unknown> {
+  private async analyzeMarketTrends(_category: string): Promise<unknown> {
     return {
       priceDirection: 'stable' as const,
       volatility: 0.15,
@@ -738,7 +756,7 @@ export class PredictiveAnalyticsService {
     };
   }
 
-  private async analyzeCompetitivePosition(category: string): Promise<unknown> {
+  private async analyzeCompetitivePosition(_category: string): Promise<unknown> {
     return {
       averagePrice: 1000,
       priceRange: { min: 800, max: 1200 },
@@ -746,11 +764,11 @@ export class PredictiveAnalyticsService {
     };
   }
 
-  private generateMarketRecommendations(trends: unknown, analysis: unknown): string[] {
+  private generateMarketRecommendations(_trends: unknown, _analysis: unknown): string[] {
     return ['Monitor market trends', 'Consider long-term contracts'];
   }
 
-  private generatePerformanceRecommendations(historical: unknown[], forecast: unknown[], risk: unknown): string[] {
+  private generatePerformanceRecommendations(_historical: unknown[], _forecast: unknown[], risk: unknown): string[] {
     const recommendations = [];
 
     if (risk.trend === 'declining') {
@@ -760,15 +778,15 @@ export class PredictiveAnalyticsService {
     return recommendations;
   }
 
-  private identifyPerformanceFactors(data: unknown[], period: number): string[] {
+  private identifyPerformanceFactors(_data: unknown[], _period: number): string[] {
     return ['Historical trend', 'Seasonal factors', 'Market conditions'];
   }
 
-  private calculateCurrentRisk(data: unknown[]): number {
+  private calculateCurrentRisk(_data: unknown[]): number {
     return 0.3; // Simplified
   }
 
-  private calculateProjectedRisk(forecast: unknown[]): number {
+  private calculateProjectedRisk(_forecast: unknown[]): number {
     return 0.25; // Simplified
   }
 
@@ -790,8 +808,11 @@ export class PredictiveAnalyticsService {
     }>
   }> {
     try {
-      // Placeholder implementation - would integrate with actual risk monitoring
-      const currentRisk = Math.random() * 0.4 + 0.3 // Random between 0.3 and 0.7
+      // Placeholder implementation - deterministically derives risk from supplierId
+      const seed = supplierId
+        .split('')
+        .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      const currentRisk = 0.3 + (seed % 40) / 100; // Range ~0.3 - 0.7
 
       const alerts = []
       if (currentRisk > 0.6) {
