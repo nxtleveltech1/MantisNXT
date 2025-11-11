@@ -1,0 +1,29 @@
+* [33m1204e6f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m x56
+*   [33m6ba4727[m Merge branch 'main' of https://github.com/nxtleveltech1/MantisNXT
+[32m|[m[33m\[m  
+[32m|[m *   [33mcb70c33[m Merge pull request #3 from nxtleveltech1/claude/build-feature-011CV258omgSd3Rs23owaoqr
+[32m|[m [34m|[m[35m\[m  
+[32m|[m [34m|[m *   [33m5db0036[m Merge branch 'main' into claude/build-feature-011CV258omgSd3Rs23owaoqr
+[32m|[m [34m|[m [36m|[m[34m\[m  
+[32m|[m [34m|[m [36m|[m[34m/[m  
+[32m|[m [34m|[m[34m/[m[36m|[m   
+[32m|[m * [36m|[m   [33mba5756c[m Merge pull request #2 from nxtleveltech1/claude/pricing-optimization-architectural-review-011CV1uNawjV85wNHmT4S19i
+[32m|[m [1;32m|[m[1;33m\[m [36m\[m  
+[32m|[m [1;32m|[m * [36m|[m [33m0005a37[m chore(pricing): add migration execution utility scripts
+[32m|[m [1;32m|[m * [36m|[m [33m47d7a10[m feat(pricing): implement SOH pricing with AI recommendations
+[32m|[m [1;32m|[m * [36m|[m [33md7b07a8[m fix(database): update postgres MCP to use Neon database
+[32m|[m [1;32m|[m [1;33m|[m * [33m45e47c0[m feat(nav): add Locations to Inventory sidebar menu
+[32m|[m [1;32m|[m [1;33m|[m * [33me8d91c0[m feat(ui): add locations management interface
+[32m|[m [1;32m|[m [1;33m|[m * [33m99ab48e[m feat(api): add locations REST API endpoints
+[32m|[m [1;32m|[m [1;33m|[m * [33mf8273c3[m feat(service): add LocationService with full CRUD operations
+[32m|[m [1;32m|[m [1;33m|[m * [33m4fc21b4[m feat(database): add stock_location table migration
+[32m|[m [1;32m|[m [1;33m|[m * [33mf1a83ba[m chore(mcp): update postgres MCP to use Neon database
+* [1;32m|[m [1;33m|[m [1;33m|[m [33ma7d7220[m x52
+[1;32m|[m[1;32m/[m [1;33m/[m [1;33m/[m  
+* [1;33m|[m [1;33m|[m [33m3d4ee45[m x52
+* [1;33m|[m [1;33m|[m [33mf5101d5[m x51
+* [1;33m|[m [1;33m|[m [33m1782a75[m x49
+* [1;33m|[m [1;33m|[m [33m6da6068[m x46
+[1;33m|[m [1;33m|[m[1;33m/[m  
+[1;33m|[m[1;33m/[m[1;33m|[m   
+* [1;33m|[m [33m3b73ede[m x46
