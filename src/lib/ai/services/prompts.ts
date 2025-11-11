@@ -324,7 +324,7 @@ ${contextBlock}${emphasis}`;
   ): string {
     let prompt = template;
     Object.entries(variables).forEach(([key, value]) => {
-      const pattern = new RegExp(`{{\s*${this.escapeRegExp(key)}\s*}}`, 'gi');
+      const pattern = new RegExp(`{{\\s*${this.escapeRegExp(key)}\\s*}}`, 'gi');
       prompt = prompt.replace(pattern, String(value));
     });
 
@@ -383,7 +383,7 @@ ${contextLines}`;
   }
 
   private escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\$&');
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '$&');
   }
 
   generateTemplateId(name: string): string {

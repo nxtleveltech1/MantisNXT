@@ -143,7 +143,7 @@ export class ResponseProcessor {
     if (text.length < 50) {
       notes.push('Response is very short; may lack detail.');
     }
-    if (!/[\.!?]/.test(text)) {
+    if (!/[.!?]/.test(text)) {
       notes.push('Response lacks sentence punctuation; may be malformed.');
     }
 

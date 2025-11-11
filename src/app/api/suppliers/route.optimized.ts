@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
 
           // Insert supplier
           const insertQuery = `
-            INSERT INTO suppliers (
+            INSERT INTO public.suppliers (
               name, email, phone, address, contact_person, website, tax_id,
               payment_terms, primary_category, geographic_region, preferred_supplier,
               bee_level, local_content_percentage, status, performance_tier

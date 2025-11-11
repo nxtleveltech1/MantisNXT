@@ -681,7 +681,7 @@ function transformAndValidateField(
   }
 
   switch (fieldName) {
-    case 'sku':
+    case 'sku': {
       const sku = value.toString().trim().toUpperCase()
       if (validationOptions.validateSkus && !/^[A-Z0-9-_]+$/i.test(sku)) {
         issues.push({
@@ -694,9 +694,10 @@ function transformAndValidateField(
         })
       }
       return sku
+    }
 
     case 'cost_price':
-    case 'sale_price':
+    case 'sale_price': {
       const price = parseFloat(value.toString().replace(/[^\d.-]/g, ''))
       if (isNaN(price) || price < 0) {
         issues.push({
@@ -709,10 +710,11 @@ function transformAndValidateField(
         return null
       }
       return price
+    }
 
     case 'stock_qty':
     case 'reorder_point':
-    case 'max_stock':
+    case 'max_stock': {
       const quantity = parseInt(value.toString())
       if (isNaN(quantity) || quantity < 0) {
         issues.push({
@@ -726,17 +728,20 @@ function transformAndValidateField(
         return 0
       }
       return quantity
+    }
 
-    case 'weight':
+    case 'weight': {
       const weight = parseFloat(value.toString())
       return isNaN(weight) ? null : weight
+    }
 
-    default:
+    default: {
       const stringValue = value.toString().trim()
       if (validationOptions.normalizeText) {
         return stringValue.toLowerCase().replace(/\s+/g, ' ');
       }
       return stringValue
+    }
   }
 }
 
@@ -754,12 +759,13 @@ function resolveConflict(
     case 'update':
       return { action: 'update', resolvedFields: Object.keys(processedRow.mappedData) }
 
-    case 'merge':
+    case 'merge': {
       const mergeFields = Object.keys(processedRow.mappedData).filter(field => {
         const newValue = processedRow.mappedData[field]
         return newValue !== null && newValue !== undefined && newValue !== ''
       })
       return { action: 'update', resolvedFields: mergeFields }
+    }
 
     case 'create_variant':
       processedRow.mappedData.sku = `${processedRow.mappedData.sku}-V${Date.now()}`

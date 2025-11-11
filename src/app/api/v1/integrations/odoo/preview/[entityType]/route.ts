@@ -119,7 +119,7 @@ async function handlePreview(
     }
     
     // Warn if URL format looks suspicious for Odoo.sh
-    if (normalizedUrl.includes('.odoo.sh') && !normalizedUrl.match(/^https:\/\/[^\/]+\.odoo\.sh$/)) {
+    if (normalizedUrl.includes('.odoo.sh') && !normalizedUrl.match(/^https:\/\/[^/]+\.odoo\.sh$/)) {
       console.warn(`[Preview] WARNING: Odoo.sh URL format may be incorrect: ${normalizedUrl}`);
       console.warn(`[Preview] Expected format: https://yourcompany.odoo.sh (no paths)`);
       console.warn(`[Preview] Using provided value as-is. If it fails, update config with exact URL from test connection.`);
@@ -286,4 +286,3 @@ async function handlePreview(
     );
   }
 }
-

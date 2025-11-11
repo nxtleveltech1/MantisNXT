@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
 import {
@@ -310,7 +311,7 @@ async function createSupplierProduct(
   data: any,
   upload: PriceListUpload
 ): Promise<string> {
-  const productId = crypto.randomUUID();
+  const productId = randomUUID();
 
   await client.query(`
     INSERT INTO supplier_products (
