@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { DemandForecastingService } from '@/lib/ai/services/DemandForecastingService';
 import { ensureServiceRuntime } from '@/lib/ai/runtime/ensure-service-runtime';
+import { authenticateRequest } from '@/lib/ai/api-utils';
 import { z } from 'zod';
 
 const forecastRequestSchema = z.object({
@@ -22,26 +22,21 @@ const batchForecastSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.orgId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 },
-      );
-    }
+    const user = await authenticateRequest(request);
+    const orgId = user.org_id;
 
     const body = await request.json();
 
     // Check if batch or single forecast
     if (body.productIds && Array.isArray(body.productIds)) {
       // Ensure service runtime config (active provider, credentials)
-      await ensureServiceRuntime(session.user.orgId, 'demand_forecasting');
+      await ensureServiceRuntime(orgId, 'demand_forecasting');
       // Batch forecast
       const validated = batchForecastSchema.parse(body);
       const service = new DemandForecastingService();
 
       const result = await service.generateBatchForecast(
-        session.user.orgId,
+        orgId,
         validated,
       );
 
@@ -63,13 +58,13 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Ensure service runtime config (active provider, credentials)
-      await ensureServiceRuntime(session.user.orgId, 'demand_forecasting');
+      await ensureServiceRuntime(orgId, 'demand_forecasting');
       // Single forecast
       const validated = forecastRequestSchema.parse(body);
       const service = new DemandForecastingService();
 
       const result = await service.generateForecast(
-        session.user.orgId,
+        orgId,
         validated,
       );
 
@@ -113,13 +108,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.orgId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 },
-      );
-    }
+    const user = await authenticateRequest(request);
+    const orgId = user.org_id;
 
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
@@ -156,7 +146,7 @@ export async function GET(request: NextRequest) {
       ORDER BY forecast_date DESC, created_at DESC
       LIMIT 50
       `,
-      [session.user.orgId, productId],
+      [orgId, productId],
     );
 
     const forecasts = result.rows.map((row) => ({

@@ -231,4 +231,21 @@ export class CustomerService {
       throw error;
     }
   }
+
+  static async getCustomerTickets(customerId: string): Promise<any[]> {
+    try {
+      const result = await query<any>(
+        `SELECT *
+         FROM customer_support_ticket
+         WHERE customer_id = $1
+         ORDER BY created_at DESC`,
+        [customerId]
+      );
+
+      return result.rows;
+    } catch (error) {
+      console.error('Error fetching customer tickets:', error);
+      throw error;
+    }
+  }
 }

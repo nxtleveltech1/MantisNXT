@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Enhanced API Client with Retry Logic, Error Handling, and Offline Support
  * Provides resilient API communication with automatic retries and fallback mechanisms

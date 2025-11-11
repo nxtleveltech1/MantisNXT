@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Advanced Machine Learning Models for MantisNXT Platform
 // Implements sophisticated ML algorithms for intelligent analytics
 

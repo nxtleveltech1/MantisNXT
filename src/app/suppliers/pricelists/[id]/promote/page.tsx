@@ -9,9 +9,10 @@ export default function PromotePricelistPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const pricelistId = params.id as string
-  const supplierId = searchParams.get('supplierId') || ''
-  const supplierName = searchParams.get('supplierName') || 'Unknown Supplier'
+  const pricelistId = params?.id ? String(params.id) : ''
+  const supplierId = searchParams?.get('supplierId') ?? ''
+  const supplierNameParam = searchParams?.get('supplierName') ?? ''
+  const supplierName = supplierNameParam ? decodeURIComponent(supplierNameParam) : 'Unknown Supplier'
 
   const handleComplete = (result: any) => {
     // Show success message and redirect
@@ -23,13 +24,13 @@ export default function PromotePricelistPage() {
     router.back()
   }
 
-  if (!supplierId) {
+  if (!pricelistId || !supplierId) {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Missing Supplier Information</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Missing Pricelist Information</h1>
           <p className="text-gray-600 mb-6">
-            Supplier ID is required to proceed with product selection.
+            We need both a pricelist ID and supplier details to proceed with product selection.
           </p>
           <button
             onClick={() => router.back()}

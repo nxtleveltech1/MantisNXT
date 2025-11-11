@@ -35,12 +35,24 @@ const FIELD_MAPPINGS = {
   maximumQuantity: ['max_qty', 'maximum_quantity', 'max_quantity', 'max_order'],
   leadTimeDays: ['lead_time', 'lead_time_days', 'delivery_days', 'days'],
   category: ['category', 'cat', 'type', 'group', 'classification'],
-};
+} as const;
 
-function detectFieldMapping(headers: string[]): Record<string, string> {
-  const mapping: Record<string, string> = {};
+type PricelistItem = z.infer<typeof PricelistItemSchema>;
+type PricelistUploadSettings = z.infer<typeof PricelistUploadSchema>;
+type FieldKey = keyof typeof FIELD_MAPPINGS;
+type FieldMapping = Partial<Record<FieldKey, string>>;
+type RowValue = string | number | boolean | null | undefined;
+type WorksheetRow = RowValue[];
+type WorksheetData = WorksheetRow[];
+type RowRecord = Record<string, RowValue>;
+type ProcessedItem = PricelistItem | Record<string, unknown>;
 
-  for (const [field, possibleNames] of Object.entries(FIELD_MAPPINGS)) {
+function detectFieldMapping(headers: string[]): FieldMapping {
+  const mapping: FieldMapping = {};
+
+  for (const [field, possibleNames] of Object.entries(FIELD_MAPPINGS) as Array<
+    [FieldKey, readonly string[]]
+  >) {
     for (const header of headers) {
       const normalizedHeader = header.toLowerCase().replace(/[^a-z0-9]/g, '_');
       if (possibleNames.includes(normalizedHeader)) {
@@ -54,16 +66,17 @@ function detectFieldMapping(headers: string[]): Record<string, string> {
 }
 
 function validatePricelistItem(
-  data: any,
-  mapping: Record<string, string>
-): { item: any; errors: string[] } {
+  data: RowRecord,
+  mapping: FieldMapping
+): { item: PricelistItem | null; errors: string[] } {
   const errors: string[] = [];
-  const item: any = {};
+  const mappedItem: Partial<PricelistItem> = {};
 
   // Map fields
-  for (const [field, header] of Object.entries(mapping)) {
-    if (data[header] !== undefined && data[header] !== null && data[header] !== '') {
-      let value = data[header];
+  for (const [field, header] of Object.entries(mapping) as Array<[FieldKey, string]>) {
+    const headerValue = header ? data[header] : undefined;
+    if (headerValue !== undefined && headerValue !== null && headerValue !== '') {
+      let value: RowValue = headerValue;
 
       // Type conversion
       if (
@@ -72,38 +85,52 @@ function validatePricelistItem(
         field === 'maximumQuantity' ||
         field === 'leadTimeDays'
       ) {
-        value = parseFloat(value);
-        if (isNaN(value)) {
+        const numericValue =
+          typeof value === 'number' ? value : parseFloat(value.toString().trim());
+        if (Number.isNaN(numericValue)) {
           errors.push(`${field}: Invalid number format`);
           continue;
         }
+        value = numericValue;
       }
 
       if (field === 'isActive') {
         value = Boolean(value);
       }
 
-      item[field] = value;
+      mappedItem[field as keyof PricelistItem] = value as PricelistItem[keyof PricelistItem];
     }
   }
 
-  // Validate required fields
-  if (!item.sku) errors.push('SKU is required');
-  if (!item.name) errors.push('Product name is required');
-  if (item.unitPrice === undefined || item.unitPrice < 0)
-    errors.push('Unit price is required and must be non-negative');
+  if (errors.length > 0) {
+    return { item: null, errors };
+  }
 
-  return { item, errors };
+  const parsedItem = PricelistItemSchema.safeParse(mappedItem);
+  if (!parsedItem.success) {
+    errors.push(
+      ...parsedItem.error.errors.map(err => {
+        const path = err.path.join('.') || 'item';
+        return `${path}: ${err.message}`;
+      })
+    );
+    return { item: null, errors };
+  }
+
+  return { item: parsedItem.data, errors };
 }
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const supplierId = formData.get('supplierId')?.toString();
-    const hasHeaders = formData.get('hasHeaders') !== 'false';
-    const validateData = formData.get('validateData') !== 'false';
-    const autoMapping = formData.get('autoMapping') !== 'false';
+    const uploadSettings: PricelistUploadSettings = PricelistUploadSchema.parse({
+      supplierId: formData.get('supplierId')?.toString(),
+      hasHeaders: formData.get('hasHeaders') !== 'false',
+      validateData: formData.get('validateData') !== 'false',
+      autoMapping: formData.get('autoMapping') !== 'false',
+    });
+    const { supplierId, hasHeaders, validateData, autoMapping } = uploadSettings;
 
     if (!file) {
       return NextResponse.json(
@@ -136,7 +163,7 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     let workbook: XLSX.WorkBook;
     let headers: string[] = [];
-    let data: any[][] = [];
+    let data: WorksheetData = [];
 
     if (file.type === 'text/csv') {
       // Handle CSV files
@@ -173,7 +200,7 @@ export async function POST(request: NextRequest) {
       }
 
       const worksheet = workbook.Sheets[worksheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const jsonData = XLSX.utils.sheet_to_json<WorksheetRow>(worksheet, { header: 1 });
 
       if (jsonData.length < 1) {
         return NextResponse.json(
@@ -185,8 +212,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      data = jsonData as any[][];
-      headers = hasHeaders ? (data[0] as string[]) : [];
+      data = jsonData;
+      headers = hasHeaders
+        ? (jsonData[0] || []).map(cell =>
+            typeof cell === 'string' ? cell : cell !== undefined && cell !== null ? String(cell) : ''
+          )
+        : [];
     }
 
     if (headers.length === 0) {
@@ -217,13 +248,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Process data
-    const processedItems: any[] = [];
+    const processedItems: ProcessedItem[] = [];
     const errors: string[] = [];
     const warnings: string[] = [];
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
-      const rowData: any = {};
+      if (!row) continue;
+      const rowData: RowRecord = {};
 
       // Map row data to headers
       for (let j = 0; j < headers.length; j++) {
@@ -231,9 +263,9 @@ export async function POST(request: NextRequest) {
       }
 
       if (validateData) {
-        const { item, itemErrors } = validatePricelistItem(rowData, mapping);
+        const { item, errors: itemErrors } = validatePricelistItem(rowData, mapping);
 
-        if (itemErrors.length > 0) {
+        if (itemErrors.length > 0 || !item) {
           errors.push(`Row ${i + 1}: ${itemErrors.join(', ')}`);
           continue;
         }
@@ -241,7 +273,7 @@ export async function POST(request: NextRequest) {
         processedItems.push(item);
       } else {
         // Simple mapping without validation
-        const item: any = {};
+        const item: Record<string, unknown> = {};
         for (const [field, header] of Object.entries(mapping)) {
           if (rowData[header] !== undefined) {
             item[field] = rowData[header];
@@ -259,6 +291,9 @@ export async function POST(request: NextRequest) {
       warnings: warnings.length,
       mapping,
       headers,
+      uploadSettings,
+      supplierId: supplierId ?? null,
+      mappingStrategy: autoMapping ? 'automatic' : 'manual',
     };
 
     return NextResponse.json({
@@ -267,6 +302,7 @@ export async function POST(request: NextRequest) {
       data: {
         items: processedItems,
         summary,
+        uploadSettings,
         errors: errors.length > 0 ? errors : undefined,
         warnings: warnings.length > 0 ? warnings : undefined,
       },

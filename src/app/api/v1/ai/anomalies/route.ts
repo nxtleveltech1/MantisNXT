@@ -33,11 +33,7 @@ export async function GET(request: NextRequest) {
     const severity = extractSeverity(searchParams);
     const status = searchParams.get('status') as any;
 
-    // TEMP FIX: Convert UUID org_id to integer for analytics_anomalies table
-    // TODO: Run migration 0017_fix_analytics_anomalies_org_id.sql to fix schema
-    const orgId = user.org_id === '00000000-0000-0000-0000-000000000000' ? 0 : parseInt(user.org_id) || 0;
-
-    const result = await anomalyService.listAnomalies(orgId, {
+    const result = await anomalyService.listAnomalies(user.organizationId, {
       entityType: entityType as any,
       entityId,
       severity: severity as any,
@@ -70,10 +66,9 @@ export async function POST(request: NextRequest) {
     const validated = detectAnomaliesSchema.parse(body);
 
     const result = await anomalyService.detectAnomalies({
-      organizationId: user.org_id,
+      organizationId: user.organizationId,
       entityType: validated.entityType as any,
       entityId: validated.entityId,
-      checkTypes: validated.checkTypes as any[],
       sensitivity: validated.sensitivity,
     });
 

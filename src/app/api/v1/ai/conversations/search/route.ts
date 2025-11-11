@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     const conversationId = searchParams.get('conversationId');
 
-    const orgId = user.organizationId || user.org_id;
+    const orgId = user.org_id;
     const userId = user.id;
 
     // Search conversations

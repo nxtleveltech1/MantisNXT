@@ -4,11 +4,7 @@
  */
 
 import { query as dbQuery } from '@/lib/database/unified-connection';
-import {
-  BatchProgress,
-  ProgressMetrics,
-  Job,
-} from './types';
+import { BatchProgress, ProgressMetrics, Job } from './types';
 
 export class ProgressTracker {
   /**
@@ -49,8 +45,8 @@ export class ProgressTracker {
     skipped_count: number;
     duration_ms: number;
     tokens_used?: number;
-    provider_used?: string;
-    error_message?: string;
+    provider_used?: string | null;
+    error_message?: string | null;
   }): Promise<void> {
     const sql = `
       UPDATE core.ai_categorization_progress
@@ -217,12 +213,17 @@ export class ProgressTracker {
   /**
    * Get error summary for a job
    */
-  async getErrorSummary(jobId: string, limit: number = 20): Promise<Array<{
-    batch_number: number;
-    error_message: string;
-    products_in_batch: number;
-    timestamp: Date;
-  }>> {
+  async getErrorSummary(
+    jobId: string,
+    limit: number = 20
+  ): Promise<
+    Array<{
+      batch_number: number;
+      error_message: string;
+      products_in_batch: number;
+      timestamp: Date;
+    }>
+  > {
     const sql = `
       SELECT 
         batch_number,
@@ -316,4 +317,3 @@ export class ProgressTracker {
 
 // Singleton instance
 export const progressTracker = new ProgressTracker();
-

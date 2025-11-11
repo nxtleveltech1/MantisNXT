@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
 
     if (!dashboard) {
       // No default dashboard exists, return null or create one
-      return successResponse(null, { message: 'No default dashboard configured' });
+      return successResponse({
+        dashboard: null,
+        message: 'No default dashboard configured'
+      });
     }
 
     return successResponse(dashboard);

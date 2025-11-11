@@ -40,7 +40,7 @@ export class LoyaltyProgramService {
 
       const conditions: string[] = ['org_id = $1'];
       const params: any[] = [orgId];
-      let paramIndex = 2;
+      const paramIndex = 2;
 
       if (activeOnly) {
         conditions.push('is_active = true');

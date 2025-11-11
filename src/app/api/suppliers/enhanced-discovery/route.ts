@@ -11,16 +11,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { 
+import {
   WebSearchRequest,
   DiscoveryConfiguration,
   BulkDiscoveryRequest,
+  BulkDiscoveryResponse,
   WebAddressInput
 } from '@/lib/supplier-discovery/enhanced-types';
-import { 
-  WebSearchRequest as LegacyWebSearchRequest,
-  SupplierDiscoveryRequest 
-} from '@/lib/supplier-discovery/types';
 import { useEnhancedSupplierDiscovery } from '@/lib/supplier-discovery/enhanced-use-supplier-discovery';
 import { webSearchService } from '@/lib/supplier-discovery/web-search-service';
 import { webScrapingService } from '@/lib/supplier-discovery/web-scraping-service';
@@ -274,7 +271,7 @@ export async function PATCH(request: NextRequest) {
             const result = await processSingleDiscovery(req);
             results.push(result);
           } catch (error) {
-            errors.push({ supplier: req.supplierName, error: error.message });
+            errors.push({ supplier: req.supplierName, error: error instanceof Error ? error.message : String(error) });
             if (options?.stopOnFirstError) break;
           }
         }
@@ -285,8 +282,9 @@ export async function PATCH(request: NextRequest) {
           try {
             return await processSingleDiscovery(req);
           } catch (error) {
-            errors.push({ supplier: req.supplierName, error: error.message });
-            return { success: false, error: error.message };
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            errors.push({ supplier: req.supplierName, error: errorMessage });
+            return { success: false, error: errorMessage };
           }
         });
         
@@ -295,7 +293,8 @@ export async function PATCH(request: NextRequest) {
           if (result.status === 'fulfilled') {
             results.push(result.value);
           } else {
-            errors.push({ supplier: requests[index].supplierName, error: result.reason.message });
+            const errorMessage = result.reason instanceof Error ? result.reason.message : String(result.reason);
+            errors.push({ supplier: requests[index].supplierName, error: errorMessage });
           }
         });
         break;
@@ -313,8 +312,9 @@ export async function PATCH(request: NextRequest) {
             try {
               return await processSingleDiscovery(req);
             } catch (error) {
-              errors.push({ supplier: req.supplierName, error: error.message });
-              return { success: false, error: error.message };
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              errors.push({ supplier: req.supplierName, error: errorMessage });
+              return { success: false, error: errorMessage };
             }
           });
           

@@ -20,6 +20,29 @@ export class WebScrapingService {
   private axiosInstance: AxiosInstance;
   private activeScrapingCount = 0;
   private maxConcurrentScraping = DISCOVERY_CONFIG.MAX_CONCURRENT_REQUESTS;
+  private businessSelectors!: {
+    companyName: string[];
+    address: string[];
+    phone: string[];
+    email: string[];
+    website: string[];
+  };
+  private socialSelectors!: {
+    linkedin: string;
+    facebook: string;
+    twitter: string;
+    instagram: string;
+  };
+  private directorySelectors!: Record<
+    'yellowpages' | 'brabys',
+    {
+      name: string;
+      address: string;
+      phone: string;
+      website: string;
+      category: string;
+    }
+  >;
 
   constructor() {
     this.axiosInstance = axios.create({
@@ -664,8 +687,3 @@ export class WebScrapingService {
 
 // Export singleton instance
 export const webScrapingService = new WebScrapingService();
-
-// Common selectors
-WebScrapingService.prototype.businessSelectors = {};
-WebScrapingService.prototype.socialSelectors = {};
-WebScrapingService.prototype.directorySelectors = {};

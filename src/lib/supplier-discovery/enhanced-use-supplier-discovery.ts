@@ -186,8 +186,8 @@ export function useEnhancedSupplierDiscovery(
       updateProgress(sessionId, 'web_search', 'Starting web search...', 10);
 
       let webResults: WebSearchResult[] = [];
-      let websiteContents: WebsiteContent[] = [];
-      let extractedFields: ExtractedDataField[] = [];
+      const websiteContents: WebsiteContent[] = [];
+      const extractedFields: ExtractedDataField[] = [];
 
       // Phase 1: Web Search (if enabled)
       if (options.enableWebSearch) {

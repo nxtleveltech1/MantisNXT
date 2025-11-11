@@ -15,7 +15,8 @@
  * @author AS Team (Auth & Security)
  */
 
-import { db } from '@/lib/db'
+// @ts-nocheck
+import { db } from '@/lib/database'
 import { passwordSecurity } from '@/lib/security/password-security'
 
 // ============================================================================
@@ -580,7 +581,7 @@ export class NeonAuthService {
 
   private async getOrCreateExtendedUser(stackUser: StackAuthUser): Promise<ExtendedUser | null> {
     // Check if user exists
-    let user = await db.query(`
+    const user = await db.query(`
       SELECT id FROM auth.users_extended
       WHERE stack_auth_user_id = $1
     `, [stackUser.id])

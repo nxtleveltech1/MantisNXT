@@ -16,6 +16,7 @@ export interface ExtractedSupplierData {
   location?: string;
   contactEmail?: string;
   contactPhone?: string;
+  contactPerson?: string;
   website?: string;
   employees?: string;
   founded?: string;
@@ -69,11 +70,18 @@ const SupplierDataSchema = z.object({
   socialMedia: z.preprocess(
     (val) => {
       if (val === null || val === undefined) return undefined;
-      if (typeof val === 'object') {
+      if (typeof val === 'object' && !Array.isArray(val)) {
+        const record = val as Record<string, unknown>;
+        const normalizeLink = (input: unknown) => {
+          if (input === null || input === undefined) return undefined;
+          if (typeof input === 'string') return input;
+          return undefined;
+        };
+
         return {
-          linkedin: val.linkedin === null ? undefined : val.linkedin,
-          twitter: val.twitter === null ? undefined : val.twitter,
-          facebook: val.facebook === null ? undefined : val.facebook,
+          linkedin: normalizeLink(record.linkedin),
+          twitter: normalizeLink(record.twitter),
+          facebook: normalizeLink(record.facebook),
         };
       }
       return val;
@@ -856,7 +864,7 @@ Return ONLY the JSON object, no other text.`;
       ];
 
       const originalCount = processed.brands.length;
-      let filteredBrands = processed.brands.filter(brand => {
+      const filteredBrands = processed.brands.filter(brand => {
         const brandTrimmed = brand.trim();
         const brandLower = brandTrimmed.toLowerCase();
         

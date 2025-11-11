@@ -4,7 +4,10 @@
  */
 
 import { query as dbQuery } from '@/lib/database/unified-connection';
-import { suggestCategoriesBatch, type CategorySuggestion } from '../category-ai';
+import {
+  suggestCategoriesBatch,
+  type CategorySuggestion as ProviderCategorySuggestion,
+} from '../category-ai';
 import { recordProposedCategoryForProduct } from '../proposed-categories';
 import { EnrichedProduct } from '../sip-product-enrichment';
 import {
@@ -161,7 +164,7 @@ export class CategorizationEngine {
    */
   private async processProduct(
     product: EnrichedProduct,
-    suggestion: CategorySuggestion | undefined,
+    suggestion: ProviderCategorySuggestion | undefined,
     threshold: number,
     forceRecategorize: boolean,
     jobId?: string,
@@ -187,8 +190,8 @@ export class CategorizationEngine {
 
     const newConfidence = suggestion.confidence;
     const categoryId = suggestion.categoryId || null;
-    const provider = suggestion.provider;
-    const reasoning = suggestion.reasoning;
+    const provider = suggestion.provider ?? null;
+    const reasoning = suggestion.reasoning ?? null;
     const proposedName = suggestion.proposedCategoryName || suggestion.categoryName || null;
 
     if (!categoryId && proposedName) {
@@ -499,8 +502,8 @@ export class CategorizationEngine {
     status?: CategorizationStatus[];
     exclude_categorized?: boolean;
   }): Promise<EnrichedProduct[]> {
-    let whereClauses: string[] = [];
-    let queryParams: any[] = [];
+    const whereClauses: string[] = [];
+    const queryParams: any[] = [];
     let paramCounter = 1;
 
     if (params.supplier_id) {

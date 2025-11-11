@@ -5,7 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
-import dbManager from '@/lib/database/enterprise-connection-manager';
 import getDatabaseMetadata from '@/lib/database-info';
 
 export async function GET(request: NextRequest) {
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
     const missingTables = requiredTables.filter(table => !existingTables.includes(table));
 
     // Get table row counts for existing tables in core schema
-    const tableCounts = {};
+    const tableCounts: Record<string, number | string> = {};
     for (const table of existingTables) {
       try {
         const countResult = await pool.query(`SELECT COUNT(*) as count FROM core."${table}"`);
@@ -124,8 +123,27 @@ export async function GET(request: NextRequest) {
             ? 'fair'
             : 'poor';
 
-    const poolStatus = dbManager.getStatus();
-    const poolHealth = dbManager.getPoolHealth();
+    const poolStatus = {
+      total: (pool as any).totalCount ?? 0,
+      idle: (pool as any).idleCount ?? 0,
+      waiting: (pool as any).waitingCount ?? 0,
+      active: (pool as any).totalCount ? ((pool as any).totalCount - ((pool as any).idleCount ?? 0)) : 0
+    };
+
+    const poolHealth = {
+      status: poolStatus.waiting > 0 ? 'degraded' : 'healthy',
+      message:
+        poolStatus.waiting > 0
+          ? 'Connections are waiting for availability'
+          : 'Pool is operating within healthy thresholds',
+      metrics: {
+        totalConnections: poolStatus.total,
+        idleConnections: poolStatus.idle,
+        waitingConnections: poolStatus.waiting,
+        activeConnections: poolStatus.active,
+        avgResponseTime: poolStatus.active > 0 ? `${(poolStatus.active / poolStatus.total).toFixed(2)}s` : '0.00s'
+      },
+    };
 
     return NextResponse.json({
       success: true,
@@ -154,13 +172,7 @@ export async function GET(request: NextRequest) {
       pool: {
         status: poolHealth.status,
         message: poolHealth.message,
-        metrics: {
-          total: poolStatus.totalConnections,
-          active: poolStatus.activeConnections,
-          idle: poolStatus.idleConnections,
-          waiting: poolStatus.waitingConnections,
-          avgResponseTime: poolStatus.avgResponseTime,
-        },
+        metrics: poolHealth.metrics,
       },
       recommendations: generateRecommendations(missingTables, functionalityTests),
     });
@@ -226,11 +238,4 @@ function generateRecommendations(missingTables: string[], functionalityTests: an
   }
 
   return recommendations;
-}
-import { NextResponse } from 'next/server'
-export async function GET() {
-  return NextResponse.json(
-    { success: false, error: 'Deprecated. Use /api/health', deprecated: true, redirectTo: '/api/health' },
-    { status: 410 }
-  )
 }

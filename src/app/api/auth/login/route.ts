@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import jwt from 'jsonwebtoken';
+import { sign as signJwt, verify as verifyJwt } from 'jsonwebtoken';
+import type { JwtPayload, SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 // Validation schema
@@ -52,12 +53,14 @@ const mockUsers = [
 ];
 
 // JWT secret - abort immediately if not provided to avoid insecure fallbacks
-const JWT_SECRET = process.env.JWT_SECRET;
+const rawJwtSecret = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
-if (!JWT_SECRET) {
+if (!rawJwtSecret) {
   throw new Error('JWT_SECRET environment variable is required for authentication');
 }
+
+const JWT_SECRET: string = rawJwtSecret;
 
 export async function POST(request: NextRequest) {
   try {
@@ -129,9 +132,11 @@ export async function POST(request: NextRequest) {
       organizationId: user.organizationId,
     };
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, {
-      expiresIn: remember_me ? '30d' : JWT_EXPIRES_IN,
-    });
+    const signOptions: SignOptions = {
+      expiresIn: (remember_me ? '30d' : JWT_EXPIRES_IN) as SignOptions['expiresIn'],
+    };
+
+    const token = signJwt(tokenPayload as Record<string, unknown>, JWT_SECRET, signOptions);
 
     // Update last login
     user.lastLogin = new Date();
@@ -200,7 +205,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = verifyJwt(token, JWT_SECRET) as JwtPayload;
 
       // Find user to get current data
       const user = mockUsers.find(u => u.id === decoded.userId);

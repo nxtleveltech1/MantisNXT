@@ -9,6 +9,7 @@ import type { ProviderConfig } from './resolver';
 import { runProviderBatch } from './engine';
 import type { z } from 'zod';
 import { BatchCategorySuggestionSchema } from './parser';
+import type { CategorySuggestion } from './index';
 import { mark } from './metrics';
 
 export type BatcherOptions = {
@@ -236,30 +237,31 @@ export async function processBatchesAcrossProviders(
             if (!category && !proposedName) continue;
 
             const existing = results.get(productId);
-            const next = {
-              categoryId: category?.category_id,
-              categoryName: category?.name,
+            const alternatives =
+              category && suggestion.alternatives
+                ? suggestion.alternatives
+                    .map(alt => {
+                      const altId = alt.category_id || alt.categoryId;
+                      const altCat = altId ? categories.find(c => c.category_id === altId) : null;
+                      return altCat
+                        ? {
+                            categoryId: altCat.category_id,
+                            categoryName: altCat.name,
+                            confidence: alt.confidence || 0.5,
+                            reasoning: alt.reasoning ?? null,
+                          }
+                        : null;
+                    })
+                    .filter((x): x is NonNullable<typeof x> => !!x)
+                : undefined;
+            const next: CategorySuggestion = {
+              categoryId: category?.category_id ?? null,
+              categoryName: category?.name ?? null,
               confidence: suggestion.confidence || 0.5,
-              reasoning: suggestion.reasoning,
-              alternatives:
-                category && suggestion.alternatives
-                  ? suggestion.alternatives
-                      .map(alt => {
-                        const altId = alt.category_id || alt.categoryId;
-                        const altCat = altId ? categories.find(c => c.category_id === altId) : null;
-                        return altCat
-                          ? {
-                              categoryId: altCat.category_id,
-                              categoryName: altCat.name,
-                              confidence: alt.confidence || 0.5,
-                              reasoning: alt.reasoning,
-                            }
-                          : null;
-                      })
-                      .filter((x): x is NonNullable<typeof x> => !!x)
-                  : undefined,
-              provider: provider.provider,
-              proposedCategoryName: category ? undefined : proposedName ?? undefined,
+              reasoning: suggestion.reasoning ?? null,
+              alternatives,
+              provider: provider.provider ?? null,
+              proposedCategoryName: category ? null : proposedName ?? null,
             };
             if (!existing || next.confidence > existing.confidence) {
               results.set(productId, next);

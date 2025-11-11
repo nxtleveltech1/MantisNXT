@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       : undefined;
     const toDate = searchParams.get('toDate') ? new Date(searchParams.get('toDate')!) : undefined;
 
-    const orgId = user.organizationId || user.org_id;
+    const orgId = user.org_id;
     const userId = user.id;
 
     // Handle search query
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = SaveMessageSchema.parse(body);
 
-    const orgId = user.organizationId || user.org_id;
+    const orgId = user.org_id;
     const userId = user.id;
 
     const message = await conversationService.saveMessage(

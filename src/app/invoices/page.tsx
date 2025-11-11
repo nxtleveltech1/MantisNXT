@@ -243,6 +243,25 @@ const mockMetrics: InvoiceMetrics = {
   automationRate: 87.3
 }
 
+const getMatchingStatusIcon = (status: ThreeWayMatchStatus) => {
+  switch (status) {
+    case "matched":
+      return <CheckCircle className="h-4 w-4 text-green-600" />
+    case "exceptions":
+      return <AlertTriangle className="h-4 w-4 text-yellow-600" />
+    case "manual_review":
+      return <Eye className="h-4 w-4 text-blue-600" />
+    case "failed":
+      return <XCircle className="h-4 w-4 text-red-600" />
+    case "in_progress":
+      return <Clock className="h-4 w-4 text-yellow-500" />
+    case "not_started":
+      return <Clock className="h-4 w-4 text-muted-foreground" />
+    default:
+      return <Clock className="h-4 w-4 text-muted-foreground" />
+  }
+}
+
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices)
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>(mockInvoices)
@@ -391,21 +410,6 @@ export default function InvoicesPage() {
         {status.replace("_", " ").toUpperCase()}
       </Badge>
     )
-  }
-
-  const getMatchingStatusIcon = (status: ThreeWayMatchStatus) => {
-    switch (status) {
-      case "matched":
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "exceptions":
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      case "manual_review":
-        return <Eye className="h-4 w-4 text-blue-600" />
-      case "failed":
-        return <XCircle className="h-4 w-4 text-red-600" />
-      default:
-        return <Clock className="h-4 w-4 text-gray-600" />
-    }
   }
 
   const handleBulkApprove = async () => {
@@ -771,12 +775,14 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell>{formatDate(invoice.invoiceDate)}</TableCell>
                     <TableCell>
-                      <div className={cn(
-                        formatDate(invoice.dueDate),
-                        new Date(invoice.dueDate) < new Date() &&
-                        invoice.paymentStatus !== "paid" &&
-                        "text-red-600 font-medium"
-                      )}>
+                      <div
+                        className={cn(
+                          "font-medium",
+                          new Date(invoice.dueDate) < new Date() &&
+                            invoice.paymentStatus !== "paid" &&
+                            "text-red-600"
+                        )}
+                      >
                         {formatDate(invoice.dueDate)}
                       </div>
                     </TableCell>

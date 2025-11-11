@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const { limit, offset, page } = extractPagination(searchParams);
     const { startDate, endDate } = extractDateRange(searchParams);
 
-    const orgId = user.organizationId || user.org_id;
+    const orgId = user.org_id;
     const userId = user.id;
 
     // Get conversation summaries

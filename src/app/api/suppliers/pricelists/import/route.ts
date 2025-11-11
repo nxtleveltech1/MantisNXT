@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     let whereClause = 'WHERE status IN (\'imported\', \'failed\')';
-    let params = [limit, offset];
+    const params: Array<number | string> = [limit, offset];
 
     if (supplierId) {
       whereClause += ' AND supplier_id = $3';
@@ -516,8 +516,8 @@ async function updateUploadStatus(
   uploadId: string,
   updates: Partial<PriceListUpload>
 ): Promise<void> {
-  const updateFields = [];
-  const values = [];
+  const updateFields: string[] = [];
+  const values: unknown[] = [];
   let paramCount = 1;
 
   Object.entries(updates).forEach(([key, value]) => {

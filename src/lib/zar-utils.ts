@@ -153,8 +153,8 @@ export function validateEmail(email: string): boolean {
 }
 
 export function validatePhone(phone: string): boolean {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
-  const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, "")
+  const phoneRegex = /^\+?[1-9]\d{0,15}$/
+  const cleanPhone = phone.replace(/[\s\-().]/g, "")
   return phoneRegex.test(cleanPhone)
 }
 

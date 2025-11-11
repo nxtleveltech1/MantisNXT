@@ -10,7 +10,27 @@ export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString()
 
   try {
-    const healthChecks = {
+    const healthChecks: {
+      timestamp: string;
+      status: string;
+      services: {
+        database: { status: string; responseTime: number; error: string | null; version?: string; currentTime?: any };
+        apis: {
+          suppliers: { status: string; responseTime: number; error: string | null };
+          inventory: { status: string; responseTime: number; error: string | null };
+          analytics: { status: string; responseTime: number; error: string | null };
+          alerts: { status: string; responseTime: number; error: string | null };
+          [key: string]: { status: string; responseTime: number; error: string | null; dataCount?: any };
+        };
+      };
+      system: {
+        nodeVersion: string;
+        platform: string;
+        uptime: number;
+        memoryUsage: NodeJS.MemoryUsage;
+        totalResponseTime: number;
+      };
+    } = {
       timestamp,
       status: 'healthy',
       services: {
@@ -46,7 +66,7 @@ export async function GET(request: NextRequest) {
       healthChecks.services.database = {
         status: 'unhealthy',
         responseTime: 0,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       }
       healthChecks.status = 'degraded'
     }
@@ -93,7 +113,7 @@ export async function GET(request: NextRequest) {
         healthChecks.services.apis[apiTest.name] = {
           status: 'unhealthy',
           responseTime: 0,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         }
         healthChecks.status = 'degraded'
       }
@@ -145,7 +165,7 @@ export async function GET(request: NextRequest) {
       data: {
         timestamp,
         status: 'unhealthy',
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         system: {
           nodeVersion: process.version,
           platform: process.platform,
@@ -160,11 +180,4 @@ export async function GET(request: NextRequest) {
       }
     }, { status: 500 })
   }
-}
-import { NextResponse } from 'next/server'
-export async function GET() {
-  return NextResponse.json(
-    { success: false, error: 'Deprecated. Use /api/health', deprecated: true, redirectTo: '/api/health' },
-    { status: 410 }
-  )
 }

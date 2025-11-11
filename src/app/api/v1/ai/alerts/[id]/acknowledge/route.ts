@@ -24,7 +24,7 @@ export async function POST(
     const user = await authenticateRequest(request);
 
     // Call production alert service
-    const alert = await alertService.acknowledgeAlert(id, user.user_id, user.org_id);
+    const alert = await alertService.acknowledgeAlert(id, user.id, user.org_id);
 
     return successResponse(alert);
   } catch (error) {

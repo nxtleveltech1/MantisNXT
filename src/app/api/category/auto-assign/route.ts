@@ -48,14 +48,14 @@ export async function POST(request: Request) {
     }> = [];
 
     for (const [productId, suggestion] of batchSuggestions.entries()) {
-      if (suggestion.confidence >= confidence_threshold) {
+      if (suggestion.confidence >= confidence_threshold && suggestion.categoryId) {
         assignments.push({
           supplierProductId: productId,
           categoryId: suggestion.categoryId,
-          assignedBy: assigned_by,
+          assignedBy: assigned_by || undefined,
           method: 'ai_auto',
           aiConfidence: suggestion.confidence,
-          aiReasoning: suggestion.reasoning,
+          aiReasoning: suggestion.reasoning || undefined,
         });
       }
     }

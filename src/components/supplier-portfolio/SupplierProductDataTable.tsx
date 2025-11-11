@@ -378,8 +378,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
 
     // Sort
     filtered.sort((a, b) => {
-      let aVal: any = a[sortColumn as keyof SelectionProduct]
-      let bVal: any = b[sortColumn as keyof SelectionProduct]
+      const aVal: any = a[sortColumn as keyof SelectionProduct]
+      const bVal: any = b[sortColumn as keyof SelectionProduct]
 
       if (aVal === undefined || aVal === null) return 1
       if (bVal === undefined || bVal === null) return -1

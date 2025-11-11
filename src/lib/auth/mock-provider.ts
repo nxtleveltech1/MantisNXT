@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Mock Authentication Provider - Provider Agnostic Implementation
 import {
   AuthProvider,

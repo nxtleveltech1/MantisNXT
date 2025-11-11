@@ -90,11 +90,9 @@ export async function POST(request: NextRequest) {
           services: extractedSupplier.services || [],
           products: extractedSupplier.products || [],
           certifications: extractedSupplier.certifications || [],
-          tags: extractedSupplier.tags || [],
           // Include transformed form data
           ...transformedData,
           // Ensure these are explicitly included
-          category: transformedData.categories?.[0], // For backwards compatibility
           categories: transformedData.categories || [],
           tags: transformedData.tags || extractedSupplier.tags || [],
           brands: transformedData.brands || [],

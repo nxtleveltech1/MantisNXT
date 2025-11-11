@@ -7,6 +7,20 @@ import {
   serializeTimestamp,
 } from "@/lib/utils/date-utils";
 
+interface RecentActivity {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  entityType: string;
+  entityId: string;
+  entityName: string;
+  timestamp: string;
+  priority: "low" | "medium" | "high";
+  status: string;
+  metadata: Record<string, unknown>;
+}
+
 // Schema for filtering activities
 const GetActivitiesSchema = z.object({
   limit: z.number().min(1).max(100).default(20),
@@ -74,7 +88,7 @@ async function generateRecentActivities(limit: number = 20) {
         pool.query(newInventoryQuery),
       ]);
 
-    const activities = [];
+    const activities: RecentActivity[] = [];
 
     // Add supplier activities
     supplierResult.rows.forEach((row) => {

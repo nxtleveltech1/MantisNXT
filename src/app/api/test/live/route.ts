@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       await deactivateSupplier(supplierId)
 
       addTest('Suppliers CRUD', true, {
-        created: createResult.rows[0].name,
+        created: created.name ?? 'API Test Supplier',
         read: readResult.rows.length > 0,
         updated: true,
         deleted: true
@@ -108,9 +108,9 @@ export async function GET(request: NextRequest) {
       await upsertSupplierProduct({ supplierId: '00000000-0000-0000-0000-000000000000', sku: testSKU, name: 'Test Product' })
       await setStock({ supplierId: '00000000-0000-0000-0000-000000000000', sku: testSKU, quantity: 10, unitCost: 100, reason: 'API Test Movement' })
 
-      // Clean up
-      await pool.query('DELETE FROM stock_movements WHERE item_id = $1', [inventoryId])
-      await pool.query('DELETE FROM public.inventory_items WHERE id = $1', [inventoryId])
+      // Clean up inserted records (best effort)
+      await pool.query('DELETE FROM stock_movements WHERE reference_doc = $1 AND notes = $2', ['setStock', 'API Test Movement'])
+      await pool.query('DELETE FROM public.inventory_items WHERE sku = $1', [testSKU])
 
       addTest('Inventory Operations', true, {
         schemaColumns: inventorySchema.rows.length,

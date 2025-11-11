@@ -288,9 +288,15 @@ export async function POST(request: NextRequest) {
     const result = await generateObject({
       model: anthropic('claude-3-5-sonnet-20241022'),
       schema: SupplierDiscoveryResponseSchema,
-      prompt,
-      temperature: 0.3, // Lower temperature for more consistent, factual output
+      prompt: buildSupplierDiscoveryPrompt(validatedRequest),
+      maxRetries: 3,
+      temperature: 0.2,
     });
+
+    const usage = (result.usage ?? {}) as { promptTokens?: number; completionTokens?: number; totalTokens?: number; inputTokens?: number; outputTokens?: number }
+    const promptTokens = usage.promptTokens ?? usage.inputTokens ?? 0
+    const completionTokens = usage.completionTokens ?? usage.outputTokens ?? 0
+    const totalTokens = usage.totalTokens ?? (promptTokens + completionTokens)
 
     console.log('✅ Discovery complete:', {
       suppliersFound: result.object.suppliers.length,
@@ -346,9 +352,9 @@ export async function POST(request: NextRequest) {
           queryProcessed: validatedRequest.query,
           finishReason: result.finishReason,
           usage: {
-            promptTokens: result.usage.promptTokens,
-            completionTokens: result.usage.completionTokens,
-            totalTokens: result.usage.totalTokens,
+            promptTokens,
+            completionTokens,
+            totalTokens,
           },
           model: 'claude-3-5-sonnet-20241022',
           timestamp: new Date().toISOString(),
@@ -358,7 +364,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'X-AI-Model': 'claude-3-5-sonnet-20241022',
           'X-AI-Provider': 'anthropic',
-          'X-AI-Tokens-Used': result.usage.totalTokens.toString(),
+          'X-AI-Tokens-Used': totalTokens.toString(),
         },
       }
     );

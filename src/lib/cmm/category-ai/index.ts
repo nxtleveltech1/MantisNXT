@@ -6,18 +6,18 @@ import { processBatchesAcrossProviders } from './batcher';
 import { runProviderSingle } from './engine';
 
 export type CategorySuggestion = {
-  categoryId?: string;
-  categoryName?: string;
+  categoryId: string | null;
+  categoryName: string | null;
   confidence: number;
-  reasoning?: string;
+  reasoning: string | null;
   alternatives?: Array<{
     categoryId: string;
     categoryName: string;
     confidence: number;
-    reasoning?: string;
+    reasoning: string | null;
   }>;
-  provider?: string;
-  proposedCategoryName?: string;
+  provider: string | null;
+  proposedCategoryName: string | null;
 };
 
 export async function suggestCategoriesBatch(
@@ -32,8 +32,10 @@ export async function suggestCategoriesBatch(
     maxBatches?: number;
   }
 ): Promise<Map<string, CategorySuggestion>> {
-  console.log(`[suggestCategoriesBatch] ENTRY: ${enrichedProducts.length} products, orgId: ${orgId}`);
-  
+  console.log(
+    `[suggestCategoriesBatch] ENTRY: ${enrichedProducts.length} products, orgId: ${orgId}`
+  );
+
   let cfg;
   try {
     cfg = await loadCategoryAIConfig(orgId);
@@ -42,12 +44,14 @@ export async function suggestCategoriesBatch(
     console.error('[suggestCategoriesBatch] ERROR loading config:', error);
     return new Map();
   }
-  
+
   if (!cfg) {
     console.warn('[suggestCategoriesBatch] No AI config found, returning empty suggestions');
     return new Map();
   }
-  console.log(`[suggestCategoriesBatch] Found ${cfg.providers.length} providers for ${enrichedProducts.length} products`);
+  console.log(
+    `[suggestCategoriesBatch] Found ${cfg.providers.length} providers for ${enrichedProducts.length} products`
+  );
 
   const cats = categories && categories.length > 0 ? categories : await getCategoryHierarchy();
   const providers: ProviderConfig[] = cfg.providers;
@@ -77,7 +81,9 @@ export async function suggestCategoriesBatch(
     maxBatches: opts?.maxBatches ?? effectiveMaxBatches,
     failFastOnFirstTimeout: effectiveFailFast,
   });
-  console.log(`[suggestCategoriesBatch] Processed ${inputProducts.length} products -> ${result.size} suggestions`);
+  console.log(
+    `[suggestCategoriesBatch] Processed ${inputProducts.length} products -> ${result.size} suggestions`
+  );
   return result;
 }
 
@@ -117,7 +123,7 @@ export async function suggestCategorySingle(
         categoryId: cat.category_id,
         categoryName: cat.name,
         confidence: s.confidence || 0.5,
-        reasoning: s.reasoning,
+        reasoning: s.reasoning ?? null,
         alternatives: s.alternatives
           ? s.alternatives
               .map(a => {
@@ -128,13 +134,14 @@ export async function suggestCategorySingle(
                       categoryId: ac.category_id,
                       categoryName: ac.name,
                       confidence: a.confidence || 0.5,
-                      reasoning: a.reasoning,
+                      reasoning: a.reasoning ?? null,
                     }
                   : null;
               })
               .filter((x): x is NonNullable<typeof x> => !!x)
           : undefined,
-        provider: r.provider,
+        provider: r.provider ?? null,
+        proposedCategoryName: s.proposed_category_name ?? s.proposedCategoryName ?? null,
       } as CategorySuggestion;
     })
     .filter((x): x is CategorySuggestion => !!x);

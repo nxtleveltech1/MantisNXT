@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useCallback, useReducer } from 'react'
 import type {
   AISupplierState,

@@ -51,10 +51,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       dbHealthCheck().catch((err) => ({
         healthy: false,
         error: err.message,
+        latency: undefined,
+        poolInfo: undefined,
       })),
       redisHealthCheck().catch((err) => ({
         healthy: false,
         error: err.message,
+        latency: undefined,
       })),
     ]);
 
@@ -73,14 +76,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       checks: {
         database: {
           status: dbCheck.healthy ? 'healthy' : 'unhealthy',
-          latency: dbCheck.latency,
-          poolInfo: dbCheck.poolInfo,
-          error: dbCheck.error,
+          latency: 'latency' in dbCheck ? dbCheck.latency : undefined,
+          poolInfo: 'poolInfo' in dbCheck ? dbCheck.poolInfo : undefined,
+          error: 'error' in dbCheck ? dbCheck.error : undefined,
         },
         redis: {
           status: redisCheck.healthy ? 'healthy' : 'unhealthy',
-          latency: redisCheck.latency,
-          error: redisCheck.error,
+          latency: 'latency' in redisCheck ? redisCheck.latency : undefined,
+          error: 'error' in redisCheck ? redisCheck.error : undefined,
         },
         sessions: sessionCheck,
       },

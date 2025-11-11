@@ -314,7 +314,9 @@ export async function GET(request: NextRequest) {
       // Limit cache size
       if (alertsCache.size > 100) {
         const firstKey = alertsCache.keys().next().value
-        alertsCache.delete(firstKey)
+        if (firstKey) {
+          alertsCache.delete(firstKey)
+        }
       }
     }
 

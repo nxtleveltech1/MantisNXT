@@ -6,6 +6,7 @@ export interface SearchResult {
   source: string;
   publishedDate?: string;
   relevanceScore: number;
+  snippet?: string;
   extractedData?: {
     companyName?: string;
     industry?: string;

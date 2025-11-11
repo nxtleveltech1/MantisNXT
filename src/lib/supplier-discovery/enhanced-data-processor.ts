@@ -330,7 +330,7 @@ export class EnhancedDataProcessor {
    * Normalize field values
    */
   private normalizeFieldValue(field: ExtractedDataField): string | number | boolean {
-    let value = field.value;
+    const value = field.value;
     
     switch (field.fieldName.toLowerCase()) {
       case 'email':

@@ -277,6 +277,7 @@ export async function authenticateRequest(_request: NextRequest) {
     return {
       id: '11111111-1111-1111-1111-111111111111',
       org_id: DEFAULT_ORG_ID,
+      organizationId: 1,
       email: 'dev@mantisnxt.com',
       role: 'admin',
     } as const;
@@ -286,6 +287,7 @@ export async function authenticateRequest(_request: NextRequest) {
   return {
     id: '22222222-2222-2222-2222-222222222222',
     org_id: normalizeOrgId('org-456'),
+    organizationId: 1,
     email: 'user@example.com',
     role: 'admin',
   } as const;

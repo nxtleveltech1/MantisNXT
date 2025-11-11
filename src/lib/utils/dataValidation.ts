@@ -170,11 +170,17 @@ export function validateAlertItems(items: any[]): ValidatedAlertItem[] {
         const normalized = normalizeTimestamps(item, ['createdAt', 'updatedAt', 'acknowledgedAt', 'resolvedAt', 'snoozedUntil']);
 
         // Ensure isRead has a default value and is boolean
+        const rawIsRead = (item as { isRead?: unknown }).isRead;
+        const normalizedIsRead =
+          typeof rawIsRead === 'boolean'
+            ? rawIsRead
+            : typeof rawIsRead === 'string'
+              ? rawIsRead.toLowerCase() === 'true'
+              : false;
+
         const alertItem: ValidatedAlertItem = {
           ...normalized,
-          isRead: typeof normalized.isRead === 'boolean' ? normalized.isRead :
-                  typeof normalized.isRead === 'string' ? normalized.isRead.toLowerCase() === 'true' :
-                  false
+          isRead: normalizedIsRead
         } as ValidatedAlertItem;
 
         validated.push(alertItem);

@@ -160,7 +160,7 @@ const AnalysisRequestSchema = z.object({
   questions: z.array(z.string().min(3)).max(10).default([]),
   dataSources: z.array(DataSourceSchema).min(1).max(8),
   comparativePeriod: TimeRangeSchema.optional(),
-  includeComparisons: z.boolean().default(false),
+  includeComparisons: z.boolean().default(false).optional(),
   output: OutputSchema.optional(),
   schedule: ScheduleSchema.optional(),
   alerts: AlertSchema.optional(),
@@ -179,11 +179,15 @@ const AnalysisQuerySchema = z.object({
   format: z.enum(['json', 'csv']).optional(),
 })
 
+type AnalysisQueryParams = z.infer<typeof AnalysisQuerySchema>
+
 const postHandler = ApiMiddleware.withValidation(
   AnalysisRequestSchema,
   { validateBody: true },
   { requiredPermissions: ['read'], requiredRole: 'manager', rateLimitType: 'aiAnalyze' }
-)(async (request: NextRequest, context: RequestContext, payload: AnalysisRequest) => {
+)(async (request: NextRequest, context: RequestContext, rawPayload) => {
+  const payload = rawPayload as AnalysisRequest
+
   try {
     const baseOptions = buildAnalysisOptions(payload)
     const schedule = payload.schedule ? resolveSchedule(payload.schedule) : null
@@ -279,48 +283,47 @@ const postHandler = ApiMiddleware.withValidation(
   }
 })
 
-const getHandler = ApiMiddleware.withValidation(
-  AnalysisQuerySchema,
-  { validateQuery: true, validateBody: false },
-  { requiredPermissions: ['read'], requiredRole: 'manager', rateLimitType: 'aiAnalyze' }
-)(async (_request: NextRequest, _context: RequestContext, query) => {
-  if (query.historyId) {
-    const record = analysisHistory.get(query.historyId)
-    if (!record) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Analysis history not found',
-          meta: {
-            timestamp: new Date().toISOString(),
-            requestId: `err_${Date.now()}`,
-            version: '1.0.0',
-            processingTime: 0,
+const getHandler = ApiMiddleware.withValidation(AnalysisQuerySchema, { validateQuery: true, validateBody: false }, { requiredPermissions: ['read'], requiredRole: 'manager', rateLimitType: 'aiAnalyze' })(
+  async (_request, _context, rawQuery) => {
+    const query = rawQuery as AnalysisQueryParams
+    if (query.historyId) {
+      const record = analysisHistory.get(query.historyId)
+      if (!record) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Analysis history not found',
+            meta: {
+              timestamp: new Date().toISOString(),
+              requestId: `err_${Date.now()}`,
+              version: '1.0.0',
+              processingTime: 0,
+            },
           },
-        },
-        { status: 404 }
-      )
+          { status: 404 }
+        )
+      }
+      return ApiMiddleware.createSuccessResponse(record, 'Analysis history item retrieved')
     }
-    return ApiMiddleware.createSuccessResponse(record, 'Analysis history item retrieved')
+
+    const limit = query.limit ?? 20
+    const history = Array.from(analysisHistory.values())
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, limit)
+
+    if (query.format === 'csv') {
+      const csv = toAnalysisCsv(history)
+      return new NextResponse(csv, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': 'attachment; filename="analysis-history.csv"',
+        },
+      })
+    }
+
+    return ApiMiddleware.createSuccessResponse(history, 'Analysis history retrieved')
   }
-
-  const limit = query.limit ?? 20
-  const history = Array.from(analysisHistory.values())
-    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-    .slice(0, limit)
-
-  if (query.format === 'csv') {
-    const csv = toAnalysisCsv(history)
-    return new NextResponse(csv, {
-      headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="analysis-history.csv"',
-      },
-    })
-  }
-
-  return ApiMiddleware.createSuccessResponse(history, 'Analysis history retrieved')
-})
+)
 
 // Next.js Route Handlers
 export async function POST(request: NextRequest) {

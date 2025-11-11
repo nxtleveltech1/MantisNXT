@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthContext } from '@/middleware/auth';
 import { QAValidator } from '@/lib/quality/qa-validator';
-import { query } from '@/lib/database';
+import { pool } from '@/lib/database';
 
 // GET /api/quality/validate - Run quality assurance validation
 export const GET = withAuth(async (request: NextRequest, context: AuthContext) => {
@@ -24,7 +24,7 @@ export const GET = withAuth(async (request: NextRequest, context: AuthContext) =
     const url = new URL(request.url);
     const category = url.searchParams.get('category');
 
-    const validator = new QAValidator(query);
+    const validator = new QAValidator(pool as any);
     let result;
 
     if (category) {
@@ -102,7 +102,7 @@ export const POST = withAuth(async (request: NextRequest, context: AuthContext) 
     const body = await request.json();
     const { categories = [], options = {} } = body;
 
-    const validator = new QAValidator(query);
+    const validator = new QAValidator(pool as any);
     let result;
 
     if (categories.length > 0) {

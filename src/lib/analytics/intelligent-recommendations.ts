@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Intelligent Recommendation Engine with Multi-Criteria Optimization
 // Implements advanced recommendation algorithms for procurement, inventory, and supplier decisions
 

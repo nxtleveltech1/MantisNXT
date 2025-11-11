@@ -9,6 +9,17 @@ import * as XLSX from 'xlsx'
 import { query, withTransaction } from '@/lib/database'
 import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
 
+type InventorySummaryRow = {
+  sku: string;
+  id: string;
+  name: string;
+  cost_price: number | null;
+  stock_qty: number | null;
+};
+
+type CategoryRow = { category: string | null };
+type BrandRow = { brand: string | null };
+
 // Enhanced validation schemas
 const UploadSessionSchema = z.object({
   sessionId: z.string().min(1),
@@ -285,9 +296,10 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
       }
 
       headers = jsonData[0] as string[]
-      data = jsonData.slice(1).filter(row =>
-        row && row.some(cell => cell !== null && cell !== undefined && cell !== '')
-      ) as any[][]
+      data = jsonData
+        .slice(1)
+        .filter((row): row is any[] => Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== ''))
+        .map(row => row as any[])
     }
 
     // Create upload session in database
@@ -542,8 +554,8 @@ async function processAndValidateData(
   const existingInventoryResult = await client.query(`
     SELECT sku, id, name, cost_price, stock_qty FROM public.inventory_items
   `)
-  const existingInventory = new Map(
-    existingInventoryResult.rows.map(item => [item.sku, item])
+  const existingInventory = new Map<string, InventorySummaryRow>(
+    existingInventoryResult.rows.map((item: InventorySummaryRow) => [item.sku, item])
   )
 
   for (let i = 0; i < data.length; i++) {
@@ -765,6 +777,7 @@ async function createBackup(client: any, sessionId: string, processedRows: Proce
   const affectedSkus = processedRows
     .filter(row => row.action !== 'skip' && row.existingRecord)
     .map(row => row.mappedData.sku)
+    .filter((sku): sku is string => typeof sku === 'string' && sku.length > 0)
 
   if (affectedSkus.length > 0) {
     const affectedRecordsResult = await client.query(`
@@ -805,8 +818,16 @@ async function importToInventory(
   const existingCategoriesResult = await client.query('SELECT DISTINCT category FROM public.inventory_items')
   const existingBrandsResult = await client.query('SELECT DISTINCT brand FROM public.inventory_items WHERE brand IS NOT NULL')
 
-  const existingCategories = new Set(existingCategoriesResult.rows.map(r => r.category))
-  const existingBrands = new Set(existingBrandsResult.rows.map(r => r.brand))
+  const existingCategories = new Set<string>(
+    existingCategoriesResult.rows
+      .map((r: CategoryRow) => r.category)
+      .filter((value: string | null): value is string => typeof value === 'string' && value.length > 0)
+  )
+  const existingBrands = new Set<string>(
+    existingBrandsResult.rows
+      .map((r: BrandRow) => r.brand)
+      .filter((value: string | null): value is string => typeof value === 'string' && value.length > 0)
+  )
 
   for (const row of processedRows) {
     if (row.status === 'error') {

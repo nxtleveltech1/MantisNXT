@@ -16,7 +16,9 @@ export const designTokens = {
       700: 'oklch(47.20% 0.1609 254.13)',
       800: 'oklch(39.18% 0.1252 256.72)',
       900: 'oklch(33.35% 0.1006 258.71)',
-      950: 'oklch(23.84% 0.0647 260.54)'
+      950: 'oklch(23.84% 0.0647 260.54)',
+      DEFAULT: 'oklch(61.42% 0.2090 248.32)',
+      foreground: '#ffffff'
     },
 
     // Status Colors - Optimized for clarity and accessibility
@@ -26,7 +28,9 @@ export const designTokens = {
       500: 'oklch(64.80% 0.1510 145.50)', // Primary success
       600: 'oklch(57.30% 0.1370 145.70)',
       700: 'oklch(48.20% 0.1140 145.90)',
-      900: 'oklch(27.10% 0.0650 148.70)'
+      900: 'oklch(27.10% 0.0650 148.70)',
+      DEFAULT: 'oklch(64.80% 0.1510 145.50)',
+      foreground: '#ffffff'
     },
 
     warning: {
@@ -35,7 +39,9 @@ export const designTokens = {
       500: 'oklch(75.80% 0.1310 86.30)', // Primary warning
       600: 'oklch(69.20% 0.1200 82.70)',
       700: 'oklch(57.70% 0.1070 78.90)',
-      900: 'oklch(35.60% 0.0650 75.60)'
+      900: 'oklch(35.60% 0.0650 75.60)',
+      DEFAULT: 'oklch(75.80% 0.1310 86.30)',
+      foreground: '#000000'
     },
 
     error: {
@@ -44,7 +50,15 @@ export const designTokens = {
       500: 'oklch(63.20% 0.1570 20.10)', // Primary error
       600: 'oklch(57.40% 0.1420 19.80)',
       700: 'oklch(48.30% 0.1170 19.40)',
-      900: 'oklch(30.90% 0.0720 18.60)'
+      900: 'oklch(30.90% 0.0720 18.60)',
+      DEFAULT: 'oklch(63.20% 0.1570 20.10)',
+      foreground: '#ffffff'
+    },
+
+    // Muted backgrounds for subtle UI elements
+    muted: {
+      DEFAULT: 'oklch(96.10% 0.0040 106.40)',
+      foreground: 'oklch(38.20% 0.0100 106.40)'
     },
 
     // Neutral Colors - Optimized for modern interfaces
@@ -62,7 +76,11 @@ export const designTokens = {
       900: 'oklch(19.70% 0.0060 106.40)',
       950: 'oklch(13.80% 0.0040 106.40)',
       1000: 'oklch(0% 0 0)' // Pure black
-    }
+    },
+
+    background: 'oklch(100% 0 0)',
+    foreground: 'oklch(19.70% 0.0060 106.40)',
+    border: 'oklch(92.40% 0.0080 106.40)'
   },
 
   // Typography Scale - Optimized for readability
@@ -123,7 +141,12 @@ export const designTokens = {
     40: '10rem',       // 160px
     48: '12rem',       // 192px
     56: '14rem',       // 224px
-    64: '16rem'        // 256px
+    64: '16rem',       // 256px
+    xs: '0.5rem',
+    sm: '0.75rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem'
   },
 
   // Border Radius - Modern rounded corners

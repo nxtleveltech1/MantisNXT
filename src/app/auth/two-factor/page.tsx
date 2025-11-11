@@ -29,6 +29,10 @@ export default function TwoFactorPage() {
 
   const router = useRouter()
 
+  const isSetup = currentStep === 'setup'
+  const isVerify = currentStep === 'verify'
+  const isComplete = currentStep === 'complete'
+
   const setupTwoFactor = async () => {
     try {
       setIsLoading(true)
@@ -191,19 +195,20 @@ Keep these codes secure and don&apos;t share them with anyone.`
             <ol className="flex items-center justify-center space-x-8">
               <li className="flex items-center">
                 <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-medium ${
-                  currentStep === 'setup' ? 'border-blue-600 text-blue-600' : 'bg-blue-600 border-blue-600 text-white'
+                  isSetup ? 'border-blue-600 text-blue-600' : 'bg-blue-600 border-blue-600 text-white'
                 }`}>
-                  {currentStep === 'setup' ? '1' : ''}
+                  {isSetup ? '1' : '✔'}
                 </span>
                 <span className="ml-3 text-sm font-medium text-gray-900">Setup</span>
               </li>
               <div className="flex-1 h-0.5 bg-gray-300" />
               <li className="flex items-center">
                 <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-medium ${
-                  currentStep === 'verify' ? 'border-blue-600 text-blue-600' :
-                  currentStep === 'complete' ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 text-gray-500'
+                  isVerify ? 'border-blue-600 text-blue-600'
+                  : isComplete ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'border-gray-300 text-gray-500'
                 }`}>
-                  {currentStep === 'complete' ? '' : '2'}
+                  {isComplete ? '✔' : '2'}
                 </span>
                 <span className="ml-3 text-sm font-medium text-gray-900">Verify</span>
               </li>

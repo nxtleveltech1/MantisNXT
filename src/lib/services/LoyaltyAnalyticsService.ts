@@ -705,7 +705,7 @@ export class LoyaltyAnalyticsService {
     reportType: ReportType
   ): Promise<LoyaltyReport> {
     try {
-      let data: Record<string, any> = {};
+      const data: Record<string, any> = {};
 
       switch (reportType) {
         case 'program_overview':

@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     // });
 
     // Mock response structure
-    const alerts = [];
+    const alerts: any[] = [];
     const total = 0;
 
     return successResponse(alerts, {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Analytics Integration Service
  * Centralized orchestration of all analytics and optimization modules

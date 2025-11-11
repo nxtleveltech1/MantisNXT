@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-/* eslint-disable ssot/no-legacy-supplier-inventory */ // TODO(SSOT): Replace all legacy reads/writes with core.* access
+  // TODO(SSOT): Replace all legacy reads/writes with core.* access
 import { query, withTransaction } from '@/lib/database/unified-connection'
 import { setStock, upsertSupplierProduct } from '@/services/ssot/inventoryService'
 import { TransactionHelper } from '@/lib/database/transaction-helper'
@@ -577,143 +577,166 @@ export async function deleteInventoryItems(request: NextRequest) {
 
 // Helper functions
 async function handleBulkCreate(items: any[]) {
-  const validatedItems = items.map(item => inventoryItemSchema.parse(item))
+  try {
+    const validatedItems = items.map(item => inventoryItemSchema.parse(item))
 
-  return TransactionHelper.withTransaction(async (client) => {
-    const created = []
-    const updated = []
-    const errors = []
+    return await TransactionHelper.withTransaction(async (client) => {
+      const created = []
+      const updated = []
+      const errors = []
 
-    for (const item of validatedItems) {
-      try {
-        // Check if item already exists
-        const existing = await client.query(
-          'SELECT id, stock_qty FROM public.inventory_items WHERE sku = $1',
-          [item.sku]
-        )
-
-        const spSku = item.supplier_sku || item.sku
-
-        if (existing.rows.length > 0) {
-          // Update existing item: add to stock quantity and update cost price
-          const existingId = existing.rows[0].id
-          const existingStock = existing.rows[0].stock_qty || 0
-          const newStock = existingStock + (item.stock_qty || 0)
-
-          await client.query(
-            `UPDATE public.inventory_items
-             SET stock_qty = $1,
-                 updated_at = NOW()
-             WHERE id = $2`,
-            [newStock, existingId]
+      for (const item of validatedItems) {
+        try {
+          // Check if item already exists
+          const existing = await client.query(
+            'SELECT id, stock_qty FROM public.inventory_items WHERE sku = $1',
+            [item.sku]
           )
 
-          // SSOT: update supplier_product and add to stock
-          await upsertSupplierProduct({
-            supplierId: item.supplier_id,
-            sku: spSku,
-            name: item.name
-          })
-          await setStock({
-            supplierId: item.supplier_id,
-            sku: spSku,
-            quantity: item.stock_qty || 0,
-            unitCost: item.cost_price,
-            reason: 'bulk_update_stock_in'
-          })
+          const spSku = item.supplier_sku || item.sku
 
-          updated.push({
-            sku: item.sku,
-            supplier_id: item.supplier_id,
-            previous_stock: existingStock,
-            new_stock: newStock,
-            added: item.stock_qty
-          })
-        } else {
-          // Create new item
-          // SSOT: create supplier_product and set initial stock
-          await upsertSupplierProduct({
-            supplierId: item.supplier_id,
-            sku: spSku,
-            name: item.name
-          })
-          await setStock({
-            supplierId: item.supplier_id,
-            sku: spSku,
-            quantity: item.stock_qty || 0,
-            unitCost: item.cost_price,
-            reason: 'bulk_create'
-          })
+          if (existing.rows.length > 0) {
+            // Update existing item: add to stock quantity and update cost price
+            const existingId = existing.rows[0].id
+            const existingStock = existing.rows[0].stock_qty || 0
+            const newStock = existingStock + (item.stock_qty || 0)
 
-          created.push({
+            await client.query(
+              `UPDATE public.inventory_items
+               SET stock_qty = $1,
+                   updated_at = NOW()
+               WHERE id = $2`,
+              [newStock, existingId]
+            )
+
+            // SSOT: update supplier_product and add to stock
+            if (item.supplier_id && spSku) {
+              await upsertSupplierProduct({
+                supplierId: item.supplier_id,
+                sku: spSku,
+                name: item.name
+              })
+              await setStock({
+                supplierId: item.supplier_id,
+                sku: spSku,
+                quantity: item.stock_qty || 0,
+                unitCost: item.cost_price,
+                reason: 'bulk_update_stock_in'
+              })
+            }
+
+            updated.push({
+              sku: item.sku,
+              supplier_id: item.supplier_id,
+              previous_stock: existingStock,
+              new_stock: newStock,
+              added: item.stock_qty
+            })
+          } else {
+            // Create new item
+            // SSOT: create supplier_product and set initial stock when supplier context provided
+            if (item.supplier_id && spSku) {
+              await upsertSupplierProduct({
+                supplierId: item.supplier_id,
+                sku: spSku,
+                name: item.name
+              })
+              await setStock({
+                supplierId: item.supplier_id,
+                sku: spSku,
+                quantity: item.stock_qty || 0,
+                unitCost: item.cost_price,
+                reason: 'bulk_create'
+              })
+            }
+
+            created.push({
+              sku: item.sku,
+              supplier_id: item.supplier_id,
+              stock: item.stock_qty
+            })
+          }
+        } catch (error) {
+          errors.push({
             sku: item.sku,
-            supplier_id: item.supplier_id,
-            stock: item.stock_qty
+            error: error instanceof Error ? error.message : 'Unknown error'
           })
         }
-      } catch (error) {
-        errors.push({
-          sku: item.sku,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        })
       }
-    }
 
-    return NextResponse.json({
-      success: errors.length === 0,
-      data: {
-        created,
-        updated,
-        errors
-      },
-      message: `Created: ${created.length}, Updated: ${updated.length}, Errors: ${errors.length}`
+      return NextResponse.json({
+        success: errors.length === 0,
+        data: {
+          created,
+          updated,
+          errors
+        },
+        message: `Created: ${created.length}, Updated: ${updated.length}, Errors: ${errors.length}`
+      })
     })
-  });
+  } catch (error) {
+    console.error('Error in bulk create:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Bulk create failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
 }
 
 async function handleBulkUpdate(body: any) {
-  const validatedData = bulkUpdateSchema.parse(body)
+  try {
+    const validatedData = bulkUpdateSchema.parse(body)
 
-  return TransactionHelper.withTransaction(async (client) => {
-    const results = []
+    return await TransactionHelper.withTransaction(async (client) => {
+      const results = []
 
-    for (const item of validatedData.items) {
-      const updateFields = []
-      const updateValues = []
-      let paramIndex = 1
+      for (const item of validatedData.items) {
+        const updateFields = []
+        const updateValues = []
+        let paramIndex = 1
 
-      // Build dynamic update query
-      for (const [field, value] of Object.entries(item.updates)) {
-        if (value !== undefined) {
-          updateFields.push(`${field} = $${paramIndex}`)
-          updateValues.push(value)
-          paramIndex++
+        // Build dynamic update query
+        for (const [field, value] of Object.entries(item.updates)) {
+          if (value !== undefined) {
+            updateFields.push(`${field} = $${paramIndex}`)
+            updateValues.push(value)
+            paramIndex++
+          }
+        }
+
+        if (updateFields.length === 0) continue
+
+        updateFields.push(`updated_at = NOW()`)
+
+        // SSOT: only support stock set via SSOT when stock_qty provided
+        if (item.updates.stock_qty !== undefined && item.updates.supplier_id && item.updates.supplier_sku) {
+          await setStock({ supplierId: String(item.updates.supplier_id), sku: String(item.updates.supplier_sku), quantity: Number(item.updates.stock_qty), unitCost: item.updates.cost_price, reason: 'bulk_update' })
+          results.push({ id: item.id, stock_qty: item.updates.stock_qty })
         }
       }
 
-      if (updateFields.length === 0) continue
-
-      updateFields.push(`updated_at = NOW()`)
-
-      // SSOT: only support stock set via SSOT when stock_qty provided
-      if (item.updates.stock_qty !== undefined && item.updates.supplier_id && item.updates.supplier_sku) {
-        await setStock({ supplierId: String(item.updates.supplier_id), sku: String(item.updates.supplier_sku), quantity: Number(item.updates.stock_qty), unitCost: item.updates.cost_price, reason: 'bulk_update' })
-        results.push({ id: item.id, stock_qty: item.updates.stock_qty })
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: results,
-      message: `${results.length} inventory items updated successfully`
+      return NextResponse.json({
+        success: true,
+        data: results,
+        message: `${results.length} inventory items updated successfully`
+      })
     })
-  })
+  } catch (error) {
+    console.error('Error in bulk update:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Bulk update failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
 }
 
 async function handleStockMovement(body: any) {
-  const validatedData = stockMovementSchema.parse(body)
+  try {
+    const validatedData = stockMovementSchema.parse(body)
 
-  return TransactionHelper.withTransaction(async (client) => {
+    return await TransactionHelper.withTransaction(async (client) => {
     // Get current stock
     const currentStock = await client.query(
       'SELECT stock_qty, reserved_qty, supplier_id, supplier_sku FROM public.inventory_items WHERE id = $1',
@@ -765,14 +788,22 @@ async function handleStockMovement(body: any) {
       validatedData.notes
     ])
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        movement: movementResult.rows[0],
-        newStockQty,
-        previousStockQty: current.stock_qty
-      },
-      message: 'Stock movement recorded successfully'
+      return NextResponse.json({
+        success: true,
+        data: {
+          movement: movementResult.rows[0],
+          newStockQty,
+          previousStockQty: current.stock_qty
+        },
+        message: 'Stock movement recorded successfully'
+      })
     })
-  });
+  } catch (error) {
+    console.error('Error recording stock movement:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Stock movement failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
 }

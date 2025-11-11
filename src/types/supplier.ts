@@ -5,7 +5,9 @@ export interface Supplier {
   code: string;
   status: 'active' | 'inactive' | 'pending' | 'suspended';
   tier: 'strategic' | 'preferred' | 'approved' | 'conditional';
-  category: string[];
+  category?: string;
+  subcategory?: string;
+  categories?: string[];
   tags: string[];
 
   // Contact Information
@@ -133,6 +135,73 @@ export interface BankDetails {
   routingNumber: string;
   swiftCode?: string;
   iban?: string;
+}
+
+export interface SupplierFormContact {
+  id?: string;
+  type?: 'primary' | 'billing' | 'technical' | 'sales' | 'support';
+  name?: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  department?: string;
+  isPrimary?: boolean;
+  isActive?: boolean;
+}
+
+export interface SupplierFormAddress {
+  id?: string;
+  type?: 'headquarters' | 'billing' | 'shipping' | 'warehouse' | 'manufacturing';
+  name?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  isPrimary?: boolean;
+  isActive?: boolean;
+}
+
+export interface SupplierFormData {
+  id?: string;
+  name?: string;
+  code?: string;
+  status?: Supplier['status'];
+  tier?: Supplier['tier'];
+  category?: string;
+  subcategory?: string;
+  categories?: string[];
+  tags?: string[];
+  brands?: string[];
+  businessInfo?: Partial<Supplier['businessInfo']> & {
+    description?: string;
+    tags?: string[];
+  };
+  capabilities?: {
+    products?: string[];
+    services?: string[];
+    leadTime?: number;
+    paymentTerms?: string;
+    certifications?: string[];
+    minimumOrderValue?: number;
+    capacityPerMonth?: number;
+  };
+  financial?: {
+    creditRating?: string;
+    paymentTerms?: string;
+    currency?: string;
+  };
+  contacts?: SupplierFormContact[];
+  addresses?: SupplierFormAddress[];
+  notes?: string;
+  performance?: {
+    rating?: number;
+    tier?: string;
+    summary?: string[];
+    score?: number;
+  };
 }
 
 // Purchase Order Types

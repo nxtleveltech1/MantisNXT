@@ -195,7 +195,7 @@ export function validateQueryParams(params: URLSearchParams, schema: {
     }
 
     switch (type) {
-      case 'number':
+      case 'number': {
         const num = parseInt(value, 10);
         if (isNaN(num)) {
           errors.push(`${key} must be a valid number`);
@@ -203,16 +203,18 @@ export function validateQueryParams(params: URLSearchParams, schema: {
           parsed[key] = num;
         }
         break;
+      }
 
-      case 'boolean':
+      case 'boolean': {
         if (value !== 'true' && value !== 'false') {
           errors.push(`${key} must be true or false`);
         } else {
           parsed[key] = value === 'true';
         }
         break;
+      }
 
-      case 'uuid':
+      case 'uuid': {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (!uuidRegex.test(value)) {
           errors.push(`${key} must be a valid UUID`);
@@ -220,8 +222,9 @@ export function validateQueryParams(params: URLSearchParams, schema: {
           parsed[key] = value;
         }
         break;
+      }
 
-      case 'date':
+      case 'date': {
         const date = new Date(value);
         if (isNaN(date.getTime())) {
           errors.push(`${key} must be a valid date`);
@@ -229,6 +232,7 @@ export function validateQueryParams(params: URLSearchParams, schema: {
           parsed[key] = date;
         }
         break;
+      }
 
       case 'array':
         parsed[key] = value.split(',').map(v => v.trim());

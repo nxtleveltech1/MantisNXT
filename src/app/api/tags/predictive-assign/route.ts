@@ -5,6 +5,7 @@ import {
   ensureCoreTagInfrastructure,
   predictiveAssignCoreTags,
 } from "@/lib/cmm/tag-service-core"
+import type { Product } from "@/lib/cmm/types"
 
 export async function POST() {
   try {
@@ -35,14 +36,19 @@ export async function POST() {
     let assigned = 0
 
     for (const product of products) {
-      const fullProduct = {
+      const fullProduct: Product = {
         sku: product.sku,
-        supplierId: product.supplierId ?? "unknown",
+        supplierId: "unknown",
+        categoryId: product.categoryId ?? undefined,
         description: product.description,
-        stockType: product.stockType,
-        tags: product.tags,
-        attributes: product.attributes ?? {},
-        updatedAt: product.updatedAt ?? Date.now(),
+        brand: product.brand,
+        seriesRange: product.seriesRange,
+        price: undefined,
+        stockType: "stock",
+        imageUrl: undefined,
+        tags: product.tags ?? [],
+        attributes: {},
+        updatedAt: Date.now(),
       }
 
       const suggestedTags = predictiveTags(fullProduct)

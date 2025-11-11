@@ -48,7 +48,9 @@ function setCache(key: string, data: any): void {
   // Limit cache size to 1000 entries
   if (queryCache.size > 1000) {
     const firstKey = queryCache.keys().next().value
-    queryCache.delete(firstKey)
+    if (firstKey !== undefined) {
+      queryCache.delete(firstKey)
+    }
   }
 }
 
@@ -89,7 +91,7 @@ export async function GET(request: NextRequest) {
     const includeMetrics = searchParams.get('includeMetrics') === 'true'
 
     // Build optimized query using covering indexes
-    let query = `
+    let sql = `
       SELECT
         s.id,
         s.name,
@@ -125,10 +127,10 @@ export async function GET(request: NextRequest) {
     // Status filter - uses idx_suppliers_status
     if (status?.length) {
       if (status.length === 1) {
-        query += ` AND s.status = $${paramIndex}`
+        sql += ` AND s.status = $${paramIndex}`
         queryParams.push(status[0])
       } else {
-        query += ` AND s.status = ANY($${paramIndex})`
+        sql += ` AND s.status = ANY($${paramIndex})`
         queryParams.push(status)
       }
       paramIndex++
@@ -136,33 +138,33 @@ export async function GET(request: NextRequest) {
 
     // Preferred supplier filter - uses idx_suppliers_preferred
     if (preferredOnly) {
-      query += ` AND s.preferred_supplier = true`
+      sql += ` AND s.preferred_supplier = true`
     }
 
     // Performance tier filter - uses idx_suppliers_performance_tier
     if (performanceTier?.length) {
-      query += ` AND s.performance_tier = ANY($${paramIndex})`
+      sql += ` AND s.performance_tier = ANY($${paramIndex})`
       queryParams.push(performanceTier)
       paramIndex++
     }
 
     // Category filter - uses idx_suppliers_primary_category
     if (category?.length) {
-      query += ` AND s.primary_category = ANY($${paramIndex})`
+      sql += ` AND s.primary_category = ANY($${paramIndex})`
       queryParams.push(category)
       paramIndex++
     }
 
     // Region filter - uses idx_suppliers_geographic_region
     if (region?.length) {
-      query += ` AND s.geographic_region = ANY($${paramIndex})`
+      sql += ` AND s.geographic_region = ANY($${paramIndex})`
       queryParams.push(region)
       paramIndex++
     }
 
     // BEE level filter - uses idx_suppliers_bee_level
     if (beeLevel?.length) {
-      query += ` AND s.bee_level = ANY($${paramIndex})`
+      sql += ` AND s.bee_level = ANY($${paramIndex})`
       queryParams.push(beeLevel)
       paramIndex++
     }
@@ -172,7 +174,7 @@ export async function GET(request: NextRequest) {
     // ========================================================================
     if (search) {
       // Use GIN index for full-text search (much faster than ILIKE)
-      query += ` AND to_tsvector('english',
+      sql += ` AND to_tsvector('english',
         s.name || ' ' ||
         COALESCE(s.email, '') || ' ' ||
         COALESCE(s.contact_person, '') || ' ' ||
@@ -184,34 +186,56 @@ export async function GET(request: NextRequest) {
 
     // Spend filters - uses idx_suppliers_spend_range
     if (minSpend) {
-      query += ` AND s.spend_last_12_months >= $${paramIndex}`
+      sql += ` AND s.spend_last_12_months >= $${paramIndex}`
       queryParams.push(parseFloat(minSpend))
       paramIndex++
     }
 
     if (maxSpend) {
-      query += ` AND s.spend_last_12_months <= $${paramIndex}`
+      sql += ` AND s.spend_last_12_months <= $${paramIndex}`
       queryParams.push(parseFloat(maxSpend))
       paramIndex++
     }
 
     // Group by if including metrics
     if (includeMetrics) {
-      query += ` GROUP BY s.id`
+      sql += ` GROUP BY s.id`
     }
 
     // Add ordering - uses idx_suppliers_status_name covering index
-    query += ` ORDER BY s.name ASC`
+    const sortBy = searchParams.get('sortBy') || 'updated_at'
+    const sortOrder = searchParams.get('sortOrder') || 'asc'
+    const sortFields: { [key: string]: string } = {
+      name: 's.name',
+      email: 's.email',
+      phone: 's.phone',
+      contact_person: 's.contact_person',
+      address: 's.address',
+      website: 's.website',
+      tax_id: 's.tax_id',
+      primary_category: 's.primary_category',
+      geographic_region: 's.geographic_region',
+      preferred_supplier: 's.preferred_supplier',
+      status: 's.status',
+      performance_tier: 's.performance_tier',
+      bee_level: 's.bee_level',
+      spend_last_12_months: 's.spend_last_12_months',
+      payment_terms: 's.payment_terms',
+      created_at: 's.created_at',
+      updated_at: 's.updated_at'
+    }
+    const sortColumn = sortFields[sortBy] || 's.updated_at'
+    sql += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`
 
     // Add pagination
-    query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
+    sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
     queryParams.push(limit, offset)
 
     // ========================================================================
     // OPTIMIZATION 6: Single query for count using window function
     // This eliminates the second COUNT query entirely
     // ========================================================================
-    const countOverQuery = query.replace(
+    const countOverQuery = sql.replace(
       'SELECT',
       'SELECT COUNT(*) OVER() AS full_count,'
     )
@@ -286,12 +310,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const results = []
-    const errors = []
+    const results: Record<string, any>[] = []
+    const errors: Array<{ name: string; error: string }> = []
 
     // Use transaction for batch insert
-    const results = []
-    const errors = []
     await withTransaction(async (client) => {
 
       for (const supplierData of suppliers) {

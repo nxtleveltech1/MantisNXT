@@ -37,6 +37,42 @@ export interface ScrapedWebsite {
   extractionDate: string;
 }
 
+type IndustryAnalysisResult = {
+  industry: string;
+  subcategory: string;
+  keywords: string[];
+  businessType: string;
+};
+
+interface CompanyContactInfo {
+  email: string;
+  phone: string;
+  address: string;
+  website?: string;
+}
+
+interface BaseIndustryProfile {
+  companyName: string;
+  legalName: string;
+  founded: string;
+  employees: string;
+  revenue: string;
+  locations: string[];
+  services: string[];
+  products: string[];
+  certifications: string[];
+  contactInfo: CompanyContactInfo;
+}
+
+interface CompanyProfile extends BaseIndustryProfile {
+  title: string;
+  description: string;
+  content: string;
+  industry: string;
+}
+
+type SocialMediaProfiles = NonNullable<ScrapedWebsite['metadata']['socialMedia']>;
+
 export class WebScrapingService {
   private timeout: number = 15000; // 15 seconds timeout for real scraping
 
@@ -102,17 +138,13 @@ export class WebScrapingService {
     console.log(`🔍 Analyzing website: ${domain}`);
 
     // Enhanced realistic data generation based on domain analysis
-    return this.generateEnhancedWebsiteData(url, domain, hostname);
+    return this.generateEnhancedWebsiteData(url, domain);
   }
 
   /**
    * Generate comprehensive website data with realistic information
    */
-  private generateEnhancedWebsiteData(
-    url: string,
-    domain: string,
-    hostname: string
-  ): ScrapedWebsite {
+  private generateEnhancedWebsiteData(url: string, domain: string): ScrapedWebsite {
     // Detect industry and company type from domain
     const industryAnalysis = this.analyzeIndustryFromDomain(domain);
 
@@ -120,7 +152,7 @@ export class WebScrapingService {
     const companyData = this.generateCompanyProfile(domain, industryAnalysis);
 
     // Extract and enhance metadata
-    const enhancedMetadata = this.extractEnhancedMetadata(companyData, domain);
+    const enhancedMetadata = this.extractEnhancedMetadata(companyData);
 
     return {
       url,
@@ -136,12 +168,7 @@ export class WebScrapingService {
   /**
    * Analyze industry based on domain name patterns
    */
-  private analyzeIndustryFromDomain(domain: string): {
-    industry: string;
-    subcategory: string;
-    keywords: string[];
-    businessType: string;
-  } {
+  private analyzeIndustryFromDomain(domain: string): IndustryAnalysisResult {
     const domainLower = domain.toLowerCase();
 
     const industryPatterns = {
@@ -217,29 +244,15 @@ export class WebScrapingService {
    */
   private generateCompanyProfile(
     domain: string,
-    industryData: any
-  ): {
-    title: string;
-    description: string;
-    content: string;
-    companyName: string;
-    legalName: string;
-    founded: string;
-    employees: string;
-    revenue: string;
-    locations: string[];
-    services: string[];
-    products: string[];
-    certifications: string[];
-    contactInfo: any;
-  } {
+    industryData: IndustryAnalysisResult
+  ): CompanyProfile {
     const baseCompanyName = domain
       .split('.')[0]
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, l => l.toUpperCase());
 
     // Generate industry-specific data
-    const industryProfiles = {
+    const industryProfiles: Record<string, BaseIndustryProfile> = {
       Technology: {
         companyName: `${baseCompanyName} Solutions`,
         legalName: `${baseCompanyName} Solutions Pty Ltd`,
@@ -335,7 +348,7 @@ export class WebScrapingService {
 
     const profile =
       industryProfiles[industryData.industry as keyof typeof industryProfiles] ||
-      industryProfiles['Technology'];
+      industryProfiles.Technology;
 
     return {
       title: `${profile.companyName} - ${industryData.subcategory}`,
@@ -351,13 +364,17 @@ export class WebScrapingService {
       products: profile.products,
       certifications: profile.certifications,
       contactInfo: profile.contactInfo,
+      industry: industryData.industry,
     };
   }
 
   /**
    * Generate detailed company content
    */
-  private generateDetailedContent(profile: any, industryData: any): string {
+  private generateDetailedContent(
+    profile: BaseIndustryProfile,
+    industryData: IndustryAnalysisResult
+  ): string {
     return `
 ${profile.companyName} - Leading ${industryData.subcategory} Company
 
@@ -390,7 +407,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
   /**
    * Extract enhanced metadata with more detailed information
    */
-  private extractEnhancedMetadata(companyData: any, domain: string): ScrapedWebsite['metadata'] {
+  private extractEnhancedMetadata(companyData: CompanyProfile): ScrapedWebsite['metadata'] {
     return {
       companyName: companyData.companyName,
       contactEmail: companyData.contactInfo.email,
@@ -414,7 +431,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
   /**
    * Generate realistic HTML structure
    */
-  private generateRealisticHTML(companyData: any): string {
+  private generateRealisticHTML(companyData: CompanyProfile): string {
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -563,7 +580,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
     let brandsContent = '';
 
     // Try to find brands sections
-    $('*').each((_, el) => {
+    $('*').each((_, el: cheerio.Element) => {
       const $el = $(el);
       const id = $el.attr('id')?.toLowerCase() || '';
       const className = $el.attr('class')?.toLowerCase() || '';
@@ -726,7 +743,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
     }
 
     // Extract social media links
-    const socialMedia: any = {};
+    const socialMedia: SocialMediaProfiles = {};
     const links = $('a[href*="linkedin.com"]');
     if (links.length > 0) socialMedia.linkedin = links.first().attr('href') || '';
 
@@ -915,11 +932,11 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
       }
     };
 
-    const candidateContainers = new Set<cheerio.Cheerio>();
-    $('[class*="brand" i], [id*="brand" i]').each((_, el) => {
+    const candidateContainers = new Set<cheerio.Cheerio<cheerio.Element>>();
+    $('[class*="brand" i], [id*="brand" i]').each((_, el: cheerio.Element) => {
       candidateContainers.add($(el));
     });
-    $('section, div').each((_, el) => {
+    $('section, div').each((_, el: cheerio.Element) => {
       const $el = $(el);
       const heading = $el.find('h1,h2,h3,h4').first().text().toLowerCase();
       if (heading.includes('brand')) {
@@ -927,10 +944,10 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
       }
     });
 
-    const processContainer = ($container: cheerio.Cheerio) => {
+    const processContainer = ($container: cheerio.Cheerio<cheerio.Element>) => {
       const heading = $container.find('h1,h2,h3,h4').first().text().toLowerCase();
 
-      $container.find('a').each((_, anchorEl) => {
+      $container.find('a').each((_, anchorEl: cheerio.Element) => {
         const $anchor = $(anchorEl);
         const href = $anchor.attr('href');
         const title = $anchor.attr('title');
@@ -956,7 +973,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
         }
       });
 
-      $container.find('img').each((_, imgEl) => {
+      $container.find('img').each((_, imgEl: cheerio.Element) => {
         const $img = $(imgEl);
         const alt = $img.attr('alt');
         const title = $img.attr('title');
@@ -965,8 +982,8 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
       });
 
       if (heading.includes('category') || heading.includes('product')) {
-        $container.find('li').each((_, liEl) => processCategoryText($(liEl).text()));
-        $container.find('a').each((_, aEl) => processCategoryText($(aEl).text()));
+        $container.find('li').each((_, liEl: cheerio.Element) => processCategoryText($(liEl).text()));
+        $container.find('a').each((_, aEl: cheerio.Element) => processCategoryText($(aEl).text()));
       }
     };
 
@@ -975,7 +992,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
     }
 
     if (brandMap.size === 0) {
-      $('a img').each((_, imgEl) => {
+      $('a img').each((_, imgEl: cheerio.Element) => {
         const $img = $(imgEl);
         const $anchor = $img.closest('a');
         const href = $anchor.attr('href');
@@ -1038,7 +1055,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
 
   private normalizeCategoryName(name?: string | null): string | null {
     if (!name) return null;
-    let cleaned = name
+    const cleaned = name
       .replace(/\([^)]*\)/g, '')
       .replace(/\b\d+\s*(?:items?|products?)\b/gi, '')
       .replace(/[™®©]/g, '')
@@ -1094,7 +1111,7 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
    * Extract phone numbers from text
    */
   private extractPhoneNumbers(text: string): string[] {
-    const phoneRegex = /(\+?\d{1,4}[\s\-\.]?)?(\(?\d{2,4}\)?[\s\-\.]?)?\d{3,4}[\s\-\.]?\d{4}/g;
+    const phoneRegex = /(\+?\d{1,4}[\s.-]?)?(\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{4}/g;
     return text.match(phoneRegex) || [];
   }
 
@@ -1156,8 +1173,8 @@ Website: www.${profile.companyName.toLowerCase().replace(/\s+/g, '')}.com
    */
   async checkUrlAccessibility(url: string): Promise<boolean> {
     try {
-      // Placeholder for URL accessibility check
-      // In production, this would make a HEAD request to check status
+      // Basic validation placeholder – in production we'd issue a HEAD request
+      this.validateUrl(url);
       return true;
     } catch {
       return false;

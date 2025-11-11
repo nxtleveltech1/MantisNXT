@@ -15,7 +15,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = InventorySelectionSchema.parse(body);
 
-    const selection = await inventorySelectionService.createSelection(validated);
+    const selection = await inventorySelectionService.createSelection({
+      selection_name: validated.selection_name,
+      description: validated.description,
+      created_by: validated.created_by,
+      valid_from: validated.valid_from,
+      valid_to: validated.valid_to ?? undefined
+    });
 
     return NextResponse.json({
       success: true,

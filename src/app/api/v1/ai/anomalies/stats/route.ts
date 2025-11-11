@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const entityType = searchParams.get('entityType') as any;
 
-    const stats = await anomalyService.getAnomalyStats(user.org_id, {
+    const stats = await anomalyService.getAnomalyStats(user.organizationId, {
       entityType,
       startDate,
       endDate,

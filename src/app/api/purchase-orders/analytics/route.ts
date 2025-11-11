@@ -103,7 +103,7 @@ export async function GET() {
       contractCompliance,
       supplierPerformance,
       topCategories: topCategoriesResult.rows.map(row => ({
-        name: (row.category || 'Unknown').replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        name: (row.category || 'Unknown').replace(/[_-]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
         value: parseFloat(row.value || '0'),
         count: parseInt(row.count),
         avgValue: parseFloat(row.avg_value || '0')

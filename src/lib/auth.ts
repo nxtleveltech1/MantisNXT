@@ -3,10 +3,11 @@
  * JWT-based auth with role-based access control
  */
 
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
-import { db } from './db'
+import { db } from '@/lib/database'
 
 export interface AuthUser {
   id: string

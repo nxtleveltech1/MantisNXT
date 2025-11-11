@@ -41,7 +41,7 @@ const SearchPricelistsSchema = z.object({
 
 // Database query helpers
 async function getPricelistsFromDB(params: any) {
-  let query = `
+  let sql = `
     SELECT
       p.id,
       p.supplier_id as "supplierId",
@@ -72,30 +72,30 @@ async function getPricelistsFromDB(params: any) {
   let paramIndex = 1
 
   if (params.supplierId) {
-    query += ` AND p.supplier_id = $${paramIndex}`
+    sql += ` AND p.supplier_id = $${paramIndex}`
     queryParams.push(params.supplierId)
     paramIndex++
   }
 
   if (params.isActive !== undefined) {
-    query += ` AND p.is_active = $${paramIndex}`
+    sql += ` AND p.is_active = $${paramIndex}`
     queryParams.push(params.isActive)
     paramIndex++
   }
 
   if (params.effectiveDate) {
-    query += ` AND p.effective_from <= $${paramIndex} AND (p.effective_to IS NULL OR p.effective_to >= $${paramIndex})`
+    sql += ` AND p.effective_from <= $${paramIndex} AND (p.effective_to IS NULL OR p.effective_to >= $${paramIndex})`
     queryParams.push(params.effectiveDate)
     paramIndex++
   }
 
   if (params.currency) {
-    query += ` AND p.currency = $${paramIndex}`
+    sql += ` AND p.currency = $${paramIndex}`
     queryParams.push(params.currency)
     paramIndex++
   }
 
-  query += ` GROUP BY p.id, s.name`
+  sql += ` GROUP BY p.id, s.name`
 
   // Add sorting
   const sortField = params.sortBy === 'name' ? 'p.name' :
@@ -103,18 +103,18 @@ async function getPricelistsFromDB(params: any) {
                    params.sortBy === 'itemCount' ? 'COUNT(pi.id)' :
                    'p.updated_at'
 
-  query += ` ORDER BY ${sortField} ${params.sortOrder.toUpperCase()}`
+  sql += ` ORDER BY ${sortField} ${params.sortOrder.toUpperCase()}`
 
   // Add pagination
-  query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
+  sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
   queryParams.push(params.limit, (params.page - 1) * params.limit)
 
-  const result = await query(query, queryParams)
+  const result = await query(sql, queryParams)
   return result.rows
 }
 
 async function getPricelistItemsFromDB(pricelistId: string) {
-  const query = `
+  const sql = `
     SELECT
       id,
       sku,
@@ -129,7 +129,7 @@ async function getPricelistItemsFromDB(pricelistId: string) {
     ORDER BY sku
   `
 
-  const result = await query(query, [pricelistId])
+  const result = await query(sql, [pricelistId])
   return result.rows
 }
 
@@ -341,7 +341,7 @@ export async function POST(request: NextRequest) {
     const validatedData = CreatePricelistSchema.parse(body)
 
     // Validate supplier exists
-    const supplierCheck = await pool.query(
+    const supplierCheck = await query(
       'SELECT id, name FROM public.suppliers WHERE id = $1',
       [validatedData.supplierId]
     )

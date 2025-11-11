@@ -80,7 +80,7 @@ const SearchWarehousesSchema = z.object({
 })
 
 // Mock database
-let mockWarehouseData = [
+const mockWarehouseData: Array<Record<string, any>> = [
   {
     id: 'wh_001',
     name: 'Main Warehouse',
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
     const validatedParams = SearchWarehousesSchema.parse(queryParams)
 
     // Apply filters
-    let filteredWarehouses = mockWarehouseData.filter(warehouse => {
+    const filteredWarehouses = mockWarehouseData.filter(warehouse => {
       // Text search
       if (validatedParams.query) {
         const query = validatedParams.query.toLowerCase()
@@ -397,28 +397,29 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const updatedWarehouses = []
-    const errors = []
+    const updatedWarehouses: Array<Record<string, any>> = []
+    const errors: Array<Record<string, any>> = []
 
     for (const updateData of warehouses) {
       try {
-        const validatedData = UpdateWarehouseSchema.parse(updateData)
-
-        if (!validatedData.id) {
-          errors.push({ id: updateData.id, error: 'ID is required for updates' })
+        const { id, ...payload } = updateData
+        if (!id) {
+          errors.push({ id, error: 'ID is required for updates' })
           continue
         }
 
-        const warehouseIndex = mockWarehouseData.findIndex(w => w.id === validatedData.id)
+        const validatedData = UpdateWarehouseSchema.parse(payload)
+
+        const warehouseIndex = mockWarehouseData.findIndex(w => w.id === id)
         if (warehouseIndex === -1) {
-          errors.push({ id: validatedData.id, error: 'Warehouse not found' })
+          errors.push({ id, error: 'Warehouse not found' })
           continue
         }
 
         // Handle primary warehouse logic
         if (validatedData.isPrimary) {
           mockWarehouseData.forEach(w => {
-            if (w.id !== validatedData.id && w.isPrimary) {
+            if (w.id !== id && w.isPrimary) {
               w.isPrimary = false
             }
           })
@@ -428,6 +429,7 @@ export async function PUT(request: NextRequest) {
         const updatedWarehouse = {
           ...existingWarehouse,
           ...validatedData,
+          id,
           updatedAt: new Date()
         }
 

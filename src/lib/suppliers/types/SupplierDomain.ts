@@ -10,7 +10,9 @@ export interface Supplier {
   code: string;
   status: SupplierStatus;
   tier: SupplierTier;
-  categories: string[]; // Changed from category to categories (array)
+  category?: string;
+  subcategory?: string | null;
+  categories?: string[];
   tags: string[];
   brands: string[]; // Supplier brands/line of products
 
@@ -94,13 +96,20 @@ export interface SupplierPerformance {
   };
 }
 
+export interface SupplierPerformanceSnapshot extends Record<string, unknown> {
+  totalOrders?: number;
+  total_orders?: number;
+}
+
 // CRUD Operation Types
 export interface CreateSupplierData {
   name: string;
   code: string;
   status: SupplierStatus;
   tier: SupplierTier;
-  categories: string[]; // Changed from category to categories (array)
+  category: string;
+  subcategory?: string | null;
+  categories?: string[];
   tags: string[];
   brands: string[];
 
@@ -113,9 +122,12 @@ export interface CreateSupplierData {
 
 export interface UpdateSupplierData {
   name?: string;
+  code?: string;
   status?: SupplierStatus;
   tier?: SupplierTier;
-  categories?: string[]; // Changed from category to categories (array)
+  category?: string;
+  subcategory?: string | null;
+  categories?: string[];
   tags?: string[];
   brands?: string[];
 
@@ -176,12 +188,14 @@ export interface SupplierMetrics {
 
 // Export Types
 export interface ExportRequest {
-  filters: SupplierFilters;
-  format: 'csv' | 'excel' | 'pdf' | 'json';
-  template?: string;
-  includePerformance?: boolean;
-  includeContacts?: boolean;
-  includeAddresses?: boolean;
+  filters: SupplierFilters
+  format: 'csv' | 'excel' | 'pdf' | 'json'
+  template?: 'basic' | 'detailed' | 'performance' | 'compliance'
+  includePerformance?: boolean
+  includeContacts?: boolean
+  includeAddresses?: boolean
+  title?: string
+  description?: string
 }
 
 export interface ExportResult {
@@ -194,22 +208,24 @@ export interface ExportResult {
 
 // API Response Types
 export interface APIResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-  error?: string;
-  timestamp: Date;
+  success: boolean
+  data: T
+  message?: string
+  error?: string
+  timestamp: string
+  details?: unknown
+  meta?: Record<string, unknown>
 }
 
 export interface PaginatedAPIResponse<T> extends APIResponse<T> {
   pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNext: boolean
+    hasPrev: boolean
+  }
 }
 
 // Validation Types
@@ -225,31 +241,41 @@ export interface ValidationResult {
 }
 
 // AI Integration Types
+export type SupplierDiscoverySource = 'web' | 'duns' | 'companies_house' | 'sars' | 'custom'
+
 export interface AISupplierDiscovery {
-  query: string;
-  industry?: string;
-  location?: string;
-  size?: 'small' | 'medium' | 'large';
-  certifications?: string[];
+  query: string
+  industry?: string
+  location?: string
+  size?: 'small' | 'medium' | 'large'
+  certifications?: string[]
+  includeInternational?: boolean
+  maxResults?: number
+  minConfidence?: number
+  sources?: SupplierDiscoverySource[]
 }
 
 export interface AISupplierMatch {
-  supplier: Supplier;
-  confidence: number;
-  reasoning: string[];
-  dataSource: string;
+  supplier: Supplier
+  confidence: number
+  reasoning: string[]
+  dataSource: SupplierDiscoverySource | 'ai_internal'
+  discoveredAt?: string
 }
 
 export interface AIEnrichmentData {
-  supplierId: string;
+  supplierId: string
   additionalInfo: {
-    financialHealth?: string;
-    riskAssessment?: string;
-    marketPosition?: string;
-    competitors?: string[];
-    sustainability?: string;
-  };
-  lastUpdated: Date;
+    financialHealth?: string
+    riskAssessment?: string
+    marketPosition?: string
+    competitors?: string[]
+    sustainability?: string
+  }
+  lastUpdated: string
+  confidence?: number
+  fields?: string[]
+  insights?: string[]
 }
 
 // Event Types for Real-time Updates
@@ -258,7 +284,7 @@ export interface SupplierEvent {
   supplierId: string;
   timestamp: Date;
   userId?: string;
-  changes?: Record<string, any>;
+  changes?: Record<string, unknown>;
 }
 
 // Audit and Compliance
@@ -266,8 +292,8 @@ export interface SupplierAuditLog {
   id: string;
   supplierId: string;
   action: string;
-  previousValues?: Record<string, any>;
-  newValues?: Record<string, any>;
+  previousValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
   userId: string;
   timestamp: Date;
   ip?: string;
@@ -278,7 +304,7 @@ export interface SupplierAuditLog {
 export interface ExternalSupplierData {
   source: 'duns' | 'companies_house' | 'sars' | 'custom';
   externalId: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   lastSync: Date;
   isActive: boolean;
 }

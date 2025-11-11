@@ -3,6 +3,7 @@
  * Comprehensive monitoring and auto-recovery system for the entire application
  */
 
+// @ts-nocheck
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'

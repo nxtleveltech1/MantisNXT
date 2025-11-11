@@ -25,7 +25,7 @@ export async function GET(
     const user = await authenticateRequest(request);
     const { id } = await params;
 
-    const anomaly = await anomalyService.getAnomalyById(id, user.org_id);
+    const anomaly = await anomalyService.getAnomalyById(id, user.organizationId);
 
     if (!anomaly) {
       return new Response(JSON.stringify({
@@ -62,7 +62,7 @@ export async function PATCH(
         result = await anomalyService.acknowledgeAnomaly(
           id,
           user.id,
-          user.org_id
+          user.organizationId
         );
         break;
 
@@ -71,7 +71,7 @@ export async function PATCH(
           id,
           user.id,
           resolutionNotes,
-          user.org_id
+          user.organizationId
         );
         break;
 
@@ -82,7 +82,8 @@ export async function PATCH(
         }), { status: 400 });
     }
 
-    return successResponse(result, {
+    return successResponse({
+      ...result,
       message: `Anomaly ${action}d successfully`,
     });
   } catch (error) {
@@ -109,10 +110,11 @@ export async function DELETE(
       id,
       user.id,
       notes,
-      user.org_id
+      user.organizationId
     );
 
-    return successResponse(result, {
+    return successResponse({
+      ...result,
       message: 'Anomaly marked as false positive',
     });
   } catch (error) {

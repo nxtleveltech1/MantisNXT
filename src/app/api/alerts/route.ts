@@ -332,7 +332,7 @@ export async function GET(request: NextRequest) {
     const realAlerts = await generateRealTimeAlerts();
 
     // Apply filters
-    let filteredAlerts = realAlerts.filter((alert) => {
+    const filteredAlerts = realAlerts.filter((alert) => {
       // Type filter
       if (validatedParams.type && validatedParams.type.length > 0) {
         if (!validatedParams.type.includes(alert.type as any)) return false;

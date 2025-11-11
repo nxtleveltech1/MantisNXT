@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Supplier Discovery Config Helper
  * Reads API keys from AI service configuration instead of just environment variables

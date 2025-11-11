@@ -370,7 +370,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
 
   // Filter and sort recommendations
   const filteredAndSortedRecommendations = useMemo(() => {
-    let filtered = recommendations.filter(supplier => {
+    const filtered = recommendations.filter(supplier => {
       return (
         (!filters.industry || supplier.industry.includes(filters.industry)) &&
         (!filters.location || supplier.location.country.includes(filters.location)) &&

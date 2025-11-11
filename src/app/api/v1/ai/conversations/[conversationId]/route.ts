@@ -27,7 +27,7 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const { limit } = extractPagination(searchParams);
 
-    const orgId = user.organizationId || user.org_id;
+    const orgId = user.org_id;
     const userId = user.id;
 
     // Get conversation messages

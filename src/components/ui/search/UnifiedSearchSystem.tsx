@@ -311,7 +311,7 @@ export const UnifiedSearch: React.FC<UnifiedSearchProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const searchEngine = useMemo(() => new AdvancedSearchEngine(config), [config]);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const debouncedSearch = useCallback((state: SearchState) => {
     if (debounceRef.current) {

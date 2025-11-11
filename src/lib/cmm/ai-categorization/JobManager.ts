@@ -193,7 +193,7 @@ export class JobManager {
             skipped_count: batchResult.skipped + batchResult.pending_review,
             duration_ms: batchResult.duration_ms,
             tokens_used: batchResult.tokens_used,
-            provider_used: batchResult.results[0]?.provider || null,
+            provider_used: batchResult.results[0]?.provider ?? null,
             error_message: applyResult.errors.length > 0
               ? `${applyResult.errors.length} products failed to update`
               : null,
@@ -489,8 +489,8 @@ export class JobManager {
     offset: number,
     filters: JobFilters
   ): Promise<string[]> {
-    let whereClauses: string[] = [];
-    let queryParams: any[] = [];
+    const whereClauses: string[] = [];
+    const queryParams: any[] = [];
     let paramCounter = 1;
 
     if (filters.supplier_id) {
@@ -549,8 +549,8 @@ export class JobManager {
    * Estimate total products for filters
    */
   private async estimateProducts(filters: JobFilters): Promise<number> {
-    let whereClauses: string[] = [];
-    let queryParams: any[] = [];
+    const whereClauses: string[] = [];
+    const queryParams: any[] = [];
     let paramCounter = 1;
 
     if (filters.supplier_id) {

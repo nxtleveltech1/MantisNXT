@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
     requireQueryParams(searchParams, ['entityType', 'entityId']);
 
     const entityType = searchParams.get('entityType')! as any;
-    const entityId = parseInt(searchParams.get('entityId')!);
+    const entityId = searchParams.get('entityId')!;
 
-    const result = await anomalyService.listAnomalies(user.org_id, {
+    const result = await anomalyService.listAnomalies(user.organizationId, {
       entityType,
       entityId,
       startDate,

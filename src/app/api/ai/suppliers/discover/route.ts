@@ -35,13 +35,13 @@ export async function POST(request: NextRequest) {
     console.log('🤖 AI Supplier Discovery initiated:', body.query);
 
     // Execute AI-powered supplier discovery
-    const result = await supplierIntelligence.discoverSuppliers({
-      query: body.query,
-      category: body.requirements?.category,
-      location: body.requirements?.location,
-      certifications: body.requirements?.certifications,
-      capacity: body.requirements?.capacity,
-      priceRange: body.requirements?.priceRange
+    const result = await supplierIntelligence.discoverSuppliers(body.query, {
+      maxResults: 20,
+      filters: {
+        industry: body.requirements?.category?.[0],
+        location: body.requirements?.location,
+        minConfidence: 0.5,
+      },
     });
 
     // Apply filters if provided
@@ -97,6 +97,16 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate and get organization ID
+    const user = await authenticateRequest(request);
+    const orgId = user.org_id;
+
+    // Load configuration from database
+    const config = await getSupplierDiscoveryConfig(orgId);
+
+    // Initialize the AI service with config
+    const supplierIntelligence = new SupplierIntelligenceService(config);
+
     const searchParams = request.nextUrl.searchParams;
     const supplierId = searchParams.get('supplierId');
 

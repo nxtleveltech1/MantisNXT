@@ -305,7 +305,7 @@ export class PredictiveAnalyticsService {
     const timeRangeMonths = this.getTimeRangeMonths(request.timeHorizon) * 2; // Get 2x data for training
 
     let query = '';
-    let params: any[] = [timeRangeMonths];
+    const params: any[] = [timeRangeMonths];
 
     switch (metric) {
       case 'cost':
