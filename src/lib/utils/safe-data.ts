@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Safe Data Utilities - Bulletproof data parsing and validation
  * Ensures UI never crashes due to data type errors

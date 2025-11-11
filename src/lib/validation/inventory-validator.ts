@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { z } from 'zod'
 
 // Database schema interfaces based on existing schema

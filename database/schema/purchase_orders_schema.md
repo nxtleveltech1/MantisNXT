@@ -341,7 +341,7 @@ Rollback is safe and complete, removing all tables, functions, triggers, and typ
 
 ### Replication
 
-This table is included in the logical replication publication `mantisnxt_core_replication` for disaster recovery to Postgres OLD.
+This table is included in the logical replication publication `mantisnxt_core_replication` for disaster recovery to the Neon replica environment.
 
 **Included in publication**: ✓ Yes
 **Replication mode**: INSERT, UPDATE, DELETE

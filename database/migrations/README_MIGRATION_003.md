@@ -123,8 +123,9 @@ This migration package contains **everything** needed to execute critical schema
 10. Validates schema creation
 
 **Execution**:
+> Set `NEON_TARGET_URL` to the Neon database connection string (e.g. `postgresql://user:pass@ep-your-branch.aws.neon.tech/db?sslmode=require`) before running the commands below.
 ```bash
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes.sql
 ```
 
@@ -153,7 +154,7 @@ psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
 
 **Execution**:
 ```bash
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes_ROLLBACK.sql
 ```
 
@@ -184,7 +185,7 @@ psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
 
 **Execution**:
 ```bash
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes_VALIDATION.sql
 ```
 
@@ -202,16 +203,16 @@ psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
 cat database/migrations/QUICK_REFERENCE_003.md
 
 # Step 2: Backup database (5 minutes)
-pg_dump -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+pg_dump "$NEON_TARGET_URL" \
   -F c -f "backup_$(date +%Y%m%d_%H%M%S).backup"
 
 # Step 3: Execute migration (5-10 minutes)
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes.sql \
   2>&1 | tee migration_log.txt
 
 # Step 4: Validate success (2 minutes)
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes_VALIDATION.sql \
   > validation_report.txt 2>&1
 

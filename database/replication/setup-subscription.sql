@@ -1,19 +1,26 @@
 -- ============================================================================
--- MantisNXT Logical Replication Setup - Subscription (Postgres OLD Replica)
+-- MantisNXT Logical Replication Setup - Subscription (Neon Replica)
 -- ============================================================================
 -- ADR: ADR-1 (Logical Replication Configuration)
--- Purpose: Configure subscription on Postgres OLD to receive from Neon
--- Database: Postgres OLD Replica (62.169.20.53:6600)
+-- Purpose: Configure subscription on a Neon-managed replica environment
+-- Target: Neon Replica (branch or secondary project)
 -- Source: Neon Primary
 -- Author: Data Oracle
--- Date: 2025-10-09
+-- Date: 2025-10-09 (updated 2025-11-11 for Neon-only topology)
 -- ============================================================================
 
--- IMPORTANT: Run this on POSTGRES OLD (REPLICA) database
--- Connection: Use OLD database credentials from .env.local (commented section)
--- Host: 62.169.20.53:6600
--- User: nxtdb_admin
--- Database: nxtprod-db_001
+-- IMPORTANT: Run this on the Neon replica database that will consume changes
+-- Connection: Provide replica credentials through psql variables or direct substitution
+-- Example invocation:
+--   psql ^
+--     -v NEON_CONN_INFO="host=ep-your-replica-pooler.aws.neon.tech port=5432 dbname=mantisnxt_replica user=replica_app password=supersecure sslmode=require" ^
+--     -f database/replication/setup-subscription.sql
+
+\if :{?NEON_CONN_INFO}
+\else
+\echo 'ERROR: NEON_CONN_INFO variable must be supplied via -v NEON_CONN_INFO="..."'
+\quit 1
+\endif
 
 -- ============================================================================
 -- SECTION 1: VERIFY PREREQUISITES ON SUBSCRIBER
@@ -56,9 +63,9 @@ ORDER BY name;
 -- Create core schema if it doesn't exist
 CREATE SCHEMA IF NOT EXISTS core;
 
--- Grant usage on schema
-GRANT USAGE ON SCHEMA core TO nxtdb_admin;
-GRANT ALL ON SCHEMA core TO nxtdb_admin;
+-- Grant usage on schema to the current replica role
+GRANT USAGE ON SCHEMA core TO CURRENT_USER;
+GRANT ALL ON SCHEMA core TO CURRENT_USER;
 
 -- Note: Tables MUST exist on subscriber before creating subscription
 -- The subscriber must have the same table structure as the publisher
@@ -114,10 +121,10 @@ END $$;
 DROP SUBSCRIPTION IF EXISTS mantisnxt_from_neon CASCADE;
 
 -- Create subscription to Neon publication
--- IMPORTANT: Replace the connection string with your actual Neon connection details
+-- IMPORTANT: Supply the connection string via NEON_CONN_INFO when invoking psql
 
 CREATE SUBSCRIPTION mantisnxt_from_neon
-CONNECTION 'host=ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech port=5432 dbname=neondb user=neondb_owner password=npg_84ELeCFbOcGA sslmode=require'
+CONNECTION :'NEON_CONN_INFO'
 PUBLICATION mantisnxt_core_replication
 WITH (
   enabled = true,
@@ -402,21 +409,21 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- IMPORTANT NOTES FOR POSTGRES OLD SETUP
+-- IMPORTANT NOTES FOR NEON REPLICA SETUP
 -- ============================================================================
 
 /*
 CRITICAL SETUP STEPS:
 
 1. Prerequisites:
-   - All migration scripts must be run on Postgres OLD first
-   - Tables must have IDENTICAL structure to Neon
-   - Ensure network connectivity from Postgres OLD to Neon (port 5432)
+   - Ensure the replica database has executed all schema migrations
+   - Tables must have IDENTICAL structure to the Neon publisher
+   - Confirm network connectivity from the replica to the Neon primary (port 5432)
 
 2. Connection String:
-   - Update the CONNECTION parameter with actual Neon credentials
+   - Update the CONNECTION parameter with replica-specific Neon credentials
    - Use SSL mode (sslmode=require) for security
-   - Verify Neon allows connections from Postgres OLD IP
+   - Ensure the replica endpoint has access to the publication endpoint
 
 3. Initial Sync:
    - copy_data = true will copy existing data from Neon
@@ -429,9 +436,9 @@ CRITICAL SETUP STEPS:
    - Alert if lag > 5 seconds
 
 5. Conflicts:
-   - DO NOT write to replicated tables on Postgres OLD
+   - DO NOT write to replicated tables on the replica
    - Writes should only happen on Neon (primary)
-   - Postgres OLD is READ-ONLY replica for disaster recovery
+   - The replica should remain READ-ONLY for disaster recovery
 
 6. Monitoring:
    - Check replication lag regularly
@@ -439,9 +446,9 @@ CRITICAL SETUP STEPS:
    - Set up alerts for replication failures
 
 7. Failover Procedure:
-   - If Neon fails, you can promote Postgres OLD to primary
+   - If Neon primary fails, promote the replica environment
    - Drop subscription: DROP SUBSCRIPTION mantisnxt_from_neon
-   - Enable writes on Postgres OLD
+   - Enable writes on the replica
    - Update application connection string
 
 8. Security:

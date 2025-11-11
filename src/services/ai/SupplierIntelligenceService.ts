@@ -3,12 +3,14 @@ import { WebSearchService } from './WebSearchService';
 import { WebScrapingService } from './WebScrapingService';
 import { DataExtractionEngine } from './DataExtractionEngine';
 import { createAIWebSearchService } from './AIWebSearchService';
+import type { WebSearchResult } from './AIWebSearchService';
 import { createAIDataExtractionService } from './AIDataExtractionService';
 import type { ExtractedSupplierData as AIExtractedSupplierData } from './AIDataExtractionService';
 import type { ExtractedSupplierData, SupplierBrandLink } from './ExtractedSupplierData';
 export type { ExtractedSupplierData } from './ExtractedSupplierData';
-import type { SupplierFormAddress, SupplierFormData } from '@/types/supplier';
+import type { SupplierFormAddress, SupplierFormContact, SupplierFormData } from '@/types/supplier';
 import type { SupplierDiscoveryConfig } from '@/lib/ai/supplier-discovery-config';
+import type { SearchResult } from './WebSearchService';
 
 export interface WebDiscoveryResult {
   success: boolean;
@@ -36,7 +38,7 @@ export class SupplierIntelligenceService {
   private dataExtractionEngine: DataExtractionEngine;
   private aiWebSearchService: ReturnType<typeof createAIWebSearchService>;
   private aiDataExtractionService: ReturnType<typeof createAIDataExtractionService>;
-  private config?: SupplierDiscoveryConfig; // Store config for custom providers
+  private config: SupplierDiscoveryConfig | undefined; // Store config for custom providers
 
   constructor(config?: SupplierDiscoveryConfig) {
     this.config = config; // Store config for later use
@@ -46,20 +48,24 @@ export class SupplierIntelligenceService {
     this.dataExtractionEngine = new DataExtractionEngine();
 
     // Initialize AI services with config
-    this.aiWebSearchService = createAIWebSearchService({
+    const webSearchConfig = this.compactObject({
       serperApiKey: config?.serperApiKey,
       tavilyApiKey: config?.tavilyApiKey,
       googleSearchApiKey: config?.googleSearchApiKey,
       googleSearchEngineId: config?.googleSearchEngineId,
     });
 
-    this.aiDataExtractionService = createAIDataExtractionService({
+    this.aiWebSearchService = createAIWebSearchService(webSearchConfig);
+
+    const dataExtractionConfig = this.compactObject({
       anthropicApiKey: config?.anthropicApiKey,
       anthropicBaseUrl: config?.anthropicBaseUrl,
       openaiApiKey: config?.openaiApiKey,
       openaiBaseUrl: config?.openaiBaseUrl,
       openaiModel: config?.openaiModel,
     });
+
+    this.aiDataExtractionService = createAIDataExtractionService(dataExtractionConfig);
   }
 
   /**
@@ -84,19 +90,35 @@ export class SupplierIntelligenceService {
       // Step 1: Search the web using AI-powered web search service
       let searchResults;
       try {
-        searchResults = await this.aiWebSearchService.searchSuppliers(query, {
-          maxResults,
+        const normalizedFilters = this.compactObject({
+          industry: filters.industry,
           location: filters.location,
-          filters,
+          minConfidence: filters.minConfidence,
         });
+
+        const searchOptions = {
+          maxResults,
+          ...(filters.location ? { location: filters.location } : {}),
+          ...(Object.keys(normalizedFilters).length > 0 ? { filters: normalizedFilters } : {}),
+        };
+
+        searchResults = await this.aiWebSearchService.searchSuppliers(query, searchOptions);
         console.log(`📊 Found ${searchResults.length} search results from AIWebSearchService`);
       } catch (aiSearchError) {
         console.warn('⚠️ AI web search failed, falling back to legacy service:', aiSearchError);
         // Fallback to legacy service
-        searchResults = await this.webSearchService.searchSuppliers(query, {
-          maxResults,
-          filters,
+        const legacyFilters = this.compactObject({
+          industry: filters.industry,
+          location: filters.location,
+          minConfidence: filters.minConfidence,
         });
+
+        const legacyOptions = {
+          maxResults,
+          ...(Object.keys(legacyFilters).length > 0 ? { filters: legacyFilters } : {}),
+        };
+
+        searchResults = await this.webSearchService.searchSuppliers(query, legacyOptions);
         console.log(`📊 Found ${searchResults.length} search results from legacy WebSearchService`);
       }
 
@@ -135,7 +157,9 @@ export class SupplierIntelligenceService {
 
           // Fallback to legacy extraction if AI failed
           if (!extracted) {
-            extracted = await this.dataExtractionEngine.extractSupplierData(result);
+            extracted = await this.dataExtractionEngine.extractSupplierData(
+              this.toLegacySearchResult(result)
+            );
             console.log(`📋 Fallback extraction:`, extracted ? 'SUCCESS' : 'FAILED');
           }
 
@@ -203,13 +227,14 @@ export class SupplierIntelligenceService {
    * Convert AI-extracted data format to our internal format
    */
   private convertAIExtractedData(aiData: AIExtractedSupplierData): ExtractedSupplierData {
-    return {
+    return this.compactObject({
       companyName: aiData.companyName,
       description: aiData.description,
       industry: aiData.industry,
       location: aiData.location,
       contactEmail: aiData.contactEmail,
       contactPhone: aiData.contactPhone,
+      contactPerson: aiData.contactPerson,
       website: aiData.website,
       employees: aiData.employees,
       founded: aiData.founded,
@@ -217,7 +242,7 @@ export class SupplierIntelligenceService {
       certifications: aiData.certifications,
       services: aiData.services,
       products: aiData.products,
-      brands: aiData.brands, // CRITICAL: Map brands field
+      brands: aiData.brands,
       categories: aiData.categories,
       brandLinks: aiData.brandLinks as SupplierBrandLink[] | undefined,
       addresses: aiData.addresses,
@@ -231,7 +256,7 @@ export class SupplierIntelligenceService {
       paymentTerms: aiData.paymentTerms,
       leadTime: aiData.leadTime,
       minimumOrderValue: aiData.minimumOrderValue,
-    };
+    }) as ExtractedSupplierData;
   }
 
   private mergeStringLists(primary?: string[], secondary?: string[]): string[] {
@@ -269,11 +294,11 @@ export class SupplierIntelligenceService {
       if (!cleanedName) return;
       const key = cleanedName.toLowerCase();
       const existing = map.get(key);
-      const resolved: SupplierBrandLink = {
+      const resolved = this.compactObject({
         name: cleanedName,
         url: entry.url,
         logo: entry.logo,
-      };
+      }) as SupplierBrandLink;
       if (existing) {
         if (!existing.url && resolved.url) existing.url = resolved.url;
         if (!existing.logo && resolved.logo) existing.logo = resolved.logo;
@@ -463,12 +488,21 @@ export class SupplierIntelligenceService {
       const scrapedBrandNames = websiteContent.metadata?.brands || [];
       const scrapedCategories = websiteContent.metadata?.categories || [];
       const scrapedBrandLinks = websiteContent.metadata?.brandLinks || [];
-      const scrapedMetadata = {
+      const scrapedMetadata: {
+        contactEmail?: string;
+        contactPhone?: string;
+        address?: string;
+        socialMedia?: {
+          linkedin?: string;
+          twitter?: string;
+          facebook?: string;
+        };
+      } = this.compactObject({
         contactEmail: websiteContent.metadata?.contactEmail,
         contactPhone: websiteContent.metadata?.contactPhone,
         address: websiteContent.metadata?.address,
         socialMedia: websiteContent.metadata?.socialMedia,
-      };
+      });
 
       // Step 1.5: Try to find and scrape brands page
       let brandsPageContent: string = '';
@@ -586,7 +620,7 @@ export class SupplierIntelligenceService {
               `🤖 Extracting with AI provider: ${aiProvider.provider}${aiProvider.model ? ` (${aiProvider.model})` : ''}`
             );
 
-            const extractionService = createAIDataExtractionService({
+            const providerConfig = this.compactObject({
               anthropicApiKey: aiProvider.provider === 'anthropic' ? aiProvider.apiKey : undefined,
               anthropicBaseUrl:
                 aiProvider.provider === 'anthropic' ? aiProvider.baseUrl : undefined,
@@ -603,6 +637,8 @@ export class SupplierIntelligenceService {
                   ? aiProvider.model
                   : undefined,
             });
+
+            const extractionService = createAIDataExtractionService(providerConfig);
 
             const aiExtracted = await extractionService.extractSupplierData(contentForExtraction);
 
@@ -849,12 +885,42 @@ export class SupplierIntelligenceService {
     };
 
     // Add optional fields if available
-    if (webData.employees) businessInfo.employeeCount = this.parseEmployeeCount(webData.employees);
-    if (webData.founded) businessInfo.foundedYear = this.parseYear(webData.founded);
+    if (webData.employees) {
+      const employeeCount = this.parseEmployeeCount(webData.employees);
+      if (employeeCount !== undefined) {
+        businessInfo.employeeCount = employeeCount;
+      }
+    }
+    if (webData.founded) {
+      const foundedYear = this.parseYear(webData.founded);
+      if (foundedYear !== undefined) {
+        businessInfo.foundedYear = foundedYear;
+      }
+    }
     const parsedRevenue = this.parseRevenue(webData.revenue);
     if (parsedRevenue !== undefined) businessInfo.annualRevenue = parsedRevenue;
     if (webData.taxId) businessInfo.taxId = webData.taxId;
     if (webData.registrationNumber) businessInfo.registrationNumber = webData.registrationNumber;
+
+    const capabilities: NonNullable<SupplierFormData['capabilities']> = {
+      products: webData.products ?? [],
+      services: webData.services ?? [],
+      certifications: webData.certifications ?? [],
+    };
+
+    const parsedLeadTime = webData.leadTime ? this.parseLeadTime(webData.leadTime) : undefined;
+    if (parsedLeadTime !== undefined) {
+      capabilities.leadTime = parsedLeadTime;
+    }
+
+    if (webData.paymentTerms) {
+      capabilities.paymentTerms = webData.paymentTerms;
+    }
+
+    const minOrderValue = this.parseNumericValue(webData.minimumOrderValue);
+    if (minOrderValue !== undefined) {
+      capabilities.minimumOrderValue = minOrderValue;
+    }
 
     const transformedData: Partial<SupplierFormData> = {
       name: webData.companyName || originalQuery || '',
@@ -865,76 +931,101 @@ export class SupplierIntelligenceService {
       tags: this.combineAllTags(webData),
       brands: this.extractBrands(webData),
       businessInfo,
-      capabilities: {
-        products: webData.products || [],
-        services: webData.services || [],
-        paymentTerms: webData.paymentTerms,
-        leadTime: webData.leadTime ? this.parseLeadTime(webData.leadTime) : undefined,
-        certifications: webData.certifications || [],
-        minimumOrderValue: this.parseNumericValue(webData.minimumOrderValue),
-      },
+      capabilities,
     };
 
     // Add financial information
     if (webData.currency || webData.paymentTerms || webData.minimumOrderValue) {
-      transformedData.financial = {
-        currency: webData.currency || businessInfo.currency || 'ZAR',
-        paymentTerms: webData.paymentTerms,
-      };
+      const financial: NonNullable<SupplierFormData['financial']> = {};
+
+      const currency = webData.currency || businessInfo.currency || 'ZAR';
+      if (currency) {
+        financial.currency = currency;
+      }
+
+      if (webData.paymentTerms) {
+        financial.paymentTerms = webData.paymentTerms;
+      }
+
+      transformedData.financial = financial;
     }
 
     // Add contact information
-    if (webData.contactEmail || webData.contactPhone) {
-      transformedData.contacts = [
-        {
-          type: 'primary',
-          name: webData.contactPerson || 'General Contact',
-          email: webData.contactEmail,
-          phone: webData.contactPhone,
-          title: 'Contact Person',
-          isPrimary: true,
-          isActive: true,
-        },
-      ];
+    if (webData.contactEmail || webData.contactPhone || webData.contactPerson) {
+      const primaryContact: SupplierFormContact = {
+        type: 'primary',
+        name: webData.contactPerson || 'General Contact',
+        title: 'Contact Person',
+        isPrimary: true,
+        isActive: true,
+      };
+
+      if (webData.contactEmail) {
+        primaryContact.email = webData.contactEmail;
+      }
+
+      if (webData.contactPhone) {
+        primaryContact.phone = webData.contactPhone;
+      }
+
+      transformedData.contacts = [primaryContact];
     }
 
     // Add addresses with enhanced processing
+    const addresses: SupplierFormAddress[] = [];
     if (primaryAddress) {
-      transformedData.addresses = [
-        {
-          type: this.normalizeAddressType(primaryAddress.type),
-          name: 'Head Office',
-          addressLine1: primaryAddress.street || '',
-          addressLine2: '',
-          city: primaryAddress.city || '',
-          state:
-            primaryAddress.state ||
-            this.extractStateFromLocation(primaryAddress.country, primaryAddress.city),
-          postalCode: primaryAddress.postalCode || '',
-          country: primaryAddress.country || 'South Africa',
-          isPrimary: true,
-          isActive: true,
-        },
-      ];
+      const normalizedPrimaryType = this.normalizeAddressType(primaryAddress.type);
+      const primaryFormAddress: SupplierFormAddress = {
+        name: 'Head Office',
+        addressLine1: primaryAddress.street || '',
+        addressLine2: '',
+        city: primaryAddress.city || '',
+        state:
+          primaryAddress.state ||
+          this.extractStateFromLocation(primaryAddress.country, primaryAddress.city),
+        postalCode: primaryAddress.postalCode || '',
+        country: primaryAddress.country || 'South Africa',
+        isPrimary: true,
+        isActive: true,
+      };
+
+      if (normalizedPrimaryType) {
+        primaryFormAddress.type = normalizedPrimaryType;
+      }
+
+      addresses.push(primaryFormAddress);
 
       // Add additional addresses if available
       if (webData.addresses && webData.addresses.length > 1) {
-        const additionalAddresses = webData.addresses.slice(1).map((addr, index) => ({
-          type: this.normalizeAddressType(addr.type),
-          name: `${addr.type || 'Address'} ${index + 2}`,
-          addressLine1: addr.street || '',
-          addressLine2: '',
-          city: addr.city || '',
-          state: addr.state || this.extractStateFromLocation(addr.country, addr.city),
-          postalCode: addr.postalCode || '',
-          country: addr.country || 'South Africa',
-          isPrimary: false,
-          isActive: true,
-        }));
-        transformedData.addresses.push(...additionalAddresses);
+        const additionalAddresses = webData.addresses.slice(1).map((addr, index) => {
+          const normalizedType = this.normalizeAddressType(addr.type);
+          const address: SupplierFormAddress = {
+            name: `${addr.type || 'Address'} ${index + 2}`,
+            addressLine1: addr.street || '',
+            addressLine2: '',
+            city: addr.city || '',
+            state: addr.state || this.extractStateFromLocation(addr.country, addr.city),
+            postalCode: addr.postalCode || '',
+            country: addr.country || 'South Africa',
+            isPrimary: false,
+            isActive: true,
+          };
+
+          if (normalizedType) {
+            address.type = normalizedType;
+          }
+
+          return address;
+        });
+
+        addresses.push(...additionalAddresses);
       }
     } else if (webData.location) {
-      transformedData.addresses = this.generateDefaultAddress(webData.location);
+      addresses.push(...this.generateDefaultAddress(webData.location));
+    }
+
+    if (addresses.length > 0) {
+      transformedData.addresses = addresses;
     }
 
     // Ensure tags are set (already set above, but ensure it's there)
@@ -954,43 +1045,6 @@ export class SupplierIntelligenceService {
     };
 
     return transformedData;
-  }
-
-  /**
-   * Generate subcategory from industry and services (deprecated - categories replaced subcategory)
-   * @deprecated Categories array replaced subcategory field
-   */
-  private generateSubcategory(industry?: string, services?: string[]): string {
-    if (!industry && !services) return '';
-
-    const industryLower = (industry || '').toLowerCase();
-    const servicesText = (services || []).join(' ').toLowerCase();
-    const combined = `${industryLower} ${servicesText}`;
-
-    // Extract specific subcategories based on keywords
-    if (combined.includes('distribution') || combined.includes('distributor')) {
-      return 'Distribution';
-    }
-    if (combined.includes('retail') || combined.includes('retailer')) {
-      return 'Retail';
-    }
-    if (combined.includes('wholesale') || combined.includes('wholesaler')) {
-      return 'Wholesale';
-    }
-    if (combined.includes('manufacturing') || combined.includes('manufacturer')) {
-      return 'Manufacturing';
-    }
-    if (combined.includes('import') || combined.includes('importer')) {
-      return 'Import/Export';
-    }
-    if (combined.includes('export') || combined.includes('exporter')) {
-      return 'Import/Export';
-    }
-    if (combined.includes('service') || combined.includes('consulting')) {
-      return 'Professional Services';
-    }
-
-    return industry || '';
   }
 
   /**
@@ -1435,6 +1489,32 @@ export class SupplierIntelligenceService {
     }
   }
 
+  private toLegacySearchResult(result: WebSearchResult): SearchResult {
+    return this.compactObject({
+      title: result.title,
+      description: result.description ?? result.snippet ?? '',
+      url: result.url,
+      source: result.source,
+      publishedDate: result.publishedDate,
+      relevanceScore: result.relevanceScore,
+      snippet: result.snippet,
+    }) as SearchResult;
+  }
+
+  private compactObject<T extends Record<string, unknown>>(
+    obj: T
+  ): Partial<{ [K in keyof T]: Exclude<T[K], undefined> }> {
+    const result: Partial<{ [K in keyof T]: Exclude<T[K], undefined> }> = {};
+    for (const key of Object.keys(obj) as Array<keyof T>) {
+      const value = obj[key];
+      if (value !== undefined) {
+        result[key] = value as Exclude<T[typeof key], undefined>;
+      }
+    }
+
+    return result;
+  }
+
   /**
    * Parse revenue strings like "$1.2M" or "ZAR 5000000" into numeric values
    */
@@ -1778,46 +1858,6 @@ export class SupplierIntelligenceService {
   }
 
   /**
-   * Map industry text to category (deprecated - use extractCategories instead)
-   * @deprecated Use extractCategories instead
-   */
-  private mapIndustryToCategory(industry: string): string {
-    const lowerIndustry = industry.toLowerCase();
-
-    if (
-      lowerIndustry.includes('technology') ||
-      lowerIndustry.includes('software') ||
-      lowerIndustry.includes('it')
-    ) {
-      return 'Technology';
-    }
-    if (lowerIndustry.includes('manufacturing') || lowerIndustry.includes('production')) {
-      return 'Manufacturing';
-    }
-    if (
-      lowerIndustry.includes('logistics') ||
-      lowerIndustry.includes('shipping') ||
-      lowerIndustry.includes('transport')
-    ) {
-      return 'Logistics';
-    }
-    if (lowerIndustry.includes('service') || lowerIndustry.includes('consulting')) {
-      return 'Services';
-    }
-    if (lowerIndustry.includes('material') || lowerIndustry.includes('supply')) {
-      return 'Materials';
-    }
-    if (lowerIndustry.includes('music') || lowerIndustry.includes('instrument')) {
-      return 'Musical Instruments';
-    }
-    if (lowerIndustry.includes('electronic') || lowerIndustry.includes('electrical')) {
-      return 'Electronics';
-    }
-
-    return 'Services'; // Default fallback
-  }
-
-  /**
    * Extract data using a custom AI provider
    */
   private async extractWithCustomProvider(
@@ -1845,7 +1885,6 @@ export class SupplierIntelligenceService {
         // Use OpenAI-compatible API
         const { createOpenAI } = await import('@ai-sdk/openai');
         const { generateObject } = await import('ai');
-        const { z } = await import('zod');
 
         const openai = createOpenAI({
           apiKey,
@@ -1855,9 +1894,10 @@ export class SupplierIntelligenceService {
         const aiModel = openai(model);
         const prompt = this.buildExtractionPrompt(content.url, textContent);
 
+        const schema = await this.getSupplierDataSchema();
         const result = await generateObject({
           model: aiModel,
-          schema: this.getSupplierDataSchema(z),
+          schema,
           prompt,
           temperature: 0.1,
         });
@@ -1867,7 +1907,6 @@ export class SupplierIntelligenceService {
         // Use Anthropic-compatible API
         const { createAnthropic } = await import('@ai-sdk/anthropic');
         const { generateObject } = await import('ai');
-        const { z } = await import('zod');
 
         const anthropic = createAnthropic({
           apiKey,
@@ -1877,9 +1916,10 @@ export class SupplierIntelligenceService {
         const aiModel = anthropic(model);
         const prompt = this.buildExtractionPrompt(content.url, textContent);
 
+        const schema = await this.getSupplierDataSchema();
         const result = await generateObject({
           model: aiModel,
-          schema: this.getSupplierDataSchema(z),
+          schema,
           prompt,
           temperature: 0.1,
         });
@@ -1978,7 +2018,9 @@ Return ONLY the information that can be clearly identified in the content.`;
   /**
    * Get supplier data schema (helper method)
    */
-  private getSupplierDataSchema(z: typeof import('zod').z) {
+  private async getSupplierDataSchema() {
+    const { z } = await import('zod');
+
     return z.object({
       companyName: z.string().optional(),
       description: z.string().optional(),

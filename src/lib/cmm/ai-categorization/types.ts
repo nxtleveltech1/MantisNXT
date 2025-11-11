@@ -130,16 +130,25 @@ export interface ProgressMetrics {
 // ==================== Categorization Result Types ====================
 
 export interface CategorySuggestion {
-  supplier_product_id: string;
-  category_id: string | null;
-  category_name: string | null;
-  confidence: number;
-  reasoning: string | null;
-  provider: string | null;
+  supplier_product_id?: string;
+  product_id?: string;
+  category_id?: string | null;
+  category_name?: string | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
+  suggested_category_id?: string | null;
+  proposed_category_name?: string | null;
+  proposedCategoryName?: string | null;
+  confidence?: number | null;
+  reasoning?: string | null;
+  provider?: string | null;
   alternatives?: Array<{
-    category_id: string;
-    category_name: string;
-    confidence: number;
+    category_id?: string;
+    category_name?: string | null;
+    categoryId?: string;
+    categoryName?: string | null;
+    confidence?: number | null;
+    reasoning?: string | null;
   }>;
 }
 

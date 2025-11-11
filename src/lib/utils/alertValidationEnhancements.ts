@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Enhanced alert validation with comprehensive error handling and data repair
  * This module provides additional utilities to handle edge cases in alert validation

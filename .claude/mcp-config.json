@@ -94,7 +94,7 @@
       "command": "npx",
       "args": ["-y", "@joshuarileydev/postgres-mcp-server"],
       "env": {
-        "POSTGRES_CONNECTION_STRING": "postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require"
+        "POSTGRES_CONNECTION_STRING": "postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require"
       },
       "description": "PostgreSQL Neon database (mantis_issoh) - PRIMARY"
     },

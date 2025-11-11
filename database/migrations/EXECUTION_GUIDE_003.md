@@ -45,12 +45,13 @@
 - [ ] Maintenance window allocated (15-20 minutes)
 
 ### Verify Access:
+> Export `NEON_TARGET_URL` to the target Neon database connection string (e.g. `postgresql://user:pass@ep-your-branch.aws.neon.tech/db?sslmode=require`) before running the checks below.
 ```bash
 # Test connection
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt -c "SELECT version();"
+psql "$NEON_TARGET_URL" -c "SELECT version();"
 
 # Check current schema
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt -c "SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'core' ORDER BY tablename;"
+psql "$NEON_TARGET_URL" -c "SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'core' ORDER BY tablename;"
 ```
 
 ---
@@ -61,14 +62,14 @@ psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt -c "SELECT schemaname, ta
 
 ```bash
 # Full database backup
-pg_dump -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+pg_dump "$NEON_TARGET_URL" \
   -F c -b -v -f "mantisnxt_backup_$(date +%Y%m%d_%H%M%S).backup"
 
 # Verify backup
 pg_restore --list mantisnxt_backup_*.backup | head -20
 
 # Schema-only backup (faster)
-pg_dump -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+pg_dump "$NEON_TARGET_URL" \
   --schema=core --schema-only \
   -f "core_schema_backup_$(date +%Y%m%d_%H%M%S).sql"
 ```
@@ -79,11 +80,11 @@ pg_dump -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
 
 ```bash
 # Connect and execute
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes.sql
 
 # OR with detailed logging
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes.sql \
   2>&1 | tee migration_003_log_$(date +%Y%m%d_%H%M%S).log
 ```
@@ -104,11 +105,11 @@ COMMIT
 
 ```bash
 # Execute full validation suite
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes_VALIDATION.sql
 
 # Save validation report
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes_VALIDATION.sql \
   > validation_report_$(date +%Y%m%d_%H%M%S).txt 2>&1
 ```
@@ -148,15 +149,15 @@ SELECT COUNT(*) FROM core.mv_low_stock_alerts;
 
 ```bash
 # IMPORTANT: Backup current state first!
-pg_dump -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+pg_dump "$NEON_TARGET_URL" \
   --schema=core -F c -f "core_before_rollback_$(date +%Y%m%d_%H%M%S).backup"
 
 # Execute rollback
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -f database/migrations/003_critical_schema_fixes_ROLLBACK.sql
 
 # Verify rollback success
-psql -h 62.169.20.53 -p 6600 -U your_user -d mantisnxt \
+psql "$NEON_TARGET_URL" \
   -c "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'core' AND table_name = 'brand');"
 ```
 
