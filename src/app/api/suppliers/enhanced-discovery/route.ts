@@ -182,10 +182,11 @@ export async function PUT(request: NextRequest) {
       case 'website_url':
         discoveryResult = await discoverFromWebsite(webAddress, companyName);
         break;
-      case 'email':
+      case 'email': {
         const domain = extractDomainFromEmail(webAddress);
         discoveryResult = await discoverWithWebSearch(companyName || domain, { ...context, domain });
         break;
+      }
       case 'phone':
         discoveryResult = await discoverWithWebSearch(companyName || 'business', context);
         break;
@@ -277,7 +278,7 @@ export async function PATCH(request: NextRequest) {
         }
         break;
         
-      case 'parallel':
+      case 'parallel': {
         const promises = requests.map(async (req) => {
           try {
             return await processSingleDiscovery(req);
@@ -298,8 +299,9 @@ export async function PATCH(request: NextRequest) {
           }
         });
         break;
+      }
         
-      case 'mixed':
+      case 'mixed': {
         // Process high priority first, then others
         const highPriority = requests.filter(r => r.priority === 'high');
         const normalPriority = requests.filter(r => r.priority === 'normal');
@@ -326,6 +328,7 @@ export async function PATCH(request: NextRequest) {
           });
         }
         break;
+      }
     }
     
     const processingTime = Date.now() - startTime;

@@ -108,7 +108,7 @@ export default function UsersPage() {
 
   const handleDeleteUser = async (user: User) => {
     if (
-      !confirm(
+      !window.confirm(
         `Are you sure you want to delete ${user.name}? This action cannot be undone.`
       )
     ) {
@@ -136,7 +136,7 @@ export default function UsersPage() {
     if (selectedUsers.length === 0) return
 
     const confirmMessage = `Are you sure you want to ${action} ${selectedUsers.length} user(s)?`
-    if (action === 'delete' && !confirm(confirmMessage)) return
+    if (action === 'delete' && !window.confirm(confirmMessage)) return
 
     try {
       switch (action) {

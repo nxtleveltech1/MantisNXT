@@ -41,21 +41,24 @@ export async function GET(request: NextRequest) {
         response = await analyticsService.getAnalyticsDashboard();
         break;
 
-      case 'insights':
+      case 'insights': {
         const limit = parseInt(searchParams.get('limit') || '20');
         response = await analyticsService.getAIInsights(limit);
         break;
+      }
 
-      case 'recommendations':
+      case 'recommendations': {
         const recType = searchParams.get('recType');
         const recLimit = parseInt(searchParams.get('limit') || '15');
         response = await analyticsService.getRecommendations(recType, recLimit);
         break;
+      }
 
-      case 'anomalies':
+      case 'anomalies': {
         const anomalyLimit = parseInt(searchParams.get('limit') || '10');
         response = await analyticsService.getAnomalies(anomalyLimit);
         break;
+      }
 
       case 'predictions':
         response = await analyticsService.getPredictions();
@@ -69,7 +72,7 @@ export async function GET(request: NextRequest) {
         response = analyticsService.getStatus();
         break;
 
-      case 'report':
+      case 'report': {
         const startDate = searchParams.get('startDate')
           ? new Date(searchParams.get('startDate')!)
           : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
@@ -79,6 +82,7 @@ export async function GET(request: NextRequest) {
 
         response = await analyticsService.generateAnalyticsReport(startDate, endDate);
         break;
+      }
 
       default:
         return NextResponse.json(

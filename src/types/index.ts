@@ -1,4 +1,5 @@
 // Extended types for the complete procurement system
+export * from './globals';
 export * from './supplier';
 export * from './ai';
 

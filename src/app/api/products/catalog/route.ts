@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
         pi."updatedAt"
       FROM "PricelistItem" pi
       JOIN "Pricelist" p ON pi."pricelistId" = p.id
-      JOIN suppliers s ON p."supplierId" = s.id
+      JOIN public.suppliers s ON p."supplierId" = s.id
       ${whereSql}
       ORDER BY ${sortColumn} ${order}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(*) AS total
       FROM "PricelistItem" pi
       JOIN "Pricelist" p ON pi."pricelistId" = p.id
-      JOIN suppliers s ON p."supplierId" = s.id
+      JOIN public.suppliers s ON p."supplierId" = s.id
       ${whereSql}
     `
     const { rows: countRows } = await query<{ total: string }>(countQuery, filterParams)

@@ -42,7 +42,7 @@ export async function GET() {
         s.name as supplier_name,
         po.requested_by
       FROM purchase_orders po
-      LEFT JOIN suppliers s ON po.supplier_id = s.id
+      LEFT JOIN public.suppliers s ON po.supplier_id = s.id
       WHERE po.status != 'cancelled'
       ORDER BY po.created_at DESC
       LIMIT 10

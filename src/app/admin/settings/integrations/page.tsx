@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   Link,
   Key,
-  Webhook,
+  Webhook as WebhookIcon,
   Shield,
   TestTube,
   Settings,
@@ -290,7 +290,7 @@ export default function IntegrationsPage() {
             API Keys
           </TabsTrigger>
           <TabsTrigger value="webhooks" className="flex items-center gap-2">
-            <Webhook className="h-4 w-4" />
+            <WebhookIcon className="h-4 w-4" />
             Webhooks
           </TabsTrigger>
         </TabsList>

@@ -1,3 +1,5 @@
+import { AIPoweredWebScrapingService } from './AIPoweredWebScrapingService';
+
 // Web Search Service for discovering suppliers
 export interface SearchResult {
   title: string;
@@ -108,8 +110,7 @@ export class WebSearchService {
     options: SearchOptions
   ): Promise<SearchResult[]> {
     // Initialize AI-powered scraping service
-    const aiScrapingService =
-      new (require('./AIPoweredWebScrapingService').AIPoweredWebScrapingService)();
+    const aiScrapingService = new AIPoweredWebScrapingService();
 
     console.log('🤖 Initializing AI-powered website analysis...');
 

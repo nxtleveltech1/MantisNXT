@@ -476,7 +476,7 @@ export class DataExtractionEngine {
    */
   private extractPhone(content: string): string {
     const phonePatterns = [
-      /(\+?\d{1,4}[\s\-\.]?)?(\(?\d{2,4}\)?[\s\-\.]?)?\d{3,4}[\s\-\.]?\d{4}/g,
+      /(\+?\d{1,4}[\s.-]?)?(\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{4}/g,
       /(?:phone|tel|call):\s*([^\n\r]+)/gi,
     ];
 
@@ -551,7 +551,7 @@ export class DataExtractionEngine {
    */
   private extractRevenue(content: string): string {
     const patterns = [
-      /(?:revenue|sales|turnover)\s*[:\-]?\s*\$?([\d,.]+(?:\s*[mkb]|million|billion|thousand)?)/gi,
+      /(?:revenue|sales|turnover)\s*[-:]?\s*\$?([\d,.]+(?:\s*[mkb]|million|billion|thousand)?)/gi,
       /\$([\d,.]+(?:\s*[mkb]|million|billion|thousand)?)\s+(?:revenue|sales)/gi,
     ];
 
