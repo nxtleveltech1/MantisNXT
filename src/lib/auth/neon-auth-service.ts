@@ -16,6 +16,7 @@
  */
 
 // @ts-nocheck
+import crypto from 'node:crypto'
 import { db } from '@/lib/database'
 import { passwordSecurity } from '@/lib/security/password-security'
 
@@ -627,13 +628,11 @@ export class NeonAuthService {
 
   private generateSessionToken(): string {
     // Generate cryptographically secure random token
-    const crypto = require('crypto')
     return crypto.randomBytes(32).toString('hex')
   }
 
   private async generateTwoFactorToken(userId: string): Promise<string> {
     // Generate temporary 2FA token
-    const crypto = require('crypto')
     return crypto.randomBytes(16).toString('hex')
   }
 

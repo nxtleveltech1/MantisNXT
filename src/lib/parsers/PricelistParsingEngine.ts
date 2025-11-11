@@ -609,7 +609,7 @@ export class PricelistParsingEngine {
     if (!value) return undefined;
 
     // Remove currency symbols and common formatting
-    const cleaned = value.replace(/[^\d.,\-]/g, '');
+    const cleaned = value.replace(/[^\d.,-]/g, '');
     if (!cleaned) return undefined;
 
     // Handle different decimal separators
@@ -625,7 +625,7 @@ export class PricelistParsingEngine {
   private parseInteger(value: string): number | undefined {
     if (!value) return undefined;
 
-    const cleaned = value.replace(/[^\d\-]/g, '');
+    const cleaned = value.replace(/[^\d-]/g, '');
     const parsed = parseInt(cleaned, 10);
 
     return isNaN(parsed) ? undefined : Math.max(0, parsed);
@@ -637,7 +637,7 @@ export class PricelistParsingEngine {
   private parseFloat(value: string): number | undefined {
     if (!value) return undefined;
 
-    const cleaned = value.replace(/[^\d.,\-]/g, '');
+    const cleaned = value.replace(/[^\d.,-]/g, '');
     const parsed = parseFloat(cleaned.replace(',', '.'));
 
     return isNaN(parsed) ? undefined : Math.max(0, parsed);

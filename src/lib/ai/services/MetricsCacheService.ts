@@ -404,7 +404,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
         COUNT(DISTINCT s.id) as total_suppliers,
         COALESCE(AVG(s.rating), 0) as avg_rating,
         COUNT(DISTINCT po.id) as purchase_orders
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN purchase_orders po ON po.supplier_id = s.id
         AND po.created_at >= $2
         AND po.created_at <= $3

@@ -117,7 +117,7 @@ export class AnalyticsService {
       const performanceQuery = `
         SELECT sp.*, s.name as supplier_name
         FROM supplier_performance sp
-        JOIN suppliers s ON sp.supplier_id = s.id
+        JOIN public.suppliers s ON sp.supplier_id = s.id
         WHERE ${supplierId ? 'sp.supplier_id = $1' : 's.organization_id = $1'}
         ORDER BY sp.evaluation_date DESC
       `;

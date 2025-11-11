@@ -1083,7 +1083,7 @@ Return ONLY the JSON object, no other text.`;
 
     // Extract phone
     const phoneMatch = fullText.match(
-      /(\+?\d{1,4}[\s\-\.]?)?(\(?\d{2,4}\)?[\s\-\.]?)?\d{3,4}[\s\-\.]?\d{4}/
+      /(\+?\d{1,4}[\s.-]?)?(\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{4}/
     );
     if (phoneMatch) {
       data.contactPhone = phoneMatch[0];

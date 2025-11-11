@@ -97,7 +97,7 @@ export class QAValidator {
           query: `
             SELECT COUNT(*) as count
             FROM pricelists pl
-            LEFT JOIN suppliers s ON pl.supplier_id = s.id
+            LEFT JOIN public.suppliers s ON pl.supplier_id = s.id
             WHERE s.id IS NULL
           `,
         },

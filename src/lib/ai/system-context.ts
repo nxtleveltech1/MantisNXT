@@ -41,14 +41,14 @@ export async function getSystemContext(orgId: string): Promise<SystemContext> {
     `SELECT
       COUNT(*) as total,
       COUNT(*) FILTER (WHERE status = 'active') as active
-    FROM suppliers
+    FROM public.suppliers
     WHERE organization_id = $1`,
     [orgId]
   );
 
   const topSuppliers = await query(
     `SELECT id, name, status, performance_score, total_orders
-    FROM suppliers
+    FROM public.suppliers
     WHERE organization_id = $1 AND status = 'active'
     ORDER BY performance_score DESC NULLS LAST, total_orders DESC NULLS LAST
     LIMIT 10`,
@@ -146,7 +146,7 @@ export async function getSystemContext(orgId: string): Promise<SystemContext> {
 export async function searchSuppliers(orgId: string, searchQuery: string, limit = 10) {
   return await query(
     `SELECT id, name, status, contact_email, phone, address, performance_score
-    FROM suppliers
+    FROM public.suppliers
     WHERE organization_id = $1
       AND (name ILIKE $2 OR contact_email ILIKE $2 OR address ILIKE $2)
     ORDER BY performance_score DESC NULLS LAST

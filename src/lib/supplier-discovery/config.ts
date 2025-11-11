@@ -107,7 +107,7 @@ export const EXTRACTION_PATTERNS = {
   phone: /(\+27|0)[0-9\s\-()]{8,15}/g,
   vatNumber: /4[0-9]{9}/g,
   registrationNumber: /[0-9]{4}\/[0-9]{6}\/[0-9]{2}/g,
-  website: /(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/g,
+  website: /(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?/g,
   postalCode: /[0-9]{4}/g
 };
 

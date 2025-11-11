@@ -168,7 +168,7 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
               COUNT(po.id) as total_orders,
               AVG(CASE WHEN po.delivered_on_time THEN 1 ELSE 0 END) as on_time_rate,
               AVG(EXTRACT(DAY FROM po.delivery_date - po.order_date)) as avg_delivery_days
-            FROM suppliers s
+            FROM public.suppliers s
             LEFT JOIN purchase_orders po ON po.supplier_id = s.id
             WHERE current_setting('app.current_org_id', true)::uuid = $1
               AND po.created_at >= NOW() - INTERVAL '90 days'

@@ -9,6 +9,7 @@
  */
 
 // @ts-nocheck
+import crypto from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/database'
 
@@ -357,7 +358,6 @@ export async function isAccountLocked(userId: string): Promise<{
  * Generate secure password reset token
  */
 export async function generatePasswordResetToken(userId: string): Promise<string> {
-  const crypto = require('crypto')
   const token = crypto.randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 

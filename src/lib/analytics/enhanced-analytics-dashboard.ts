@@ -203,7 +203,7 @@ export class AIInsightsGenerator {
         AVG(overall_rating) as avg_rating,
         COUNT(*) as evaluation_count
       FROM supplier_performance sp
-      JOIN suppliers s ON sp.supplier_id = s.id
+      JOIN public.suppliers s ON sp.supplier_id = s.id
       WHERE s.organization_id = $1
       AND evaluation_date >= NOW() - INTERVAL '6 months'
       GROUP BY DATE_TRUNC('month', evaluation_date)
@@ -605,7 +605,7 @@ export class AIInsightsGenerator {
           spl.sku,
           AVG(s.lead_time_days) as avg_lead_time
         FROM supplier_price_lists spl
-        JOIN suppliers s ON spl.supplier_id = s.id
+        JOIN public.suppliers s ON spl.supplier_id = s.id
         GROUP BY spl.sku
       ) lead_time ON ii.sku = lead_time.sku
       WHERE ii.organization_id = $1
@@ -1027,7 +1027,7 @@ export class SmartDashboardManager {
         COUNT(*) as order_count,
         AVG(total_amount) as avg_order_value
       FROM purchase_orders po
-      JOIN suppliers s ON po.supplier_id = s.id
+      JOIN public.suppliers s ON po.supplier_id = s.id
       WHERE s.organization_id = $1
       AND po.order_date >= $2
     `;
@@ -1046,7 +1046,7 @@ export class SmartDashboardManager {
         AVG(sp.on_time_delivery_rate) as avg_delivery,
         AVG(sp.quality_acceptance_rate) as avg_quality
       FROM supplier_performance sp
-      JOIN suppliers s ON sp.supplier_id = s.id
+      JOIN public.suppliers s ON sp.supplier_id = s.id
       WHERE s.organization_id = $1
       AND sp.evaluation_date >= $2
       GROUP BY DATE_TRUNC('month', sp.evaluation_date)
