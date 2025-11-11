@@ -652,7 +652,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
         query = `
           SELECT sp.*, s.name as supplier_name, s.id as supplier_id
           FROM supplier_performance sp
-          JOIN suppliers s ON sp.supplier_id = s.id
+          JOIN public.suppliers s ON sp.supplier_id = s.id
           WHERE s.organization_id = $1
           AND sp.evaluation_date >= NOW() - INTERVAL '1 hour'
           ORDER BY sp.evaluation_date DESC

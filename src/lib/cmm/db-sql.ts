@@ -170,7 +170,7 @@ export async function upsertProductAttributes(
 
     // ensure supplier exists
     await query(`
-      insert into suppliers (id, name) values ($1, $2)
+      insert into public.suppliers (id, name) values ($1, $2)
       on conflict (id) do nothing
     `, [p.supplierId, p.supplierId])
 

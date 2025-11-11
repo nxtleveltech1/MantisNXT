@@ -226,7 +226,7 @@ export class MetricsCalculator {
       SELECT
         COUNT(*) as total_suppliers,
         COUNT(*) FILTER (WHERE is_active = true) as active_suppliers
-      FROM suppliers
+      FROM public.suppliers
       WHERE current_setting('app.current_org_id', true)::uuid = $1
       `,
       [orgId],
@@ -278,7 +278,7 @@ export class MetricsCalculator {
           LIMIT 1
         ), 75) as score,
         COUNT(po.id) as total_orders
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN purchase_orders po ON po.supplier_id = s.id AND po.created_at >= NOW() - INTERVAL '90 days'
       WHERE current_setting('app.current_org_id', true)::uuid = $1
       GROUP BY s.id, s.name

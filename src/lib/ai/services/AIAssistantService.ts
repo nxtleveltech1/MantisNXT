@@ -324,7 +324,7 @@ Available actions you can suggest:
     const result = await db.query(
       `
       SELECT s.name, COUNT(po.id) as total_orders
-      FROM suppliers s
+      FROM public.suppliers s
       LEFT JOIN purchase_orders po ON po.supplier_id = s.id
       WHERE current_setting('app.current_org_id', true)::uuid = $1
       GROUP BY s.id, s.name

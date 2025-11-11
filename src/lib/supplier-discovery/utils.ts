@@ -291,7 +291,7 @@ function formatAddress(address: SupplierAddress): SupplierAddress {
 function formatRegistrationNumber(regNumber: string): string {
   if (!regNumber) return '';
 
-  const cleaned = regNumber.replace(/[^\d\/]/g, '');
+  const cleaned = regNumber.replace(/[^\d/]/g, '');
 
   // Ensure proper format: YYYY/NNNNNN/NN
   const match = cleaned.match(/^(\d{4})\/(\d{6})\/(\d{2})$/);

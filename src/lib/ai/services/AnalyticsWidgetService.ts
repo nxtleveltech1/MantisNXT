@@ -460,7 +460,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
       SELECT
         COUNT(DISTINCT id) as total_suppliers,
         AVG(rating) as avg_rating
-      FROM suppliers
+      FROM public.suppliers
       WHERE org_id = $1
       `,
       [orgId],

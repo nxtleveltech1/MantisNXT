@@ -343,7 +343,7 @@ export class XLSXProcessor extends EventEmitter {
       case 'email':
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value));
       case 'phone':
-        return /^[\+]?[(]?[\d\s\-\(\)]{10,}$/.test(String(value));
+        return /^\+?\(?[\d\s()-]{10,}$/.test(String(value));
       default:
         return true;
     }

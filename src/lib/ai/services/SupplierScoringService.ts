@@ -224,7 +224,7 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
    */
   private async getSupplierInfo(supplierId: string): Promise<{ name: string }> {
     const result = await db.query(
-      `SELECT name FROM suppliers WHERE id = $1`,
+      `SELECT name FROM public.suppliers WHERE id = $1`,
       [supplierId],
     );
     return result.rows[0] || { name: 'Unknown' };
