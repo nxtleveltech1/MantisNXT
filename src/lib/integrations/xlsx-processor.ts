@@ -37,7 +37,7 @@ export interface ProcessingError {
   row: number;
   column?: string;
   error: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface ValidationRule {
@@ -47,8 +47,8 @@ export interface ValidationRule {
   minLength?: number;
   maxLength?: number;
   pattern?: RegExp;
-  allowedValues?: any[];
-  customValidator?: (value: any) => boolean | string;
+  allowedValues?: unknown[];
+  customValidator?: (value: unknown) => boolean | string;
 }
 
 export class XLSXProcessor extends EventEmitter {
@@ -94,7 +94,7 @@ export class XLSXProcessor extends EventEmitter {
         header: 1,
         defval: null,
         blankrows: false
-      }) as any[][];
+      }) as unknown[][];
 
       if (jsonData.length === 0) {
         throw new Error('No data found in worksheet');
@@ -173,7 +173,7 @@ export class XLSXProcessor extends EventEmitter {
    * Process batch of rows
    */
   private async processBatch(
-    batch: any[][],
+    batch: unknown[][],
     headers: string[],
     options: XLSXProcessingOptions,
     validationRules: ValidationRule[],
@@ -188,7 +188,7 @@ export class XLSXProcessor extends EventEmitter {
 
       try {
         // Convert row array to object
-        const record: any = {};
+        const record: unknown = {};
         headers.forEach((header, index) => {
           if (header && rowData[index] !== undefined) {
             record[header.toLowerCase().replace(/\s+/g, '_')] = rowData[index];
@@ -247,7 +247,7 @@ export class XLSXProcessor extends EventEmitter {
   /**
    * Validate record against rules
    */
-  private validateRecord(record: any, rules: ValidationRule[]): ProcessingError[] {
+  private validateRecord(record: unknown, rules: ValidationRule[]): ProcessingError[] {
     const errors: ProcessingError[] = [];
 
     for (const rule of rules) {
@@ -332,7 +332,7 @@ export class XLSXProcessor extends EventEmitter {
   /**
    * Validate data type
    */
-  private validateType(value: any, type: string): boolean {
+  private validateType(value: unknown, type: string): boolean {
     switch (type) {
       case 'string':
         return typeof value === 'string';
@@ -352,7 +352,7 @@ export class XLSXProcessor extends EventEmitter {
   /**
    * Insert record into database
    */
-  private async insertRecord(record: any, tableName: string): Promise<void> {
+  private async insertRecord(record: unknown, tableName: string): Promise<void> {
     const fields = Object.keys(record);
     const values = Object.values(record);
     const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
@@ -368,7 +368,7 @@ export class XLSXProcessor extends EventEmitter {
   /**
    * Upsert record (insert or update if exists)
    */
-  private async upsertRecord(record: any, tableName: string): Promise<void> {
+  private async upsertRecord(record: unknown, tableName: string): Promise<void> {
     const fields = Object.keys(record);
     const values = Object.values(record);
     const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
@@ -386,7 +386,7 @@ export class XLSXProcessor extends EventEmitter {
   /**
    * Notify about processed record
    */
-  private async notifyRecordProcessed(tableName: string, record: any, operation: string): Promise<void> {
+  private async notifyRecordProcessed(tableName: string, record: unknown, operation: string): Promise<void> {
     const payload = JSON.stringify({
       operation,
       table: tableName,

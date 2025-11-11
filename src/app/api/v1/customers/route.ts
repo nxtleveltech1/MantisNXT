@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { CustomerService } from '@/lib/services/CustomerService';
 
 export async function GET(request: NextRequest) {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       limit,
       offset
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in GET /api/v1/customers:', error);
     return NextResponse.json(
       {
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: customer
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in POST /api/v1/customers:', error);
     return NextResponse.json(
       {

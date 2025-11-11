@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ResponsiveUIProvider, PerformanceStatusIndicator, useResponsiveUI } from './ResponsiveUIManager'
+import { ResponsiveUIProvider, PerformanceStatusIndicator } from './ResponsiveUIManager'
 import { resilientFetch } from '@/utils/resilientApi'
 import { toast } from 'sonner'
 import {
@@ -23,26 +23,15 @@ import {
   CheckCircle,
   Clock,
   Database,
-  Gauge,
   Heart,
   RefreshCw,
   Server,
-  Shield,
-  TrendingDown,
-  TrendingUp,
   Wifi,
   WifiOff,
-  Zap,
-  Settings,
   Eye,
   EyeOff,
-  Download,
-  Upload,
   HardDrive,
-  Cpu,
   MemoryStick,
-  Network,
-  Globe,
   Lock,
   Unlock,
   XCircle,
@@ -212,7 +201,7 @@ class HealthMonitor {
     const start = performance.now()
 
     try {
-      const response = await resilientFetch.get(check.url, {
+      const _response = await resilientFetch.get(check.url, {
         timeout: check.timeout,
         retries: 1
       })
@@ -242,7 +231,7 @@ class HealthMonitor {
           try {
             const result = await this.checkEndpoint(check)
             return { check, ...result, error: null }
-          } catch (err: any) {
+          } catch (err: unknown) {
             return {
               check,
               status: 'critical' as const,
@@ -262,7 +251,7 @@ class HealthMonitor {
     let errorCount = 0
     let totalChecks = 0
 
-    results.forEach((result, index) => {
+    results.forEach((result) => {
       if (result.status === 'fulfilled') {
         const { check, status, responseTime, error } = result.value
         totalResponseTime += responseTime
@@ -307,7 +296,7 @@ class HealthMonitor {
     // Check memory usage
     let memoryStatus: HealthStatus['memory'] = 'normal'
     if ('memory' in performance) {
-      const memory = (performance as any).memory
+      const memory = (performance as unknown).memory
       const usage = memory.usedJSHeapSize / memory.jsHeapSizeLimit
       if (usage > 0.9) memoryStatus = 'critical'
       else if (usage > 0.7) memoryStatus = 'high'
@@ -399,7 +388,7 @@ class HealthMonitor {
 // HEALTH STATUS COMPONENTS
 // ============================================================================
 
-const StatusIcon: React.FC<{ status: string; type: 'overall' | 'component' }> = ({ status, type }) => {
+const StatusIcon: React.FC<{ status: string; type: 'overall' | 'component' }> = ({ status }) => {
   const getIcon = () => {
     switch (status) {
       case 'healthy':

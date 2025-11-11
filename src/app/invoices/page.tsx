@@ -12,46 +12,27 @@ import {
   Edit,
   Trash2,
   FileText,
-  DollarSign,
   Clock,
   AlertTriangle,
   CheckCircle,
   XCircle,
   MoreHorizontal,
-  ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Calendar,
   CreditCard,
   Receipt,
   Target,
   TrendingUp,
-  AlertCircle,
-  Users,
-  RefreshCw,
   Settings,
-  Mail,
-  Phone,
-  Globe,
-  MapPin,
-  Building2,
-  Banknote,
   Percent,
-  FileCheck,
-  FileX,
   Zap,
-  BarChart3,
-  PieChart,
-  Activity,
-  BookOpen,
   Paperclip,
   MessageSquare,
   History,
   UserCheck,
   Send,
   Ban,
-  Copy,
-  ExternalLink
+  Copy
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -72,10 +53,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import {
   Dialog,
@@ -87,7 +65,6 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
@@ -99,11 +76,9 @@ import type {
   Invoice,
   InvoiceStatus,
   PaymentStatus,
-  ApprovalStatus,
   InvoiceFilters,
   InvoiceMetrics,
-  ThreeWayMatchStatus,
-  BulkInvoiceOperation
+  ThreeWayMatchStatus
 } from "@/types/invoice"
 
 // Mock data - in real app this would come from API

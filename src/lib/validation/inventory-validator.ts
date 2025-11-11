@@ -178,7 +178,7 @@ export const SupplierProductValidationSchema = z.object({
 // Validation result types
 export interface ValidationIssue {
   field: string
-  value: any
+  value: unknown
   severity: 'error' | 'warning' | 'info'
   message: string
   suggestion?: string
@@ -189,7 +189,7 @@ export interface ValidationIssue {
 export interface ValidationResult {
   isValid: boolean
   issues: ValidationIssue[]
-  transformedData: any
+  transformedData: unknown
   metadata: {
     validatedFields: string[]
     appliedTransformations: string[]
@@ -204,7 +204,7 @@ export interface BulkValidationResult {
   errorItems: number
   warningItems: number
   issues: ValidationIssue[]
-  transformedData: any[]
+  transformedData: unknown[]
   metadata: {
     processingTime: number
     validationRules: string[]
@@ -319,7 +319,7 @@ export class InventoryValidator {
 
   // Single item validation
   public static async validateInventoryItem(
-    data: any,
+    data: unknown,
     options: {
       validateReferences?: boolean
       allowSkuUpdate?: boolean
@@ -403,7 +403,7 @@ export class InventoryValidator {
 
   // Bulk validation
   public static async validateInventoryBulk(
-    items: any[],
+    items: unknown[],
     options: {
       validateReferences?: boolean
       allowSkuUpdates?: boolean
@@ -417,7 +417,7 @@ export class InventoryValidator {
   ): Promise<BulkValidationResult> {
     const startTime = Date.now()
     const allIssues: ValidationIssue[] = []
-    const transformedItems: any[] = []
+    const transformedItems: unknown[] = []
     let validItems = 0
     let errorItems = 0
     let warningItems = 0
@@ -497,9 +497,9 @@ export class InventoryValidator {
 
   // Business logic validations
   private static async performBusinessValidations(
-    data: any,
+    data: unknown,
     issues: ValidationIssue[],
-    options: any
+    options: unknown
   ): Promise<void> {
     // SKU format validation
     if (data.sku) {
@@ -596,9 +596,9 @@ export class InventoryValidator {
 
   // Reference validations
   private static async validateReferences(
-    data: any,
+    data: unknown,
     issues: ValidationIssue[],
-    context?: any
+    context?: unknown
   ): Promise<void> {
     // Validate category exists
     if (data.category) {
@@ -692,9 +692,9 @@ export class InventoryValidator {
 
   // Data transformations
   private static async applyDataTransformations(
-    data: any,
+    data: unknown,
     appliedTransformations: string[]
-  ): Promise<any> {
+  ): Promise<unknown> {
     const transformed = { ...data }
 
     // Normalize SKU
@@ -761,7 +761,7 @@ export class InventoryValidator {
 
   // Cross-field validations
   private static performCrossFieldValidations(
-    data: any,
+    data: unknown,
     issues: ValidationIssue[]
   ): void {
     // Reorder level should not exceed max stock level

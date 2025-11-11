@@ -1,4 +1,5 @@
-import { Pool, PoolClient, PoolConfig, QueryResult, QueryResultRow } from 'pg';
+import type { PoolClient, PoolConfig, QueryResult, QueryResultRow } from 'pg';
+import { Pool } from 'pg';
 
 import { randomUUID } from 'crypto';
 
@@ -583,7 +584,7 @@ class EnterpriseConnectionManager {
 
 
 
-  private sanitizeParameters(params: any[]): any[] {
+  private sanitizeParameters(params: unknown[]): unknown[] {
 
     if (!params || params.length === 0) return [];
 
@@ -625,7 +626,7 @@ class EnterpriseConnectionManager {
 
     text: string,
 
-    params: any[],
+    params: unknown[],
 
     duration: number,
 
@@ -693,7 +694,7 @@ class EnterpriseConnectionManager {
 
 
 
-      const logData: any = {
+      const logData: unknown = {
 
         queryId,
 
@@ -737,7 +738,7 @@ class EnterpriseConnectionManager {
 
 
 
-  private async explainQuery(text: string, params: any[]): Promise<any> {
+  private async explainQuery(text: string, params: unknown[]): Promise<unknown> {
 
     if (!this.pool) return null;
 
@@ -763,7 +764,7 @@ class EnterpriseConnectionManager {
 
 
 
-  private logExecutionPlan(queryId: string, plan: any): void {
+  private logExecutionPlan(queryId: string, plan: unknown): void {
 
     if (!plan) return;
 
@@ -831,11 +832,11 @@ class EnterpriseConnectionManager {
 
 
 
-  async query<T extends QueryResultRow = any>(
+  async query<T extends QueryResultRow = unknown>(
 
     text: string,
 
-    params: any[] = [],
+    params: unknown[] = [],
 
     options: QueryOptions = {}
 
@@ -1325,7 +1326,7 @@ class EnterpriseConnectionManager {
 
 
 
-  getQueryMetrics(): any {
+  getQueryMetrics(): unknown {
 
     const fingerprints = Array.from(this.metrics.queryFingerprints.entries())
 
@@ -1503,11 +1504,11 @@ export const dbManager = new EnterpriseConnectionManager();
 
 
 
-export const query = <T extends QueryResultRow = any>(
+export const query = <T extends QueryResultRow = unknown>(
 
   text: string,
 
-  params?: any[],
+  params?: unknown[],
 
   options?: QueryOptions
 

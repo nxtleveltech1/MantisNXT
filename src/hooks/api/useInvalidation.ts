@@ -7,7 +7,6 @@
 
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { CacheInvalidationEventType } from '@/lib/cache/events';
 import { triggerCacheInvalidation } from '@/lib/cache/event-invalidation';
 
 /**
@@ -211,7 +210,7 @@ export function useMutationInvalidation() {
    */
   const onInventorySuccess = useCallback(
     (
-      data: any,
+      data: unknown,
       options?: {
         entityId?: string;
         supplierId?: string;
@@ -233,7 +232,7 @@ export function useMutationInvalidation() {
    */
   const onSupplierSuccess = useCallback(
     (
-      data: any,
+      data: unknown,
       options?: {
         entityId?: string;
       }

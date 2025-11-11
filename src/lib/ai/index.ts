@@ -3,10 +3,9 @@
  * Provides provider selection, configuration utilities, service wrapper, and telemetry hooks.
  */
 
-import {
+import type {
   AIProvider,
   AIProviderId,
-  AIConfig,
   AIClient,
   AITextResult,
   AIStreamChunk,
@@ -17,9 +16,9 @@ import {
   AIEmbeddingOptions,
   AIEmbeddingResult,
   AIUsageEvent,
-  AIUsageMetrics,
-  AIProviderHealth,
-} from '@/types/ai';
+  AIProviderHealth} from '@/types/ai';
+
+
 import {
   getAIConfig as loadAIConfig,
   refreshAIConfig,

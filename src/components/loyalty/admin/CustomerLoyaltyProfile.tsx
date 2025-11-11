@@ -48,17 +48,9 @@ import {
 import {
   Trophy,
   Gift,
-  TrendingUp,
-  Calendar,
   CreditCard,
-  Plus,
-  Minus,
   ArrowUpCircle,
   ArrowDownCircle,
-  User,
-  Mail,
-  Phone,
-  MapPin,
   Clock,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -89,7 +81,7 @@ const TIER_COLORS: Record<LoyaltyTier, string> = {
   diamond: 'bg-purple-500',
 }
 
-const TRANSACTION_ICONS: Record<TransactionType, any> = {
+const TRANSACTION_ICONS: Record<TransactionType, unknown> = {
   earn: ArrowUpCircle,
   redeem: ArrowDownCircle,
   expire: Clock,

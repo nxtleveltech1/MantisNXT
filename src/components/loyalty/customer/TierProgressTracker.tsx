@@ -18,7 +18,6 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Check, Lock, Sparkles, Trophy, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { TierBadge } from './shared/TierBadge';
 import { cn } from '@/lib/utils';
@@ -170,14 +169,14 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-2">Current Tier</p>
-              <TierBadge tier={data.current_tier as any} size="lg" />
+              <TierBadge tier={data.current_tier as unknown} size="lg" />
             </div>
             {hasNextTier && (
               <div className="text-right">
                 <p className="text-sm text-muted-foreground mb-2">Next Tier</p>
                 <div className="relative">
                   <TierBadge
-                    tier={TIER_PROGRESSION[nextTierIndex].name as any}
+                    tier={TIER_PROGRESSION[nextTierIndex].name as unknown}
                     size="lg"
                     className="opacity-50"
                   />
@@ -222,7 +221,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-primary">
                     {data.progress_percentage > 75
-                      ? "You're almost there!"
+                      ? "You are almost there!"
                       : data.progress_percentage > 50
                         ? 'Keep it up!'
                         : 'Great progress!'}
@@ -240,7 +239,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
               <Trophy className="h-12 w-12 text-primary mx-auto" />
               <p className="font-semibold text-lg">Maximum Tier Achieved!</p>
               <p className="text-sm text-muted-foreground">
-                You're at the highest tier. Enjoy all premium benefits!
+                You are at the highest tier. Enjoy all premium benefits!
               </p>
             </div>
           )}
@@ -395,7 +394,7 @@ export function TierProgressTracker({ customerId }: TierProgressTrackerProps) {
                     )}
                   </div>
                   <TierBadge
-                    tier={tier.name as any}
+                    tier={tier.name as unknown}
                     size="md"
                     className={!isUnlocked ? 'opacity-50' : ''}
                   />

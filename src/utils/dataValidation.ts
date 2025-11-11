@@ -42,7 +42,7 @@ export class TimestampValidator {
    * Comprehensive timestamp validation and sanitization
    */
   static validate(
-    value: any,
+    value: unknown,
     options: TimestampValidationOptions = {}
   ): ValidationResult<Date> {
     const {
@@ -181,7 +181,7 @@ export class TimestampValidator {
    * Safe timestamp formatting with fallbacks
    */
   static formatSafe(
-    value: any,
+    value: unknown,
     formatString: string = 'MMM dd, yyyy',
     fallback: string = 'Invalid Date'
   ): string {
@@ -203,7 +203,7 @@ export class TimestampValidator {
    * Safe relative time formatting
    */
   static formatRelativeSafe(
-    value: any,
+    value: unknown,
     fallback: string = 'Unknown time'
   ): string {
     const validation = this.validate(value, { fallbackToNow: false })
@@ -223,7 +223,7 @@ export class TimestampValidator {
   /**
    * Safe timestamp comparison for sorting
    */
-  static compareSafe(a: any, b: any, direction: 'asc' | 'desc' = 'desc'): number {
+  static compareSafe(a: unknown, b: unknown, direction: 'asc' | 'desc' = 'desc'): number {
     const aValidation = this.validate(a, { fallbackToNow: false, allowNull: true })
     const bValidation = this.validate(b, { fallbackToNow: false, allowNull: true })
 
@@ -249,7 +249,7 @@ export class TimestampValidator {
 
 export class NumberValidator {
   static validate(
-    value: any,
+    value: unknown,
     options: NumberValidationOptions = {}
   ): ValidationResult<number> {
     const {
@@ -347,7 +347,7 @@ export class NumberValidator {
    * Safe number formatting with fallbacks
    */
   static formatSafe(
-    value: any,
+    value: unknown,
     options: {
       style?: 'decimal' | 'currency' | 'percent'
       currency?: string
@@ -377,7 +377,7 @@ export class NumberValidator {
 
 export class StringValidator {
   static validate(
-    value: any,
+    value: unknown,
     options: {
       minLength?: number
       maxLength?: number
@@ -455,8 +455,8 @@ export class StringValidator {
 
 export class ArrayValidator {
   static validate<T>(
-    value: any,
-    itemValidator?: (item: any, index: number) => ValidationResult<T>,
+    value: unknown,
+    itemValidator?: (item: unknown, index: number) => ValidationResult<T>,
     options: {
       minLength?: number
       maxLength?: number
@@ -482,7 +482,7 @@ export class ArrayValidator {
     }
 
     // Ensure we have an array
-    let arr: any[]
+    let arr: unknown[]
     if (Array.isArray(value)) {
       arr = value
     } else if (value === null || value === undefined) {
@@ -555,7 +555,7 @@ export class DataSanitizer {
   /**
    * Sanitize activity/log data with timestamp handling
    */
-  static sanitizeActivity(data: any): any {
+  static sanitizeActivity(data: unknown): unknown {
     if (!data || typeof data !== 'object') {
       return {
         id: `fallback-${Date.now()}`,
@@ -587,7 +587,7 @@ export class DataSanitizer {
   /**
    * Sanitize supplier data
    */
-  static sanitizeSupplier(data: any): any {
+  static sanitizeSupplier(data: unknown): unknown {
     if (!data || typeof data !== 'object') return null
 
     return {
@@ -605,7 +605,7 @@ export class DataSanitizer {
   /**
    * Sanitize inventory item data
    */
-  static sanitizeInventoryItem(data: any): any {
+  static sanitizeInventoryItem(data: unknown): unknown {
     if (!data || typeof data !== 'object') return null
 
     return {
@@ -625,8 +625,8 @@ export class DataSanitizer {
    * Sanitize array of data with item-specific sanitizer
    */
   static sanitizeArray<T>(
-    data: any,
-    itemSanitizer: (item: any) => T | null
+    data: unknown,
+    itemSanitizer: (item: unknown) => T | null
   ): T[] {
     const arrayResult = ArrayValidator.validate(
       data,
@@ -657,7 +657,7 @@ export class SafeSorter {
    */
   static byTimestamp<T>(
     items: T[],
-    getTimestamp: (item: T) => any,
+    getTimestamp: (item: T) => unknown,
     direction: 'asc' | 'desc' = 'desc'
   ): T[] {
     return [...items].sort((a, b) => {
@@ -674,7 +674,7 @@ export class SafeSorter {
    */
   static byNumber<T>(
     items: T[],
-    getNumber: (item: T) => any,
+    getNumber: (item: T) => unknown,
     direction: 'asc' | 'desc' = 'asc'
   ): T[] {
     return [...items].sort((a, b) => {
@@ -694,7 +694,7 @@ export class SafeSorter {
    */
   static byString<T>(
     items: T[],
-    getString: (item: T) => any,
+    getString: (item: T) => unknown,
     direction: 'asc' | 'desc' = 'asc'
   ): T[] {
     return [...items].sort((a, b) => {

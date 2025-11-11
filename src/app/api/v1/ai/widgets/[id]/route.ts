@@ -5,13 +5,12 @@
  * DELETE /api/v1/ai/widgets/[id]
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
   successResponse,
   noContentResponse,
-  validateWidgetType,
 } from '@/lib/ai/api-utils';
 import { updateWidgetSchema } from '@/lib/ai/validation-schemas';
 import { DashboardService } from '@/lib/ai/services/dashboard-service';

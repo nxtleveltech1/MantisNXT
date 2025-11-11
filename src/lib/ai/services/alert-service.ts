@@ -33,7 +33,7 @@ export interface Alert {
   severity: AlertSeverity;
   title: string;
   message: string;
-  recommendations?: Record<string, any>[];
+  recommendations?: Record<string, unknown>[];
   entity_type?: string;
   entity_id?: string;
   is_acknowledged: boolean;
@@ -42,7 +42,7 @@ export interface Alert {
   is_resolved: boolean;
   resolved_at?: Date;
   created_at: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CreateAlertInput {
@@ -52,8 +52,8 @@ export interface CreateAlertInput {
   message: string;
   entityType?: string;
   entityId?: string;
-  metadata?: Record<string, any>;
-  recommendations?: Record<string, any>[];
+  metadata?: Record<string, unknown>;
+  recommendations?: Record<string, unknown>[];
 }
 
 export interface ListAlertsFilters {
@@ -99,7 +99,7 @@ export class AIAlertService {
     try {
       // Build WHERE conditions
       const conditions: string[] = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
       let paramIndex = 2;
 
       // Severity filter (supports single or array)

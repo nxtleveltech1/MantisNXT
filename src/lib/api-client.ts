@@ -4,7 +4,6 @@
  * Provides resilient API communication with automatic retries and fallback mechanisms
  */
 
-import { QueryClient } from '@tanstack/react-query';
 
 export interface ApiClientConfig {
   baseURL?: string;
@@ -17,7 +16,7 @@ export interface ApiClientConfig {
   offlineStorage?: boolean;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -32,14 +31,14 @@ export interface RetryConfig {
   delay: number;
   maxDelay: number;
   backoffFactor: number;
-  retryCondition?: (error: any) => boolean;
+  retryCondition?: (error: unknown) => boolean;
 }
 
 class ApiClient {
   private config: Required<ApiClientConfig>;
   private retryConfig: RetryConfig;
   private abortControllers: Map<string, AbortController> = new Map();
-  private offlineQueue: Array<{ key: string; request: () => Promise<any> }> = [];
+  private offlineQueue: Array<{ key: string; request: () => Promise<unknown> }> = [];
   private isOnline: boolean = true;
 
   constructor(config: ApiClientConfig = {}) {
@@ -132,7 +131,7 @@ class ApiClient {
     this.saveOfflineQueue();
   }
 
-  private shouldRetry = (error: any): boolean => {
+  private shouldRetry = (error: unknown): boolean => {
     // Don't retry on successful responses
     if (error?.response?.status < 400) return false;
 
@@ -192,7 +191,7 @@ class ApiClient {
     requestFn: () => Promise<T>,
     requestId: string = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   ): Promise<T> {
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 1; attempt <= this.retryConfig.attempts + 1; attempt++) {
       try {
@@ -238,7 +237,7 @@ class ApiClient {
     throw lastError;
   }
 
-  async request<T = any>(
+  async request<T = unknown>(
     endpoint: string,
     options: RequestInit & {
       requestId?: string;
@@ -276,7 +275,7 @@ class ApiClient {
 
         clearTimeout(timeoutId);
 
-        let data: any;
+        let data: unknown;
         const contentType = response.headers.get('content-type');
 
         if (contentType?.includes('application/json')) {
@@ -288,8 +287,8 @@ class ApiClient {
         // Handle different response formats
         if (!response.ok) {
           const error = new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
-          (error as any).response = response;
-          (error as any).data = data;
+          (error as unknown).response = response;
+          (error as unknown).data = data;
           throw error;
         }
 
@@ -319,7 +318,7 @@ class ApiClient {
 
         if (controller.signal.aborted) {
           const timeoutError = new Error(`Request timeout after ${timeout}ms`);
-          (timeoutError as any).code = 'TIMEOUT';
+          (timeoutError as unknown).code = 'TIMEOUT';
           throw timeoutError;
         }
 
@@ -337,11 +336,11 @@ class ApiClient {
   }
 
   // Convenience methods
-  async get<T = any>(endpoint: string, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async get<T = unknown>(endpoint: string, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  async post<T = any>(endpoint: string, data?: any, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async post<T = unknown>(endpoint: string, data?: unknown, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
@@ -349,7 +348,7 @@ class ApiClient {
     });
   }
 
-  async put<T = any>(endpoint: string, data?: any, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async put<T = unknown>(endpoint: string, data?: unknown, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
@@ -357,7 +356,7 @@ class ApiClient {
     });
   }
 
-  async patch<T = any>(endpoint: string, data?: any, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async patch<T = unknown>(endpoint: string, data?: unknown, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
@@ -365,7 +364,7 @@ class ApiClient {
     });
   }
 
-  async delete<T = any>(endpoint: string, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
+  async delete<T = unknown>(endpoint: string, options?: RequestInit & { requestId?: string }): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
@@ -409,7 +408,7 @@ export const apiClient = new ApiClient();
 export const createApiClient = (config: ApiClientConfig) => new ApiClient(config);
 
 // Enhanced React Query error retry logic
-export const queryRetryFn = (failureCount: number, error: any) => {
+export const queryRetryFn = (failureCount: number, error: unknown) => {
   // Don't retry authentication errors
   if (error?.response?.status === 401 || error?.response?.status === 403) {
     return false;

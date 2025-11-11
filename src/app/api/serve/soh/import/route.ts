@@ -2,7 +2,8 @@
  * POST /api/serve/soh/import - Bulk import stock snapshots
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { stockService } from '@/lib/services/StockService';
 import { z } from 'zod';
 

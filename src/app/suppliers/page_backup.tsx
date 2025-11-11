@@ -1,5 +1,4 @@
 import AppLayout from '@/components/layout/AppLayout'
-import SupplierDirectory from '@/components/suppliers/SupplierDirectory'
 import EnhancedSupplierDashboard from '@/components/suppliers/EnhancedSupplierDashboard'
 
 export default function SuppliersPage() {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -26,14 +25,11 @@ import {
   DollarSign,
   AlertTriangle,
   CheckCircle2,
-  ArrowRight,
-  Target,
   Warehouse,
   ClipboardCheck,
   Zap,
   Building2,
   Clock,
-  ShoppingCart,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -138,14 +134,9 @@ export default function ProductToInventoryWizard({
   })
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('')
   const [promotionResults, setPromotionResults] = useState<PromotionResult[]>([])
+  const hasProducts = productIds.length > 0
 
-  useEffect(() => {
-    if (isOpen && productIds.length > 0) {
-      loadInitialData()
-    }
-  }, [isOpen, productIds])
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -199,7 +190,13 @@ export default function ProductToInventoryWizard({
     } finally {
       setLoading(false)
     }
-  }
+  }, [productIds, supplierId])
+
+  useEffect(() => {
+    if (isOpen && hasProducts) {
+      loadInitialData()
+    }
+  }, [hasProducts, isOpen, loadInitialData])
 
   const updateInventoryConfig = (productId: string, updates: Partial<InventoryConfiguration>) => {
     setInventoryConfigs(prev => {

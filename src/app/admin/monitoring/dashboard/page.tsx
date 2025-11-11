@@ -10,23 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Activity,
   Server,
-  Database,
   Cpu,
   HardDrive,
   MemoryStick,
   Network,
   Clock,
-  Users,
   AlertTriangle,
   CheckCircle,
   XCircle,
   RefreshCw,
   TrendingUp,
   TrendingDown,
-  Zap,
   Globe,
-  Monitor,
-  Wifi
+  Monitor
 } from "lucide-react"
 
 interface SystemMetric {

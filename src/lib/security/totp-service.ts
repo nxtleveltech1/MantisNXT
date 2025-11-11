@@ -460,7 +460,7 @@ async function logSecurityEvent(
   userId: string,
   eventType: string,
   severity: 'low' | 'medium' | 'high' | 'critical',
-  details?: any
+  details?: unknown
 ): Promise<void> {
   try {
     const userResult = await db.query(`

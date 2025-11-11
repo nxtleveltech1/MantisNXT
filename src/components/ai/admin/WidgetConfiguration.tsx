@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +39,7 @@ interface WidgetConfig {
   title: string;
   dataSource: {
     type: string;
-    params: Record<string, any>;
+    params: Record<string, unknown>;
   };
   config: {
     colors?: string[];
@@ -49,7 +49,7 @@ interface WidgetConfig {
     filters?: Array<{
       field: string;
       operator: string;
-      value: any;
+      value: unknown;
     }>;
   };
   refreshInterval?: number;
@@ -127,7 +127,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
   });
 
   const [filters, setFilters] = useState<FilterRule[]>([]);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<unknown[]>([]);
 
   // Mock preview data based on widget type
   const generatePreviewData = () => {
@@ -335,7 +335,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
               <Label htmlFor="widget-type">Widget Type</Label>
               <Select
                 value={config.type}
-                onValueChange={(value: any) => setConfig({ ...config, type: value })}
+                onValueChange={(value: unknown) => setConfig({ ...config, type: value })}
               >
                 <SelectTrigger id="widget-type">
                   <SelectValue />
@@ -533,7 +533,7 @@ export default function WidgetConfiguration({ dashboardId }: { dashboardId: stri
                 <div className="text-center">
                   <Eye className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    Click "Preview" to see your widget
+                    Click &ldquo;Preview&rdquo; to see your widget
                   </p>
                 </div>
               </div>

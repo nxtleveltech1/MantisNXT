@@ -5,7 +5,8 @@
  * Target: 70-90% response time reduction (1200ms → 120-360ms)
  */
 
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import type { UseQueryResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { QueryKeys } from '@/lib/cache/patterns';
 
 /**

@@ -16,7 +16,7 @@ export interface IntegrationMapping {
   internal_id: string;
   external_id: string;
   external_model?: string;
-  mapping_data?: any;
+  mapping_data?: unknown;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -32,11 +32,11 @@ export interface SyncState {
   direction: SyncDirection;
   last_sync_at?: string;
   last_sync_status: SyncStatus;
-  sync_data?: any;
+  sync_data?: unknown;
   sync_hash?: string;
   error_message?: string;
   retry_count: number;
-  metadata?: any;
+  metadata?: unknown;
   created_at: string;
   updated_at: string;
 }
@@ -46,8 +46,8 @@ export interface CreateMappingParams {
   internalId: string;
   externalId: string;
   externalModel?: string;
-  mappingData?: any;
-  syncData?: any;
+  mappingData?: unknown;
+  syncData?: unknown;
   direction?: SyncDirection;
 }
 
@@ -142,7 +142,7 @@ export class IntegrationMappingService {
     updates: Partial<IntegrationMapping>
   ): Promise<IntegrationMapping> {
     const setClauses: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramIndex = 1;
 
     Object.entries(updates).forEach(([key, value]) => {
@@ -207,7 +207,7 @@ export class IntegrationMappingService {
   ): Promise<IntegrationMapping[]> {
     if (mappings.length === 0) return [];
 
-    const values: any[] = [];
+    const values: unknown[] = [];
     const placeholders: string[] = [];
     let paramIndex = 1;
 
@@ -265,7 +265,7 @@ export class IntegrationMappingService {
     entity_id: string;
     external_id: string;
     direction: SyncDirection;
-    sync_data?: any;
+    sync_data?: unknown;
     external_model?: string;
   }): Promise<void> {
     const tableName = await this.getTableName();
@@ -319,7 +319,7 @@ export class IntegrationMappingService {
     entityType: EntityType,
     externalId: string,
     status: SyncStatus,
-    syncData?: any,
+    syncData?: unknown,
     errorMessage?: string
   ): Promise<void> {
     const tableName = await this.getTableName();
@@ -330,7 +330,7 @@ export class IntegrationMappingService {
       'last_sync_at = NOW()',
       'updated_at = NOW()'
     ];
-    const values: any[] = [status];
+    const values: unknown[] = [status];
     let paramIndex = 2;
 
     if (syncData) {
@@ -391,7 +391,7 @@ export class IntegrationMappingService {
 
     let sql = `SELECT * FROM ${tableName}
                WHERE connector_id = $1 AND last_sync_status = 'failed'`;
-    const params: any[] = [this.connectorId];
+    const params: unknown[] = [this.connectorId];
 
     if (entityType) {
       sql += ' AND entity_type = $2';
@@ -415,9 +415,9 @@ export class IntegrationMappingService {
     status: SyncStatus;
     operation: 'create' | 'update' | 'delete' | 'read' | 'sync';
     recordsAffected?: number;
-    errorDetails?: any;
-    requestPayload?: any;
-    responsePayload?: any;
+    errorDetails?: unknown;
+    requestPayload?: unknown;
+    responsePayload?: unknown;
     durationMs?: number;
   }): Promise<void> {
     try {
@@ -460,9 +460,9 @@ export class IntegrationMappingService {
     status?: SyncStatus;
     limit?: number;
     offset?: number;
-  }): Promise<any[]> {
+  }): Promise<unknown[]> {
     let sql = `SELECT * FROM sync_log WHERE connector_id = $1`;
-    const values: any[] = [this.connectorId];
+    const values: unknown[] = [this.connectorId];
     let paramIndex = 2;
 
     if (params.entityType) {

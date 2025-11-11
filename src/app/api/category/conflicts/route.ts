@@ -33,7 +33,7 @@ export async function GET() {
       return NextResponse.json({ success: true, conflicts: [] })
     }
 
-    const { rows } = await dbQuery<ConflictRow & { proposals: any }>(`
+    const { rows } = await dbQuery<ConflictRow & { proposals: unknown }>(`
       SELECT
         sp.supplier_product_id,
         sp.supplier_id,

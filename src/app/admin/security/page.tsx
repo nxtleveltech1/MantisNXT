@@ -5,7 +5,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Shield, Eye, Lock, AlertTriangle, CheckCircle, XCircle, Activity, Users, FileText, Settings } from 'lucide-react';
+import { Shield, Eye, Lock, AlertTriangle, CheckCircle, XCircle, FileText, Settings } from 'lucide-react';
 
 interface SecurityMetric {
   title: string;

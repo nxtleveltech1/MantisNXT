@@ -3,7 +3,7 @@
  * GET /api/v1/products - List products for AI forecasting
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       WHERE organization_id = $1
     `;
 
-    const params: any[] = [user.org_id];
+    const params: unknown[] = [user.org_id];
     let paramIndex = 2;
 
     // Add search filter if provided

@@ -4,7 +4,7 @@
  * DELETE /api/v1/ai/services/[id] - delete service
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { authenticateRequest, handleAIError, successResponse, noContentResponse } from '@/lib/ai/api-utils';
 import { deleteService, updateService } from '../_store';
 

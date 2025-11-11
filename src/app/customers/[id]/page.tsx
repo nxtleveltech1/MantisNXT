@@ -48,7 +48,7 @@ interface Customer {
     postal_code?: string;
     country?: string;
   } | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   tags: string[] | null;
   created_at: string;
   updated_at: string;
@@ -98,9 +98,9 @@ export default function CustomerDetailsPage() {
     if (customerId) {
       fetchCustomerDetails();
     }
-  }, [customerId]);
+  }, [customerId, fetchCustomerDetails]);
 
-  const fetchCustomerDetails = async () => {
+  const fetchCustomerDetails = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -134,7 +134,7 @@ export default function CustomerDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customerId, toast]);
 
   const handleDeleteCustomer = async () => {
     if (!confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
@@ -157,7 +157,7 @@ export default function CustomerDetailsPage() {
       } else {
         throw new Error(data.error);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: error.message || "Failed to delete customer",

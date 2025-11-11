@@ -288,6 +288,9 @@ export const useRealTimeDashboard = () => {
   }));
 
   // Memoized refetch function to prevent unnecessary re-renders
+  const { refetch: refetchMetrics } = metricsQuery;
+  const { refetch: refetchActivities } = activityQuery;
+
   const refetch = useCallback(async () => {
     if (refetchingRef.current) {
       console.log('⏳ Refetch already in progress, skipping...');
@@ -298,8 +301,8 @@ export const useRealTimeDashboard = () => {
     try {
       // Use Promise.allSettled to handle partial failures gracefully
       const results = await Promise.allSettled([
-        metricsQuery.refetch(),
-        activityQuery.refetch()
+        refetchMetrics(),
+        refetchActivities()
       ]);
 
       const failures = results.filter(result => result.status === 'rejected');
@@ -316,7 +319,7 @@ export const useRealTimeDashboard = () => {
     } finally {
       refetchingRef.current = false;
     }
-  }, [metricsQuery.refetch, activityQuery.refetch]);
+  }, [refetchActivities, refetchMetrics]);
 
   // Update refetch function in state
   useEffect(() => {
@@ -488,7 +491,7 @@ export const useSupplierMutations = () => {
   const queryClient = useQueryClient();
 
   const createSupplier = useMutation({
-    mutationFn: async (supplierData: any) => {
+    mutationFn: async (supplierData: unknown) => {
       console.log('📤 Creating supplier...');
       return fetchWithTimeout('/api/suppliers', {
         method: 'POST',
@@ -507,7 +510,7 @@ export const useSupplierMutations = () => {
       const previousSuppliers = queryClient.getQueryData(['suppliers']);
 
       // Optimistically add new supplier
-      queryClient.setQueryData(['suppliers'], (old: any) => ({
+      queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
         data: [optimisticSupplier, ...(old?.data || [])]
       }));
@@ -518,9 +521,9 @@ export const useSupplierMutations = () => {
       console.log('✅ Supplier created successfully');
 
       // Replace optimistic supplier with real data
-      queryClient.setQueryData(['suppliers'], (old: any) => ({
+      queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.map((supplier: any) =>
+        data: old?.data?.map((supplier: unknown) =>
           supplier.id === context.tempId ? data.data : supplier
         ) || [data.data]
       }));
@@ -539,7 +542,7 @@ export const useSupplierMutations = () => {
   });
 
   const updateSupplier = useMutation({
-    mutationFn: async ({ id, data: supplierData }: { id: string, data: any }) => {
+    mutationFn: async ({ id, data: supplierData }: { id: string, data: unknown }) => {
       console.log('📤 Updating supplier:', id);
       return fetchWithTimeout(`/api/suppliers/${id}`, {
         method: 'PUT',
@@ -556,15 +559,15 @@ export const useSupplierMutations = () => {
       const previousSupplier = queryClient.getQueryData(['supplier', id]);
 
       // Optimistically update list
-      queryClient.setQueryData(['suppliers'], (old: any) => ({
+      queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.map((supplier: any) =>
+        data: old?.data?.map((supplier: unknown) =>
           supplier.id === id ? { ...supplier, ...newData, status: 'updating' } : supplier
         ) || []
       }));
 
       // Optimistically update individual supplier
-      queryClient.setQueryData(['supplier', id], (old: any) => ({
+      queryClient.setQueryData(['supplier', id], (old: unknown) => ({
         ...old,
         ...newData,
         status: 'updating'
@@ -576,9 +579,9 @@ export const useSupplierMutations = () => {
       console.log('✅ Supplier updated successfully');
 
       // Update with real server data
-      queryClient.setQueryData(['suppliers'], (old: any) => ({
+      queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.map((supplier: any) =>
+        data: old?.data?.map((supplier: unknown) =>
           supplier.id === id ? data.data : supplier
         ) || []
       }));
@@ -613,9 +616,9 @@ export const useSupplierMutations = () => {
       const previousSuppliers = queryClient.getQueryData(['suppliers']);
 
       // Optimistically remove supplier
-      queryClient.setQueryData(['suppliers'], (old: any) => ({
+      queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.filter((supplier: any) => supplier.id !== id) || []
+        data: old?.data?.filter((supplier: unknown) => supplier.id !== id) || []
       }));
 
       return { previousSuppliers };

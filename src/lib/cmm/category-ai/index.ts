@@ -61,9 +61,9 @@ export async function suggestCategoriesBatch(
   const effectiveBatchDelay = opts?.batchDelayMs ?? cfg.defaults.batchDelayMs;
   const effectiveBatchSize = opts?.batchSize ?? cfg.defaults.batchSize ?? 10; // larger batches = fewer API calls = faster
   const effectiveOverallTimeout =
-    (opts as any)?.overallTimeoutMs ?? cfg.defaults.overallTimeoutMs ?? 12000; // 12s default for parallel processing
-  const effectiveMaxBatches = (opts as any)?.maxBatches ?? undefined;
-  const effectiveFailFast = (opts as any)?.failFastOnFirstTimeout ?? true;
+    (opts as unknown)?.overallTimeoutMs ?? cfg.defaults.overallTimeoutMs ?? 12000; // 12s default for parallel processing
+  const effectiveMaxBatches = (opts as unknown)?.maxBatches ?? undefined;
+  const effectiveFailFast = (opts as unknown)?.failFastOnFirstTimeout ?? true;
 
   // Apply platform-level max item cap if configured
   const maxItems = cfg.defaults.maxItems;

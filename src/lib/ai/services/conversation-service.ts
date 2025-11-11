@@ -37,7 +37,7 @@ export interface ConversationMessage {
   conversationId: string;
   role: ConversationRole;
   content: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -98,7 +98,7 @@ class ConversationService {
     conversationId: string,
     role: ConversationRole,
     content: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ): Promise<ConversationMessage | null> {
     const result = await this.service.saveMessage(
       orgId,
@@ -233,7 +233,7 @@ class ConversationService {
    * @param conversationId - Conversation ID
    * @returns Merged context from all messages
    */
-  async getConversationContext(conversationId: string): Promise<Record<string, any>> {
+  async getConversationContext(conversationId: string): Promise<Record<string, unknown>> {
     const result = await this.service.getRelevantContext(conversationId);
 
     if (!result.success || !result.data) {

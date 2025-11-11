@@ -9,7 +9,8 @@
  * - Custom limits per route
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { getRedisClient } from '@/lib/cache/redis-client';
 
 export interface RateLimitConfig {

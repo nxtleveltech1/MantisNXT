@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import AppLayout from '@/components/layout/AppLayout'
-import { User, USER_ROLES } from '@/types/auth'
+import type { User} from '@/types/auth';
+import { USER_ROLES } from '@/types/auth'
 import { authProvider } from '@/lib/auth/mock-provider'
 
 import { Button } from '@/components/ui/button'
@@ -52,11 +53,7 @@ export default function UserRolesPage() {
   const [effectiveTo, setEffectiveTo] = useState<Date | undefined>()
   const [hasEndDate, setHasEndDate] = useState(false)
 
-  useEffect(() => {
-    loadUser()
-  }, [userId])
-
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
       setIsLoading(true)
       const currentUser = await authProvider.getCurrentUser()
@@ -80,7 +77,11 @@ export default function UserRolesPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router, userId])
+
+  useEffect(() => {
+    loadUser()
+  }, [loadUser])
 
   const handleSave = async () => {
     if (!user || !selectedRole) return
@@ -90,7 +91,7 @@ export default function UserRolesPage() {
       setError(null)
       setSuccess(null)
 
-      await authProvider.updateUser(userId, { role: selectedRole as any })
+      await authProvider.updateUser(userId, { role: selectedRole as unknown })
       setSuccess('Role assignment updated successfully')
       await loadUser()
     } catch (err) {

@@ -250,7 +250,7 @@ export default function AIServiceHealthMonitor() {
                 {Array.isArray(health?.services)
                   ? health.services.filter((s) => s.status === 'healthy').length
                   : health?.services
-                  ? Object.values(health.services).filter((s: any) => s.status === 'healthy').length
+                  ? Object.values(health.services).filter((s: unknown) => s.status === 'healthy').length
                   : 0}{' '}
                 /{' '}
                 {Array.isArray(health?.services)
@@ -273,7 +273,7 @@ export default function AIServiceHealthMonitor() {
         {(Array.isArray(health?.services)
           ? health.services
           : health?.services
-          ? Object.entries(health.services).map(([serviceName, serviceData]: [string, any]) => ({
+          ? Object.entries(health.services).map(([serviceName, serviceData]: [string, unknown]) => ({
               service: serviceName,
               status: serviceData.status,
               uptime: 0,

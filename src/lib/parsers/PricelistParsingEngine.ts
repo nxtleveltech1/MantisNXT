@@ -14,7 +14,7 @@
 
 import * as XLSX from 'xlsx';
 import { readFile } from 'fs/promises';
-import { extname, basename } from 'path';
+import { basename } from 'path';
 import { createHash } from 'crypto';
 
 // =====================================================
@@ -67,7 +67,7 @@ export interface PricelistItem {
   dimensionsH?: number;
   upcBarcode?: string;
   eanBarcode?: string;
-  rawData: { [key: string]: any };
+  rawData: { [key: string]: unknown };
 }
 
 export interface ColumnMapping {
@@ -84,7 +84,7 @@ export interface ParsingError {
   column?: string;
   message: string;
   severity: 'error' | 'warning';
-  rawValue?: any;
+  rawValue?: unknown;
 }
 
 export interface ParsingWarning {
@@ -92,7 +92,7 @@ export interface ParsingWarning {
   column: string;
   message: string;
   suggestion: string;
-  rawValue?: any;
+  rawValue?: unknown;
 }
 
 // =====================================================
@@ -213,7 +213,7 @@ export class PricelistParsingEngine {
         header: 1,
         raw: false,
         defval: null
-      }) as any[][];
+      }) as unknown[][];
 
       const structure = this.detectSheetStructure(sheetData);
       const columnMapping = this.createColumnMapping(structure.headers);
@@ -268,7 +268,7 @@ export class PricelistParsingEngine {
 
     for (const sheetName of sheetNames) {
       const sheet = workbook.Sheets[sheetName];
-      const sheetData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+      const sheetData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
 
       // Score based on data characteristics
       let score = 0;
@@ -303,7 +303,7 @@ export class PricelistParsingEngine {
   /**
    * Detect the structure of the sheet (header location, data start, etc.)
    */
-  private detectSheetStructure(sheetData: any[][]): {
+  private detectSheetStructure(sheetData: unknown[][]): {
     headerRow: number;
     dataStartRow: number;
     headers: string[];
@@ -482,7 +482,7 @@ export class PricelistParsingEngine {
    * Parse data rows using the column mapping
    */
   private parseDataRows(
-    sheetData: any[][],
+    sheetData: unknown[][],
     structure: { headerRow: number; dataStartRow: number; headers: string[] },
     columnMapping: ColumnMapping
   ): {
@@ -531,7 +531,7 @@ export class PricelistParsingEngine {
   /**
    * Check if a row is effectively empty
    */
-  private isEmptyRow(row: any[]): boolean {
+  private isEmptyRow(row: unknown[]): boolean {
     return !row || row.every(cell => !cell || String(cell).trim() === '');
   }
 
@@ -539,7 +539,7 @@ export class PricelistParsingEngine {
    * Parse a single data row
    */
   private parseRow(
-    row: any[],
+    row: unknown[],
     rowNumber: number,
     columnMapping: ColumnMapping,
     headers: string[]
@@ -569,11 +569,11 @@ export class PricelistParsingEngine {
         );
 
         // Map to item fields
-        (item as any)[this.camelCase(fieldName)] = transformedValue;
+        (item as unknown)[this.camelCase(fieldName)] = transformedValue;
 
       } catch (error) {
         // Store raw value if transformation fails
-        (item as any)[this.camelCase(fieldName)] = rawValue;
+        (item as unknown)[this.camelCase(fieldName)] = rawValue;
       }
     }
 
@@ -583,7 +583,7 @@ export class PricelistParsingEngine {
   /**
    * Transform raw cell value based on field type
    */
-  private transformValue(rawValue: any, fieldName: string, transformFunction?: string): any {
+  private transformValue(rawValue: unknown, fieldName: string, transformFunction?: string): unknown {
     if (rawValue === null || rawValue === undefined || rawValue === '') return undefined;
 
     const stringValue = String(rawValue).trim();
@@ -747,7 +747,7 @@ export class PricelistParsingEngine {
   /**
    * Debug logging helper
    */
-  private debugLog(message: string, data?: any): void {
+  private debugLog(message: string, data?: unknown): void {
     if (this.debug) {
       console.log(`[PricelistParser] ${message}`, data || '');
     }

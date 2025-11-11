@@ -12,38 +12,20 @@ import {
   Edit,
   Trash2,
   FileText,
-  DollarSign,
   Clock,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   MoreHorizontal,
-  ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Calendar,
   Package,
-  Truck,
   Target,
   TrendingUp,
-  AlertCircle,
-  Users,
-  RefreshCw,
   Settings,
   Mail,
-  Phone,
-  Globe,
-  MapPin,
   Building2,
-  Banknote,
-  Percent,
-  FileCheck,
-  FileX,
-  Zap,
   BarChart3,
-  PieChart,
-  Activity,
-  BookOpen,
   Paperclip,
   MessageSquare,
   History,
@@ -51,20 +33,12 @@ import {
   Send,
   Ban,
   Copy,
-  ExternalLink,
-  Shield,
   Star,
   Receipt,
-  CreditCard,
-  ShoppingCart,
-  Package2,
-  Warehouse,
   ClipboardCheck,
   Calculator,
   List,
-  Grid3X3,
-  SortAsc,
-  SortDesc
+  Grid3X3
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -86,7 +60,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu"
@@ -114,11 +87,7 @@ import { formatCurrency, formatDate, formatDateTime, getStatusColor, cn } from "
 import type {
   PurchaseOrder,
   POFilters,
-  PODashboardMetrics,
-  POAnalytics,
-  BulkOperation,
-  POTemplate,
-  ReorderPoint
+  PODashboardMetrics
 } from "@/types/purchase-order"
 
 // Mock data - in real app this would come from API
@@ -2056,7 +2025,7 @@ function PurchaseOrderDetailView({
                       </div>
                       {step.comments && (
                         <p className="text-sm text-muted-foreground mt-1">
-                          "{step.comments}"
+                          &ldquo;{step.comments}&rdquo;
                         </p>
                       )}
                     </div>

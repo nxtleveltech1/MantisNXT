@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 
 // System Health API Endpoint
 export async function GET(request: NextRequest) {
@@ -263,7 +264,7 @@ async function gatherSystemData() {
   }
 }
 
-function calculateOverallStatus(services: any[]): string {
+function calculateOverallStatus(services: unknown[]): string {
   const hasError = services.some(s => s.status === 'error')
   const hasWarning = services.some(s => s.status === 'warning')
   
@@ -272,7 +273,7 @@ function calculateOverallStatus(services: any[]): string {
   return 'healthy'
 }
 
-function calculateHealthScore(services: any[], databases: any[]): number {
+function calculateHealthScore(services: unknown[], databases: unknown[]): number {
   let score = 100
   
   services.forEach(service => {

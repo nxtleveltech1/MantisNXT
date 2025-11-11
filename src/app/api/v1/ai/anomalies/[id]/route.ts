@@ -5,7 +5,7 @@
  * DELETE /api/v1/ai/anomalies/[id] - Mark as false positive
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

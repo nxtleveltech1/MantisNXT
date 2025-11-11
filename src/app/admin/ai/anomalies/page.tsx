@@ -1,5 +1,5 @@
 import React from 'react';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import AppLayout from '@/components/layout/AppLayout';
 import AnomalyDetector from '@/components/ai/admin/AnomalyDetector';
 import {
@@ -10,7 +10,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Activity, AlertTriangle } from 'lucide-react';
 
 export const metadata: Metadata = {

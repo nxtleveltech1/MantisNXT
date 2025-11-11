@@ -4,7 +4,7 @@
  * Provides various performance optimization utilities for the application
  */
 
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 
 export interface PerformanceMetrics {
   queryTime: number;

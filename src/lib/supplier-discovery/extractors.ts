@@ -2,10 +2,11 @@
  * Data Extraction Engine for Supplier Discovery
  */
 
-import puppeteer, { Browser } from 'puppeteer';
+import type { Browser } from 'puppeteer';
+import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
-import { ExtractionResult, SupplierDiscoveryRequest } from './types';
+import type { ExtractionResult, SupplierDiscoveryRequest } from './types';
 import { EXTRACTION_PATTERNS, USER_AGENTS, DISCOVERY_CONFIG } from './config';
 
 export class DataExtractor {

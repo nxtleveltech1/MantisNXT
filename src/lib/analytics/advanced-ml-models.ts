@@ -2,8 +2,8 @@
 // Advanced Machine Learning Models for MantisNXT Platform
 // Implements sophisticated ML algorithms for intelligent analytics
 
-import { Pool } from 'pg';
-import { SupplierPerformance, InventoryItem, StockMovement } from '@/types';
+import type { Pool } from 'pg';
+import type { SupplierPerformance} from '@/types';
 
 // Advanced ML Types
 export interface NeuralNetworkPrediction {
@@ -36,7 +36,7 @@ export interface TimeSeriesForecast {
     algorithm: string;
     trainingData: number;
     lastTraining: Date;
-    parameters: Record<string, any>;
+    parameters: Record<string, unknown>;
   };
 }
 
@@ -536,7 +536,7 @@ export class TimeSeriesForecaster {
     seasonalComponent: number;
     trendComponent: number;
   }> {
-    const predictions: Array<any> = [];
+    const predictions: Array<unknown> = [];
     const today = new Date();
 
     for (let h = 0; h < horizon; h++) {
@@ -604,7 +604,7 @@ export class TimeSeriesForecaster {
 export class EnsemblePredictor {
   private models: Array<{
     name: string;
-    predictor: any;
+    predictor: unknown;
     weight: number;
     performance: number;
   }>;
@@ -613,7 +613,7 @@ export class EnsemblePredictor {
     this.models = [];
   }
 
-  addModel(name: string, predictor: any, weight: number = 1.0) {
+  addModel(name: string, predictor: unknown, weight: number = 1.0) {
     this.models.push({
       name,
       predictor,
@@ -622,7 +622,7 @@ export class EnsemblePredictor {
     });
   }
 
-  async predict(data: any): Promise<EnsemblePrediction> {
+  async predict(data: unknown): Promise<EnsemblePrediction> {
     const predictions = [];
 
     for (const model of this.models) {
@@ -665,7 +665,7 @@ export class EnsemblePredictor {
     };
   }
 
-  private generateEnsembleExplanation(predictions: any[], consensus: number): string {
+  private generateEnsembleExplanation(predictions: unknown[], consensus: number): string {
     const topModel = predictions.reduce((best, current) =>
       current.confidence > best.confidence ? current : best
     );

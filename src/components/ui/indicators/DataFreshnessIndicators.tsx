@@ -10,16 +10,9 @@ import {
   WifiOff,
   AlertCircle,
   CheckCircle,
-  Zap,
   TrendingUp,
-  TrendingDown,
   Activity,
   Radio,
-  Gauge,
-  Timer,
-  Calendar,
-  Database,
-  Eye,
   Sparkles
 } from 'lucide-react';
 import { designTokens } from '../design-system';
@@ -43,8 +36,8 @@ export interface DataChange {
   id: string;
   type: DataChangeType;
   field?: string;
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
   timestamp: Date;
   userId?: string;
   source?: string;
@@ -65,9 +58,12 @@ export interface FreshnessConfig {
 
 // Freshness Calculation Engine
 class FreshnessCalculator {
-  static calculateFreshnessLevel(lastUpdated: Date, config: FreshnessConfig): FreshnessLevel {
-    const now = new Date();
-    const timeDiff = now.getTime() - lastUpdated.getTime();
+  static calculateFreshnessLevel(
+    lastUpdated: Date,
+    config: FreshnessConfig,
+    referenceDate: Date = new Date()
+  ): FreshnessLevel {
+    const timeDiff = referenceDate.getTime() - lastUpdated.getTime();
 
     if (timeDiff <= config.realtimeThreshold) return 'realtime';
     if (timeDiff <= config.freshThreshold) return 'fresh';
@@ -75,9 +71,8 @@ class FreshnessCalculator {
     return 'outdated';
   }
 
-  static getRelativeTimeString(date: Date): string {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+  static getRelativeTimeString(date: Date, referenceDate: Date = new Date()): string {
+    const diffMs = referenceDate.getTime() - date.getTime();
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -143,7 +138,7 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
   onRefresh,
   className = ''
 }) => {
-  const mergedConfig = { ...defaultConfig, ...config };
+  const mergedConfig = useMemo(() => ({ ...defaultConfig, ...config }), [config]);
   const [isHovered, setIsHovered] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -158,14 +153,14 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
     return () => clearInterval(interval);
   }, [mergedConfig.showRelativeTime, mergedConfig.refreshInterval]);
 
-  const freshnessLevel = useMemo(() =>
-    FreshnessCalculator.calculateFreshnessLevel(data.lastUpdated, mergedConfig),
-    [data.lastUpdated, mergedConfig, currentTime]
+  const freshnessLevel = useMemo(
+    () => FreshnessCalculator.calculateFreshnessLevel(data.lastUpdated, mergedConfig, currentTime),
+    [currentTime, data.lastUpdated, mergedConfig]
   );
 
-  const relativeTime = useMemo(() =>
-    FreshnessCalculator.getRelativeTimeString(data.lastUpdated),
-    [data.lastUpdated, currentTime]
+  const relativeTime = useMemo(
+    () => FreshnessCalculator.getRelativeTimeString(data.lastUpdated, currentTime),
+    [currentTime, data.lastUpdated]
   );
 
   const freshnessColor = FreshnessCalculator.getFreshnessColor(freshnessLevel);
@@ -652,7 +647,7 @@ export const DataFreshnessDashboard: React.FC<DataFreshnessDashboardProps> = ({
   onRefreshItem,
   className = ''
 }) => {
-  const mergedConfig = { ...defaultConfig, ...config };
+  const mergedConfig = useMemo(() => ({ ...defaultConfig, ...config }), [config]);
 
   const freshnessStats = useMemo(() => {
     const stats = { realtime: 0, fresh: 0, stale: 0, outdated: 0 };

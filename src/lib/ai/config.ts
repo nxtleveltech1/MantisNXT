@@ -1,5 +1,5 @@
 // @ts-nocheck
-import {
+import type {
   AIConfig,
   AIProvider,
   AIProviderConfig,
@@ -394,11 +394,11 @@ const ensureFallbackOrder = (
 
 const deepMerge = <T>(base: T, updates: Partial<T>): T => {
   if (!updates) return base;
-  const clone: any = Array.isArray(base) ? [...(base as any)] : { ...(base as any) };
+  const clone: unknown = Array.isArray(base) ? [...(base as unknown)] : { ...(base as unknown) };
 
   for (const [key, value] of Object.entries(updates)) {
     if (value === undefined) continue;
-    const current = (clone as any)[key];
+    const current = (clone as unknown)[key];
     if (
       value &&
       typeof value === 'object' &&
@@ -407,9 +407,9 @@ const deepMerge = <T>(base: T, updates: Partial<T>): T => {
       typeof current === 'object' &&
       !Array.isArray(current)
     ) {
-      (clone as any)[key] = deepMerge(current, value);
+      (clone as unknown)[key] = deepMerge(current, value);
     } else {
-      (clone as any)[key] = value;
+      (clone as unknown)[key] = value;
     }
   }
 

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { AuthContext, AuthProvider as AuthProviderType, User, SignInCredentials, SignUpData, AuthResult } from '@/types/auth';
+import type { AuthContext, AuthProvider as AuthProviderType, User, SignInCredentials, SignUpData, AuthResult } from '@/types/auth';
 import { mockAuthProvider } from './mock-provider';
 
 // Create context

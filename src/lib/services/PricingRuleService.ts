@@ -8,8 +8,9 @@
  * Date: 2025-11-02
  */
 
-import { query, withTransaction } from '@/lib/database';
-import { PRICING_TABLES, PricingRule, PricingRuleCondition, PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
+import { query } from '@/lib/database';
+import type { PricingRule} from '@/lib/db/pricing-schema';
+import { PRICING_TABLES, PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
 import { CORE_TABLES } from '@/lib/db/schema-contract';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -101,7 +102,7 @@ export class PricingRuleService {
    */
   static async getAllRules(filter?: PricingRuleFilter): Promise<PricingRule[]> {
     let sql = `SELECT * FROM ${PRICING_TABLES.PRICING_RULES} WHERE 1=1`;
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramCount = 1;
 
     if (filter?.rule_type) {
@@ -164,7 +165,7 @@ export class PricingRuleService {
     }
 
     const updates: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramCount = 1;
 
     if (input.name !== undefined) {
@@ -324,7 +325,7 @@ export class PricingRuleService {
       WHERE p.product_id = $1
       LIMIT 1
     `;
-    const productResult = await query<any>(productSql, [productId]);
+    const productResult = await query<unknown>(productSql, [productId]);
 
     if (productResult.rows.length === 0) {
       throw new Error(`Product ${productId} not found`);
@@ -368,7 +369,7 @@ export class PricingRuleService {
   /**
    * Get rules applicable to a specific product
    */
-  private static async getApplicableRules(product: any): Promise<PricingRule[]> {
+  private static async getApplicableRules(product: unknown): Promise<PricingRule[]> {
     const allRules = await this.getAllRules({ is_active: true });
 
     return allRules.filter(rule => {
@@ -407,7 +408,7 @@ export class PricingRuleService {
   /**
    * Apply a single pricing rule to calculate adjustment
    */
-  private static applyRule(rule: PricingRule, currentPrice: number, cost: number, product: any): number {
+  private static applyRule(rule: PricingRule, currentPrice: number, cost: number, product: unknown): number {
     const config = rule.config;
 
     switch (rule.rule_type) {
@@ -506,7 +507,7 @@ export class PricingRuleService {
   /**
    * Parse database row to PricingRule object
    */
-  private static parseRule(row: any): PricingRule {
+  private static parseRule(row: unknown): PricingRule {
     return {
       ...row,
       config: typeof row.config === 'string' ? JSON.parse(row.config) : row.config,

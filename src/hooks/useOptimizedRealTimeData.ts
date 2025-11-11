@@ -12,10 +12,10 @@ interface OptimizedRealTimeDataOptions {
   maxRetries?: number;
   retryDelayMs?: number;
   onError?: (error: Error) => void;
-  onUpdate?: (data: any) => void;
+  onUpdate?: (data: unknown) => void;
 }
 
-interface RealTimeDataState<T = any> {
+interface RealTimeDataState<T = unknown> {
   data: T | null;
   connected: boolean;
   loading: boolean;
@@ -24,7 +24,7 @@ interface RealTimeDataState<T = any> {
   retryCount: number;
 }
 
-export function useOptimizedRealTimeData<T = any>({
+export function useOptimizedRealTimeData<T = unknown>({
   table,
   autoReconnect = true,
   debounceMs = 1000,
@@ -46,6 +46,7 @@ export function useOptimizedRealTimeData<T = any>({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);
+  const connectRef = useRef<() => void>(() => {});
 
   /**
    * Debounced update handler to prevent excessive re-renders
@@ -68,6 +69,23 @@ export function useOptimizedRealTimeData<T = any>({
       onUpdate?.(data);
     }, debounceMs);
   }, [debounceMs, onUpdate]);
+
+  /**
+   * Schedule reconnection with exponential backoff
+   */
+  const scheduleReconnect = useCallback(() => {
+    if (isUnmountedRef.current || !autoReconnect) return;
+
+    setState(prev => ({ ...prev, retryCount: prev.retryCount + 1 }));
+
+    const delay = retryDelayMs * Math.pow(2, state.retryCount);
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      if (isUnmountedRef.current) return;
+      console.log(`🔄 Attempting to reconnect to table: ${table} (attempt ${state.retryCount + 1})`);
+      connectRef.current();
+    }, delay);
+  }, [autoReconnect, retryDelayMs, state.retryCount, table]);
 
   /**
    * Connect to WebSocket with error handling
@@ -163,24 +181,11 @@ export function useOptimizedRealTimeData<T = any>({
 
       onError?.(err instanceof Error ? err : new Error(errorMsg));
     }
-  }, [table, autoReconnect, maxRetries, onError, debouncedUpdate, state.retryCount]);
+  }, [autoReconnect, debouncedUpdate, maxRetries, onError, scheduleReconnect, state.retryCount, table]);
 
-  /**
-   * Schedule reconnection with exponential backoff
-   */
-  const scheduleReconnect = useCallback(() => {
-    if (isUnmountedRef.current || !autoReconnect) return;
-
-    setState(prev => ({ ...prev, retryCount: prev.retryCount + 1 }));
-
-    const delay = retryDelayMs * Math.pow(2, state.retryCount);
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      if (isUnmountedRef.current) return;
-      console.log(`🔄 Attempting to reconnect to table: ${table} (attempt ${state.retryCount + 1})`);
-      connect();
-    }, delay);
-  }, [autoReconnect, retryDelayMs, state.retryCount, table, connect]);
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   /**
    * Manual reconnection

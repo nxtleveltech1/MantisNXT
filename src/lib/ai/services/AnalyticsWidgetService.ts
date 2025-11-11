@@ -26,8 +26,8 @@ export interface AnalyticsWidget {
   dashboardId: string;
   widgetType: WidgetType;
   metricType: AnalyticsMetricType;
-  config: Record<string, any>;
-  query: Record<string, any>;
+  config: Record<string, unknown>;
+  query: Record<string, unknown>;
   refreshIntervalSeconds: number;
   positionX: number;
   positionY: number;
@@ -41,8 +41,8 @@ export interface CreateWidgetData {
   dashboardId: string;
   widgetType: WidgetType;
   metricType: AnalyticsMetricType;
-  config?: Record<string, any>;
-  query?: Record<string, any>;
+  config?: Record<string, unknown>;
+  query?: Record<string, unknown>;
   refreshIntervalSeconds?: number;
   positionX?: number;
   positionY?: number;
@@ -53,8 +53,8 @@ export interface CreateWidgetData {
 export interface UpdateWidgetData {
   widgetType?: WidgetType;
   metricType?: AnalyticsMetricType;
-  config?: Record<string, any>;
-  query?: Record<string, any>;
+  config?: Record<string, unknown>;
+  query?: Record<string, unknown>;
   refreshIntervalSeconds?: number;
 }
 
@@ -134,7 +134,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
       'widget.update',
       async () => {
         const setClauses: string[] = [];
-        const values: any[] = [];
+        const values: unknown[] = [];
         let paramIndex = 1;
 
         if (updates.widgetType !== undefined) {
@@ -274,7 +274,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
   async fetchWidgetData(
     widgetId: string,
     options?: AIServiceRequestOptions,
-  ): Promise<AIServiceResponse<any>> {
+  ): Promise<AIServiceResponse<unknown>> {
     return this.executeOperation(
       'widget.fetchData',
       async () => {
@@ -306,7 +306,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
   async refreshWidget(
     widgetId: string,
     options?: AIServiceRequestOptions,
-  ): Promise<AIServiceResponse<any>> {
+  ): Promise<AIServiceResponse<unknown>> {
     return this.fetchWidgetData(widgetId, options);
   }
 
@@ -381,7 +381,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async executeWidgetQuery(
     widget: AnalyticsWidget,
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { metricType, query, config } = widget;
 
     switch (metricType) {
@@ -407,8 +407,8 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchSalesData(
     orgId: string,
-    query: Record<string, any>,
-  ): Promise<any> {
+    query: Record<string, unknown>,
+  ): Promise<unknown> {
     // Simplified sales query - would be more complex in production
     const result = await db.query(
       `
@@ -431,8 +431,8 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchInventoryData(
     orgId: string,
-    query: Record<string, any>,
-  ): Promise<any> {
+    query: Record<string, unknown>,
+  ): Promise<unknown> {
     const result = await db.query(
       `
       SELECT
@@ -453,8 +453,8 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchSupplierPerformanceData(
     orgId: string,
-    query: Record<string, any>,
-  ): Promise<any> {
+    query: Record<string, unknown>,
+  ): Promise<unknown> {
     const result = await db.query(
       `
       SELECT
@@ -474,8 +474,8 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchCustomerBehaviorData(
     orgId: string,
-    query: Record<string, any>,
-  ): Promise<any> {
+    query: Record<string, unknown>,
+  ): Promise<unknown> {
     const result = await db.query(
       `
       SELECT
@@ -497,8 +497,8 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchFinancialData(
     orgId: string,
-    query: Record<string, any>,
-  ): Promise<any> {
+    query: Record<string, unknown>,
+  ): Promise<unknown> {
     // Placeholder - would integrate with actual financial tables
     return {
       revenue: 0,
@@ -512,8 +512,8 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
    */
   private async fetchOperationalData(
     orgId: string,
-    query: Record<string, any>,
-  ): Promise<any> {
+    query: Record<string, unknown>,
+  ): Promise<unknown> {
     // Placeholder - would integrate with actual operational tables
     return {
       efficiency: 0,
@@ -525,7 +525,7 @@ export class AnalyticsWidgetService extends AIServiceBase<AIServiceRequestOption
   /**
    * Map database row to AnalyticsWidget
    */
-  private mapWidgetRow(row: any): AnalyticsWidget {
+  private mapWidgetRow(row: unknown): AnalyticsWidget {
     return {
       id: row.id,
       orgId: row.org_id,

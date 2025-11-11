@@ -20,13 +20,9 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Plus,
-  Minus,
   Calendar as CalendarIcon,
   Search,
   Building2,
-  Package,
-  DollarSign,
-  FileText,
   CheckCircle,
   AlertTriangle,
   X
@@ -122,7 +118,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
     { number: 4, title: 'Review & Submit', description: 'Review and validate order' }
   ]
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -143,7 +139,7 @@ const POCreationWizard: React.FC<POCreationWizardProps> = ({ open, onClose }) =>
     setLineItems(prev => prev.filter(item => item.id !== id))
   }
 
-  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
+  const updateLineItem = (id: string, field: keyof LineItem, value: unknown) => {
     setLineItems(prev => prev.map(item => {
       if (item.id === id) {
         const updated = { ...item, [field]: value }

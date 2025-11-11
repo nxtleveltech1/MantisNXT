@@ -4,7 +4,7 @@
  * PATCH /api/v1/ai/conversations/[conversationId]/context
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

@@ -11,7 +11,7 @@ export interface WebSearchResult {
   publishedDate?: string;
   relevanceScore: number;
   snippet?: string;
-  extractedData?: any; // For compatibility with legacy SearchResult
+  extractedData?: unknown; // For compatibility with legacy SearchResult
 }
 
 export interface WebSearchOptions {
@@ -131,7 +131,7 @@ export class AIWebSearchService {
 
     const data = await response.json();
 
-    return (data.organic || []).map((result: any, index: number) => ({
+    return (data.organic || []).map((result: unknown, index: number) => ({
       title: result.title || '',
       description: result.snippet || '',
       url: result.link || '',
@@ -178,7 +178,7 @@ export class AIWebSearchService {
 
     const data = await response.json();
 
-    return (data.results || []).map((result: any, index: number) => ({
+    return (data.results || []).map((result: unknown, index: number) => ({
       title: result.title || '',
       description: result.content || '',
       url: result.url || '',
@@ -221,7 +221,7 @@ export class AIWebSearchService {
 
     const data = await response.json();
 
-    return (data.items || []).map((result: any, index: number) => ({
+    return (data.items || []).map((result: unknown, index: number) => ({
       title: result.title || '',
       description: result.snippet || '',
       url: result.link || '',
@@ -310,7 +310,7 @@ export class AIWebSearchService {
   /**
    * Calculate relevance score for search results
    */
-  private calculateRelevanceScore(result: any, index: number): number {
+  private calculateRelevanceScore(result: unknown, index: number): number {
     let score = 0.9 - index * 0.05; // Base score decreases with position
 
     // Boost score if title/description contains supplier-related keywords

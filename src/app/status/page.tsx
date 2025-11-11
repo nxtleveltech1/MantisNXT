@@ -5,19 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
 import {
   CheckCircle,
   XCircle,
   AlertTriangle,
   RefreshCw,
-  Clock,
   Database,
   Server,
   Activity,
-  Monitor,
-  MemoryStick,
-  HardDrive
+  Monitor
 } from 'lucide-react'
 
 interface HealthData {

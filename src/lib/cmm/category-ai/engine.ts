@@ -123,7 +123,7 @@ Return ONLY valid JSON matching this schema:
     });
     const model = anthropic(modelName || 'claude-3-5-sonnet-20241022');
     try {
-      const opts: any = {
+      const opts: unknown = {
         model,
         schema: BatchCategorySuggestionSchema,
         prompt,
@@ -140,13 +140,13 @@ Return ONLY valid JSON matching this schema:
         `[engine] runProviderBatch success (anthropic schema) provider=${provider.provider} model=${modelName} suggestions=${(result.object as BatchSuggestion | null)?.suggestions?.length ?? 0}`
       );
       return (result.object as BatchSuggestion | null) ?? null;
-    } catch (err: any) {
+    } catch (err: unknown) {
       // JSON-mode fallback
       mark('providerFallbacks');
       const jsonPrompt = `${prompt}
 
 IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
-      const textOpts: any = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
+      const textOpts: unknown = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
       if (!isReasoningModel(modelName)) textOpts.temperature = 0.1;
       const text = await withTimeout(
         generateText(textOpts),
@@ -169,7 +169,7 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
   const model = openai(modelName || 'gpt-4o-mini');
   try {
     if (supportsJsonSchema(modelName)) {
-      const opts: any = {
+      const opts: unknown = {
         model,
         schema: BatchCategorySuggestionSchema,
         prompt,
@@ -192,7 +192,7 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
       const jsonPrompt = `${prompt}
 
 IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
-      const textOpts: any = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
+      const textOpts: unknown = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
       if (!isReasoningModel(modelName)) textOpts.temperature = 0.1;
       const text = await withTimeout(
         generateText(textOpts),
@@ -205,7 +205,7 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
       );
       return parsed;
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(
       `[engine] runProviderBatch primary attempt failed provider=${provider.provider} model=${modelName}:`,
       err
@@ -215,7 +215,7 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
     const jsonPrompt = `${prompt}
 
 IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
-    const textOpts: any = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
+    const textOpts: unknown = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
     if (!isReasoningModel(modelName)) textOpts.temperature = 0.1;
     const text = await withTimeout(
       generateText(textOpts),
@@ -282,7 +282,7 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
     });
     const model = anthropic(modelName || 'claude-3-5-sonnet-20241022');
     try {
-      const opts: any = {
+      const opts: unknown = {
         model,
         schema: CategorySuggestionSchema,
         prompt,
@@ -314,7 +314,7 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
   const model = openai(modelName || 'gpt-4o-mini');
   try {
     if (supportsJsonSchema(modelName)) {
-      const opts: any = {
+      const opts: unknown = {
         model,
         schema: CategorySuggestionSchema,
         prompt,

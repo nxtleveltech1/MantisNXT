@@ -2,7 +2,8 @@
  * POST /api/spp/validate - Validate a pricelist upload
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { pricelistService } from '@/lib/services/PricelistService';
 import { z } from 'zod';
 

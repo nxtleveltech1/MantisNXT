@@ -3,7 +3,8 @@
  * POST /api/v1/ai/config/[service]/models
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { authenticateRequest, extractServiceType, handleAIError, successResponse } from '@/lib/ai/api-utils'
 import { getSupportedModels, normalizeModelForProvider, normalizeProviderKey } from '@/lib/ai/model-utils'
 
@@ -18,7 +19,7 @@ async function listOpenAIModels(baseUrl: string, apiKey: string, abort: AbortSig
   if (!res.ok) throw new Error(`OpenAI models failed: ${res.status}`)
   const data = await res.json()
   const items = Array.isArray(data?.data) ? data.data : Array.isArray(data?.models) ? data.models : []
-  return items.map((m: any) => String(m.id || m.name)).filter(Boolean)
+  return items.map((m: unknown) => String(m.id || m.name)).filter(Boolean)
 }
 
 async function listAnthropicModels(baseUrl: string, apiKey: string, abort: AbortSignal) {
@@ -32,7 +33,7 @@ async function listAnthropicModels(baseUrl: string, apiKey: string, abort: Abort
   if (!res.ok) throw new Error(`Anthropic models failed: ${res.status}`)
   const data = await res.json()
   const items = Array.isArray(data?.data) ? data.data : Array.isArray(data?.models) ? data.models : []
-  return items.map((m: any) => String(m.id || m.name)).filter(Boolean)
+  return items.map((m: unknown) => String(m.id || m.name)).filter(Boolean)
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ service: string }> }) {

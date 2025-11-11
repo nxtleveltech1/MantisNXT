@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ type ServiceType = 'demand_forecasting' | 'anomaly_detection' | 'supplier_scorin
 interface AIServiceConfig {
   id: string;
   service_type: ServiceType;
-  config: any;
+  config: unknown;
   enabled: boolean;
 }
 
@@ -97,7 +97,7 @@ export default function UnifiedServicePanel() {
   } | null>(null);
 
   const updateConfig = useMutation({
-    mutationFn: async ({ serviceType, payload }: { serviceType: ServiceType; payload: any }) => {
+    mutationFn: async ({ serviceType, payload }: { serviceType: ServiceType; payload: unknown }) => {
       const res = await fetch(`/api/v1/ai/config/${serviceType}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -139,7 +139,7 @@ export default function UnifiedServicePanel() {
         }
       });
     },
-    onError: (e: any) => toast.error(e?.message || 'Failed to save provider'),
+    onError: (e: unknown) => toast.error(e?.message || 'Failed to save provider'),
   });
 
   // Auto-migration disabled - circuit breaker protection
@@ -193,7 +193,7 @@ export default function UnifiedServicePanel() {
     });
   };
 
-  const addProviderInstance = (serviceType: ServiceType, cfg: any) => {
+  const addProviderInstance = (serviceType: ServiceType, cfg: unknown) => {
     const form = getForm(serviceType);
     const isWebSearchProvider = ['serper', 'tavily', 'google_search'].includes(form.provider);
     
@@ -298,7 +298,7 @@ export default function UnifiedServicePanel() {
             return next;
           });
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
           // Rollback optimistic update on error
           queryClient.invalidateQueries({ queryKey: ['ai-configs'] });
           toast.error(`Failed to add provider: ${error?.message || 'Unknown error'}`);
@@ -308,7 +308,7 @@ export default function UnifiedServicePanel() {
     );
   };
 
-  const deleteProviderInstance = (serviceType: ServiceType, cfg: any, instanceId: string) => {
+  const deleteProviderInstance = (serviceType: ServiceType, cfg: unknown, instanceId: string) => {
     const instances: ProviderInstance[] = cfg.providerInstances || [];
     const updatedInstances = instances.filter(i => i.id !== instanceId);
     
@@ -340,7 +340,7 @@ export default function UnifiedServicePanel() {
     });
   };
 
-  const saveEditedInstance = (serviceType: ServiceType, cfg: any, instanceId: string) => {
+  const saveEditedInstance = (serviceType: ServiceType, cfg: unknown, instanceId: string) => {
     if (!editForm) return;
 
     const instances: ProviderInstance[] = cfg.providerInstances || [];
@@ -407,7 +407,7 @@ export default function UnifiedServicePanel() {
           };
         });
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e?.message || 'Connection failed');
       
       // Update connection status in cache
@@ -430,7 +430,7 @@ export default function UnifiedServicePanel() {
     }
   };
 
-  const toggleProviderInstance = (serviceType: ServiceType, cfg: any, instanceId: string, enabled: boolean) => {
+  const toggleProviderInstance = (serviceType: ServiceType, cfg: unknown, instanceId: string, enabled: boolean) => {
     const instances: ProviderInstance[] = cfg.providerInstances || [];
     const updatedInstances = instances.map(i => i.id === instanceId ? { ...i, enabled } : i);
 
@@ -445,7 +445,7 @@ export default function UnifiedServicePanel() {
     });
   };
 
-  const setActiveProvider = (serviceType: ServiceType, cfg: any, instanceId: string) => {
+  const setActiveProvider = (serviceType: ServiceType, cfg: unknown, instanceId: string) => {
     updateConfig.mutate({
       serviceType,
       payload: {
@@ -606,7 +606,7 @@ export default function UnifiedServicePanel() {
                         });
                         if (!res.ok) throw new Error(await res.text());
                         toast.success('Connection test successful');
-                      } catch (e: any) {
+                      } catch (e: unknown) {
                         toast.error(e?.message || 'Connection test failed');
                       }
                     }}

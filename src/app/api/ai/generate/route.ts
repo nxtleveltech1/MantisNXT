@@ -1,8 +1,10 @@
 import { createHash } from 'crypto'
 import { ReadableStream } from 'node:stream/web'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'
+import type { RequestContext } from '@/lib/api/middleware';
+import { ApiMiddleware } from '@/lib/api/middleware'
 import {
   AITextService,
   type StreamingResult,
@@ -26,9 +28,9 @@ interface GenerationHistoryRecord {
   model?: string
   usage?: AIUsageMetrics
   costInCents?: number
-  input: Record<string, any>
+  input: Record<string, unknown>
   output?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   templateId?: string
   templateVariant?: string
 }
@@ -344,7 +346,7 @@ function preparePrompt(
 function renderTemplateForGeneration(
   template: TemplateOptions,
   baseOptions: TextGenerationOptions
-): { prompt: string; metadata?: Record<string, any>; variant?: string } {
+): { prompt: string; metadata?: Record<string, unknown>; variant?: string } {
   const rendered = textService.getPromptManager().renderTemplate(template.id, {
     variables: template.variables,
     context: template.context,
@@ -455,7 +457,7 @@ function applyPromptOptions(prompt: string, options: TextGenerationOptions): Tex
   }
 }
 
-function buildUserMetadata(context: RequestContext): Record<string, any> | undefined {
+function buildUserMetadata(context: RequestContext): Record<string, unknown> | undefined {
   if (!context.user) return undefined
   return {
     user: {
@@ -468,9 +470,9 @@ function buildUserMetadata(context: RequestContext): Record<string, any> | undef
 }
 
 function mergeMetadata(
-  ...sources: Array<Record<string, any> | undefined>
-): Record<string, any> | undefined {
-  const merged: Record<string, any> = {}
+  ...sources: Array<Record<string, unknown> | undefined>
+): Record<string, unknown> | undefined {
+  const merged: Record<string, unknown> = {}
   for (const source of sources) {
     if (!source) continue
     for (const [key, value] of Object.entries(source)) {
@@ -480,7 +482,7 @@ function mergeMetadata(
   return Object.keys(merged).length ? merged : undefined
 }
 
-function buildMeta(response: { requestId: string; durationMs: number; provider: string }): Record<string, any> {
+function buildMeta(response: { requestId: string; durationMs: number; provider: string }): Record<string, unknown> {
   return {
     requestId: response.requestId,
     processingTime: response.durationMs,
@@ -492,12 +494,12 @@ function storeHistory(params: {
   mode: GenerationMode
   requestId: string
   promptHash: string
-  payload: Record<string, any>
+  payload: Record<string, unknown>
   response: {
     provider: string
     model?: string
     usage?: AIUsageMetrics
-    data?: any
+    data?: unknown
   }
   template?: { id: string; variant?: string }
 }): GenerationHistoryRecord {
@@ -543,8 +545,8 @@ function attachStreamingHistory(
   context: {
     mode: GenerationMode
     prompt: string
-    payload: Record<string, any>
-    metadata?: Record<string, any>
+    payload: Record<string, unknown>
+    metadata?: Record<string, unknown>
     template?: { id: string; variant?: string }
   }
 ): void {

@@ -316,7 +316,7 @@ export function getErrorSeverity(error: Error | string): 'low' | 'medium' | 'hig
 /**
  * Sanitize error for logging (remove sensitive data)
  */
-export function sanitizeError(error: Error): Record<string, any> {
+export function sanitizeError(error: Error): Record<string, unknown> {
   return {
     name: error.name,
     message: error.message,

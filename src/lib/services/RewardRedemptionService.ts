@@ -9,12 +9,11 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
-import {
+import type {
   RewardRedemption,
-  RewardRedemptionInsert,
-  RewardRedemptionUpdate,
   RedeemRewardResult,
-  RedemptionStatus,
+  RedemptionStatus} from '@/types/loyalty';
+import {
   LoyaltyError,
   InsufficientPointsError,
   RewardNotAvailableError,
@@ -688,7 +687,7 @@ export class RewardRedemptionService {
   }> {
     try {
       const conditions: string[] = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
       let paramIndex = 2;
 
       if (filters.customerId) {

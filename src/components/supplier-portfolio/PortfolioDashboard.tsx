@@ -18,11 +18,8 @@ import {
   Package,
   DollarSign,
   TrendingUp,
-  TrendingDown,
-  Sparkles,
   Upload,
   CheckCircle2,
-  AlertCircle,
   BarChart3,
   FileUp,
   ArrowRight,
@@ -34,10 +31,8 @@ import {
   Clock,
   Loader2,
   Users,
-  ShoppingCart,
 } from 'lucide-react'
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { cn, formatCurrency } from '@/lib/utils'
 import NumberTicker from '@/components/magicui/number-ticker'
 
 interface DashboardMetrics {

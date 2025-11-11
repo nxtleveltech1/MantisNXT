@@ -9,12 +9,13 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
-import {
+import type {
   LoyaltyRule,
   LoyaltyRuleInsert,
   LoyaltyRuleUpdate,
   LoyaltyRuleConditions,
-  RuleTriggerType,
+  RuleTriggerType} from '@/types/loyalty';
+import {
   LoyaltyError,
 } from '@/types/loyalty';
 
@@ -37,7 +38,7 @@ export interface RuleContext {
   customerTier?: string;
   customerSegment?: string;
   orderCount?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface RuleEvaluation {
@@ -63,7 +64,7 @@ export interface RuleTestResult {
   pointsMultiplier: number;
   bonusPoints: number;
   totalPoints: number;
-  evaluationDetails: Record<string, any>;
+  evaluationDetails: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -175,7 +176,7 @@ export class LoyaltyRuleService {
       }
 
       const setClauses: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let paramIndex = 1;
 
       if (data.name !== undefined) {
@@ -415,7 +416,7 @@ export class LoyaltyRuleService {
         '(valid_from IS NULL OR valid_from <= NOW())',
         '(valid_until IS NULL OR valid_until > NOW())',
       ];
-      const params: any[] = [programId, orgId];
+      const params: unknown[] = [programId, orgId];
 
       if (triggerType) {
         conditions.push('trigger_type = $3');
@@ -770,7 +771,7 @@ export class LoyaltyRuleService {
       if (!context.customerTier) {
         return false;
       }
-      if (!conditions.customer_tier.includes(context.customerTier as any)) {
+      if (!conditions.customer_tier.includes(context.customerTier as unknown)) {
         return false;
       }
     }
@@ -816,8 +817,8 @@ export class LoyaltyRuleService {
   private static getEvaluationDetails(
     conditions: LoyaltyRuleConditions,
     context: RuleContext
-  ): Record<string, any> {
-    const details: Record<string, any> = {};
+  ): Record<string, unknown> {
+    const details: Record<string, unknown> = {};
 
     if (conditions.min_order_amount !== undefined) {
       details.minOrderAmount = {
@@ -845,7 +846,7 @@ export class LoyaltyRuleService {
         actual: context.customerTier,
         met:
           context.customerTier !== undefined &&
-          conditions.customer_tier.includes(context.customerTier as any),
+          conditions.customer_tier.includes(context.customerTier as unknown),
       };
     }
 

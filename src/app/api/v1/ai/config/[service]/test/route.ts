@@ -3,7 +3,7 @@
  * POST /api/v1/ai/config/[service]/test
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

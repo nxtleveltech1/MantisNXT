@@ -376,8 +376,8 @@ export class AnomalyDetectionService extends AIServiceBase<AIServiceRequestOptio
    * Get AI recommendations for an anomaly
    */
   private async getAIRecommendations(
-    service: any,
-    runtimeOptions: any,
+    service: unknown,
+    runtimeOptions: unknown,
     anomaly: Anomaly,
   ): Promise<string[]> {
     const prompt = `

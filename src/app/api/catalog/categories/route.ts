@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query as dbQuery, withTransaction } from '@/lib/database/unified-connection'
 
 export async function GET() {
@@ -18,10 +19,10 @@ export async function GET() {
 
     // Combine and de-duplicate by id
     const coreList = coreRes.rows.map(r => ({ id: r.category_id, category_id: r.category_id, name: r.name, source: 'core' as const }))
-    const rawList = rawRes.rows.map(r => ({ id: r.id, category_id: null as any, name: r.name, source: 'raw' as const }))
+    const rawList = rawRes.rows.map(r => ({ id: r.id, category_id: null as unknown, name: r.name, source: 'raw' as const }))
 
     // De-duplicate by name (case-insensitive), preferring core entries over raw
-    const seenByName = new Map<string, any>()
+    const seenByName = new Map<string, unknown>()
     for (const item of coreList) {
       const key = item.name?.toLowerCase().trim() || ''
       if (key && !seenByName.has(key)) seenByName.set(key, item)

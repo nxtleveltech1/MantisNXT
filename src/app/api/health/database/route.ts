@@ -3,7 +3,8 @@
  * Test live database connectivity and table status
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
 import getDatabaseMetadata from '@/lib/database-info';
 
@@ -124,10 +125,10 @@ export async function GET(request: NextRequest) {
             : 'poor';
 
     const poolStatus = {
-      total: (pool as any).totalCount ?? 0,
-      idle: (pool as any).idleCount ?? 0,
-      waiting: (pool as any).waitingCount ?? 0,
-      active: (pool as any).totalCount ? ((pool as any).totalCount - ((pool as any).idleCount ?? 0)) : 0
+      total: (pool as unknown).totalCount ?? 0,
+      idle: (pool as unknown).idleCount ?? 0,
+      waiting: (pool as unknown).waitingCount ?? 0,
+      active: (pool as unknown).totalCount ? ((pool as unknown).totalCount - ((pool as unknown).idleCount ?? 0)) : 0
     };
 
     const poolHealth = {
@@ -205,7 +206,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function generateRecommendations(missingTables: string[], functionalityTests: any[]): string[] {
+function generateRecommendations(missingTables: string[], functionalityTests: unknown[]): string[] {
   const recommendations: string[] = [];
 
   if (missingTables.length > 0) {

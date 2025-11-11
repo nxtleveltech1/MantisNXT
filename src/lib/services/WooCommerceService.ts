@@ -41,7 +41,7 @@ export interface WooCommerceProduct {
     visible?: boolean;
     variation?: boolean;
   }>;
-  meta_data?: Array<{ key: string; value: any }>;
+  meta_data?: Array<{ key: string; value: unknown }>;
 }
 
 export interface WooCommerceOrder {
@@ -71,7 +71,7 @@ export interface WooCommerceOrder {
     name: string;
     total: string;
   }>;
-  meta_data?: Array<{ key: string; value: any }>;
+  meta_data?: Array<{ key: string; value: unknown }>;
 }
 
 export interface WooCommerceAddress {
@@ -109,7 +109,7 @@ export interface WooCommerceCustomer {
   username?: string;
   billing?: WooCommerceAddress;
   shipping?: WooCommerceAddress;
-  meta_data?: Array<{ key: string; value: any }>;
+  meta_data?: Array<{ key: string; value: unknown }>;
 }
 
 export interface WooCommerceCategory {
@@ -184,8 +184,8 @@ export class WooCommerceService {
   private async request<T>(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     endpoint: string,
-    data?: any,
-    params?: Record<string, any>
+    data?: unknown,
+    params?: Record<string, unknown>
   ): Promise<WooCommerceResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
 
@@ -494,14 +494,14 @@ export class WooCommerceService {
   /**
    * Get total count from response headers
    */
-  getTotalCount(response: WooCommerceResponse<any>): number {
+  getTotalCount(response: WooCommerceResponse<unknown>): number {
     return parseInt(response.headers['x-wp-total'] || '0', 10);
   }
 
   /**
    * Get total pages from response headers
    */
-  getTotalPages(response: WooCommerceResponse<any>): number {
+  getTotalPages(response: WooCommerceResponse<unknown>): number {
     return parseInt(response.headers['x-wp-totalpages'] || '0', 10);
   }
 

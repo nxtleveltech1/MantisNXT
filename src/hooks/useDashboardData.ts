@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRealTimeData } from '@/hooks/useRealTimeData';
 
 interface UseDashboardDataResult {
-  metrics: any | null;
+  metrics: unknown | null;
   loading: boolean;
   error: string | null;
   lastUpdate: string | null;
@@ -47,7 +47,7 @@ export function useDashboardData(): UseDashboardDataResult {
   return {
     metrics: data?.data ?? null,
     loading: isLoading,
-    error: error instanceof Error ? error.message : ((error as any)?.toString?.() ?? null),
+    error: error instanceof Error ? error.message : ((error as unknown)?.toString?.() ?? null),
     lastUpdate: rt.lastUpdate,
     connected: rt.connected,
   };

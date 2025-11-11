@@ -14,7 +14,7 @@ export default function PromotePricelistPage() {
   const supplierNameParam = searchParams?.get('supplierName') ?? ''
   const supplierName = supplierNameParam ? decodeURIComponent(supplierNameParam) : 'Unknown Supplier'
 
-  const handleComplete = (result: any) => {
+  const handleComplete = (result: unknown) => {
     // Show success message and redirect
     const message = `Successfully processed ${result.created + result.updated} items`
     router.push(`/suppliers/${supplierId}?message=${encodeURIComponent(message)}`)

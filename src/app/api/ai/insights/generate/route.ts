@@ -3,7 +3,8 @@
  * Context-aware insight generation with natural language processing
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { SupplierIntelligenceService } from '@/services/ai/SupplierIntelligenceService';
 import { PredictiveAnalyticsService } from '@/services/ai/PredictiveAnalyticsService';
 import { getOrSet, makeKey } from '@/lib/cache/responseCache';
@@ -119,9 +120,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}async function generateContextualInsights(request: any): Promise<{
-  insights: any[];
-  summary: any;
+}async function generateContextualInsights(request: unknown): Promise<{
+  insights: unknown[];
+  summary: unknown;
 }> {
   const insights = [];
   let totalOpportunities = 0;
@@ -195,7 +196,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Generate supplier-specific insights
-async function generateSupplierInsights(supplierId: string, focusAreas: string[], timeFrame: any): Promise<any[]> {
+async function generateSupplierInsights(supplierId: string, focusAreas: string[], timeFrame: unknown): Promise<unknown[]> {
   const insights = [];
 
   try {
@@ -314,7 +315,7 @@ async function generateSupplierInsights(supplierId: string, focusAreas: string[]
 }
 
 // Generate category-specific insights
-async function generateCategoryInsights(categoryId: string, focusAreas: string[], timeFrame: any): Promise<any[]> {
+async function generateCategoryInsights(categoryId: string, focusAreas: string[], timeFrame: unknown): Promise<unknown[]> {
   const insights = [];
 
   // Simulate category-level insights
@@ -346,7 +347,7 @@ async function generateCategoryInsights(categoryId: string, focusAreas: string[]
 }
 
 // Generate portfolio-level insights
-async function generatePortfolioInsights(focusAreas: string[], timeFrame: any): Promise<any[]> {
+async function generatePortfolioInsights(focusAreas: string[], timeFrame: unknown): Promise<unknown[]> {
   const insights = [];
 
   // Portfolio diversification insight
@@ -400,7 +401,7 @@ async function generatePortfolioInsights(focusAreas: string[], timeFrame: any): 
 }
 
 // Generate contract-specific insights
-async function generateContractInsights(contractId: string, focusAreas: string[], timeFrame: any): Promise<any[]> {
+async function generateContractInsights(contractId: string, focusAreas: string[], timeFrame: unknown): Promise<unknown[]> {
   const insights = [];
 
   // Contract renewal insight
@@ -435,7 +436,7 @@ async function generateContractInsights(contractId: string, focusAreas: string[]
 }
 
 // Generate action items for insights
-function generateActionItems(insight: any): any[] {
+function generateActionItems(insight: unknown): unknown[] {
   const actionItems = [];
 
   switch (insight.type) {
@@ -473,7 +474,7 @@ function generateActionItems(insight: any): any[] {
 }
 
 // Validation function
-function validateInsightsRequest(body: any): string | null {
+function validateInsightsRequest(body: unknown): string | null {
   // Validate context
   if (!body.context || !body.context.type) {
     return 'Context with type is required';

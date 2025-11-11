@@ -8,19 +8,18 @@
  * - Track upload status and history
  */
 
-import { PoolClient } from 'pg';
 import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
 import { isFeatureEnabled, FeatureFlag } from '@/lib/feature-flags';
-import {
+import type {
   PricelistUpload,
   PricelistRow,
   PricelistUploadRequest,
   PricelistValidationResult,
   MergeResult,
   MergeProcedureResult,
-  ValidationError,
+  ValidationError} from '../../types/nxt-spp';
+import {
   PricelistUploadSchema,
-  PricelistRowSchema,
   MergeProcedureResultSchema
 } from '../../types/nxt-spp';
 
@@ -66,7 +65,7 @@ export class PricelistService {
     }
 
     // Normalize the first returned row and ensure upload_id exists
-    const first = result.rows[0] as any;
+    const first = result.rows[0] as unknown;
     let normalizedUploadId = first?.upload_id ?? first?.uploadId ?? first?.['upload_id'];
 
     if (!normalizedUploadId) {
@@ -96,7 +95,7 @@ export class PricelistService {
    * Insert pricelist rows in batch
    */
   async insertRows(uploadId: string, rows: PricelistRow[]): Promise<number> {
-    return await withTransaction(async (client: any) => {
+    return await withTransaction(async (client: unknown) => {
       let insertedCount = 0;
 
       // Batch insert for performance (100 rows at a time)
@@ -104,7 +103,7 @@ export class PricelistService {
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize);
 
-        const values: any[] = [];
+        const values: unknown[] = [];
         const placeholders: string[] = [];
         let paramIndex = 1;
 
@@ -128,7 +127,7 @@ export class PricelistService {
             row.category_raw || null,
             row.vat_code || null,
             row.barcode || null,
-            (row as any).attrs_json || null
+            (row as unknown).attrs_json || null
           );
         });
 
@@ -588,7 +587,7 @@ export class PricelistService {
     offset?: number;
   }): Promise<{ uploads: PricelistUpload[]; total: number }> {
     const conditions: string[] = ['1=1'];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (filters?.supplier_id) {
@@ -767,7 +766,7 @@ export class PricelistService {
   private async updateUploadStatus(
     uploadId: string,
     status: PricelistUpload['status'],
-    errorsJson?: Record<string, any>
+    errorsJson?: Record<string, unknown>
   ): Promise<void> {
     const query = `
       UPDATE spp.pricelist_upload

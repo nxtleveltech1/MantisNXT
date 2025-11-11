@@ -237,7 +237,7 @@ export interface AuditLog {
   userId: string;
   action: string;
   resource: string;
-  details?: any;
+  details?: unknown;
   ipAddress?: string;
   userAgent?: string;
   success: boolean;
@@ -248,7 +248,7 @@ export const createAuditLog = (
   action: string,
   resource: string,
   success: boolean = true,
-  details?: any,
+  details?: unknown,
   ipAddress?: string,
   userAgent?: string
 ): AuditLog => {

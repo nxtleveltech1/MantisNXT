@@ -275,7 +275,7 @@ export function safeGet<T>(
 
   try {
     const keys = path.split('.')
-    let current: any = obj
+    let current: unknown = obj
 
     for (const key of keys) {
       if (current == null || typeof current !== 'object') {

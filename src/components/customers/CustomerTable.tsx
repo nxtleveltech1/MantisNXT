@@ -2,14 +2,15 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type {
+  ColumnDef,
+  SortingState} from '@tanstack/react-table';
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   getPaginationRowModel,
   getFilteredRowModel,
-  ColumnDef,
-  SortingState,
   flexRender,
 } from '@tanstack/react-table';
 import {

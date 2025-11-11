@@ -5,7 +5,6 @@
  * Tracks hit rates, response times, and cache effectiveness.
  */
 
-import { QueryClient } from '@tanstack/react-query';
 
 /**
  * Performance metric entry

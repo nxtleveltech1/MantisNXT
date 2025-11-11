@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
-import { TransactionManager, BulkImportProgress } from '@/lib/upload/transaction-manager';
+import type { BulkImportProgress } from '@/lib/upload/transaction-manager';
+import { TransactionManager } from '@/lib/upload/transaction-manager';
 import { UploadErrorHandler } from '@/lib/upload/error-handler';
-import {
+import type {
   BulkImportJob,
   PriceListUpload
 } from '@/types/pricelist-upload';

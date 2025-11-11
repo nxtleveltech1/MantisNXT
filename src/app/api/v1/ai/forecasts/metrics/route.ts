@@ -3,12 +3,14 @@
  * GET /api/v1/ai/forecasts/metrics - Get accuracy metrics by horizon
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
 } from '@/lib/ai/api-utils';
-import { demandForecastService, ForecastHorizon } from '@/lib/ai/services/forecast-service';
+import type { ForecastHorizon } from '@/lib/ai/services/forecast-service';
+import { demandForecastService } from '@/lib/ai/services/forecast-service';
 
 /**
  * GET /api/v1/ai/forecasts/metrics

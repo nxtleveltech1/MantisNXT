@@ -14,7 +14,7 @@ export interface Notification {
   type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
-  data?: any;
+  data?: unknown;
   read: boolean;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   channels: NotificationChannel[];
@@ -60,7 +60,7 @@ export interface NotificationTrigger {
 export interface NotificationCondition {
   field: string;
   operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'regex';
-  value: any;
+  value: unknown;
 }
 
 export interface NotificationAction {
@@ -68,7 +68,7 @@ export interface NotificationAction {
   template: string;
   channels: string[];
   recipients: NotificationRecipient[];
-  data?: any;
+  data?: unknown;
 }
 
 export interface NotificationRecipient {
@@ -173,7 +173,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Handle database changes and check notification rules
    */
-  private async handleDatabaseChange(change: any): Promise<void> {
+  private async handleDatabaseChange(change: unknown): Promise<void> {
     const { operation, table, record } = change;
 
     // Find matching rules
@@ -202,7 +202,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Evaluate notification conditions
    */
-  private async evaluateConditions(conditions: NotificationCondition[], data: any): Promise<boolean> {
+  private async evaluateConditions(conditions: NotificationCondition[], data: unknown): Promise<boolean> {
     if (conditions.length === 0) return true;
 
     for (const condition of conditions) {
@@ -218,7 +218,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Evaluate single condition
    */
-  private evaluateCondition(fieldValue: any, operator: string, expectedValue: any): boolean {
+  private evaluateCondition(fieldValue: unknown, operator: string, expectedValue: unknown): boolean {
     switch (operator) {
       case 'equals':
         return fieldValue === expectedValue;
@@ -272,7 +272,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Execute notification actions
    */
-  private async executeActions(rule: NotificationRule, context: any): Promise<void> {
+  private async executeActions(rule: NotificationRule, context: unknown): Promise<void> {
     for (const action of rule.actions) {
       try {
         switch (action.type) {
@@ -300,7 +300,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Send in-app notification
    */
-  private async sendNotification(rule: NotificationRule, action: NotificationAction, context: any): Promise<void> {
+  private async sendNotification(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
     const { record } = context;
 
     // Process template
@@ -322,7 +322,7 @@ export class LiveNotificationSystem extends EventEmitter {
         read: false,
         priority: rule.priority,
         channels: action.channels.map(channel => ({
-          type: channel as any,
+          type: channel as unknown,
           target: recipient,
           status: 'pending'
         })),
@@ -343,7 +343,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Send email notification
    */
-  private async sendEmail(rule: NotificationRule, action: NotificationAction, context: any): Promise<void> {
+  private async sendEmail(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
     // Email sending logic would go here
     console.log(`📧 Sending email notification for rule ${rule.id}`);
   }
@@ -351,7 +351,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Call webhook
    */
-  private async callWebhook(rule: NotificationRule, action: NotificationAction, context: any): Promise<void> {
+  private async callWebhook(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
     // Webhook calling logic would go here
     console.log(`🔗 Calling webhook for rule ${rule.id}`);
   }
@@ -359,7 +359,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Create task
    */
-  private async createTask(rule: NotificationRule, action: NotificationAction, context: any): Promise<void> {
+  private async createTask(rule: NotificationRule, action: NotificationAction, context: unknown): Promise<void> {
     // Task creation logic would go here
     console.log(`📋 Creating task for rule ${rule.id}`);
   }
@@ -407,7 +407,7 @@ export class LiveNotificationSystem extends EventEmitter {
   /**
    * Process template with context variables
    */
-  private processTemplate(template: string, context: any): string {
+  private processTemplate(template: string, context: unknown): string {
     return template.replace(/\{\{([^}]+)\}\}/g, (match, variable) => {
       const keys = variable.trim().split('.');
       let value = context;

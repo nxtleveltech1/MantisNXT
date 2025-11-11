@@ -3,7 +3,7 @@
  * All amounts in South African Rand (ZAR)
  */
 
-import { BEECategory, SAProvince } from "../currency/zar-formatter";
+import { SAProvince } from "../currency/zar-formatter";
 
 export const ZAR_DASHBOARD_STATS = {
   totalSuppliers: 22,

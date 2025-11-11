@@ -222,7 +222,7 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-green-600" />
-            Today's Summary
+            Today&rsquo;s Summary
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">

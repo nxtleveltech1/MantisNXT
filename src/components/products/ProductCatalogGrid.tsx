@@ -2,14 +2,11 @@
 
 import React, { useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
 import {
   Search,
   Grid3x3,
@@ -21,29 +18,17 @@ import {
   Package,
   AlertTriangle,
   Clock,
-  DollarSign,
   Eye,
   ShoppingCart,
   Heart,
-  Share2,
-  MoreHorizontal,
-  Filter,
   ArrowUpDown,
-  Calendar,
-  Box,
   Building2,
   CheckCircle,
-  AlertCircle,
   XCircle,
-  Zap,
   Sparkles,
-  Target,
   Activity,
   BarChart3,
   Tag,
-  Bookmark,
-  ExternalLink,
-  Info,
   RefreshCw,
   Download
 } from 'lucide-react'
@@ -379,7 +364,7 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
           </Button>
 
           {/* Sort Controls */}
-          <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as unknown)}>
             <SelectTrigger className="w-32 h-10">
               <SelectValue />
             </SelectTrigger>
@@ -416,7 +401,7 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Category Filter */}
                   <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-3 block">Categories</label>
+                    <p className="text-sm font-semibold text-gray-700 mb-3 block">Categories</p>
                     <div className="space-y-2 max-h-32 overflow-y-auto">
                       {categories.map(category => (
                         <label key={category} className="flex items-center space-x-2 cursor-pointer">
@@ -440,7 +425,7 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
 
                   {/* Brand Filter */}
                   <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-3 block">Brands</label>
+                    <p className="text-sm font-semibold text-gray-700 mb-3 block">Brands</p>
                     <div className="space-y-2 max-h-32 overflow-y-auto">
                       {brands.map(brand => (
                         <label key={brand} className="flex items-center space-x-2 cursor-pointer">
@@ -464,8 +449,8 @@ const ProductCatalogGrid: React.FC<ProductCatalogGridProps> = ({
 
                   {/* Stock Filter */}
                   <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-3 block">Stock Status</label>
-                    <Select value={stockFilter} onValueChange={(value) => setStockFilter(value as any)}>
+                    <p className="text-sm font-semibold text-gray-700 mb-3 block">Stock Status</p>
+                    <Select value={stockFilter} onValueChange={(value) => setStockFilter(value as unknown)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>

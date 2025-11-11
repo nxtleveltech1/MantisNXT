@@ -8,7 +8,8 @@
  * @date 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import * as jwt from 'jsonwebtoken';
 
 const FALLBACK_ORG_ID = '00000000-0000-0000-0000-000000000000';

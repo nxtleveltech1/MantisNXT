@@ -3,11 +3,11 @@
  * Production-grade implementation with caching, batching, and efficient querying
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { pool } from '@/lib/database/unified-connection';
 import { z } from 'zod';
 import { SWRCache } from '@/lib/pipeline/cache-manager';
-import { aggregateMetricsInParallel } from '@/lib/pipeline/batch-processor';
 
 // Validation schemas
 const SearchAlertsSchema = z.object({
@@ -24,7 +24,7 @@ const SearchAlertsSchema = z.object({
 /**
  * Cached alert generation with SWR pattern
  */
-const alertsCache = new SWRCache<any[]>(
+const alertsCache = new SWRCache<unknown[]>(
   {
     ttl: 60 * 1000, // 1 minute
     staleTime: 30 * 1000, // 30 seconds

@@ -33,7 +33,7 @@ export interface AIAlert {
   isResolved: boolean;
   resolvedAt?: Date;
   createdAt: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface CreateAlertData {
@@ -48,7 +48,7 @@ export interface CreateAlertData {
   }>;
   entityType?: string;
   entityId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AlertStats {
@@ -422,7 +422,7 @@ export class AIAlertService extends AIServiceBase<AIServiceRequestOptions> {
   /**
    * Map database row to AIAlert
    */
-  private mapAlertRow(row: any): AIAlert {
+  private mapAlertRow(row: unknown): AIAlert {
     return {
       id: row.id,
       orgId: row.org_id,

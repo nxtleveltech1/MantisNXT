@@ -407,7 +407,7 @@ interface SecurityEventParams {
   userId: string
   eventType: string
   severity: 'low' | 'medium' | 'high' | 'critical'
-  details: any
+  details: unknown
   ipAddress?: string
   userAgent?: string
 }

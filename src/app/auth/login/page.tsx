@@ -32,8 +32,8 @@ export default function LoginPage() {
 
   const router = useRouter()
 
-  const form = useForm<LoginFormData, any, LoginFormData>({
-    resolver: zodResolver(loginFormSchema) as Resolver<LoginFormData, any, LoginFormData>,
+  const form = useForm<LoginFormData, unknown, LoginFormData>({
+    resolver: zodResolver(loginFormSchema) as Resolver<LoginFormData, unknown, LoginFormData>,
     defaultValues: {
       email: '',
       password: '',
@@ -359,7 +359,7 @@ export default function LoginPage() {
 
           <CardFooter className="flex flex-col space-y-4 px-6 pb-6">
             <div className="text-sm text-center text-muted-foreground">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link
                 href="/auth/register"
                 className="font-medium text-primary hover:text-primary/90 transition-colors"

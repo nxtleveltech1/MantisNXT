@@ -7,7 +7,8 @@
  * Date: 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 
 interface OdooConfig {
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       LIMIT 1
     `;
 
-    const result = await query<any>(sql);
+    const result = await query<unknown>(sql);
 
     if (result.rows.length === 0) {
       return NextResponse.json({
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: result.rows[0],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching Odoo configuration:', error);
     return NextResponse.json(
       {
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
       sync_frequency: body.sync_frequency,
     };
 
-    const result = await query<any>(sql, [
+    const result = await query<unknown>(sql, [
       body.name,
       body.status || 'inactive',
       JSON.stringify(config),
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: result.rows[0],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating Odoo configuration:', error);
     return NextResponse.json(
       {
@@ -193,7 +194,7 @@ export async function PUT(request: NextRequest) {
         (config->>'sync_frequency')::int as sync_frequency
     `;
 
-    const result = await query<any>(sql, [
+    const result = await query<unknown>(sql, [
       body.name,
       body.status || 'inactive',
       JSON.stringify(config),
@@ -214,7 +215,7 @@ export async function PUT(request: NextRequest) {
       success: true,
       data: result.rows[0],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating Odoo configuration:', error);
     return NextResponse.json(
       {

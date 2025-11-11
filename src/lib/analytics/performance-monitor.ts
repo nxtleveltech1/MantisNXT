@@ -73,8 +73,8 @@ export interface OptimizationRecommendation {
     risks: string[];
   };
   metrics: {
-    before: any;
-    expectedAfter: any;
+    before: unknown;
+    expectedAfter: unknown;
   };
 }
 
@@ -211,7 +211,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
   /**
    * Measure API performance
    */
-  private async measureApiPerformance(organizationId: string): Promise<any> {
+  private async measureApiPerformance(organizationId: string): Promise<unknown> {
     const startTime = Date.now();
 
     try {
@@ -256,7 +256,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
   /**
    * Measure database performance
    */
-  private async measureDatabasePerformance(organizationId: string): Promise<any> {
+  private async measureDatabasePerformance(organizationId: string): Promise<unknown> {
     try {
       // Simulate database performance metrics
       const queryTimes = [
@@ -292,7 +292,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
   /**
    * Measure resource utilization
    */
-  private async measureResourceUtilization(): Promise<any> {
+  private async measureResourceUtilization(): Promise<unknown> {
     // Simulate system resource metrics
     return {
       cpu: Math.random() * 80 + 10, // 10-90% CPU usage
@@ -305,7 +305,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
   /**
    * Measure business metrics
    */
-  private async measureBusinessMetrics(organizationId: string): Promise<any> {
+  private async measureBusinessMetrics(organizationId: string): Promise<unknown> {
     return {
       transactionThroughput: Math.floor(Math.random() * 1000) + 100, // 100-1100 transactions/hour
       userConcurrency: Math.floor(Math.random() * 50) + 5, // 5-55 concurrent users
@@ -459,7 +459,7 @@ export class RealTimePerformanceMonitor extends EventEmitter {
   /**
    * Calculate trend direction and rate
    */
-  private calculateTrend(values: number[]): any {
+  private calculateTrend(values: number[]): unknown {
     if (values.length < 3) {
       return {
         direction: 'stable' as const,
@@ -789,7 +789,7 @@ export class PerformanceOptimizationEngine {
   /**
    * Get performance summary
    */
-  async getPerformanceSummary(organizationId: string): Promise<any> {
+  async getPerformanceSummary(organizationId: string): Promise<unknown> {
     const currentMetrics = this.monitor.getCurrentMetrics(organizationId);
     const trends = await this.monitor.getPerformanceTrends(organizationId);
     const alerts = this.monitor.getRecentAlerts(organizationId, 10);
@@ -892,7 +892,7 @@ export class PerformanceManagementSystem extends EventEmitter {
   /**
    * Get comprehensive performance dashboard data
    */
-  async getPerformanceDashboard(organizationId: string): Promise<any> {
+  async getPerformanceDashboard(organizationId: string): Promise<unknown> {
     const summary = await this.optimizer.getPerformanceSummary(organizationId);
     const recommendations = await this.optimizer.generateOptimizationRecommendations(organizationId);
 

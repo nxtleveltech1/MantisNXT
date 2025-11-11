@@ -15,11 +15,11 @@
  * Rate Limit: 10 requests/minute per organization
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import { SyncOrchestrator, type System, type EntityType, type SyncConfig } from '@/lib/services/SyncOrchestrator';
 import { ConflictResolver } from '@/lib/services/ConflictResolver';
-import { v4 as uuidv4 } from 'uuid';
 import { getRateLimiter } from '@/lib/utils/rate-limiter';
 
 // In-memory store of active orchestrators (in production, use Redis for multi-instance)
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { orgId } = auth;
 
     // Parse request body
-    let body: any;
+    let body: unknown;
     try {
       body = await request.json();
     } catch {
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 async function handleStartSync(
   request: NextRequest,
   orgId: string,
-  body: any
+  body: unknown
 ): Promise<NextResponse> {
   try {
     // Validate required fields
@@ -220,7 +220,7 @@ async function handleStartSync(
 
     // Check for duplicate active syncs per org
     const activeSyncs = Array.from(activeOrchestrators.values()).filter(
-      o => (o as any).orgId === orgId && (o as any).status === 'processing'
+      o => (o as unknown).orgId === orgId && (o as unknown).status === 'processing'
     );
 
     if (activeSyncs.length >= 5) {
@@ -239,7 +239,7 @@ async function handleStartSync(
     );
 
     // Store reference
-    const syncId = (orchestrator as any).syncId;
+    const syncId = (orchestrator as unknown).syncId;
     activeOrchestrators.set(syncId, orchestrator);
 
     // Start sync in background (don't await)
@@ -284,7 +284,7 @@ async function handleStartSync(
 async function handleGetStatus(
   request: NextRequest,
   orgId: string,
-  body: any
+  body: unknown
 ): Promise<NextResponse> {
   try {
     const syncId = body.syncId || request.nextUrl.searchParams.get('syncId');
@@ -402,7 +402,7 @@ async function handleGetStatus(
 async function handlePauseSync(
   request: NextRequest,
   orgId: string,
-  body: any
+  body: unknown
 ): Promise<NextResponse> {
   try {
     const syncId = body.syncId;
@@ -448,7 +448,7 @@ async function handlePauseSync(
 async function handleResumeSync(
   request: NextRequest,
   orgId: string,
-  body: any
+  body: unknown
 ): Promise<NextResponse> {
   try {
     const syncId = body.syncId;
@@ -494,7 +494,7 @@ async function handleResumeSync(
 async function handleCancelSync(
   request: NextRequest,
   orgId: string,
-  body: any
+  body: unknown
 ): Promise<NextResponse> {
   try {
     const syncId = body.syncId;
@@ -541,7 +541,7 @@ async function handleCancelSync(
 async function handleGetConflicts(
   request: NextRequest,
   orgId: string,
-  body: any
+  body: unknown
 ): Promise<NextResponse> {
   try {
     const syncId = body.syncId;
@@ -581,7 +581,7 @@ async function handleGetConflicts(
 async function handleResolveConflict(
   request: NextRequest,
   orgId: string,
-  body: any
+  body: unknown
 ): Promise<NextResponse> {
   try {
     const { conflictId, resolution, customData } = body;
@@ -603,7 +603,7 @@ async function handleResolveConflict(
     const conflictResolver = new ConflictResolver();
     await conflictResolver.resolveConflictManually(
       conflictId,
-      resolution as any,
+      resolution as unknown,
       customData
     );
 

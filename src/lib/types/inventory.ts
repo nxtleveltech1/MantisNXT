@@ -65,7 +65,7 @@ export interface Supplier {
   manufacturer_direct: boolean
   authorized_reseller: boolean
   exclusive_supplier: boolean
-  volume_discount_tiers: any | null
+  volume_discount_tiers: unknown | null
   early_payment_discount: number | null
   preferred_order_method: string | null
   minimum_order_value: number | null
@@ -74,7 +74,7 @@ export interface Supplier {
   capacity_rating: string | null
   scalability_rating: string | null
   geographic_coverage: string[] | null
-  service_level_agreements: any | null
+  service_level_agreements: unknown | null
   kpi_dashboard_access: boolean
   performance_review_frequency: string | null
   contract_type: string | null
@@ -96,7 +96,7 @@ export interface Supplier {
   next_audit_due: string | null
   audit_findings_status: string | null
   corrective_actions_pending: number | null
-  risk_mitigation_plan: any | null
+  risk_mitigation_plan: unknown | null
   backup_supplier_identified: boolean
   single_source_risk: boolean
   geographic_risk_exposure: string | null
@@ -185,20 +185,20 @@ export interface Product {
   spare_parts_availability: string | null
   end_of_life_support: string | null
   upgrade_path_available: boolean
-  compatibility_matrix: any | null
+  compatibility_matrix: unknown | null
   integration_complexity: string | null
   deployment_time_estimate: number | null
   roi_estimate_months: number | null
   total_cost_of_ownership: number | null
-  lifecycle_cost_analysis: any | null
-  competitive_analysis: any | null
+  lifecycle_cost_analysis: unknown | null
+  competitive_analysis: unknown | null
   market_position: string | null
   price_competitiveness: string | null
-  feature_comparison: any | null
+  feature_comparison: unknown | null
   technology_readiness_level: number | null
   innovation_rating: number | null
   future_roadmap_alignment: string | null
-  risk_assessment: any | null
+  risk_assessment: unknown | null
   contingency_plan: string | null
   business_continuity_impact: string | null
   regulatory_compliance_status: string | null
@@ -217,10 +217,10 @@ export interface Product {
   documentation_requirements: string[] | null
   approval_workflow_required: boolean
   approval_authority: string | null
-  approval_criteria: any | null
+  approval_criteria: unknown | null
   review_frequency: string | null
-  performance_metrics: any | null
-  kpi_targets: any | null
+  performance_metrics: unknown | null
+  kpi_targets: unknown | null
   improvement_opportunities: string[] | null
   lessons_learned: string[] | null
   best_practices: string[] | null
@@ -231,9 +231,9 @@ export interface Product {
   community_support_available: boolean
   vendor_support_rating: number | null
   escalation_procedures: string | null
-  sla_requirements: any | null
+  sla_requirements: unknown | null
   uptime_requirements: number | null
-  performance_benchmarks: any | null
+  performance_benchmarks: unknown | null
   monitoring_requirements: string | null
   alerting_requirements: string | null
   reporting_requirements: string | null
@@ -302,8 +302,8 @@ export interface InventoryItem {
   last_cycle_count: string | null
   next_cycle_count_due: string | null
   variance_threshold: number | null
-  adjustment_history: any | null
-  movement_history: any | null
+  adjustment_history: unknown | null
+  movement_history: unknown | null
   supplier_lead_time: number | null
   supplier_reliability_score: number | null
   quality_issues_count: number | null
@@ -1640,7 +1640,7 @@ export interface PricelistUpload {
   total_rows: number | null
   processed_rows: number | null
   failed_rows: number | null
-  error_log: any | null
+  error_log: unknown | null
   uploaded_by: string | null
   file_size: number | null
   file_hash: string | null

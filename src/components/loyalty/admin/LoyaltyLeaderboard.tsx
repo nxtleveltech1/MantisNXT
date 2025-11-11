@@ -44,7 +44,7 @@ const TIER_COLORS: Record<LoyaltyTier, string> = {
   diamond: 'bg-purple-500',
 }
 
-const TIER_ICONS: Record<LoyaltyTier, any> = {
+const TIER_ICONS: Record<LoyaltyTier, unknown> = {
   bronze: Award,
   silver: Medal,
   gold: Trophy,
@@ -229,7 +229,7 @@ export default function LoyaltyLeaderboard() {
         <CardContent className="pt-6">
           <div className="flex gap-4">
             <div className="flex-1">
-              <Select value={period} onValueChange={(v) => setPeriod(v as any)}>
+              <Select value={period} onValueChange={(v) => setPeriod(v as unknown)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -243,7 +243,7 @@ export default function LoyaltyLeaderboard() {
             </div>
 
             <div className="flex-1">
-              <Select value={tierFilter} onValueChange={(v) => setTierFilter(v as any)}>
+              <Select value={tierFilter} onValueChange={(v) => setTierFilter(v as unknown)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

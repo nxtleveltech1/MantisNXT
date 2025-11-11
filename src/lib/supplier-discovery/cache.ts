@@ -3,7 +3,7 @@
  */
 
 import NodeCache from 'node-cache';
-import { CacheEntry, DiscoveredSupplierData } from './types';
+import type { CacheEntry, DiscoveredSupplierData } from './types';
 import { DISCOVERY_CONFIG } from './config';
 
 class SupplierDiscoveryCache {
@@ -36,7 +36,7 @@ class SupplierDiscoveryCache {
   /**
    * Generate cache key from supplier name
    */
-  private generateKey(supplierName: string, additionalContext?: any): string {
+  private generateKey(supplierName: string, additionalContext?: unknown): string {
     const cleanName = supplierName
       .toLowerCase()
       .trim()
@@ -51,7 +51,7 @@ class SupplierDiscoveryCache {
   /**
    * Get cached supplier data
    */
-  get(supplierName: string, additionalContext?: any): DiscoveredSupplierData | null {
+  get(supplierName: string, additionalContext?: unknown): DiscoveredSupplierData | null {
     const key = this.generateKey(supplierName, additionalContext);
     const cached = this.cache.get<CacheEntry>(key);
 
@@ -72,7 +72,7 @@ class SupplierDiscoveryCache {
   set(
     supplierName: string,
     data: DiscoveredSupplierData,
-    additionalContext?: any,
+    additionalContext?: unknown,
     customTTL?: number
   ): boolean {
     const key = this.generateKey(supplierName, additionalContext);
@@ -90,7 +90,7 @@ class SupplierDiscoveryCache {
   /**
    * Delete cached supplier data
    */
-  delete(supplierName: string, additionalContext?: any): number {
+  delete(supplierName: string, additionalContext?: unknown): number {
     // Try exact match first
     const exactKey = this.generateKey(supplierName, additionalContext);
     const exactDelete = this.cache.del(exactKey);
@@ -116,7 +116,7 @@ class SupplierDiscoveryCache {
   /**
    * Check if supplier data is cached
    */
-  has(supplierName: string, additionalContext?: any): boolean {
+  has(supplierName: string, additionalContext?: unknown): boolean {
     const key = this.generateKey(supplierName, additionalContext);
     return this.cache.has(key);
   }
@@ -183,7 +183,7 @@ class SupplierDiscoveryCache {
   updateIfBetter(
     supplierName: string,
     newData: DiscoveredSupplierData,
-    additionalContext?: any
+    additionalContext?: unknown
   ): boolean {
     const existing = this.get(supplierName, additionalContext);
 
@@ -201,7 +201,7 @@ class SupplierDiscoveryCache {
     entries: Array<{
       supplierName: string;
       data: DiscoveredSupplierData;
-      additionalContext?: any;
+      additionalContext?: unknown;
       ttl?: number;
     }>
   ): number {

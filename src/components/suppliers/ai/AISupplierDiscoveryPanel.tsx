@@ -14,15 +14,11 @@ import {
   Sparkles,
   TrendingUp,
   Target,
-  MapPin,
   Star,
-  Clock,
   AlertCircle,
   CheckCircle,
   Loader2,
-  RefreshCw,
   MessageSquare,
-  Filter,
   Zap,
   ThumbsUp,
   ThumbsDown
@@ -33,46 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import type { Supplier } from '@/types/supplier'
 import type { AISupplierRecommendation, AISupplierInsight } from '@/types/ai-supplier'
-
-interface AISupplierRecommendation {
-  id: string
-  supplier: Partial<Supplier>
-  confidenceScore: number
-  matchReasons: string[]
-  riskFactors: string[]
-  predictedPerformance: {
-    deliveryReliability: number
-    qualityScore: number
-    costEffectiveness: number
-    relationshipPotential: number
-  }
-  marketIntelligence: {
-    competitorAnalysis: string
-    industryPosition: string
-    growthTrend: 'increasing' | 'stable' | 'declining'
-    marketShare: number
-  }
-  aiInsights: string[]
-  recommendationType: 'perfect_match' | 'good_alternative' | 'cost_effective' | 'innovative'
-  estimatedSavings?: number
-  implementationComplexity: 'low' | 'medium' | 'high'
-}
-
-interface AISupplierInsight {
-  id: string
-  type: 'opportunity' | 'risk' | 'trend' | 'recommendation'
-  title: string
-  description: string
-  impact: 'low' | 'medium' | 'high'
-  confidence: number
-  actionable: boolean
-  suggestedActions: string[]
-  relatedSuppliers: string[]
-  dataPoints: Record<string, any>
-  timestamp: Date
-}
 
 interface AISupplierDiscoveryPanelProps {
   onSupplierRecommend?: (supplier: AISupplierRecommendation) => void

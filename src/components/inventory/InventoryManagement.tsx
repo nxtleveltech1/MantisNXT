@@ -24,14 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,17 +41,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
+
+
 import {
   Search,
-  Filter,
   Plus,
   Edit,
   Trash2,
@@ -65,28 +52,21 @@ import {
   Eye,
   Package,
   AlertTriangle,
-  TrendingUp,
-  TrendingDown,
   BarChart3,
   Download,
-  Upload,
   RefreshCw,
   SlidersHorizontal,
   X,
   Columns3,
   DollarSign,
   AlertCircle,
-  CheckCircle2,
   Activity,
-  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
 import { useInventoryStore } from '@/lib/stores/inventory-store'
-import { useSupplierStore } from '@/lib/stores/supplier-store'
 import { useNotificationStore } from '@/lib/stores/notification-store'
 import type { InventoryItem, Product, Supplier, InventoryFilters } from '@/lib/types/inventory'
-import { format } from 'date-fns'
 import { deriveStockStatus } from '@/lib/utils/inventory-metrics'
 import AddProductDialog from './AddProductDialog'
 import AddProductsModeDialog from './AddProductsModeDialog'
@@ -137,7 +117,7 @@ export default function InventoryManagement() {
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
 
   // New features state
-  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([])
+  const [searchSuggestions, setSearchSuggestions] = useState<unknown[]>([])
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     sku: true,
@@ -152,7 +132,7 @@ export default function InventoryManagement() {
   const [stockLevelFilter, setStockLevelFilter] = useState<string>('all')
   const [pagination, setPagination] = useState({ page: 1, pageSize: 25 })
   const [quickEditingStock, setQuickEditingStock] = useState<string | null>(null)
-  const [stockMovements, setStockMovements] = useState<Record<string, any[]>>({})
+  const [stockMovements, setStockMovements] = useState<Record<string, unknown[]>>({})
 
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -190,8 +170,8 @@ export default function InventoryManagement() {
     if (searchTerm.length >= 2) {
       const suggestions = [...products, ...items]
         .filter(item => {
-          const name = 'name' in item ? item.name : (item as any).product?.name
-          const sku = 'sku' in item ? item.sku : (item as any).product?.sku
+          const name = 'name' in item ? item.name : (item as unknown).product?.name
+          const sku = 'sku' in item ? item.sku : (item as unknown).product?.sku
           return name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                  sku?.toLowerCase().includes(searchTerm.toLowerCase())
         })
@@ -226,7 +206,7 @@ export default function InventoryManagement() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [])
+  }, [handleExport])
 
   // Debug logging for investigating item count
   useEffect(() => {
@@ -810,7 +790,7 @@ export default function InventoryManagement() {
                     <Select
                       value={filters.category?.[0] || 'all_categories'}
                       onValueChange={(value) =>
-                        setFilters({ category: value && value !== 'all_categories' ? [value as any] : undefined })
+                        setFilters({ category: value && value !== 'all_categories' ? [value as unknown] : undefined })
                       }
                     >
                       <SelectTrigger>
@@ -856,7 +836,7 @@ export default function InventoryManagement() {
                     <Select
                       value={filters.stock_status?.[0] || 'all_statuses'}
                       onValueChange={(value) =>
-                        setFilters({ stock_status: value && value !== 'all_statuses' ? [value as any] : undefined })
+                        setFilters({ stock_status: value && value !== 'all_statuses' ? [value as unknown] : undefined })
                       }
                     >
                       <SelectTrigger>

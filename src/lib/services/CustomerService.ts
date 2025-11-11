@@ -25,7 +25,7 @@ export interface Customer {
   last_order_date?: Date;
   notes?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -50,7 +50,7 @@ export interface CustomerInsert {
   } | null;
   notes?: string;
   tags?: string[] | null;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface CustomerUpdate {
@@ -67,7 +67,7 @@ export interface CustomerUpdate {
   last_order_date?: Date;
   notes?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class CustomerService {
@@ -141,7 +141,7 @@ export class CustomerService {
   static async updateCustomer(id: string, updates: CustomerUpdate): Promise<Customer> {
     try {
       const setClauses: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let paramIndex = 1;
 
       Object.entries(updates).forEach(([key, value]) => {
@@ -232,9 +232,9 @@ export class CustomerService {
     }
   }
 
-  static async getCustomerTickets(customerId: string): Promise<any[]> {
+  static async getCustomerTickets(customerId: string): Promise<unknown[]> {
     try {
-      const result = await query<any>(
+      const result = await query<unknown>(
         `SELECT *
          FROM customer_support_ticket
          WHERE customer_id = $1

@@ -24,7 +24,7 @@ export interface ErrorLogEntry {
     url?: string;
     component?: string;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class ErrorLogger {
@@ -43,7 +43,7 @@ class ErrorLogger {
       userId?: string;
       component?: string;
     },
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): string {
     const id = this.generateLogId();
     const sanitized = sanitizeError(error);
@@ -73,7 +73,7 @@ class ErrorLogger {
       endpoint?: string;
       component?: string;
     },
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): string {
     const id = this.generateLogId();
 
@@ -101,7 +101,7 @@ class ErrorLogger {
    */
   logInfo(
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): string {
     const id = this.generateLogId();
 
@@ -248,7 +248,7 @@ class ErrorLogger {
     }
   }
 
-  private sanitizeContext(context?: Record<string, any>): Record<string, any> | undefined {
+  private sanitizeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
     if (!context) return undefined;
 
     // Remove sensitive data from context
@@ -271,7 +271,7 @@ class ErrorLogger {
     return sanitized;
   }
 
-  private sanitizeMetadata(metadata?: Record<string, any>): Record<string, any> | undefined {
+  private sanitizeMetadata(metadata?: Record<string, unknown>): Record<string, unknown> | undefined {
     if (!metadata) return undefined;
 
     // Remove sensitive data from metadata

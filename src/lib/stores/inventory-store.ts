@@ -19,7 +19,7 @@ export function deriveStockStatus(current: number, reorder: number, max: number)
   return 'in_stock';
 }
 
-export function assertCamelItem(i: any): asserts i is InventoryItem {
+export function assertCamelItem(i: unknown): asserts i is InventoryItem {
   if (
     typeof i !== 'object' || i === null ||
     typeof i.id !== 'string' ||
@@ -80,12 +80,12 @@ export async function deallocateFromSupplier(itemId: string, supplierId: string,
 // ---------------------------------------------
 import { create } from 'zustand';
 
-type Filters = { search?: string } & Record<string, any>;
+type Filters = { search?: string } & Record<string, unknown>;
 
 type InventoryZustandState = {
-  items: any[];
-  products: any[];
-  suppliers: any[];
+  items: unknown[];
+  products: unknown[];
+  suppliers: unknown[];
   filters: Filters;
   loading: boolean;
   error: string | null;
@@ -94,8 +94,8 @@ type InventoryZustandState = {
   fetchSuppliers: () => Promise<void>;
   setFilters: (f: Partial<Filters>) => void;
   clearFilters: () => void;
-  addProduct: (p: any) => Promise<void>;
-  updateProduct: (id: string, p: any) => Promise<void>;
+  addProduct: (p: unknown) => Promise<void>;
+  updateProduct: (id: string, p: unknown) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   adjustInventory: (payload: { inventoryItemId: string; delta: number; reason: string }) => Promise<void>;
   clearError: () => void;
@@ -127,7 +127,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
               : [];
 
       // Map API fields (camelCase or snake_case) to component expectations
-      const items = rows.map((r: any) => {
+      const items = rows.map((r: unknown) => {
         const supplierId = r.supplier_id ?? r.supplierId ?? r.supplier_uuid ?? r.supplier?.id ?? null;
         const supplierProductId =
           r.supplier_product_id ?? r.supplierProductId ?? r.product?.id ?? r.inventory_item_id ?? null;
@@ -206,7 +206,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       });
 
       set({ items, loading: false });
-    } catch (e: any) {
+    } catch (e: unknown) {
       set({ error: e?.message || 'Failed to fetch items', loading: false });
     }
   },
@@ -227,7 +227,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
             : [];
 
       // Map to consistent format
-      const products = productRows.map((p: any) => {
+      const products = productRows.map((p: unknown) => {
         const supplierId = p.supplier_id ?? p.supplierId ?? p.supplier_uuid ?? p.supplier?.id ?? null;
         const unitCost = Number(
           p.unit_cost_zar ?? p.unit_cost ?? p.cost_price ?? p.price ?? p.salePrice ?? 0
@@ -247,7 +247,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       });
 
       set({ products, loading: false });
-    } catch (e: any) {
+    } catch (e: unknown) {
       set({ error: e?.message || 'Failed to fetch products', loading: false });
     }
   },
@@ -267,7 +267,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
         : (data?.data || data?.items || []);
 
       // Map to consistent format
-      const suppliers = supplierRows.map((s: any) => ({
+      const suppliers = supplierRows.map((s: unknown) => ({
         id: s.id || s.supplier_id,
         name: s.name || s.supplier_name || 'Unknown Supplier',
         email: s.email || null,
@@ -280,7 +280,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       }));
 
       set({ suppliers, loading: false });
-    } catch (e: any) {
+    } catch (e: unknown) {
       set({ error: e?.message || 'Failed to fetch suppliers', loading: false });
     }
   },
@@ -292,7 +292,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
 
   clearFilters: () => set({ filters: { search: '' } }),
 
-  addProduct: async (p: any) => {
+  addProduct: async (p: unknown) => {
     set({ loading: true, error: null });
     try {
       // Use /api/inventory instead of deprecated /api/inventory/products
@@ -300,12 +300,12 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       if (!res.ok) throw new Error(`ADD_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });
-    } catch (e: any) {
+    } catch (e: unknown) {
       set({ error: e?.message || 'Failed to add product', loading: false });
     }
   },
 
-  updateProduct: async (id: string, p: any) => {
+  updateProduct: async (id: string, p: unknown) => {
     set({ loading: true, error: null });
     try {
       // Use /api/inventory/[id] instead of deprecated /api/inventory/products/[id]
@@ -313,7 +313,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       if (!res.ok) throw new Error(`UPDATE_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });
-    } catch (e: any) {
+    } catch (e: unknown) {
       set({ error: e?.message || 'Failed to update product', loading: false });
     }
   },
@@ -326,7 +326,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       if (!res.ok) throw new Error(`DELETE_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });
-    } catch (e: any) {
+    } catch (e: unknown) {
       set({ error: e?.message || 'Failed to delete product', loading: false });
     }
   },
@@ -338,7 +338,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       if (!res.ok) throw new Error(`ADJUST_INVENTORY_FAILED: ${res.status}`);
       await get().fetchItems();
       set({ loading: false });
-    } catch (e: any) {
+    } catch (e: unknown) {
       set({ error: e?.message || 'Failed to adjust inventory', loading: false });
     }
   },

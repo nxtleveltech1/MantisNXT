@@ -90,7 +90,7 @@ export interface UserPermission {
   name: string
   resource: string
   action: 'create' | 'read' | 'update' | 'delete' | 'manage' | 'execute'
-  conditions?: any[]
+  conditions?: unknown[]
 }
 
 export interface UserPreferences {
@@ -686,7 +686,7 @@ export class NeonAuthService {
     userId: string
     eventType: string
     action: string
-    metadata?: any
+    metadata?: unknown
   }): Promise<void> {
     await db.query(`
       INSERT INTO auth.audit_events (
@@ -696,7 +696,7 @@ export class NeonAuthService {
     `, [params.orgId, params.userId, params.eventType, params.action, JSON.stringify(params.metadata || {})])
   }
 
-  private async getSessionByToken(sessionToken: string): Promise<any> {
+  private async getSessionByToken(sessionToken: string): Promise<unknown> {
     const result = await db.query(`
       SELECT
         s.user_id,

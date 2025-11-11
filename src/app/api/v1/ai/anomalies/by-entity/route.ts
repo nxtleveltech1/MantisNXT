@@ -3,7 +3,7 @@
  * GET /api/v1/ai/anomalies/by-entity
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Validate required parameters
     requireQueryParams(searchParams, ['entityType', 'entityId']);
 
-    const entityType = searchParams.get('entityType')! as any;
+    const entityType = searchParams.get('entityType')! as unknown;
     const entityId = searchParams.get('entityId')!;
 
     const result = await anomalyService.listAnomalies(user.organizationId, {

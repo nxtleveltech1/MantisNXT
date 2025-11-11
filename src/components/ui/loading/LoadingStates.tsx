@@ -4,40 +4,17 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Loader2,
   RefreshCw,
   Clock,
-  Zap,
-  Activity,
-  TrendingUp,
-  CheckCircle,
-  AlertCircle,
   Database,
-  Server,
   Gauge,
-  BarChart3,
-  PieChart,
-  LineChart,
-  Package,
-  Building2,
-  Users,
-  DollarSign,
-  ShoppingCart,
-  FileSpreadsheet,
   Upload,
   Download,
   Search,
-  Filter,
-  Brain,
-  Sparkles,
-  Target,
-  Eye,
-  Settings,
-  Globe
+  Brain
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -86,7 +63,7 @@ export interface LoadingState {
   progress?: number
   subMessage?: string
   duration?: number
-  icon?: React.ComponentType<any>
+  icon?: React.ComponentType<unknown>
   color?: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'indigo'
   variant?: 'minimal' | 'detailed' | 'progress' | 'skeleton'
   showProgressBar?: boolean

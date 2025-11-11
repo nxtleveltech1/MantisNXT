@@ -2,7 +2,8 @@
  * GET /api/serve/soh/rolled-up - Rolled-up SOH report (aggregated across suppliers)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { stockService } from '@/lib/services/StockService';
 import { SohReportRequestSchema } from '@/types/nxt-spp';
 import { z } from 'zod';

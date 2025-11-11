@@ -2,7 +2,8 @@
  * GET /api/core/selections/catalog - Get selected catalog (all active selections)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { inventorySelectionService } from '@/lib/services/InventorySelectionService';
 
 export async function GET(request: NextRequest) {

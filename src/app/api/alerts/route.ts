@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server";
 import { pool } from "@/lib/database/unified-connection";
 import { z } from "zod";
 
@@ -335,17 +336,17 @@ export async function GET(request: NextRequest) {
     const filteredAlerts = realAlerts.filter((alert) => {
       // Type filter
       if (validatedParams.type && validatedParams.type.length > 0) {
-        if (!validatedParams.type.includes(alert.type as any)) return false;
+        if (!validatedParams.type.includes(alert.type as unknown)) return false;
       }
 
       // Severity filter
       if (validatedParams.severity && validatedParams.severity.length > 0) {
-        if (!validatedParams.severity.includes(alert.severity as any)) return false;
+        if (!validatedParams.severity.includes(alert.severity as unknown)) return false;
       }
 
       // Status filter
       if (validatedParams.status && validatedParams.status.length > 0) {
-        if (!validatedParams.status.includes(alert.status as any)) return false;
+        if (!validatedParams.status.includes(alert.status as unknown)) return false;
       }
 
       // Item filter

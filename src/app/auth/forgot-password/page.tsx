@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
             <CardHeader className="text-center space-y-2 pb-4">
               <CardTitle className="text-xl font-bold text-success">Email Sent Successfully</CardTitle>
               <CardDescription>
-                We've sent password reset instructions to your email address
+                We&apos;ve sent password reset instructions to your email address
               </CardDescription>
             </CardHeader>
 
@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
               <Alert className="rounded-lg bg-info/5 border-info/20">
                 <AlertCircle className="h-4 w-4 text-info" />
                 <AlertDescription className="text-sm">
-                  <strong>Didn't receive the email?</strong> Check your spam folder or contact your system administrator.
+                  <strong>Didn&apos;t receive the email?</strong> Check your spam folder or contact your system administrator.
                 </AlertDescription>
               </Alert>
 
@@ -141,7 +141,7 @@ export default function ForgotPasswordPage() {
           <CardHeader className="text-center space-y-2 pb-4">
             <CardTitle className="text-2xl font-bold">Forgot Your Password?</CardTitle>
             <CardDescription>
-              No worries! Enter your email address and we'll send you reset instructions.
+              No worries! Enter your email address and we&apos;ll send you reset instructions.
             </CardDescription>
           </CardHeader>
 
@@ -174,7 +174,7 @@ export default function ForgotPasswordPage() {
               <Alert className="rounded-lg bg-info/5 border-info/20">
                 <AlertCircle className="h-4 w-4 text-info" />
                 <AlertDescription className="text-sm">
-                  We'll send password reset instructions to this email address if it's registered in our system.
+                  We&apos;ll send password reset instructions to this email address if it&apos;s registered in our system.
                 </AlertDescription>
               </Alert>
 
@@ -204,7 +204,7 @@ export default function ForgotPasswordPage() {
               </Link>
 
               <div className="text-sm text-center text-muted-foreground">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link
                   href="/auth/register"
                   className="font-medium text-primary hover:text-primary/90 transition-colors"
@@ -223,7 +223,7 @@ export default function ForgotPasswordPage() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="text-xs text-muted-foreground space-y-1.5">
-              <p>• Make sure you're using your registered business email</p>
+              <p>• Make sure you&apos;re using your registered business email</p>
               <p>• Check your spam/junk folder for the reset email</p>
               <p>• Contact your system administrator if issues persist</p>
               <p className="pt-1">

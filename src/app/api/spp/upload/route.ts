@@ -4,9 +4,10 @@
  * Handles file upload to SPP schema for validation and merging
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { pricelistService } from '@/lib/services/PricelistService';
-import { PricelistRow } from '@/types/nxt-spp';
+import type { PricelistRow } from '@/types/nxt-spp';
 import * as XLSX from 'xlsx';
 
 export async function POST(request: NextRequest) {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Helper function to parse price values (handles "R 1,300.00" format and plain numbers)
-    const parsePrice = (value: any): number => {
+    const parsePrice = (value: unknown): number => {
       if (!value && value !== 0) return 0;
       if (typeof value === 'number') return Math.max(0, value);
       
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
                  (!file.name.toLowerCase().endsWith('.xlsx') && 
                   !file.name.toLowerCase().endsWith('.xls'));
     
-    let data: any[] = [];
+    let data: unknown[] = [];
     
     if (isCSV) {
       // Parse CSV manually to handle semicolon delimiters properly
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
           }
           values.push(currentValue.trim().replace(/^"|"$/g, '')); // Last value
           
-          const row: any = {};
+          const row: unknown = {};
           headers.forEach((header, idx) => {
             row[header] = values[idx] || '';
           });
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Transform to PricelistRow format with proper column mapping for this CSV format
-    const rows: PricelistRow[] = data.map((row: any, index) => {
+    const rows: PricelistRow[] = data.map((row: unknown, index) => {
       // Map columns based on actual CSV headers:
       // Supplier Name;Supplier Code;Produt Category;BRAND;Brand Sub Tag;SKU / MODEL;PRODUCT DESCRIPTION;SUPPLIER SOH;COST  EX VAT;QTY ON ORDER;NEXT SHIPMENT;Tags;Links
       
@@ -227,7 +228,7 @@ export async function POST(request: NextRequest) {
       ]);
 
       // Store additional info in attrs_json
-      const attrs: any = {};
+      const attrs: unknown = {};
       if (stockQty) attrs.stock_qty = parseInt(String(stockQty)) || 0;
       if (getColumn(['QTY ON ORDER'])) attrs.qty_on_order = parseInt(String(getColumn(['QTY ON ORDER']))) || 0;
       if (getColumn(['NEXT SHIPMENT'])) attrs.next_shipment = getColumn(['NEXT SHIPMENT']);
@@ -335,7 +336,7 @@ export async function GET(request: NextRequest) {
 
     const result = await pricelistService.listUploads(filters);
     const uploads = Array.isArray(result.uploads) ? result.uploads : [];
-    const total = Number.isFinite(result.total as any) ? (result.total as any as number) : 0;
+    const total = Number.isFinite(result.total as unknown) ? (result.total as unknown as number) : 0;
 
     return NextResponse.json({
       success: true,

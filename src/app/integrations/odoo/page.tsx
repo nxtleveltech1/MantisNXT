@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Database, RefreshCw, Settings, History, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, FileText, Eye, X, Loader2, Clock, XCircle, Play, Square } from "lucide-react";
+import { Database, RefreshCw, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, FileText, Eye, X } from "lucide-react";
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,7 +51,7 @@ export default function OdooPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [previewData, setPreviewData] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<unknown>(null);
   const [previewLoading, setPreviewLoading] = useState<string | null>(null);
 
   // Sync preview and progress management
@@ -108,7 +108,7 @@ export default function OdooPage() {
       } else {
         throw new Error(data.error || 'Failed to save configuration');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: error.message,
@@ -170,7 +170,7 @@ export default function OdooPage() {
       } else {
         throw new Error(data.error || 'Connection test failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Connection Failed",
         description: error.message,
@@ -211,7 +211,7 @@ export default function OdooPage() {
       } else {
         throw new Error(data.error);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Sync Failed",
         description: error.message,
@@ -246,7 +246,7 @@ export default function OdooPage() {
       } else {
         throw new Error(data.error);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Preview Failed",
         description: error.message,
@@ -265,7 +265,7 @@ export default function OdooPage() {
     syncManager.openPreview('odoo', entityType);
   };
 
-  const handleSyncConfirmed = async (config: any) => {
+  const handleSyncConfirmed = async (config: unknown) => {
     syncManager.closePreview();
     // Generate job ID and start progress tracking
     const jobId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -701,7 +701,7 @@ export default function OdooPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {previewData.previewData.map((record: any, idx: number) => (
+                          {previewData.previewData.map((record: unknown, idx: number) => (
                             <TableRow key={idx}>
                               {previewData.fields.map((field: string) => (
                                 <TableCell key={field} className="max-w-xs truncate">

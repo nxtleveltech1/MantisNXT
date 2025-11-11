@@ -4,10 +4,6 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, formatDistanceToNow, subDays, startOfDay, endOfDay } from 'date-fns';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
   AreaChart,
   Area,
   XAxis,
@@ -18,12 +14,7 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar
+  Cell
 } from 'recharts';
 import {
   Card,
@@ -60,7 +51,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
@@ -69,25 +59,17 @@ import {
   Info,
   CheckCircle2,
   XCircle,
-  Activity,
-  TrendingUp,
-  TrendingDown,
   Clock,
   Search,
-  Filter,
   RefreshCw,
-  ChevronRight,
   Eye,
   Shield,
-  Zap,
   Database,
   Users,
   Package,
   ShoppingCart,
   DollarSign,
   BarChart3,
-  Calendar,
-  FileText,
   Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';

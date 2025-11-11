@@ -4,7 +4,7 @@
  * POST /api/v1/ai/config - Create new config
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

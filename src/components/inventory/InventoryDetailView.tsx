@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,14 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,25 +34,18 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   AreaChart,
-  Area,
-  Legend
+  Area
 } from 'recharts'
 import {
   Package,
   Building2,
   MapPin,
   DollarSign,
-  Calendar,
   TrendingUp,
   TrendingDown,
   AlertTriangle,
   CheckCircle,
-  Clock,
-  Eye,
   Edit,
   Download,
   Share,
@@ -69,35 +56,17 @@ import {
   ShoppingCart,
   FileText,
   Star,
-  Info,
-  Settings,
-  RefreshCw,
-  ArrowUp,
-  ArrowDown,
   History,
-  Users,
   Target,
   Zap,
   X,
-  Maximize2,
-  Minimize2,
   Copy,
   ExternalLink,
-  Award,
   Shield,
-  Globe,
-  Mail,
-  Phone,
-  Layers,
-  PieChart as PieChartIcon,
-  Percent,
-  MousePointer,
-  Filter,
-  Search,
   Calendar as CalendarIcon
 } from 'lucide-react'
 import type { Product, InventoryItem, Supplier, StockMovement } from '@/lib/types/inventory'
-import { format, subDays, isAfter, isBefore } from 'date-fns'
+import { format } from 'date-fns'
 
 interface DetailedInventoryItem {
   product: Product

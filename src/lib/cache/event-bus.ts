@@ -5,7 +5,7 @@
  * Supports event emission, subscription, and listener management.
  */
 
-import {
+import type {
   CacheInvalidationEvent,
   CacheInvalidationEventType,
   CacheEventListener,

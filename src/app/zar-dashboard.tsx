@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import {
   Building2,
-  CheckCircle,
   Star,
   Award,
   TrendingUp,
@@ -17,18 +16,14 @@ import {
   Home as HomeIcon,
   Users,
   ShoppingCart,
-  FileText,
   Package,
   CreditCard,
   DollarSign,
   MessageSquare,
   Settings,
-  LogOut,
   Plus,
   Bell,
-  BarChart3,
   Target,
-  Zap,
   Shield,
   MapPin,
   Percent

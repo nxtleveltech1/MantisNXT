@@ -19,7 +19,6 @@ import { EnhancedPricelistUpload } from '@/components/supplier-portfolio/Enhance
 import { CatalogTable } from '@/components/catalog/CatalogTable';
 // Selections UI removed from NXT-SPP surface to simplify workflow
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { triggerConfetti } from '@/components/spp/AnimatedComponents';
 import type { MergeResult } from '@/types/nxt-spp';
 
 function NxtSppContent() {

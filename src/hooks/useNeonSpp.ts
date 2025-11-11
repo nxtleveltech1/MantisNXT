@@ -24,11 +24,11 @@ export const sppKeys = {
   activeSelection: () => [...sppKeys.all, 'selection', 'active'] as const,
   selections: () => [...sppKeys.all, 'selections'] as const,
   selection: (id: string) => [...sppKeys.selections(), id] as const,
-  uploads: (filters?: Record<string, any>) => [...sppKeys.all, 'uploads', filters] as const,
+  uploads: (filters?: Record<string, unknown>) => [...sppKeys.all, 'uploads', filters] as const,
   upload: (id: string) => [...sppKeys.all, 'upload', id] as const,
   metrics: () => [...sppKeys.all, 'metrics'] as const,
-  nxtSoh: (filters?: Record<string, any>) => [...sppKeys.all, 'nxt-soh', filters] as const,
-  productsBySupplier: (filters?: Record<string, any>) => [...sppKeys.all, 'products', filters] as const,
+  nxtSoh: (filters?: Record<string, unknown>) => [...sppKeys.all, 'nxt-soh', filters] as const,
+  productsBySupplier: (filters?: Record<string, unknown>) => [...sppKeys.all, 'products', filters] as const,
   selectionProducts: (selectionId: string) => [...sppKeys.selection(selectionId), 'products'] as const,
 };
 
@@ -131,7 +131,7 @@ export function useUploadPricelist() {
       currency?: string;
       valid_from?: Date;
       valid_to?: Date;
-      options?: Record<string, any>;
+      options?: Record<string, unknown>;
     }): Promise<string> => {
       const formData = new FormData();
       formData.append('file', request.file);

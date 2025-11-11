@@ -17,7 +17,7 @@ export interface ValidatedActivityItem {
   entityType?: string;
   entityId?: string;
   entityName?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Alert item validation - Updated to match API structure
@@ -57,7 +57,7 @@ export interface ValidatedAlertItem {
 /**
  * Type guard for activity items
  */
-export function isValidActivityItem(item: any): item is ValidatedActivityItem {
+export function isValidActivityItem(item: unknown): item is ValidatedActivityItem {
   if (!item || typeof item !== 'object') return false;
 
   return (
@@ -74,7 +74,7 @@ export function isValidActivityItem(item: any): item is ValidatedActivityItem {
 /**
  * Type guard for alert items - Updated to match API structure with improved validation
  */
-export function isValidAlertItem(item: any): item is ValidatedAlertItem {
+export function isValidAlertItem(item: unknown): item is ValidatedAlertItem {
   if (!item || typeof item !== 'object') {
     return false;
   }
@@ -122,7 +122,7 @@ export function isValidAlertItem(item: any): item is ValidatedAlertItem {
 /**
  * Safely validate and normalize activity items
  */
-export function validateActivityItems(items: any[]): ValidatedActivityItem[] {
+export function validateActivityItems(items: unknown[]): ValidatedActivityItem[] {
   if (!Array.isArray(items)) {
     if (process.env.NODE_ENV === 'development') {
       console.warn('Expected array for activity items, got:', typeof items);
@@ -153,7 +153,7 @@ export function validateActivityItems(items: any[]): ValidatedActivityItem[] {
 /**
  * Safely validate and normalize alert items with fallback recovery
  */
-export function validateAlertItems(items: any[]): ValidatedAlertItem[] {
+export function validateAlertItems(items: unknown[]): ValidatedAlertItem[] {
   if (!Array.isArray(items)) {
     if (process.env.NODE_ENV === 'development') {
       console.warn('Expected array for alert items, got:', typeof items);
@@ -162,7 +162,7 @@ export function validateAlertItems(items: any[]): ValidatedAlertItem[] {
   }
 
   const validated: ValidatedAlertItem[] = [];
-  const errors: Array<{index: number, item: any, error: string}> = [];
+  const errors: Array<{index: number, item: unknown, error: string}> = [];
 
   items.forEach((item, index) => {
     try {
@@ -239,14 +239,14 @@ export function validateAlertItems(items: any[]): ValidatedAlertItem[] {
 /**
  * Attempt fallback validation with data repair for partial alert objects
  */
-function attemptFallbackValidation(item: any, index: number): ValidatedAlertItem | null {
+function attemptFallbackValidation(item: unknown, index: number): ValidatedAlertItem | null {
   if (!item || typeof item !== 'object') {
     return null;
   }
 
   try {
     // Ensure we have all required fields with sensible defaults
-    const repaired: any = {
+    const repaired: unknown = {
       // Required fields with fallbacks
       id: item.id || `generated_alert_${Date.now()}_${index}`,
       type: item.type || 'quality_issue', // Default fallback type
@@ -317,7 +317,7 @@ function attemptFallbackValidation(item: any, index: number): ValidatedAlertItem
 /**
  * Validate API response structure
  */
-export function validateApiResponse<T>(response: any, expectedDataType: string): {
+export function validateApiResponse<T>(response: unknown, expectedDataType: string): {
   success: boolean;
   data: T | null;
   error?: string;
@@ -349,7 +349,7 @@ export function validateApiResponse<T>(response: any, expectedDataType: string):
  * Safe property access with fallback
  */
 export function safeGet<T>(
-  obj: any,
+  obj: unknown,
   path: string,
   fallback: T
 ): T {
@@ -377,7 +377,7 @@ export function safeGet<T>(
 /**
  * Validate metrics object
  */
-export function validateMetrics(metrics: any): Record<string, number> {
+export function validateMetrics(metrics: unknown): Record<string, number> {
   const validated: Record<string, number> = {};
 
   if (!metrics || typeof metrics !== 'object') {
@@ -402,8 +402,8 @@ export function validateMetrics(metrics: any): Record<string, number> {
  * Error boundary helper for component validation
  */
 export function withDataValidation<T>(
-  data: any,
-  validator: (data: any) => T,
+  data: unknown,
+  validator: (data: unknown) => T,
   fallback: T,
   errorContext: string
 ): T {
@@ -432,7 +432,7 @@ class ErrorLogger {
   private readonly maxErrorsPerMinute = 5;
   private readonly resetInterval = 60000; // 1 minute
 
-  logError(errorKey: string, error: any, context: string) {
+  logError(errorKey: string, error: unknown, context: string) {
     const now = Date.now();
     const errorInfo = this.errorCounts.get(errorKey) || { count: 0, lastLogged: 0 };
 
@@ -459,7 +459,7 @@ export const errorLogger = new ErrorLogger();
 /**
  * Transform raw API alert data to ensure compatibility with validation schema
  */
-export function transformAlertItem(rawItem: any): any {
+export function transformAlertItem(rawItem: unknown): unknown {
   if (!rawItem || typeof rawItem !== 'object') {
     return rawItem;
   }
@@ -514,7 +514,7 @@ export function transformAlertItem(rawItem: any): any {
 /**
  * Map different severity naming conventions with better fallbacks
  */
-function mapSeverityValue(severity: any): string {
+function mapSeverityValue(severity: unknown): string {
   if (!severity) {
     return 'info'; // Default fallback
   }
@@ -557,7 +557,7 @@ function mapSeverityValue(severity: any): string {
  * Debug function to log sample alert data structure with validation details
  * Only enabled in development mode
  */
-export function debugAlertStructure(alerts: any[], sampleSize: number = 3): void {
+export function debugAlertStructure(alerts: unknown[], sampleSize: number = 3): void {
   if (process.env.NODE_ENV !== 'development') {
     return; // Only debug in development
   }

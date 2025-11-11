@@ -7,7 +7,8 @@
  * Date: 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 
 // GET - Fetch customer by ID
@@ -41,7 +42,7 @@ export async function GET(
       WHERE id = $1
     `;
 
-    const result = await query<any>(sql, [id]);
+    const result = await query<unknown>(sql, [id]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -57,7 +58,7 @@ export async function GET(
       success: true,
       data: result.rows[0],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching customer:', error);
     return NextResponse.json(
       {
@@ -84,7 +85,7 @@ export async function DELETE(
       RETURNING id
     `;
 
-    const result = await query<any>(sql, [id]);
+    const result = await query<unknown>(sql, [id]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -100,7 +101,7 @@ export async function DELETE(
       success: true,
       data: { id: result.rows[0].id },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting customer:', error);
     return NextResponse.json(
       {

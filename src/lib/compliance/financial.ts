@@ -61,7 +61,7 @@ export interface AuditTrail {
   action: 'create' | 'update' | 'delete' | 'approve' | 'reject';
   userId: string;
   timestamp: Date;
-  changes: Record<string, { old: any; new: any }>;
+  changes: Record<string, { old: unknown; new: unknown }>;
   reason?: string;
   ipAddress?: string;
   userAgent?: string;
@@ -222,7 +222,7 @@ export class FinancialCompliance {
     beePercentage: number;
     recognizedSpend: number;
     recognizedPercentage: number;
-    breakdown: Record<string, any>;
+    breakdown: Record<string, unknown>;
     recommendations: string[];
   } {
     const periodSpends = spends.filter(s => s.period === period);
@@ -274,7 +274,7 @@ export class FinancialCompliance {
     entityId: string,
     action: AuditTrail['action'],
     userId: string,
-    changes: Record<string, { old: any; new: any }>,
+    changes: Record<string, { old: unknown; new: unknown }>,
     reason?: string,
     ipAddress?: string,
     userAgent?: string

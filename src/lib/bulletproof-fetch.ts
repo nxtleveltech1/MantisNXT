@@ -3,7 +3,6 @@
  * Enterprise-grade API client with comprehensive error handling, retry mechanisms, and graceful degradation
  */
 
-import { useErrorRecovery, useApiRetry } from '@/hooks/useErrorRecovery'
 import { toast } from 'sonner'
 
 // ============================================================================

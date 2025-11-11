@@ -191,11 +191,11 @@ function extractUnqualifiedTables(sql: string): string[] {
  * const result = await validatedQuery('SELECT * FROM core.supplier');
  * ```
  */
-export function withQueryValidation<T extends (...args: any[]) => any>(
+export function withQueryValidation<T extends (...args: unknown[]) => unknown>(
   queryFn: T,
   options: QueryValidationOptions = {}
 ): T {
-  return ((...args: any[]) => {
+  return ((...args: unknown[]) => {
     const [sql] = args;
 
     // Validate query before execution

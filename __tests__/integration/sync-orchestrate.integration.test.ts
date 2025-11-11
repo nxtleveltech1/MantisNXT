@@ -10,16 +10,12 @@
  * Coverage target: 90%+ for API routes
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import {
   createMockDatabase,
   createAuthenticatedRequest,
-  waitForCondition,
 } from '../helpers/sync-test-helpers';
 import {
-  generateCustomerData,
-  generateConflictData,
-  generateSyncQueueData,
   mockApiResponse,
 } from '../fixtures/sync-test-data';
 

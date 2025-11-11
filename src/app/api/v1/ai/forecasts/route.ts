@@ -4,7 +4,7 @@
  * POST /api/v1/ai/forecasts - Generate forecast
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -14,7 +14,8 @@ import {
   extractDateRange,
 } from '@/lib/ai/api-utils';
 import { generateForecastSchema } from '@/lib/ai/validation-schemas';
-import { demandForecastService, ForecastHorizon } from '@/lib/ai/services/forecast-service';
+import type { ForecastHorizon } from '@/lib/ai/services/forecast-service';
+import { demandForecastService } from '@/lib/ai/services/forecast-service';
 import { ensureServiceRuntime } from '@/lib/ai/runtime/ensure-service-runtime';
 
 /**

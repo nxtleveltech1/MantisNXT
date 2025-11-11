@@ -13,7 +13,8 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useChat } from 'ai/react'
-import { motion, AnimatePresence, PanInfo } from 'framer-motion'
+import type { PanInfo } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,13 +23,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Brain,
   Send,
-  Mic,
   X,
   Sparkles,
-  User,
-  Bot,
   ChevronDown,
-  ChevronUp,
   Loader2,
   TrendingUp,
   AlertTriangle,
@@ -63,7 +60,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
   // State
   const [isMinimized, setIsMinimized] = useState(startMinimized)
   const [isListening, setIsListening] = useState(false)
-  const [insights, setInsights] = useState<any[]>([])
+  const [insights, setInsights] = useState<unknown[]>([])
   const [activeTab, setActiveTab] = useState<'chat' | 'insights'>('chat')
 
   // Refs
@@ -108,7 +105,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
   }
 
   // Handle drag to minimize
-  const handleDragEnd = (_event: any, info: PanInfo) => {
+  const handleDragEnd = (_event: unknown, info: PanInfo) => {
     if (info.offset.y > 100) {
       setIsMinimized(true)
     } else if (info.offset.y < -100) {
@@ -299,7 +296,7 @@ const MobileAIInterfaceV5: React.FC<MobileAIInterfaceV5Props> = ({
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            handleInputChange({ target: { value: action.label } } as any)
+                            handleInputChange({ target: { value: action.label } } as unknown)
                             inputRef.current?.focus()
                           }}
                           className="flex-shrink-0 text-xs"

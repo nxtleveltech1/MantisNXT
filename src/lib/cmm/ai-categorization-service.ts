@@ -14,7 +14,6 @@ import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
 import { jsonrepair } from 'jsonrepair';
 import {
-  estimateBatchPromptTokens,
   estimateProductTokens,
   estimateCategoryListTokens,
   calculateMaxProductsPerBatch,
@@ -156,7 +155,7 @@ interface AIServiceConfig {
   id: string;
   org_id: string;
   service_id: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   enabled: boolean;
 }
 
@@ -232,7 +231,7 @@ async function getProductCategoriesService(orgId?: string | null): Promise<AISer
 /**
  * Extract enabled AI providers from config
  */
-function extractProviders(config: Record<string, any>): Array<{
+function extractProviders(config: Record<string, unknown>): Array<{
   provider: string;
   apiKey: string;
   baseUrl?: string;
@@ -250,7 +249,7 @@ function extractProviders(config: Record<string, any>): Array<{
   // Check providers object
   if (config.providers) {
     for (const [providerKey, providerConfig] of Object.entries(config.providers)) {
-      const prov = providerConfig as any;
+      const prov = providerConfig as unknown;
       if (prov?.enabled && prov?.apiKey) {
         providers.push({
           provider: providerKey,
@@ -518,7 +517,7 @@ Return ONLY valid JSON matching this exact schema:
       const model = anthropic(modelName || 'claude-3-5-sonnet-20241022');
 
       try {
-        const generateOptions: any = {
+        const generateOptions: unknown = {
           model,
           schema: BatchCategorySuggestionSchema,
           prompt,
@@ -529,7 +528,7 @@ Return ONLY valid JSON matching this exact schema:
 
         const aiResult = await generateObject(generateOptions);
         batchResult = aiResult.object;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Handle "No object generated" error - fallback to generateText with JSON mode
         if (
           error?.message?.includes('No object generated') ||
@@ -559,7 +558,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 
 Return ONLY the JSON object, no other text.`;
 
-            const textOptions: any = {
+            const textOptions: unknown = {
               model,
               prompt: jsonPrompt,
             };
@@ -603,7 +602,7 @@ Return ONLY the JSON object, no other text.`;
 
       try {
         if (supportsJsonSchema(compatibleModel)) {
-          const generateOptions: any = {
+          const generateOptions: unknown = {
             model,
             schema: BatchCategorySuggestionSchema,
             prompt,
@@ -643,7 +642,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 }
 
 Return ONLY the JSON object, no other text.`;
-          const textOptions: any = { model, prompt: jsonPrompt, maxTokens: 2000 };
+          const textOptions: unknown = { model, prompt: jsonPrompt, maxTokens: 2000 };
           if (!isReasoningModel(compatibleModel)) {
             textOptions.temperature = 0.1;
           }
@@ -663,7 +662,7 @@ Return ONLY the JSON object, no other text.`;
             return results;
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Handle "No object generated" error - fallback to generateText with JSON mode
         const msg = String(error?.message || '');
         const body = String(error?.responseBody || '');
@@ -706,7 +705,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 
 Return ONLY the JSON object, no other text.`;
 
-            const textOptions: any = {
+            const textOptions: unknown = {
               model,
               prompt: jsonPrompt,
               maxTokens: 2000,
@@ -759,7 +758,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 }
 
 Return ONLY the JSON object, no other text.`;
-            const textOptions: any = { model, prompt: jsonPrompt, maxTokens: 2000 };
+            const textOptions: unknown = { model, prompt: jsonPrompt, maxTokens: 2000 };
             if (!isReasoningModel(compatibleModel)) {
               textOptions.temperature = 0.1;
             }
@@ -842,7 +841,7 @@ Return ONLY the JSON object, no other text.`;
     }
 
     return results;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Re-throw rate limit errors to be handled by caller
     if (error?.statusCode === 429 || error?.message?.includes('Rate limit')) {
       throw error;
@@ -942,7 +941,7 @@ Return ONLY valid JSON matching this schema:
 
       try {
         // Reasoning models don't support temperature
-        const generateOptions: any = {
+        const generateOptions: unknown = {
           model,
           schema: CategorySuggestionSchema,
           prompt,
@@ -953,7 +952,7 @@ Return ONLY valid JSON matching this schema:
 
         const aiResult = await generateObject(generateOptions);
         result = aiResult.object;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Handle "No object generated" error - fallback to generateText with JSON mode
         if (
           error?.message?.includes('No object generated') ||
@@ -976,7 +975,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 
 Return ONLY the JSON object, no other text.`;
 
-            const textOptions: any = {
+            const textOptions: unknown = {
               model,
               prompt: jsonPrompt,
             };
@@ -1018,7 +1017,7 @@ Return ONLY the JSON object, no other text.`;
       try {
         // Reasoning models don't support temperature
         if (supportsJsonSchema(compatibleModel)) {
-          const generateOptions: any = {
+          const generateOptions: unknown = {
             model,
             schema: CategorySuggestionSchema,
             prompt,
@@ -1050,7 +1049,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 }
 
 Return ONLY the JSON object, no other text.`;
-          const textOptions: any = { model, prompt: jsonPrompt, maxTokens: 1200 };
+          const textOptions: unknown = { model, prompt: jsonPrompt, maxTokens: 1200 };
           if (!isReasoningModel(compatibleModel)) {
             textOptions.temperature = 0.1;
           }
@@ -1066,7 +1065,7 @@ Return ONLY the JSON object, no other text.`;
             throw new Error('Unable to parse JSON response from fallback');
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Handle "No object generated" error - fallback to generateText with JSON mode
         const msg = String(error?.message || '');
         const body = String(error?.responseBody || '');
@@ -1103,7 +1102,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 
 Return ONLY the JSON object, no other text.`;
 
-            const textOptions: any = {
+            const textOptions: unknown = {
               model,
               prompt: jsonPrompt,
               maxTokens: 1200,
@@ -1145,7 +1144,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 }
 
 Return ONLY the JSON object, no other text.`;
-            const textOptions: any = { model, prompt: jsonPrompt, maxTokens: 1200 };
+            const textOptions: unknown = { model, prompt: jsonPrompt, maxTokens: 1200 };
             if (!isReasoningModel(compatibleModel)) {
               textOptions.temperature = 0.1;
             }
@@ -1381,7 +1380,7 @@ export async function suggestCategoriesBatchWithAIService(
           );
 
           return { provider: providerConfig.provider, results: batchResults };
-        } catch (error: any) {
+        } catch (error: unknown) {
           const isRateLimitError =
             error?.statusCode === 429 ||
             error?.message?.includes('Rate limit') ||
@@ -1530,7 +1529,7 @@ export async function suggestCategoryWithAIService(
           providerConfig
         );
         return suggestion;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // If it's a rate limit error, log and return null (other provider can still succeed)
         // Handle both direct rate limit errors and retry errors that contain rate limit errors
         const isRateLimitError =

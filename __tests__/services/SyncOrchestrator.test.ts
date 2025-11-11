@@ -7,14 +7,14 @@
  * Coverage target: 80%+
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import {
   createMockDatabase,
   createMockWooCommerceService,
   createMockOdooService,
   createMockSyncProgressTracker,
 } from '../helpers/sync-test-helpers';
-import { generateCustomerData, generateSyncQueueData } from '../fixtures/sync-test-data';
+import { generateCustomerData } from '../fixtures/sync-test-data';
 
 /**
  * Simulated SyncOrchestrator implementation

@@ -11,15 +11,15 @@
 
 import { query as dbQuery, withTransaction } from "../../../lib/database/unified-connection";
 import { isFeatureEnabled, FeatureFlag } from "@/lib/feature-flags";
-import {
+import type {
   StockOnHand,
   SohBySupplier,
   SohRolledUp,
   SohReportRequest,
+  NxtSoh} from "../../types/nxt-spp";
+import {
   SohReportRequestSchema,
   StockOnHandSchema,
-  NxtSoh,
-  NxtSohSchema,
 } from "../../types/nxt-spp";
 
 export class StockService {
@@ -34,7 +34,7 @@ export class StockService {
     // If using view, count from view
     if (isFeatureEnabled(FeatureFlag.USE_NXT_SOH_VIEW)) {
       const conditions: string[] = ["1=1"];
-      const params: any[] = [];
+      const params: unknown[] = [];
       let idx = 1;
       if (filters?.supplier_ids?.length) {
         conditions.push(`supplier_id = ANY($${idx++}::uuid[])`);
@@ -68,7 +68,7 @@ export class StockService {
           AND isi.status = 'selected'
       )`,
     ];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let idx = 1;
     if (filters?.supplier_ids?.length) {
       conditions.push(`s.supplier_id = ANY($${idx++}::uuid[])`);
@@ -162,7 +162,7 @@ export class StockService {
       for (let i = 0; i < stocks.length; i += batchSize) {
         const batch = stocks.slice(i, i + batchSize);
 
-        const values: any[] = [];
+        const values: unknown[] = [];
         const placeholders: string[] = [];
         let paramIndex = 1;
 
@@ -213,7 +213,7 @@ export class StockService {
     const validated = SohReportRequestSchema.parse(request);
 
     const conditions: string[] = ["1=1"];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (validated.supplier_ids && validated.supplier_ids.length > 0) {
@@ -318,7 +318,7 @@ export class StockService {
     const validated = SohReportRequestSchema.parse(request);
 
     const conditions: string[] = ["sp.product_id IS NOT NULL"];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (validated.product_ids && validated.product_ids.length > 0) {
@@ -452,7 +452,7 @@ export class StockService {
     limit = 100
   ): Promise<StockOnHand[]> {
     const conditions = ["supplier_product_id = $1"];
-    const params: any[] = [supplierProductId];
+    const params: unknown[] = [supplierProductId];
     let paramIndex = 2;
 
     if (locationId) {
@@ -490,7 +490,7 @@ export class StockService {
     }>;
   }> {
     const conditions: string[] = ["1=1"];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (filters?.supplier_ids && filters.supplier_ids.length > 0) {
@@ -608,7 +608,7 @@ export class StockService {
     offset?: number;
   }): Promise<NxtSoh[]> {
     const conditions: string[] = ["1=1"];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (filters?.supplier_ids && filters.supplier_ids.length > 0) {
@@ -667,7 +667,7 @@ export class StockService {
           AND isi.status = 'selected'
       )`,
     ];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (filters?.supplier_ids && filters.supplier_ids.length > 0) {

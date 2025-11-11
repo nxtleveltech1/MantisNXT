@@ -13,7 +13,7 @@ export interface AssistantContext {
 export interface AssistantMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export interface AssistantResponse {
@@ -22,9 +22,9 @@ export interface AssistantResponse {
   actions?: Array<{
     type: string;
     label: string;
-    data: any;
+    data: unknown;
   }>;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class AIAssistantService extends AIChatService {
@@ -109,7 +109,7 @@ export class AIAssistantService extends AIChatService {
     );
 
     if (!response.success || !response.data) {
-      return response as any;
+      return response as unknown;
     }
 
     // Parse AI response for structured data

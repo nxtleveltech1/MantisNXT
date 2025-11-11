@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import PriceListProcessor from '@/lib/services/PriceListProcessor'
 import { query } from '@/lib/database'
@@ -167,7 +168,7 @@ export async function PUT(request: NextRequest) {
     console.log(`📁 Found ${priceListFiles.length} price list files to process`)
 
     // Process files in batches
-    const batchResults: any[] = []
+    const batchResults: unknown[] = []
     const concurrency = validatedData.globalOptions?.concurrentProcesses || 2
     const batches = createFileBatches(priceListFiles, concurrency)
 
@@ -389,7 +390,7 @@ export async function DELETE(request: NextRequest) {
 // Helper functions
 
 async function logProcessingResult(
-  result: any,
+  result: unknown,
   supplierId: string,
   filePath: string
 ): Promise<void> {

@@ -1,6 +1,6 @@
 // @ts-nocheck
 // Mock Authentication Provider - Provider Agnostic Implementation
-import {
+import type {
   AuthProvider,
   User,
   Organization,
@@ -9,10 +9,9 @@ import {
   CreateUserData,
   AuthResult,
   TwoFactorSetup,
-  BulkImportResult,
-  SouthAfricanProvince,
-  Permission
-} from '@/types/auth'
+  BulkImportResult} from '@/types/auth';
+
+
 
 // Mock data store (in real app, this would be a database)
 const mockUsers: User[] = [
@@ -482,7 +481,7 @@ export class MockAuthProvider implements AuthProvider {
         id: `perm-${p}`,
         name: p,
         resource: p.split('.')[0],
-        action: p.split('.')[1] as any
+        action: p.split('.')[1] as unknown
       })) || [],
       created_at: new Date(),
       last_login: new Date(),
@@ -576,7 +575,7 @@ export class MockAuthProvider implements AuthProvider {
           id: `user-${Date.now()}-${index}`,
           email,
           name: values[headers.indexOf('name')] || 'Unknown',
-          role: (values[headers.indexOf('role')] as any) || 'viewer',
+          role: (values[headers.indexOf('role')] as unknown) || 'viewer',
           org_id: this.currentUser?.org_id || 'org-1',
           department: values[headers.indexOf('department')] || 'General',
           permissions: [],

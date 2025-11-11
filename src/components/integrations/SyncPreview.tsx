@@ -18,7 +18,7 @@ interface SyncItem {
   name: string;
   lastModified?: string;
   preview?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface SyncPreviewData {

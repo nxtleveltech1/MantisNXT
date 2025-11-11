@@ -17,8 +17,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   AreaChart,
   Area,
   XAxis,
@@ -31,8 +29,6 @@ import {
   Cell,
 } from 'recharts';
 import {
-  Activity,
-  TrendingUp,
   AlertCircle,
   CheckCircle2,
   Clock,
@@ -42,7 +38,6 @@ import {
   Brain,
   Zap,
   Target,
-  BarChart3,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';

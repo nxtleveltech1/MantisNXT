@@ -8,7 +8,8 @@
  * - Session store
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { dbHealthCheck, getDbMetrics } from '@/lib/database/connection-pool';
 import { redisHealthCheck } from '@/lib/cache/redis-client';
 import { sessionStore } from '@/lib/cache/redis-session-store';
@@ -23,7 +24,7 @@ interface HealthStatus {
     database: {
       status: 'healthy' | 'unhealthy';
       latency?: number;
-      poolInfo?: any;
+      poolInfo?: unknown;
       error?: string;
     };
     redis: {
@@ -38,7 +39,7 @@ interface HealthStatus {
     };
   };
   metrics?: {
-    database?: any;
+    database?: unknown;
   };
 }
 
@@ -137,9 +138,9 @@ async function checkSessionStore(): Promise<{
 }
 
 function determineOverallStatus(
-  dbCheck: any,
-  redisCheck: any,
-  sessionCheck: any
+  dbCheck: unknown,
+  redisCheck: unknown,
+  sessionCheck: unknown
 ): 'healthy' | 'degraded' | 'unhealthy' {
   // Database is critical
   if (!dbCheck.healthy) {

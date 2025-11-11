@@ -37,7 +37,7 @@ export const scaleIn = {
 };
 
 // Animated container components
-export function FadeInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: any }) {
+export function FadeInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
   return (
     <motion.div {...fadeIn} {...props}>
       {children}
@@ -45,7 +45,7 @@ export function FadeInContainer({ children, ...props }: { children: React.ReactN
   );
 }
 
-export function SlideInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: any }) {
+export function SlideInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
   return (
     <motion.div {...slideIn} {...props}>
       {children}
@@ -53,7 +53,7 @@ export function SlideInContainer({ children, ...props }: { children: React.React
   );
 }
 
-export function SlideUpContainer({ children, ...props }: { children: React.ReactNode; [key: string]: any }) {
+export function SlideUpContainer({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
   return (
     <motion.div {...slideUp} {...props}>
       {children}
@@ -61,7 +61,7 @@ export function SlideUpContainer({ children, ...props }: { children: React.React
   );
 }
 
-export function ScaleInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: any }) {
+export function ScaleInContainer({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) {
   return (
     <motion.div {...scaleIn} {...props}>
       {children}
@@ -216,10 +216,16 @@ export function StaggerContainer({ children, staggerDelay = 0.1 }: { children: R
 // Number counter animation
 export function AnimatedNumber({ value, duration = 1 }: { value: number; duration?: number }) {
   const [displayValue, setDisplayValue] = React.useState(0);
+  const lastDisplayValueRef = React.useRef(0);
 
   React.useEffect(() => {
+    lastDisplayValueRef.current = displayValue;
+  }, [displayValue]);
+
+  React.useEffect(() => {
+    let animationFrame: number;
     const startTime = Date.now();
-    const startValue = displayValue;
+    const startValue = lastDisplayValueRef.current;
     const difference = value - startValue;
 
     const updateValue = () => {
@@ -231,13 +237,19 @@ export function AnimatedNumber({ value, duration = 1 }: { value: number; duratio
       setDisplayValue(currentValue);
 
       if (progress < 1) {
-        requestAnimationFrame(updateValue);
+        animationFrame = requestAnimationFrame(updateValue);
       } else {
         setDisplayValue(value);
       }
     };
 
-    requestAnimationFrame(updateValue);
+    animationFrame = requestAnimationFrame(updateValue);
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
   }, [value, duration]);
 
   return <span>{displayValue.toLocaleString()}</span>;

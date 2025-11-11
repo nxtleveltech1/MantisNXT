@@ -17,7 +17,7 @@ export interface AIConfigRecord {
   id: string;
   org_id: string;
   service_type: AIServiceType;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   enabled: boolean;
   created_at: string;
   updated_at: string;
@@ -43,7 +43,7 @@ interface DbConfigRow {
   provider: DbProvider;
   model_name: string;
   api_endpoint: string | null;
-  config: any;
+  config: unknown;
   rate_limit_per_hour: number;
   created_at: Date | string;
   updated_at: Date | string;
@@ -99,9 +99,9 @@ function normalizeModelName(provider: string, model?: string | null): string | u
   const mapped = LEGACY_MODEL_MAP[model] ?? model;
   return normalizeModelForProvider(provider, mapped) ?? mapped;
 }
-function parseConfig(value: unknown): Record<string, any> {
+function parseConfig(value: unknown): Record<string, unknown> {
   if (!value) return {};
-  if (typeof value === 'object') return value as Record<string, any>;
+  if (typeof value === 'object') return value as Record<string, unknown>;
   try {
     return JSON.parse(String(value));
   } catch (error) {
@@ -129,7 +129,7 @@ function mapRow(row: DbConfigRow): AIConfigRecord {
     config.rateLimit = row.rate_limit_per_hour;
   }
   if (config.providers) {
-    Object.entries(config.providers).forEach(([key, section]: any) => {
+    Object.entries(config.providers).forEach(([key, section]: unknown) => {
       if (!section) return;
       section.model = normalizeModelName(key, section.model) ?? section.model;
     });
@@ -153,14 +153,14 @@ function mapRow(row: DbConfigRow): AIConfigRecord {
 }
 
 function pickActiveInstance(
-  config: Record<string, any>
+  config: Record<string, unknown>
 ): { provider?: string; model?: string; baseUrl?: string; apiKey?: string } | null {
   const instances = Array.isArray(config?.providerInstances) ? config.providerInstances : undefined;
   const activeId = config?.activeProviderInstanceId;
   if (instances && instances.length) {
     const target = activeId
-      ? instances.find((i: any) => i?.id === activeId)
-      : instances.find((i: any) => i?.enabled);
+      ? instances.find((i: unknown) => i?.id === activeId)
+      : instances.find((i: unknown) => i?.enabled);
     if (target) {
       return {
         provider: target.providerType || config.activeProvider || config.provider,
@@ -173,7 +173,7 @@ function pickActiveInstance(
   return null;
 }
 
-function resolveProvider(config: Record<string, any>): DbProvider {
+function resolveProvider(config: Record<string, unknown>): DbProvider {
   const fromInstance = pickActiveInstance(config);
   const active = fromInstance?.provider || config.activeProvider || config.provider;
   const mapped = PROVIDER_TO_DB[active || ''];
@@ -181,7 +181,7 @@ function resolveProvider(config: Record<string, any>): DbProvider {
   return 'openai';
 }
 
-function resolveModel(config: Record<string, any>, provider: string): string {
+function resolveModel(config: Record<string, unknown>, provider: string): string {
   const fromInstance = pickActiveInstance(config);
   const preferred = normalizeModelName(
     provider,
@@ -207,7 +207,7 @@ function resolveModel(config: Record<string, any>, provider: string): string {
   return 'gpt-4.1-mini';
 }
 
-function resolveApiEndpoint(config: Record<string, any>, provider: string): string | null {
+function resolveApiEndpoint(config: Record<string, unknown>, provider: string): string | null {
   const fromInstance = pickActiveInstance(config);
   const base = fromInstance?.baseUrl || config.baseUrl || config.apiEndpoint;
   if (base) return String(base);
@@ -222,7 +222,7 @@ function resolveApiEndpoint(config: Record<string, any>, provider: string): stri
   return null;
 }
 
-function resolveRateLimit(config: Record<string, any>): number {
+function resolveRateLimit(config: Record<string, unknown>): number {
   const candidate = config.rateLimit ?? config.rateLimitPerHour ?? config.rate_limit;
   const parsed = Number(candidate);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1000;
@@ -278,7 +278,7 @@ export async function getConfig(orgId: string, service: string): Promise<AIConfi
 export async function upsertConfig(
   orgId: string,
   service: string,
-  updates: { config?: Record<string, any>; enabled?: boolean }
+  updates: { config?: Record<string, unknown>; enabled?: boolean }
 ): Promise<AIConfigRecord> {
   const resolvedOrg = resolveOrgId(orgId);
   const dbService = toDbServiceType(service);
@@ -365,7 +365,7 @@ export async function getConfigByServiceId(
 export async function upsertConfigByServiceId(
   orgId: string,
   serviceId: string,
-  updates: { config?: Record<string, any>; enabled?: boolean }
+  updates: { config?: Record<string, unknown>; enabled?: boolean }
 ): Promise<AIConfigRecord> {
   const resolvedOrg = resolveOrgId(orgId);
   const configObject = updates.config ? { ...updates.config } : {};

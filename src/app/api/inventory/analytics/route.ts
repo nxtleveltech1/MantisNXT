@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import { calculateTurnover, fillRate } from '@/lib/utils/inventory-metrics';
 
@@ -30,12 +31,12 @@ export async function GET(req: NextRequest) {
     );
 
     const totalOutbound = mvRows
-      .filter((m: any) =>
+      .filter((m: unknown) =>
         String(m.movement_type).toLowerCase() === 'sale' ||
         String(m.movement_type).toLowerCase() === 'outbound' ||
         String(m.movement_type).toLowerCase() === 'shipment'
       )
-      .reduce((acc: number, m: any) => acc + Math.abs(Number(m.quantity || 0)), 0);
+      .reduce((acc: number, m: unknown) => acc + Math.abs(Number(m.quantity || 0)), 0);
 
     // Average inventory proxy: use total_units snapshot (approximation)
     const avgInventory = Number(invRows[0]?.total_units || 0) || 1; // avoid division by zero
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
     };
 
     return NextResponse.json({ success: true, data: payload });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json({ success: false, error: 'ANALYTICS_FAILED', detail: err?.message ?? String(err) }, { status: 500 });
   }
 }

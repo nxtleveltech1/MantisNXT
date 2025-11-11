@@ -34,11 +34,6 @@ import {
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -47,16 +42,12 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import {
-  TrendingUp,
-  TrendingDown,
   Users,
   Gift,
-  Award,
   Download,
   DollarSign,
   Percent,
   ArrowUpRight,
-  ArrowDownRight,
   AlertTriangle,
   Brain,
   Target,
@@ -65,7 +56,6 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
 
 const TIER_COLORS: Record<string, string> = {
   bronze: '#d97706',
@@ -99,7 +89,7 @@ export default function AILoyaltyAnalytics() {
   // Set default program
   React.useEffect(() => {
     if (programs && programs.length > 0 && !programId) {
-      const defaultProgram = programs.find((p: any) => p.is_default) || programs[0]
+      const defaultProgram = programs.find((p: unknown) => p.is_default) || programs[0]
       setProgramId(defaultProgram.id)
     }
   }, [programs, programId])
@@ -320,7 +310,7 @@ export default function AILoyaltyAnalytics() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {programs?.map((program: any) => (
+              {programs?.map((program: unknown) => (
                 <SelectItem key={program.id} value={program.id}>
                   {program.name}
                 </SelectItem>
@@ -534,7 +524,7 @@ export default function AILoyaltyAnalytics() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold text-red-600">
-                      {churnData.at_risk_customers?.filter((c: any) => c.risk_level === 'critical').length || 0}
+                      {churnData.at_risk_customers?.filter((c: unknown) => c.risk_level === 'critical').length || 0}
                     </p>
                   </CardContent>
                 </Card>
@@ -634,7 +624,7 @@ export default function AILoyaltyAnalytics() {
                 </p>
                 <div className="space-y-4">
                   <h4 className="font-semibold">Optimization Suggestions</h4>
-                  {rewardsData.optimization_suggestions?.map((suggestion: any, i: number) => (
+                  {rewardsData.optimization_suggestions?.map((suggestion: unknown, i: number) => (
                     <div key={i} className="border-l-4 border-blue-500 pl-4">
                       <div className="flex items-center gap-2 mb-1">
                         <Badge>{suggestion.category}</Badge>
@@ -672,8 +662,8 @@ export default function AILoyaltyAnalytics() {
                 <div className="space-y-2">
                   <h4 className="font-semibold">Predicted Movements (30 days)</h4>
                   <p className="text-sm text-muted-foreground">
-                    {tierData.predicted_movements?.filter((m: any) => m.movement_type === 'upgrade').length || 0} upgrades,{' '}
-                    {tierData.predicted_movements?.filter((m: any) => m.movement_type === 'downgrade').length || 0} downgrades
+                    {tierData.predicted_movements?.filter((m: unknown) => m.movement_type === 'upgrade').length || 0} upgrades,{' '}
+                    {tierData.predicted_movements?.filter((m: unknown) => m.movement_type === 'downgrade').length || 0} downgrades
                   </p>
                 </div>
               </CardContent>

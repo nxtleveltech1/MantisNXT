@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Plus, X } from 'lucide-react';
+import { Save, Plus, X } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 
 export default function NewCustomerPage() {
@@ -26,7 +26,7 @@ export default function NewCustomerPage() {
       country: ''
     },
     tags: [] as string[],
-    metadata: {} as Record<string, any>,
+    metadata: {} as Record<string, unknown>,
     notes: ''
   });
 

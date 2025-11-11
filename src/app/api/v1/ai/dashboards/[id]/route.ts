@@ -5,7 +5,7 @@
  * DELETE /api/v1/ai/dashboards/[id]
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { pool, withTransaction } from "@/lib/database";
 
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     const { rows } = await pool.query(sql, [limit, offset]);
 
-    const data = rows.map((r: any) => ({
+    const data = rows.map((r: unknown) => ({
       id: r.id,
       supplierProductId: r.supplier_product_id,
       sku: r.sku,
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
         hasMore: data.length === limit,
       },
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("❌ Stock movements query failed:", e);
     return NextResponse.json(
       {
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("❌ Stock movement creation failed:", e);
 
     if (e instanceof z.ZodError) {

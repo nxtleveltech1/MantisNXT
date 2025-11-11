@@ -3,7 +3,7 @@
  * GET /api/v1/ai/predictions/by-entity
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
     // Validate required parameters
     requireQueryParams(searchParams, ['entityType', 'entityId']);
 
-    const entityType = searchParams.get('entityType')! as any;
+    const entityType = searchParams.get('entityType')! as unknown;
     const entityId = searchParams.get('entityId')!;
 
     // Optional filters
-    const serviceType = searchParams.get('serviceType') as any;
+    const serviceType = searchParams.get('serviceType') as unknown;
     const status = searchParams.get('status') || undefined;
 
     const result = await predictionService.listPredictions(user.org_id, {

@@ -3,7 +3,6 @@
  * Emergency simplified version to prevent circular dependencies
  */
 
-import { Pool } from 'pg';
 import { pool } from './connection';
 
 /**
@@ -13,7 +12,7 @@ export const connectionResolver = {
   /**
    * Execute a database query
    */
-  query: async <T = any>(text: string, params?: any[]): Promise<{ rows: T[]; rowCount: number }> => {
+  query: async <T = unknown>(text: string, params?: unknown[]): Promise<{ rows: T[]; rowCount: number }> => {
     try {
       console.log('🔍 Connection Resolver executing query');
       const result = await pool.query(text, params);

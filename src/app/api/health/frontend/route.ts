@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { pool } from '@/lib/database'
 
 /**
@@ -14,13 +15,13 @@ export async function GET(request: NextRequest) {
       timestamp: string;
       status: string;
       services: {
-        database: { status: string; responseTime: number; error: string | null; version?: string; currentTime?: any };
+        database: { status: string; responseTime: number; error: string | null; version?: string; currentTime?: unknown };
         apis: {
           suppliers: { status: string; responseTime: number; error: string | null };
           inventory: { status: string; responseTime: number; error: string | null };
           analytics: { status: string; responseTime: number; error: string | null };
           alerts: { status: string; responseTime: number; error: string | null };
-          [key: string]: { status: string; responseTime: number; error: string | null; dataCount?: any };
+          [key: string]: { status: string; responseTime: number; error: string | null; dataCount?: unknown };
         };
       };
       system: {

@@ -7,7 +7,7 @@ import { BuildSafeErrorBoundary, SafeLazyWrapper } from '@/components/ui/BuildSa
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Brain,
   BarChart3,
@@ -16,8 +16,6 @@ import {
   Sparkles,
   TrendingUp,
   Activity,
-  Maximize2,
-  Minimize2,
   AlertTriangle
 } from 'lucide-react'
 
@@ -170,7 +168,7 @@ export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState('dashboard')
 
   // Handle AI chat actions with error handling
-  const handleChatAction = useCallback((action: any) => {
+  const handleChatAction = useCallback((action: unknown) => {
     try {
       console.log('Chat action triggered:', action)
       switch (action.action) {
@@ -192,7 +190,7 @@ export default function AnalyticsPage() {
   }, [])
 
   // Handle supplier selection with error handling
-  const handleSupplierSelect = useCallback((supplier: any) => {
+  const handleSupplierSelect = useCallback((supplier: unknown) => {
     try {
       setSelectedSupplier(supplier)
       console.log('Supplier selected:', supplier)
@@ -202,7 +200,7 @@ export default function AnalyticsPage() {
   }, [])
 
   // Handle insight actions with error handling
-  const handleInsightAction = useCallback((insightId: string, action: any) => {
+  const handleInsightAction = useCallback((insightId: string, action: unknown) => {
     try {
       console.log('Insight action:', insightId, action)
     } catch (error) {

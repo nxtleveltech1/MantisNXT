@@ -63,7 +63,7 @@ export async function loadCategoryAIConfig(
     id: string;
     org_id: string;
     service_id: string;
-    config: Record<string, any>;
+    config: Record<string, unknown>;
     enabled: boolean;
   }>(
     `
@@ -101,7 +101,7 @@ export async function loadCategoryAIConfig(
   const cfg = row.config || {};
   const activeProvider = cfg.activeProvider || cfg.primaryProvider;
   const orderFromConfig: string[] = Array.isArray(cfg.providerOrder)
-    ? cfg.providerOrder.map((s: any) => String(s).toLowerCase())
+    ? cfg.providerOrder.map((s: unknown) => String(s).toLowerCase())
     : [];
   const orderSet = new Set(orderFromConfig);
   if (activeProvider) {
@@ -142,7 +142,7 @@ export async function loadCategoryAIConfig(
   }
 
   // Operational defaults from platform config (flexible keys)
-  const toInt = (v: any): number | undefined => {
+  const toInt = (v: unknown): number | undefined => {
     const n = Number(v);
     return Number.isFinite(n) && n > 0 ? n : undefined;
   };
@@ -172,7 +172,7 @@ export async function loadCategoryAIConfig(
 /**
  * Extract enabled providers from the flexible config shape used by ai_service_config.config
  */
-function extractProviders(config: Record<string, any>): ProviderConfig[] {
+function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
   const providers: ProviderConfig[] = [];
 
   // Priority 1: providerInstances array (used by AI Services UI)
@@ -182,7 +182,7 @@ function extractProviders(config: Record<string, any>): ProviderConfig[] {
     // If there's an activeProviderInstanceId, use only that one
     const activeId = config.activeProviderInstanceId;
     if (activeId) {
-      const activeInst = config.providerInstances.find((inst: any) => inst.id === activeId);
+      const activeInst = config.providerInstances.find((inst: unknown) => inst.id === activeId);
       if (activeInst?.enabled && activeInst?.apiKey) {
         console.log(`[category-ai:resolver] Using active provider instance: ${activeInst.id} (${activeInst.model})`);
         providers.push({
@@ -214,7 +214,7 @@ function extractProviders(config: Record<string, any>): ProviderConfig[] {
   // Priority 2: providers object
   if (providers.length === 0 && config?.providers && typeof config.providers === 'object') {
     console.log(`[category-ai:resolver] Using providers object`);
-    for (const [key, value] of Object.entries<any>(config.providers)) {
+    for (const [key, value] of Object.entries<unknown>(config.providers)) {
       if (value?.enabled && value?.apiKey) {
         providers.push({
           provider: key,

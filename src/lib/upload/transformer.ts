@@ -1,10 +1,9 @@
-import {
+import type {
   MappedProductData,
   ImportConfiguration,
-  PriceListRowExtended,
-  ValidationError,
-  ValidationWarning
-} from '@/types/pricelist-upload';
+  PriceListRowExtended} from '@/types/pricelist-upload';
+
+
 import { DataCleaner } from './validator';
 
 export class DataTransformer {
@@ -13,7 +12,7 @@ export class DataTransformer {
    * Transform raw data rows to mapped product data
    */
   static transformData(
-    rawData: Record<string, any>[],
+    rawData: Record<string, unknown>[],
     config: ImportConfiguration
   ): PriceListRowExtended[] {
     return rawData.map((row, index) => {
@@ -35,7 +34,7 @@ export class DataTransformer {
    * Map raw row data to structured product data using column mapping
    */
   private static mapRowData(
-    row: Record<string, any>,
+    row: Record<string, unknown>,
     config: ImportConfiguration
   ): MappedProductData {
     const { columnMapping } = config;
@@ -143,7 +142,7 @@ export class DataTransformer {
       Object.keys(transformed).forEach(key => {
         const value = transformed[key as keyof MappedProductData];
         if (typeof value === 'string') {
-          (transformed as any)[key] = value.trim();
+          (transformed as unknown)[key] = value.trim();
         }
       });
     }
@@ -152,7 +151,7 @@ export class DataTransformer {
     rules.convertToUpperCase.forEach(fieldName => {
       const value = transformed[fieldName as keyof MappedProductData];
       if (typeof value === 'string') {
-        (transformed as any)[fieldName] = value.toUpperCase();
+        (transformed as unknown)[fieldName] = value.toUpperCase();
       }
     });
 
@@ -160,7 +159,7 @@ export class DataTransformer {
     rules.convertToLowerCase.forEach(fieldName => {
       const value = transformed[fieldName as keyof MappedProductData];
       if (typeof value === 'string') {
-        (transformed as any)[fieldName] = value.toLowerCase();
+        (transformed as unknown)[fieldName] = value.toLowerCase();
       }
     });
 
@@ -168,7 +167,7 @@ export class DataTransformer {
     rules.removeSpecialChars.forEach(fieldName => {
       const value = transformed[fieldName as keyof MappedProductData];
       if (typeof value === 'string') {
-        (transformed as any)[fieldName] = value.replace(/[^a-zA-Z0-9\s\-_]/g, '');
+        (transformed as unknown)[fieldName] = value.replace(/[^a-zA-Z0-9\s\-_]/g, '');
       }
     });
 
@@ -190,7 +189,7 @@ export class DataTransformer {
   /**
    * Normalize availability values
    */
-  private static normalizeAvailability(value: any): string {
+  private static normalizeAvailability(value: unknown): string {
     if (!value || typeof value !== 'string') return 'available';
 
     const normalized = value.toLowerCase().trim();
@@ -216,7 +215,7 @@ export class DataTransformer {
   /**
    * Normalize and validate barcode
    */
-  private static normalizeBarcode(value: any): string | undefined {
+  private static normalizeBarcode(value: unknown): string | undefined {
     if (!value || typeof value !== 'string') return undefined;
 
     // Remove all non-numeric characters
@@ -233,7 +232,7 @@ export class DataTransformer {
   /**
    * Parse dimensions from various formats
    */
-  private static parseDimensions(value: any): MappedProductData['dimensions'] | undefined {
+  private static parseDimensions(value: unknown): MappedProductData['dimensions'] | undefined {
     if (!value || typeof value !== 'string') return undefined;
 
     const cleaned = value.toLowerCase().replace(/[^0-9.,x× ]/g, '');
@@ -280,7 +279,7 @@ export class DataTransformer {
    * Create smart column mapping suggestions based on data analysis
    */
   static suggestColumnMapping(
-    sampleData: Record<string, any>[],
+    sampleData: Record<string, unknown>[],
     headers: string[]
   ): ImportConfiguration['columnMapping'] {
     const mapping: ImportConfiguration['columnMapping'] = {};

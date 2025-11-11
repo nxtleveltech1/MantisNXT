@@ -4,7 +4,7 @@
  * POST /api/v1/ai/providers  - Create a new registry entry
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { authenticateRequest, handleAIError, successResponse, createdResponse } from '@/lib/ai/api-utils';
 import { createProviderRegistry, listProviderRegistry, type RegistryProviderType } from './_store';
 

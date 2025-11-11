@@ -97,7 +97,7 @@ export interface ImportConfiguration {
 
 export interface PriceListRowExtended {
   rowIndex: number;
-  originalData: Record<string, any>;
+  originalData: Record<string, unknown>;
   mappedData: MappedProductData;
   validationStatus: 'valid' | 'invalid' | 'warning';
   validationErrors: ValidationError[];
@@ -137,7 +137,7 @@ export interface MappedProductData {
 export interface ValidationError {
   rowIndex: number;
   field: string;
-  value: any;
+  value: unknown;
   errorType: 'missing_required' | 'invalid_format' | 'invalid_value' | 'duplicate' | 'constraint_violation';
   message: string;
   severity: 'error';
@@ -146,7 +146,7 @@ export interface ValidationError {
 export interface ValidationWarning {
   rowIndex: number;
   field: string;
-  value: any;
+  value: unknown;
   warningType: 'missing_optional' | 'unusual_value' | 'format_suggestion' | 'duplicate_suggestion';
   message: string;
   severity: 'warning';
@@ -201,7 +201,7 @@ export interface FileFormatDetection {
   hasHeaders: boolean;
   totalRows: number;
   totalColumns: number;
-  sampleData: Record<string, any>[];
+  sampleData: Record<string, unknown>[];
   detectedColumns: DetectedColumn[];
 }
 
@@ -209,7 +209,7 @@ export interface DetectedColumn {
   index: number;
   name: string;
   dataType: 'string' | 'number' | 'boolean' | 'date' | 'currency' | 'mixed';
-  sampleValues: any[];
+  sampleValues: unknown[];
   nullCount: number;
   uniqueCount: number;
   suggestedMapping?: keyof ImportConfiguration['columnMapping'];
@@ -361,7 +361,7 @@ export interface ValidationResponse {
 export interface ProcessingEvent {
   uploadId: string;
   type: 'progress' | 'validation_complete' | 'import_complete' | 'error';
-  data: any;
+  data: unknown;
   timestamp: Date;
 }
 

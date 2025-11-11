@@ -26,7 +26,7 @@ export interface PricelistUpload {
   valid_to: Date | null;
   row_count: number;
   status: 'received' | 'validating' | 'validated' | 'merged' | 'failed' | 'rejected';
-  errors_json: Record<string, any> | null;
+  errors_json: Record<string, unknown> | null;
   processed_by?: string;
   processed_at?: Date;
   created_at: Date;
@@ -67,7 +67,7 @@ export interface PricelistRow {
   category_raw?: string;
   vat_code?: string;
   barcode?: string;
-  attrs_json?: Record<string, any>;
+  attrs_json?: Record<string, unknown>;
   validation_errors?: string[];
 }
 
@@ -139,7 +139,7 @@ export interface Product {
   pack_size?: string;
   barcode?: string;
   category_id?: string;
-  attrs_json?: Record<string, any>;
+  attrs_json?: Record<string, unknown>;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -197,7 +197,7 @@ export interface SupplierProduct {
   is_active: boolean;
   is_new: boolean;
   category_id?: string;
-  attrs_json?: Record<string, any>;
+  attrs_json?: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
 }
@@ -584,7 +584,7 @@ export type MergeResult = {
 export type ValidationError = {
   row_num: number;
   field: string;
-  value: any;
+  value: unknown;
   message: string;
   severity: 'error' | 'warning';
 };
@@ -595,7 +595,7 @@ export type BulkOperationResult<T> = {
   failed: number;
   results: T[];
   errors: Array<{
-    item: any;
+    item: unknown;
     error: string;
   }>;
 };

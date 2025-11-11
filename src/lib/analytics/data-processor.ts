@@ -53,7 +53,7 @@ export class AnalyticsDataProcessor {
     return 'stable'
   }
 
-  static processSpendAnalysis(rawData: any[]): {
+  static processSpendAnalysis(rawData: unknown[]): {
     monthlySpend: TimeSeriesData[]
     totalSpend: ComparisonData
     topCategories: Array<{ category: string; amount: number; percentage: number }>
@@ -97,13 +97,13 @@ export class AnalyticsDataProcessor {
     }
   }
 
-  static processSupplierMetrics(supplierData: any[]): {
+  static processSupplierMetrics(supplierData: unknown[]): {
     averageRating: number
     onTimePerformance: number
     qualityScore: number
     riskDistribution: { low: number; medium: number; high: number }
-    topPerformers: any[]
-    underperformers: any[]
+    topPerformers: unknown[]
+    underperformers: unknown[]
   } {
     const totalSuppliers = supplierData.length
 
@@ -142,7 +142,7 @@ export class AnalyticsDataProcessor {
     }
   }
 
-  static processSavingsAnalysis(savingsData: any[]): {
+  static processSavingsAnalysis(savingsData: unknown[]): {
     totalSavings: number
     savingsByType: { [key: string]: number }
     targetAchievement: number
@@ -182,7 +182,7 @@ export class AnalyticsDataProcessor {
     }
   }
 
-  static processRiskAnalysis(riskData: any[]): {
+  static processRiskAnalysis(riskData: unknown[]): {
     overallRiskScore: number
     criticalRisks: number
     riskTrends: { improving: number; stable: number; worsening: number }
@@ -229,7 +229,7 @@ export class AnalyticsDataProcessor {
     }
   }
 
-  static generateInsights(data: any): string[] {
+  static generateInsights(data: unknown): string[] {
     const insights = []
 
     // Spend insights

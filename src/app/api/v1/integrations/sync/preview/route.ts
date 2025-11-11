@@ -21,9 +21,11 @@
  * Error Codes: 400 (invalid params), 401 (auth), 500 (service error)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
-import { DeltaDetectionService, SyncType, EntityType } from '@/lib/services/DeltaDetectionService';
+import type { SyncType, EntityType } from '@/lib/services/DeltaDetectionService';
+import { DeltaDetectionService } from '@/lib/services/DeltaDetectionService';
 
 interface SelectiveSyncPayload {
   includeNew: boolean;
@@ -61,7 +63,7 @@ function validateQueryParams(
 /**
  * Extract organization ID from request context
  */
-function getOrgIdFromRequest(request: NextRequest, body?: any): string | null {
+function getOrgIdFromRequest(request: NextRequest, body?: unknown): string | null {
   // Try to get from request body first (for POST requests)
   if (body?.orgId) {
     return body.orgId;
@@ -192,7 +194,7 @@ export async function GET(request: NextRequest) {
         },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`[Sync Preview] GET error:`, error);
 
     const orgId = getOrgIdFromRequest(request);
@@ -228,7 +230,7 @@ export async function POST(request: NextRequest) {
     const entityType = url.searchParams.get('entity_type');
 
     // Get organization ID
-    let body: any = {};
+    let body: unknown = {};
     try {
       body = await request.json();
     } catch {
@@ -410,7 +412,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`[Sync Preview] POST error:`, error);
 
     const orgId = getOrgIdFromRequest(request);
@@ -440,7 +442,7 @@ async function logRequest(
   orgId: string,
   activityType: string,
   status: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): Promise<void> {
   try {
     await query(
@@ -448,7 +450,7 @@ async function logRequest(
        VALUES ($1, $2, $3, $4::jsonb)`,
       [orgId, activityType, status, JSON.stringify(details || {})]
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle missing table gracefully - this is non-fatal
     if (error.message?.includes('does not exist') || 
         error.message?.includes('relation') ||

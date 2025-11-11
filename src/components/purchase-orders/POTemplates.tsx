@@ -36,7 +36,6 @@ import {
   Monitor,
   Wrench,
   Building,
-  Clock,
   User,
   Download,
   Upload

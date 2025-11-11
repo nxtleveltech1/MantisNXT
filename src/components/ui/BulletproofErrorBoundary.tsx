@@ -6,7 +6,8 @@
 
 'use client'
 
-import React, { Component, ReactNode } from 'react'
+import type { ReactNode } from 'react';
+import React, { Component } from 'react'
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,7 +16,7 @@ interface ErrorBoundaryProps {
   children: ReactNode
   fallback?: ReactNode
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void
-  resetKeys?: any[]
+  resetKeys?: unknown[]
   showDetails?: boolean
   isolate?: boolean
 }
@@ -100,7 +101,7 @@ export class BulletproofErrorBoundary extends Component<ErrorBoundaryProps, Erro
     }
   }
 
-  private logErrorToService(error: Error, errorInfo: React.ErrorInfo) {
+  private logErrorToService(error: Error, _errorInfo: React.ErrorInfo) {
     // Placeholder for error tracking service integration
     // e.g., Sentry, LogRocket, Bugsnag
     try {

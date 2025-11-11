@@ -12,7 +12,8 @@
  * - Performance optimized queries
  */
 
-import { query, withTransaction, PoolClient } from '@/lib/database/connection';
+import type { PoolClient } from '@/lib/database/connection';
+import { query, withTransaction } from '@/lib/database/connection';
 
 // ============================================================================
 // TYPES
@@ -24,7 +25,7 @@ export interface Dashboard {
   name: string;
   description?: string;
   layout: LayoutItem[];
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   is_default: boolean;
   is_shared: boolean;
   created_by: string;
@@ -47,8 +48,8 @@ export interface Widget {
   dashboard_id: string;
   widget_type: string;
   metric_type: string;
-  config: Record<string, any>;
-  query: Record<string, any>;
+  config: Record<string, unknown>;
+  query: Record<string, unknown>;
   refresh_interval_seconds: number;
   position_x: number;
   position_y: number;
@@ -62,18 +63,18 @@ export interface CreateDashboardData {
   name: string;
   description?: string;
   layout?: LayoutItem[];
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   isPublic?: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateDashboardData {
   name?: string;
   description?: string;
   layout?: LayoutItem[];
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   isPublic?: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ShareConfig {
@@ -85,13 +86,13 @@ export interface WidgetConfig {
   dashboardId: string;
   type: string;
   title: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   dataSource: {
     type: string;
-    params: Record<string, any>;
+    params: Record<string, unknown>;
   };
   refreshInterval?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ListDashboardsOptions {
@@ -122,7 +123,7 @@ export class DashboardService {
     } = options;
 
     let whereClause = 'WHERE d.org_id = $1';
-    const params: any[] = [orgId];
+    const params: unknown[] = [orgId];
 
     // Filter by public/private
     if (isPublic !== undefined) {
@@ -340,7 +341,7 @@ export class DashboardService {
   ): Promise<Dashboard | null> {
     // Build dynamic update query
     const updates: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramCounter = 1;
 
     if (data.name !== undefined) {
@@ -686,7 +687,7 @@ export class DashboardService {
     const { dashboardId, type, limit = 50, offset = 0 } = options;
 
     let whereClause = 'WHERE org_id = $1';
-    const params: any[] = [orgId];
+    const params: unknown[] = [orgId];
 
     if (dashboardId) {
       params.push(dashboardId);
@@ -774,7 +775,7 @@ export class DashboardService {
     data: Partial<WidgetConfig>
   ): Promise<Widget | null> {
     const updates: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramCounter = 1;
 
     if (data.title !== undefined && data.config) {
@@ -917,7 +918,7 @@ export class DashboardService {
   static async getWidgetData(
     orgId: string,
     widgetId: string
-  ): Promise<{ data: any; metadata: any }> {
+  ): Promise<{ data: unknown; metadata: unknown }> {
     const widget = await this.getWidget(orgId, widgetId);
 
     if (!widget) {
@@ -943,7 +944,7 @@ export class DashboardService {
    * Generate mock data based on widget type
    * In production, this would be replaced with actual data queries
    */
-  private static generateMockWidgetData(widget: Widget): any {
+  private static generateMockWidgetData(widget: Widget): unknown {
     switch (widget.widget_type) {
       case 'metric_card':
         return {

@@ -192,7 +192,7 @@ export const generateProgressSnapshot = () => {
 };
 
 export const mockWooCommerceResponse = (type: string = 'customers') => {
-  const responses: Record<string, any> = {
+  const responses: Record<string, unknown> = {
     customers: {
       data: generateCustomerData(5),
       headers: { 'x-wp-total': '5', 'x-wp-totalpages': '1' },
@@ -210,7 +210,7 @@ export const mockWooCommerceResponse = (type: string = 'customers') => {
   return responses[type] || responses.customers;
 };
 
-export const mockApiResponse = (success: boolean = true, data: any = null, error: string | null = null) => {
+export const mockApiResponse = (success: boolean = true, data: unknown = null, error: string | null = null) => {
   return {
     status: success ? 200 : 400,
     data: {
@@ -222,7 +222,7 @@ export const mockApiResponse = (success: boolean = true, data: any = null, error
   };
 };
 
-export const mockSSEEvent = (type: string = 'progress', data: any = {}) => {
+export const mockSSEEvent = (type: string = 'progress', data: unknown = {}) => {
   return {
     type,
     data: JSON.stringify(data),

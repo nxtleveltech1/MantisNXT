@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import GridLayout, { Layout } from 'react-grid-layout';
+import type { Layout } from 'react-grid-layout';
+import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,13 +19,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
+
 import { Switch } from '@/components/ui/switch';
 import {
   LayoutDashboard,
@@ -47,7 +43,7 @@ interface Dashboard {
   name: string;
   description?: string;
   layout: Layout[];
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   is_default: boolean;
   is_shared: boolean;
   created_by: string;
@@ -62,8 +58,8 @@ interface Widget {
   dashboard_id: string;
   widget_type: string;
   metric_type: string;
-  config: Record<string, any>;
-  query: Record<string, any>;
+  config: Record<string, unknown>;
+  query: Record<string, unknown>;
   refresh_interval_seconds: number;
   position_x: number;
   position_y: number;
@@ -235,8 +231,8 @@ export default function DashboardBuilder({ dashboardId }: DashboardBuilderProps 
       dashboardId: string;
       type: string;
       title: string;
-      config: Record<string, any>;
-      dataSource: { type: string; params: Record<string, any> };
+      config: Record<string, unknown>;
+      dataSource: { type: string; params: Record<string, unknown> };
       refreshInterval?: number;
     }) => {
       const response = await fetch('/api/v1/ai/widgets', {

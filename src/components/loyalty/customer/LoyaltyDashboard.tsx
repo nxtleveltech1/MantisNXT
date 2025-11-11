@@ -27,12 +27,9 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { PointsDisplay } from './shared/PointsDisplay';
 import { TierBadge } from './shared/TierBadge';
-import { ActivityFeedItem } from './shared/ActivityFeedItem';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 interface LoyaltyDashboardProps {
@@ -92,8 +89,8 @@ interface LoyaltySummary {
     min_points: number;
     max_points: number;
   };
-  recent_transactions: any[];
-  recent_redemptions: any[];
+  recent_transactions: unknown[];
+  recent_redemptions: unknown[];
 }
 
 const containerVariants = {
@@ -190,7 +187,7 @@ export function LoyaltyDashboard({
 
               {/* Tier Badge */}
               <div className="flex justify-center">
-                <TierBadge tier={tier_info.current_tier as any} size="lg" />
+                <TierBadge tier={tier_info.current_tier as unknown} size="lg" />
               </div>
 
               {/* Quick Actions */}

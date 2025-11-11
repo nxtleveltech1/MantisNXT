@@ -9,8 +9,9 @@
  * - Performance monitoring
  */
 
-import { Pool, PoolClient, PoolConfig } from 'pg';
-import { neon, neonConfig } from '@neondatabase/serverless';
+import type { PoolClient, PoolConfig } from 'pg';
+import { Pool } from 'pg';
+import { neonConfig } from '@neondatabase/serverless';
 
 interface PoolMetrics {
   totalConnections: number;
@@ -124,9 +125,9 @@ class DatabaseConnectionPool {
   /**
    * Execute query with metrics
    */
-  public async query<T = any>(
+  public async query<T = unknown>(
     text: string,
-    params?: any[]
+    params?: unknown[]
   ): Promise<{ rows: T[]; rowCount: number }> {
     const pool = await this.getPool();
     const startTime = Date.now();
@@ -190,7 +191,7 @@ class DatabaseConnectionPool {
   public async healthCheck(): Promise<{
     healthy: boolean;
     latency?: number;
-    poolInfo?: any;
+    poolInfo?: unknown;
     error?: string;
   }> {
     try {
@@ -224,7 +225,7 @@ class DatabaseConnectionPool {
   /**
    * Get pool metrics
    */
-  public getMetrics(): PoolMetrics & { poolInfo?: any } {
+  public getMetrics(): PoolMetrics & { poolInfo?: unknown } {
     return {
       ...this.metrics,
       poolInfo: this.pool
@@ -277,7 +278,7 @@ class DatabaseConnectionPool {
 export const dbPool = DatabaseConnectionPool.getInstance();
 
 // Helper functions
-export async function query<T = any>(text: string, params?: any[]) {
+export async function query<T = unknown>(text: string, params?: unknown[]) {
   return dbPool.query<T>(text, params);
 }
 

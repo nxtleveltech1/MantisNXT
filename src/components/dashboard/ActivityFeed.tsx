@@ -47,7 +47,7 @@ interface ActivityResponse {
     total: number;
     hasMore: boolean;
   };
-  metrics?: any;
+  metrics?: unknown;
   error?: string;
 }
 

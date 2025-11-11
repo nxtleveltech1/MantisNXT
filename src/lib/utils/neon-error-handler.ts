@@ -5,7 +5,7 @@
  * for all Neon database interactions.
  */
 
-import { DatabaseError } from 'pg';
+import type { DatabaseError } from 'pg';
 import { ZodError } from 'zod';
 import { NextResponse } from 'next/server';
 
@@ -15,7 +15,7 @@ import { NextResponse } from 'next/server';
 export interface ErrorResponse {
   error: string;
   message: string;
-  details?: any;
+  details?: unknown;
   code?: string;
 }
 
@@ -106,7 +106,7 @@ function isDatabaseError(error: unknown): error is DatabaseError {
 /**
  * Validate upload data before insert
  */
-export function validateUploadData(data: any): { valid: boolean; errors: string[] } {
+export function validateUploadData(data: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (!data.supplier_id) {
@@ -183,9 +183,9 @@ export function createErrorResponse(
  */
 export function validateQueryParams(params: URLSearchParams, schema: {
   [key: string]: 'string' | 'number' | 'boolean' | 'uuid' | 'date' | 'array'
-}): { valid: boolean; errors: string[]; parsed: Record<string, any> } {
+}): { valid: boolean; errors: string[]; parsed: Record<string, unknown> } {
   const errors: string[] = [];
-  const parsed: Record<string, any> = {};
+  const parsed: Record<string, unknown> = {};
 
   for (const [key, type] of Object.entries(schema)) {
     const value = params.get(key);
@@ -256,7 +256,7 @@ export function validateQueryParams(params: URLSearchParams, schema: {
  * Validate request body for required fields
  */
 export function validateRequestBody(
-  body: any,
+  body: unknown,
   requiredFields: string[]
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = [];

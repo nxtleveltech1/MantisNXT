@@ -15,14 +15,14 @@ export interface WidgetConfig {
     limit?: number;
   };
   query: {
-    filters?: Record<string, any>;
+    filters?: Record<string, unknown>;
     dateRange?: { start: Date; end: Date };
   };
 }
 
 export interface WidgetData {
   widgetId: string;
-  data: any;
+  data: unknown;
   metadata: {
     calculatedAt: Date;
     dataPoints: number;
@@ -40,7 +40,7 @@ export class WidgetDataProvider {
   ): Promise<WidgetData> {
     const startTime = Date.now();
 
-    let data: any;
+    let data: unknown;
     let fromCache = false;
 
     // Try to get from cache first
@@ -104,7 +104,7 @@ export class WidgetDataProvider {
   private static async calculateWidgetData(
     orgId: string,
     widgetConfig: WidgetConfig,
-  ): Promise<any> {
+  ): Promise<unknown> {
     switch (widgetConfig.metricType) {
       case 'sales':
         return this.calculateSalesData(orgId, widgetConfig);
@@ -127,7 +127,7 @@ export class WidgetDataProvider {
   private static async calculateSalesData(
     orgId: string,
     widgetConfig: WidgetConfig,
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { dateRange, filters } = widgetConfig.query;
     const { chartType, groupBy, limit } = widgetConfig.config;
 
@@ -178,7 +178,7 @@ export class WidgetDataProvider {
   private static async calculateInventoryData(
     orgId: string,
     widgetConfig: WidgetConfig,
-  ): Promise<any> {
+  ): Promise<unknown> {
     const metrics = await MetricsCalculator.calculateInventoryMetrics(orgId);
 
     switch (widgetConfig.widgetType) {
@@ -207,7 +207,7 @@ export class WidgetDataProvider {
   private static async calculateSupplierData(
     orgId: string,
     widgetConfig: WidgetConfig,
-  ): Promise<any> {
+  ): Promise<unknown> {
     const metrics = await MetricsCalculator.calculateSupplierMetrics(orgId);
 
     switch (widgetConfig.widgetType) {
@@ -234,7 +234,7 @@ export class WidgetDataProvider {
   private static async calculateFinancialData(
     orgId: string,
     widgetConfig: WidgetConfig,
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { dateRange } = widgetConfig.query;
 
     if (!dateRange) {
@@ -273,7 +273,7 @@ export class WidgetDataProvider {
   private static async calculateOperationalData(
     orgId: string,
     widgetConfig: WidgetConfig,
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { dateRange } = widgetConfig.query;
 
     if (!dateRange) {

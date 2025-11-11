@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
 import { z } from 'zod';
 
@@ -22,8 +23,8 @@ const PayloadSchema = z.object({
 export async function PUT(req: NextRequest) {
   try {
     const body = PayloadSchema.parse(await req.json());
-    const results: any[] = [];
-    const errors: any[] = [];
+    const results: unknown[] = [];
+    const errors: unknown[] = [];
     const failFast = body.failFast === true;
     await withTransaction(async (client) => {
       for (const item of body.items) {
@@ -33,9 +34,9 @@ export async function PUT(req: NextRequest) {
           const before = current.rows[0];
 
           const fields: string[] = [];
-          const values: any[] = [];
+          const values: unknown[] = [];
           let idx = 1;
-          const set = (col: string, val: any) => { fields.push(`${col} = $${idx++}`); values.push(val); };
+          const set = (col: string, val: unknown) => { fields.push(`${col} = $${idx++}`); values.push(val); };
           if (item.stock_qty !== undefined) set('stock_qty', item.stock_qty);
           if (item.reserved_qty !== undefined) set('reserved_qty', item.reserved_qty);
           if (item.cost_price !== undefined) set('cost_price', item.cost_price);
@@ -56,7 +57,7 @@ export async function PUT(req: NextRequest) {
             );
           }
           results.push({ id: item.id, status: 'ok' });
-        } catch (e: any) {
+        } catch (e: unknown) {
           const entry = { id: item.id, error: e?.message || String(e) };
           errors.push(entry);
           if (failFast) throw e;
@@ -64,7 +65,7 @@ export async function PUT(req: NextRequest) {
       }
     });
     return NextResponse.json({ success: errors.length === 0, results, errors }, { status: errors.length ? 207 : 200 });
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json({ success: false, error: e?.message ?? String(e) }, { status: 400 });
   }
 }

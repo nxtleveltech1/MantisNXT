@@ -11,7 +11,8 @@
  * Date: 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 
 /**
@@ -42,9 +43,9 @@ export async function GET(request: NextRequest) {
     // 2. Try to fetch from database with timeout handling
     try {
       const result = await Promise.race([
-        query<any>(`SELECT id, name, slug FROM organization ORDER BY created_at LIMIT 1`),
+        query<unknown>(`SELECT id, name, slug FROM organization ORDER BY created_at LIMIT 1`),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Database query timeout')), 3000))
-      ]) as any;
+      ]) as unknown;
 
       if (result.rows && result.rows.length > 0) {
         const org = result.rows[0];
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
           },
         });
       }
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
       console.warn('Database query failed or timed out:', dbError.message);
       // Continue to fallback
     }
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
       warning: 'Using emergency fallback org_id. Please configure DEFAULT_ORG_ID environment variable.',
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching current organization:', error);
     return NextResponse.json(
       {

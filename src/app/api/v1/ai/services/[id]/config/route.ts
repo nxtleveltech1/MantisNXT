@@ -5,7 +5,7 @@
  * DELETE /api/v1/ai/services/[id]/config
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { authenticateRequest, handleAIError, successResponse, noContentResponse } from '@/lib/ai/api-utils';
 import { updateConfigSchema } from '@/lib/ai/validation-schemas';
 import { getConfigByServiceId, upsertConfigByServiceId, deleteConfigByServiceId } from '../../../config/_store';

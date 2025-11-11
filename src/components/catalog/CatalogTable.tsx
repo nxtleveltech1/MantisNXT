@@ -75,8 +75,8 @@ export function CatalogTable() {
     active: false,
   })
   const [detailId, setDetailId] = useState<string | null>(null)
-  const [detail, setDetail] = useState<any>(null)
-  const [history, setHistory] = useState<any[]>([])
+  const [detail, setDetail] = useState<unknown>(null)
+  const [history, setHistory] = useState<unknown[]>([])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -165,12 +165,12 @@ export function CatalogTable() {
             <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
-              {categories.filter(c => !!c).map((c: any) => (
+              {categories.filter(c => !!c).map((c: unknown) => (
                 <SelectItem key={String(c.category_id ?? c.id)} value={String(c.category_id ?? c.id)}>{c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={isActive} onValueChange={v => setIsActive(v as any)}>
+          <Select value={isActive} onValueChange={v => setIsActive(v as unknown)}>
             <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
@@ -273,7 +273,7 @@ export function CatalogTable() {
                   <TableHead className="text-right">Currency</TableHead>
                 )}
                 {visibleCols.first_seen && (
-                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('first_seen_at' as any); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>First Seen</TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('first_seen_at' as unknown); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>First Seen</TableHead>
                 )}
                 {visibleCols.last_seen && (
                   <TableHead className="cursor-pointer" onClick={() => { setSortBy('last_seen_at'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Last Seen</TableHead>
@@ -304,7 +304,7 @@ export function CatalogTable() {
                     <TableCell>{r.product_name || 'Product Details Unavailable'}</TableCell>
                   )}
                   {visibleCols.brand && (
-                    <TableCell className="text-muted-foreground">{(r as any).brand || '-'}</TableCell>
+                    <TableCell className="text-muted-foreground">{(r as unknown).brand || '-'}</TableCell>
                   )}
                   {visibleCols.uom && (
                     <TableCell className="text-muted-foreground">{r.uom || '-'}</TableCell>
@@ -319,10 +319,10 @@ export function CatalogTable() {
                     <TableCell className="text-muted-foreground">{r.category_name || '-'}</TableCell>
                   )}
                   {visibleCols.soh && (
-                    <TableCell className="text-right">{(r as any).qty_on_hand ?? 0}</TableCell>
+                    <TableCell className="text-right">{(r as unknown).qty_on_hand ?? 0}</TableCell>
                   )}
                   {visibleCols.on_order && (
-                    <TableCell className="text-right">{(r as any).qty_on_order ?? 0}</TableCell>
+                    <TableCell className="text-right">{(r as unknown).qty_on_order ?? 0}</TableCell>
                   )}
                   {visibleCols.price && (
                     <TableCell className="text-right">{formatCost(r.current_price)}</TableCell>
@@ -393,7 +393,7 @@ export function CatalogTable() {
   )
 }
 
-function ProductDetailBody({ id, detail, setDetail, history, setHistory }: { id: string | null, detail: any, setDetail: (d: any) => void, history: any[], setHistory: (h: any[]) => void }) {
+function ProductDetailBody({ id, detail, setDetail, history, setHistory }: { id: string | null, detail: unknown, setDetail: (d: unknown) => void, history: unknown[], setHistory: (h: unknown[]) => void }) {
   useEffect(() => {
     if (!id) return
     ;(async () => {
@@ -407,7 +407,7 @@ function ProductDetailBody({ id, detail, setDetail, history, setHistory }: { id:
         setHistory(hj.data || [])
       } catch (e) {}
     })()
-  }, [id])
+  }, [id, setDetail, setHistory])
 
   if (!id) return null
   return (

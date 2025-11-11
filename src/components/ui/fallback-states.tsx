@@ -3,7 +3,7 @@
 import React from 'react';
 import { AlertTriangle, Wifi, WifiOff, RefreshCw, Home, Settings, HelpCircle, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -235,7 +235,7 @@ export const DatabaseErrorFallback: React.FC<FallbackStateProps> = ({
             Database Connection Error
           </h3>
           <p className="text-red-700 max-w-md">
-            We're unable to connect to the database. This is likely a temporary issue that our team is working to resolve.
+            We are unable to connect to the database. This is likely a temporary issue that our team is working to resolve.
           </p>
         </div>
 
@@ -314,7 +314,7 @@ export const TimeoutFallback: React.FC<FallbackStateProps> = ({
 
 // Generic fallback that adapts based on error type
 export interface AdaptiveFallbackProps extends FallbackStateProps {
-  error?: any;
+  error?: unknown;
   isOnline?: boolean;
   queuedRequests?: number;
 }
@@ -377,7 +377,7 @@ export const MaintenanceFallback: React.FC<FallbackStateProps> = ({
             Under Maintenance
           </h3>
           <p className="text-blue-700 max-w-md">
-            We're currently performing scheduled maintenance to improve your experience. Please check back shortly.
+            We are currently performing scheduled maintenance to improve your experience. Please check back shortly.
           </p>
         </div>
 

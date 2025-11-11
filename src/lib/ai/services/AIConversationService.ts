@@ -19,7 +19,7 @@ export interface AIConversation {
   conversationId: string;
   role: ConversationRole;
   content: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -28,7 +28,7 @@ export interface CreateMessageData {
   conversationId: string;
   role: ConversationRole;
   content: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export interface ConversationSummary {
@@ -167,7 +167,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
           WHERE user_id = $1
         `;
 
-        const params: any[] = [userId];
+        const params: unknown[] = [userId];
         let paramIndex = 2;
 
         if (filters?.orgId) {
@@ -222,7 +222,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
     conversationId: string,
     role: ConversationRole,
     content: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     options?: AIServiceRequestOptions,
   ): Promise<AIServiceResponse<AIConversation>> {
     return this.createMessage(
@@ -256,7 +256,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
           ORDER BY created_at DESC
         `;
 
-        const params: any[] = [orgId, conversationId];
+        const params: unknown[] = [orgId, conversationId];
 
         if (limit) {
           query += ` LIMIT $3`;
@@ -304,7 +304,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
    */
   async addContext(
     messageId: string,
-    context: Record<string, any>,
+    context: Record<string, unknown>,
     options?: AIServiceRequestOptions,
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
@@ -335,7 +335,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
   async getRelevantContext(
     conversationId: string,
     options?: AIServiceRequestOptions,
-  ): Promise<AIServiceResponse<Record<string, any>>> {
+  ): Promise<AIServiceResponse<Record<string, unknown>>> {
     return this.executeOperation(
       'conversation.getContext',
       async () => {
@@ -351,7 +351,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
         );
 
         // Merge all context objects
-        const mergedContext: Record<string, any> = {};
+        const mergedContext: Record<string, unknown> = {};
 
         for (const row of result.rows) {
           const context = row.context || {};
@@ -438,7 +438,7 @@ export class AIConversationService extends AIServiceBase<AIServiceRequestOptions
   /**
    * Map database row to AIConversation
    */
-  private mapConversationRow(row: any): AIConversation {
+  private mapConversationRow(row: unknown): AIConversation {
     return {
       id: row.id,
       orgId: row.org_id,

@@ -13,21 +13,17 @@ import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import {
   Calculator,
-  Building2,
   Shield,
   FileText,
   TrendingUp,
   AlertTriangle,
-  Users,
   Award,
   Target,
   Save,
   RotateCcw,
   CheckCircle,
-  Settings,
   CreditCard,
   Receipt,
-  Banknote,
   Calendar
 } from 'lucide-react'
 import AppLayout from '@/components/layout/AppLayout'
@@ -179,7 +175,7 @@ export default function FinancialSettingsPage() {
   }
 
   // Update nested settings
-  const updateNestedSettings = (section: keyof FinancialSettings, updates: any) => {
+  const updateNestedSettings = (section: keyof FinancialSettings, updates: unknown) => {
     setSettings(prev => ({
       ...prev,
       [section]: { ...prev[section], ...updates }

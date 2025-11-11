@@ -93,7 +93,7 @@ export async function GET() {
   }
 }
 
-function generateRecommendations(analysis: any): string[] {
+function generateRecommendations(analysis: unknown): string[] {
   const recommendations = []
 
   if (analysis.orphanedProducts > 0) {

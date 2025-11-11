@@ -5,23 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  LineChart,
   Line,
   AreaChart,
   Area,
-  BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -32,7 +22,6 @@ import {
 } from 'recharts'
 import {
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   CheckCircle2,
   DollarSign,
@@ -40,39 +29,18 @@ import {
   Target,
   Brain,
   BarChart3,
-  Download,
-  Filter,
-  Calendar,
-  Users,
   Package,
-  CreditCard,
   FileText,
-  Zap,
-  Award,
   Activity,
-  Settings,
   RefreshCw,
-  ArrowUp,
-  ArrowDown,
   Star,
   Building2,
   Lightbulb,
   Info,
-  Search,
-  ChevronDown,
-  ChevronUp,
-  FileDown,
-  Bell,
-  Calculator,
   Archive,
-  Gauge,
-  Eye,
-  Loader2,
   AlertOctagon,
   Sparkles,
-  ShieldCheck,
-  Crown,
-  Database
+  ShieldCheck
 } from 'lucide-react'
 
 // Enhanced Types for Real-Time Analytics
@@ -141,7 +109,7 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
   // State Management
   const [metrics, setMetrics] = useState<AnalyticsMetrics | null>(null)
   const [insights, setInsights] = useState<AnalyticsInsight[]>([])
-  const [chartData, setChartData] = useState<any[]>([])
+  const [chartData, setChartData] = useState<unknown[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
@@ -179,7 +147,7 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
 
       // Combine insights from different sources
       const allInsights: AnalyticsInsight[] = [
-        ...(anomaliesData.success && anomaliesData.data.anomalies ? anomaliesData.data.anomalies.map((anomaly: any) => ({
+        ...(anomaliesData.success && anomaliesData.data.anomalies ? anomaliesData.data.anomalies.map((anomaly: unknown) => ({
           id: `anomaly-${anomaly.type}-${Date.now()}`,
           type: 'anomaly' as const,
           priority: anomaly.severity === 'high' ? 'high' as const : 'medium' as const,
@@ -192,7 +160,7 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
           category: anomaly.type,
           createdAt: anomaly.detected_at || new Date().toISOString()
         })) : []),
-        ...(predictionsData.success && predictionsData.data.predictions ? predictionsData.data.predictions.map((prediction: any) => ({
+        ...(predictionsData.success && predictionsData.data.predictions ? predictionsData.data.predictions.map((prediction: unknown) => ({
           id: `prediction-${prediction.type}-${Date.now()}`,
           type: 'trend' as const,
           priority: prediction.action_required ? 'high' as const : 'medium' as const,
@@ -205,7 +173,7 @@ const RealTimeAnalyticsDashboard: React.FC<RealTimeAnalyticsDashboardProps> = ({
           category: prediction.type,
           createdAt: new Date().toISOString()
         })) : []),
-        ...(recommendationsData.success && recommendationsData.data.recommendations ? recommendationsData.data.recommendations.map((rec: any) => ({
+        ...(recommendationsData.success && recommendationsData.data.recommendations ? recommendationsData.data.recommendations.map((rec: unknown) => ({
           id: rec.id || `recommendation-${Date.now()}`,
           type: 'opportunity' as const,
           priority: rec.priority,

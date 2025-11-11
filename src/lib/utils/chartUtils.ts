@@ -143,7 +143,7 @@ export const getTrendColorClass = (trend: 'up' | 'down' | 'neutral'): string => 
 }
 
 // Smooth data for better visualization
-export const smoothData = <T extends Record<string, any>>(
+export const smoothData = <T extends Record<string, unknown>>(
   data: T[],
   key: keyof T,
   windowSize: number = 3

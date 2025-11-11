@@ -4,14 +4,14 @@
  * Provides comprehensive validation and quality checks for the application
  */
 
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
 
 export interface ValidationResult {
   success: boolean;
   message: string;
-  details?: any;
+  details?: unknown;
   recommendations?: string[];
 }
 

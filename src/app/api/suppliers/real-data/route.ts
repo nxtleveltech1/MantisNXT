@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 
 interface RealSupplierData {
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     const whereClauses: string[] = ['1=1']
-    const filterParams: any[] = []
+    const filterParams: unknown[] = []
     let paramIndex = 1
 
     if (search) {

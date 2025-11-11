@@ -1,16 +1,15 @@
 "use client"
 
 import React from 'react'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, RefreshCw, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface LoadingStateManagerProps {
   loading: boolean
-  error: any
-  data: any
+  error: unknown
+  data: unknown
   onRetry?: () => void
   loadingComponent?: React.ReactNode
   errorComponent?: React.ReactNode
@@ -45,7 +44,7 @@ const DefaultErrorState = ({
   onRetry,
   retryable
 }: {
-  error: any
+  error: unknown
   onRetry?: () => void
   retryable?: boolean
 }) => {
@@ -62,19 +61,19 @@ const DefaultErrorState = ({
     }
   }
 
-  const getErrorMessage = (error: any): string => {
+  const getErrorMessage = (error: unknown): string => {
     if (typeof error === 'string') return error
     if (error?.message) return error.message
     if (error?.error) return error.error
     return 'An unexpected error occurred'
   }
 
-  const isTimeoutError = (error: any): boolean => {
+  const isTimeoutError = (error: unknown): boolean => {
     const message = getErrorMessage(error).toLowerCase()
     return message.includes('timeout') || message.includes('timed out')
   }
 
-  const isNetworkError = (error: any): boolean => {
+  const isNetworkError = (error: unknown): boolean => {
     const message = getErrorMessage(error).toLowerCase()
     return message.includes('fetch') || message.includes('network') || message.includes('connection')
   }
@@ -187,7 +186,7 @@ const LoadingStateManager: React.FC<LoadingStateManagerProps> = ({
 // Specialized component for metric cards
 interface MetricLoadingStateProps {
   loading: boolean
-  error: any
+  error: unknown
   onRetry?: () => void
   children: React.ReactNode
 }

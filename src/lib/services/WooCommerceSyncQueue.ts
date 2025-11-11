@@ -31,7 +31,7 @@ export enum LineState {
 
 export interface QueueLineData {
   woo_customer_id: number;
-  customer_data: any;
+  customer_data: unknown;
   external_id?: string;
 }
 
@@ -92,7 +92,7 @@ export class WooCommerceSyncQueue {
     queueId: string,
     orgId: string,
     wooCustomerId: number,
-    customerData: any,
+    customerData: unknown,
     externalId?: string
   ): Promise<string> {
     const idempotencyToken = `${queueId}-${wooCustomerId}-${Date.now()}`;
@@ -138,7 +138,7 @@ export class WooCommerceSyncQueue {
   /**
    * Get next batch of draft lines for processing
    */
-  static async getNextBatch(queueId: string, batchSize: number = 50): Promise<any[]> {
+  static async getNextBatch(queueId: string, batchSize: number = 50): Promise<unknown[]> {
     const result = await query(
       `SELECT id, woo_customer_id, customer_data, queue_id
        FROM woo_customer_sync_queue_line
@@ -235,7 +235,7 @@ export class WooCommerceSyncQueue {
   /**
    * Get queue status (counts, state, progress)
    */
-  static async getQueueStatus(queueId: string): Promise<any> {
+  static async getQueueStatus(queueId: string): Promise<unknown> {
     const result = await query(
       `SELECT
         id,
@@ -352,7 +352,7 @@ export class WooCommerceSyncQueue {
     activityType: string,
     status: string,
     message: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     const org = await query<{ org_id: string }>(
       `SELECT org_id FROM woo_customer_sync_queue WHERE id = $1`,
@@ -373,7 +373,7 @@ export class WooCommerceSyncQueue {
   /**
    * Get activity log for queue
    */
-  static async getActivityLog(queueId: string, limit: number = 100): Promise<any[]> {
+  static async getActivityLog(queueId: string, limit: number = 100): Promise<unknown[]> {
     const result = await query(
       `SELECT id, queue_line_id, activity_type, status, message, details, created_at
        FROM woo_sync_activity
@@ -389,7 +389,7 @@ export class WooCommerceSyncQueue {
   /**
    * Get failed lines with retry potential
    */
-  static async getRetryableFailed(queueId: string, maxRetries: number = 3): Promise<any[]> {
+  static async getRetryableFailed(queueId: string, maxRetries: number = 3): Promise<unknown[]> {
     const result = await query(
       `SELECT id, woo_customer_id, customer_data, error_message, process_count
        FROM woo_customer_sync_queue_line
@@ -433,7 +433,7 @@ export class WooCommerceSyncQueue {
   /**
    * Get queue by idempotency key
    */
-  static async getQueueByIdempotencyKey(orgId: string, idempotencyKey: string): Promise<any> {
+  static async getQueueByIdempotencyKey(orgId: string, idempotencyKey: string): Promise<unknown> {
     const result = await query(
       `SELECT id, state, process_count FROM woo_customer_sync_queue
        WHERE org_id = $1 AND idempotency_key = $2`,

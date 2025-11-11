@@ -1,13 +1,12 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useCallback } from "react"
+import React, { useState, useMemo, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -17,7 +16,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -26,49 +24,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+
+
 import {
   Brain,
   Search,
   Sparkles,
   TrendingUp,
-  TrendingDown,
   Building2,
   MapPin,
   Star,
   AlertTriangle,
   CheckCircle,
-  Clock,
   DollarSign,
   Award,
   ShieldCheck,
   Zap,
   Target,
-  Users,
-  Globe,
-  Activity,
   BarChart3,
   Eye,
   Heart,
-  BookmarkPlus,
-  Filter,
-  SortAsc,
   Loader2,
-  RefreshCw,
-  Info,
   Lightbulb,
-  Crown,
   Database,
-  Calculator,
   ArrowRight,
-  ExternalLink,
-  ChevronRight,
-  Gauge
+  ExternalLink
 } from "lucide-react"
 
 // AI Enhanced Types
@@ -126,7 +106,7 @@ interface AIInsight {
   impact: 'high' | 'medium' | 'low'
   confidence: number
   recommendation: string
-  data: any
+  data: unknown
   createdAt: string
 }
 
@@ -546,7 +526,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as unknown)}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>

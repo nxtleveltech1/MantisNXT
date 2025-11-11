@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { pool } from '@/lib/database/unified-connection'
 import { z } from 'zod'
 
@@ -26,7 +27,7 @@ import { z } from 'zod'
 // OPTIMIZATION 2: In-memory cache with TTL
 // ============================================================================
 interface CachedAlerts {
-  alerts: any[]
+  alerts: unknown[]
   timestamp: number
   queryTime: number
 }
@@ -34,14 +35,14 @@ interface CachedAlerts {
 const alertsCache: Map<string, CachedAlerts> = new Map()
 const CACHE_TTL = 60 * 1000 // 1 minute for alerts (fresher data)
 
-function getCacheKey(params: any): string {
+function getCacheKey(params: unknown): string {
   return JSON.stringify(params)
 }
 
 // ============================================================================
 // OPTIMIZATION 3: Batch query with single JOIN
 // ============================================================================
-async function fetchAlertsOptimized(filters: any = {}) {
+async function fetchAlertsOptimized(filters: unknown = {}) {
   const startTime = Date.now()
 
   // Use covering indexes for both queries in parallel
@@ -77,7 +78,7 @@ async function fetchAlertsOptimized(filters: any = {}) {
     `)
   ])
 
-  const alerts: any[] = []
+  const alerts: unknown[] = []
 
   // Create low stock alerts
   lowStockResult.rows.forEach((item) => {
@@ -170,7 +171,7 @@ const SearchAlertsSchema = z.object({
 // ============================================================================
 // OPTIMIZATION 4: Smart filtering with early exit
 // ============================================================================
-function applyFilters(alerts: any[], filters: any): any[] {
+function applyFilters(alerts: unknown[], filters: unknown): unknown[] {
   return alerts.filter(alert => {
     // Type filter
     if (filters.type?.length > 0 && !filters.type.includes(alert.type)) {
@@ -229,7 +230,7 @@ function applyFilters(alerts: any[], filters: any): any[] {
 const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 }
 const statusOrder = { active: 1, acknowledged: 2, snoozed: 3, resolved: 4 }
 
-function sortAlerts(alerts: any[], sortBy: string, sortOrder: 'asc' | 'desc'): any[] {
+function sortAlerts(alerts: unknown[], sortBy: string, sortOrder: 'asc' | 'desc'): unknown[] {
   const multiplier = sortOrder === 'asc' ? 1 : -1
 
   return alerts.sort((a, b) => {
@@ -290,7 +291,7 @@ export async function GET(request: NextRequest) {
     const cacheKey = getCacheKey(validatedParams)
     const cached = alertsCache.get(cacheKey)
 
-    let alerts: any[]
+    let alerts: unknown[]
     let queryTime: number
     let fromCache = false
 

@@ -1,5 +1,6 @@
   // TODO(SSOT): Migrate writes to core.supplier_product/core.stock_on_hand
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query, withTransaction } from '@/lib/database'
 import { z } from 'zod'
 import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'

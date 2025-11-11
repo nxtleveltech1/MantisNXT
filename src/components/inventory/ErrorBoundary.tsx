@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -232,7 +233,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 <div className="flex-1">
                   <CardTitle className="text-red-800">Something went wrong</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    An unexpected error occurred. We've been notified and are working on it.
+                    An unexpected error occurred. We&apos;ve been notified and are working on it.
                   </p>
                 </div>
                 <Badge variant="outline" className="font-mono text-xs">

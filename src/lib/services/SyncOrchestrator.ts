@@ -41,8 +41,8 @@ export interface SyncItem {
   target_system: System;
   external_id: string;
   local_id?: string;
-  data: Record<string, any>;
-  delta: Record<string, any>;
+  data: Record<string, unknown>;
+  delta: Record<string, unknown>;
   idempotency_key: string;
   retry_count: number;
   last_error?: string;
@@ -367,7 +367,7 @@ export class SyncOrchestrator {
   private async processItem(
     item: SyncItem,
     system: System,
-    finalData: Record<string, any>
+    finalData: Record<string, unknown>
   ): Promise<void> {
     // This method delegates to CustomerSyncService, OdooService, etc.
     // Implementation depends on entity type and target system
@@ -456,7 +456,7 @@ export class SyncOrchestrator {
       'status = $1',
       'updated_at = NOW()',
     ];
-    const values: any[] = [status];
+    const values: unknown[] = [status];
     let paramIndex = 2;
 
     if (errorMsg) {
@@ -654,9 +654,9 @@ export class SyncOrchestrator {
   /**
    * Update sync record in database
    */
-  private async updateSyncRecord(updates: Record<string, any>): Promise<void> {
+  private async updateSyncRecord(updates: Record<string, unknown>): Promise<void> {
     const setClauses: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramIndex = 1;
 
     Object.entries(updates).forEach(([key, value]) => {
@@ -689,7 +689,7 @@ export class SyncOrchestrator {
    */
   private async logActivity(
     action: string,
-    details: Record<string, any>
+    details: Record<string, unknown>
   ): Promise<void> {
     try {
       await query(

@@ -5,10 +5,7 @@
 
 import type {
   SOHBySupplier,
-  SOHRolledUp,
   ProductTableBySupplier,
-  SupplierProduct,
-  PriceHistory,
   SelectionWorkflowRequest
 } from '@/types/supplier-portfolio'
 
@@ -258,19 +255,19 @@ export function buildSelectionWorkflowRequest(
  * Complete pricelist upload workflow (upload → validate → merge)
  */
 export async function completePricelistWorkflow(
-  api: any,
+  api: unknown,
   file: File,
   supplierId: string,
   options: {
     currency?: string
     valid_from?: Date
-    on_progress?: (stage: 'uploading' | 'validating' | 'merging', data: any) => void
+    on_progress?: (stage: 'uploading' | 'validating' | 'merging', data: unknown) => void
   } = {}
 ): Promise<{
   success: boolean
   upload_id?: string
-  validation?: any
-  merge?: any
+  validation?: unknown
+  merge?: unknown
   error?: string
 }> {
   try {
@@ -342,14 +339,14 @@ export async function completePricelistWorkflow(
  * Complete ISI selection workflow (create selection → select products → activate)
  */
 export async function completeISIWorkflow(
-  api: any,
+  api: unknown,
   selectionName: string,
   supplierProductIds: string[],
   createdBy: string,
   options: {
     description?: string
     notes?: string
-    on_progress?: (stage: 'creating' | 'selecting' | 'activating', data: any) => void
+    on_progress?: (stage: 'creating' | 'selecting' | 'activating', data: unknown) => void
   } = {}
 ): Promise<{
   success: boolean
@@ -420,7 +417,7 @@ export async function completeISIWorkflow(
  * Batch select products with chunking for large selections
  */
 export async function batchSelectProducts(
-  api: any,
+  api: unknown,
   selectionId: string,
   supplierProductIds: string[],
   selectedBy: string,
@@ -463,7 +460,7 @@ export async function batchSelectProducts(
         totalFailed += result.data.failed_count || 0
 
         if (result.data.errors) {
-          errors.push(...result.data.errors.map((e: any) => e.error))
+          errors.push(...result.data.errors.map((e: unknown) => e.error))
         }
       } else {
         totalFailed += chunk.length

@@ -11,7 +11,7 @@
  * - Account lockout after failed attempts
  */
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from '@jest/globals';
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';

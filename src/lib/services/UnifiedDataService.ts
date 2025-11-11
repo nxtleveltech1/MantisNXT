@@ -18,7 +18,7 @@ import { CacheManager, cachedQuery } from '@/lib/cache/query-cache';
  * Standardized API Response Format
  * All endpoints should use this format for consistency
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T | T[];
   pagination?: PaginationMeta;
@@ -45,7 +45,7 @@ export interface PaginationMeta {
  */
 export interface QueryMeta {
   queryTime?: number;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   queryFingerprint?: string;
 }
 
@@ -57,7 +57,7 @@ export interface QueryOptions {
   limit?: number;
   cursor?: string;
   search?: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -76,7 +76,7 @@ export interface Supplier {
   currency?: string;
   paymentTerms?: string;
   taxNumber?: string;
-  contactInfo?: Record<string, any>;
+  contactInfo?: Record<string, unknown>;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -115,7 +115,7 @@ export interface InventoryItem {
 /**
  * Maps database row to Supplier object with field name transformation
  */
-function mapDatabaseRowToSupplier(row: any): Supplier {
+function mapDatabaseRowToSupplier(row: unknown): Supplier {
   return {
     id: row.id || row.supplier_id,
     name: row.name,
@@ -136,7 +136,7 @@ function mapDatabaseRowToSupplier(row: any): Supplier {
 /**
  * Maps database row to InventoryItem object with field name transformation
  */
-function mapDatabaseRowToInventoryItem(row: any): InventoryItem {
+function mapDatabaseRowToInventoryItem(row: unknown): InventoryItem {
   const stockQty = Number(row.stock_qty ?? row.qty ?? row.current_stock ?? row.currentStock ?? 0);
   const costPrice = Number(row.cost_price ?? row.unit_cost ?? row.costPerUnitZar ?? 0);
   const salePrice = Number(row.sale_price ?? row.unit_cost ?? row.salePerUnitZar ?? costPrice);
@@ -239,7 +239,7 @@ export class SupplierService {
     try {
       // Build WHERE conditions
       const whereConditions: string[] = ['1=1'];
-      const queryParams: any[] = [];
+      const queryParams: unknown[] = [];
       let paramIndex = 1;
 
       // Search filter
@@ -477,7 +477,7 @@ export class InventoryService {
     try {
       // Build WHERE conditions
       const whereConditions: string[] = [];
-      const queryParams: any[] = [];
+      const queryParams: unknown[] = [];
       let paramIndex = 1;
 
       // Cursor-based pagination
@@ -617,7 +617,7 @@ export class InventoryService {
       }
 
       // For offset pagination, derive total from window function
-      const total = result.rows.length > 0 ? parseInt((result.rows[0] as any).total_count, 10) : 0;
+      const total = result.rows.length > 0 ? parseInt((result.rows[0] as unknown).total_count, 10) : 0;
       const totalPages = Math.ceil(total / limit);
 
       return createSuccessResponse(
@@ -648,7 +648,7 @@ export class InventoryService {
   /**
    * Get inventory analytics/summary
    */
-  static async getInventoryAnalytics(): Promise<ApiResponse<any>> {
+  static async getInventoryAnalytics(): Promise<ApiResponse<unknown>> {
     try {
       const sql = `
         SELECT

@@ -21,7 +21,7 @@ export interface EmbeddingRequestOptions extends AIServiceRequestOptions {
 export interface EmbeddingDocument {
   id: string;
   vector: number[] | Float32Array;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface EmbeddingSearchResult extends EmbeddingDocument {

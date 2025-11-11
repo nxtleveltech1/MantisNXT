@@ -4,7 +4,7 @@
  * POST /api/v1/ai/predictions - Create prediction
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const { entityType, entityId } = extractEntityFilters(searchParams);
 
     const filters = {
-      serviceType: searchParams.get('serviceType') as any,
+      serviceType: searchParams.get('serviceType') as unknown,
       predictionType: extractPredictionType(searchParams) || undefined,
       status: extractStatus(searchParams) || undefined,
       entityType: entityType || undefined,

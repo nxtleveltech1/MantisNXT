@@ -231,7 +231,7 @@ const QuickStatCard = ({
   value: string | number
   change?: string
   trend?: 'up' | 'down' | 'neutral'
-  icon: any
+  icon: unknown
   href?: string
   subtitle?: string
 }) => {
@@ -332,7 +332,7 @@ const MagicDashboard = () => {
     const previousInventoryValue = totalInventoryValue * 0.95 // Simulated previous value
 
     // Get product counts from suppliers data if available
-    const totalProducts = suppliers.reduce((sum: number, s: any) => sum + (s.totalProducts || 0), 0)
+    const totalProducts = suppliers.reduce((sum: number, s: unknown) => sum + (s.totalProducts || 0), 0)
     const newProducts = 0 // Would come from API if available
 
     return {
@@ -377,7 +377,7 @@ const MagicDashboard = () => {
       <div className="space-y-2">
         <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome back! Here's what's happening with your business today.
+          Welcome back! Here&apos;s what&apos;s happening with your business today.
         </p>
       </div>
 

@@ -3,7 +3,7 @@
  * GET /api/v1/ai/alerts/unresolved
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     // });
 
     // Mock response structure
-    const alerts: any[] = [];
+    const alerts: unknown[] = [];
     const total = 0;
 
     return successResponse(alerts, {

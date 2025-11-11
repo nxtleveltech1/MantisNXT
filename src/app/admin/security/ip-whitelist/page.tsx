@@ -68,10 +68,14 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="add-ip-address"
+                className="block text-sm font-medium text-gray-700"
+              >
                 IP Address/Range
               </label>
               <input
+                id="add-ip-address"
                 type="text"
                 value={formData.ipAddress}
                 onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
@@ -82,12 +86,16 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="add-ip-type"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Type
               </label>
               <select
+                id="add-ip-type"
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as unknown })}
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="single">Single IP</option>
@@ -97,10 +105,14 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="add-ip-description"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Description
               </label>
               <input
+                id="add-ip-description"
                 type="text"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -111,12 +123,16 @@ const AddIPModal: React.FC<AddIPModalProps> = ({ isOpen, onClose, onAdd }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="add-ip-status"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Status
               </label>
               <select
+                id="add-ip-status"
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as unknown })}
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="active">Active</option>

@@ -15,7 +15,8 @@
  * Date: 2025-11-05
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { WooCommerceService } from '@/lib/services/WooCommerceService';
 import { CustomerSyncService } from '@/lib/services/CustomerSyncService';
 import { WooCommerceSyncQueue } from '@/lib/services/WooCommerceSyncQueue';
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
         });
 
         console.log(`Sync completed for queue ${queueId}`);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(`Error processing queue ${queueId}:`, error);
         // Mark queue for manual intervention
         await WooCommerceSyncQueue.logActivity(
@@ -220,7 +221,7 @@ export async function POST(request: NextRequest) {
         message: 'Sync queue created and processing started',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in customer sync API:', error);
     return NextResponse.json(
       {

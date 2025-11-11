@@ -19,7 +19,7 @@ export interface EnrichedProduct {
   uom: string;
   pack_size: string | null;
   barcode: string | null;
-  attrs_json: Record<string, any> | null;
+  attrs_json: Record<string, unknown> | null;
   category_raw: string | null;
   current_price: number | null;
   currency: string | null;
@@ -228,7 +228,7 @@ export async function getUncategorizedProducts(filters?: {
   offset?: number;
 }): Promise<{ products: EnrichedProduct[]; total: number }> {
   const conditions: string[] = ['sp.is_active = true', 'sp.category_id IS NULL'];
-  const params: any[] = [];
+  const params: unknown[] = [];
   let paramIndex = 1;
 
   if (filters?.supplier_id) {
@@ -337,7 +337,7 @@ export async function getProductsBySupplier(
   options?: { uncategorized_only?: boolean; limit?: number; offset?: number }
 ): Promise<{ products: EnrichedProduct[]; total: number }> {
   const conditions: string[] = ['sp.is_active = true', `sp.supplier_id = $1`];
-  const params: any[] = [supplierId];
+  const params: unknown[] = [supplierId];
 
   if (options?.uncategorized_only) {
     conditions.push('sp.category_id IS NULL');
@@ -457,7 +457,7 @@ export async function getCategoryHierarchy(): Promise<CategoryHierarchy[]> {
 /**
  * Extract specifications from attrs_json for AI analysis
  */
-export function extractSpecifications(attrsJson: Record<string, any> | null): string[] {
+export function extractSpecifications(attrsJson: Record<string, unknown> | null): string[] {
   if (!attrsJson) return [];
 
   const specs: string[] = [];

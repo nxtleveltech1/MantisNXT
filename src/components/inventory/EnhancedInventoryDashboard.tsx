@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,11 +12,10 @@ import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  LineChart,
   Line,
   AreaChart,
   Area,
@@ -24,7 +23,6 @@ import {
   Bar,
   PieChart,
   Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -36,56 +34,24 @@ import {
 import {
   Package,
   AlertTriangle,
-  CheckCircle2,
-  TrendingUp,
-  TrendingDown,
   BarChart3,
   PieChart as PieChartIcon,
   Search,
   Filter,
   Plus,
   Edit,
-  Trash2,
   Eye,
   RefreshCw,
-  Download,
-  Upload,
-  SlidersHorizontal,
-  Zap,
   Target,
   Clock,
   DollarSign,
   Archive,
-  Building2,
   Star,
-  Award,
   Activity,
   Gauge,
   AlertOctagon,
-  Loader2,
-  ShoppingCart,
-  Truck,
-  Calendar,
-  Users,
-  Settings,
-  Info,
-  ChevronDown,
-  ChevronUp,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  Box,
-  Layers,
-  MapPin,
-  Tag,
-  Database,
-  Calculator,
-  FileText,
   Bell,
-  Shield,
-  Lightbulb,
-  Sparkles,
-  Crown
+  Sparkles
 } from 'lucide-react'
 
 // Enhanced Types for Inventory Management
@@ -239,7 +205,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
 
       // Handle {items: [...]} format from /api/inventory
       if (itemsData?.items && Array.isArray(itemsData.items)) {
-        const mapped = itemsData.items.map((r: any) => ({
+        const mapped = itemsData.items.map((r: unknown) => ({
           id: r.id,
           sku: r.sku,
           name: r.name || r.sku,
@@ -265,7 +231,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
         const cats = Array.from(new Set(mapped.map(m => m.category).filter(Boolean)))
         setCategoryOptions(cats)
       } else if (Array.isArray(itemsData)) {
-        const mapped = itemsData.map((r: any) => ({
+        const mapped = itemsData.map((r: unknown) => ({
           id: r.id,
           sku: r.sku,
           name: r.name || r.sku,
@@ -292,7 +258,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
         setCategoryOptions(cats)
       } else if (itemsData?.success) {
         const rows = itemsData.data || itemsData.data?.items || []
-        const mapped = rows.map((r: any) => ({
+        const mapped = rows.map((r: unknown) => ({
           id: r.id,
           sku: r.sku,
           name: r.name || r.sku,
@@ -335,7 +301,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
 
       const mvData = await movementsResponse.json()
       const movementList = Array.isArray(mvData?.data) ? mvData.data : []
-      ;(window as any).__recentMovements = movementList
+      ;(window as unknown).__recentMovements = movementList
 
       setLastUpdate(new Date())
 
@@ -345,7 +311,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
     } finally {
       setLoading(false)
     }
-  }, [searchTerm, selectedCategory, selectedStatus, selectedSupplier])
+  }, [searchTerm, selectedCategory, selectedSupplier])
 
   // Real-time refresh effect
   useEffect(() => {
@@ -377,7 +343,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           : Array.isArray(data) 
           ? data 
           : (data?.data || [])
-        const options = list.map((s: any) => ({ id: s.id, name: s.name || s.supplier_name || 'Unnamed Supplier' }))
+        const options = list.map((s: unknown) => ({ id: s.id, name: s.name || s.supplier_name || 'Unnamed Supplier' }))
         if (!cancelled) setSupplierOptions(options)
       } catch (err) {
         console.error('Error fetching suppliers:', err)
@@ -419,7 +385,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
     })
 
     return filtered
-  }, [items, searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder])
+  }, [items, searchTerm, selectedCategory, selectedStatus, selectedSupplier, sortBy, sortOrder])
 
   // Critical alerts
   const criticalAlerts = useMemo(() => {
@@ -618,7 +584,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
               </div>
               <div className="space-y-2">
                 <div className="text-3xl font-bold text-purple-800">
-                  {Number.isFinite(metrics?.stockTurnover as any) ? (metrics!.stockTurnover as number).toFixed(1) : '0.0'}x
+                  {Number.isFinite(metrics?.stockTurnover as unknown) ? (metrics!.stockTurnover as number).toFixed(1) : '0.0'}x
                 </div>
                 <div className="text-sm text-purple-700">Stock Turnover</div>
                 <div className="flex items-center text-xs text-purple-600">
@@ -642,7 +608,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
               </div>
               <div className="space-y-2">
                 <div className="text-3xl font-bold text-orange-800">
-                  {Number.isFinite(metrics?.forecastAccuracy as any) ? ((metrics!.forecastAccuracy as number) * 100).toFixed(0) : '0'}%
+                  {Number.isFinite(metrics?.forecastAccuracy as unknown) ? ((metrics!.forecastAccuracy as number) * 100).toFixed(0) : '0'}%
                 </div>
                 <div className="text-sm text-orange-700">Forecast Accuracy</div>
                 <div className="flex items-center text-xs text-orange-600">
@@ -1049,8 +1015,8 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Array.isArray((window as any).__recentMovements) && (window as any).__recentMovements.length > 0 ? (
-                        (window as any).__recentMovements.map((m: any) => (
+                      {Array.isArray((window as unknown).__recentMovements) && (window as unknown).__recentMovements.length > 0 ? (
+                        (window as unknown).__recentMovements.map((m: unknown) => (
                           <TableRow key={m.id}>
                             <TableCell>{m.createdAt || m.timestamp || '-'}</TableCell>
                             <TableCell>{m.sku || '-'}</TableCell>

@@ -23,7 +23,7 @@ export interface SupplierScore {
     scoreChange30d: number;
     scoreChange90d: number;
   };
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface SupplierPerformanceData {
@@ -311,9 +311,9 @@ export class SupplierScoringService extends AIServiceBase<AIServiceRequestOption
    * Get AI-generated recommendations
    */
   private async getAIRecommendations(
-    service: any,
-    runtimeOptions: any,
-    supplier: any,
+    service: unknown,
+    runtimeOptions: unknown,
+    supplier: unknown,
     data: SupplierPerformanceData,
     categories: SupplierScore['categories'],
     overallScore: number,
@@ -455,7 +455,7 @@ Provide 3-5 specific, actionable recommendations in JSON array format:
   /**
    * Store prediction in database
    */
-  private async storePrediction(orgId: string, supplierId: string, data: any): Promise<void> {
+  private async storePrediction(orgId: string, supplierId: string, data: unknown): Promise<void> {
     await db.query(
       `
       INSERT INTO ai_prediction (

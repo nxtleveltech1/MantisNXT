@@ -2,16 +2,14 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import AppLayout from "@/components/layout/AppLayout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tooltip } from "@/components/ui/tooltip"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Search,
   Send,
@@ -19,21 +17,16 @@ import {
   Phone,
   Video,
   MoreVertical,
-  Archive,
   Star,
-  Filter,
   MessageSquare,
   Users,
   Circle,
-  Clock,
   Check,
   CheckCheck,
-  AlertTriangle,
   FileText,
   Image as ImageIcon,
   Download,
   X,
-  Smile,
   Plus
 } from "lucide-react"
 

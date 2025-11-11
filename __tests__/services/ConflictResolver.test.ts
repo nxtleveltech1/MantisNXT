@@ -7,9 +7,9 @@
  * Coverage target: 85%+
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { createMockDatabase } from '../helpers/sync-test-helpers';
-import { generateConflictData, generateCustomerData } from '../fixtures/sync-test-data';
+import { generateConflictData } from '../fixtures/sync-test-data';
 
 /**
  * Simulated ConflictResolver implementation

@@ -11,7 +11,7 @@ export type Product = {
   stockType?: StockType;
   imageUrl?: string;
   tags: string[];
-  attributes?: Record<string, any>;
+  attributes?: Record<string, unknown>;
   updatedAt: number;
 };
 
@@ -43,7 +43,7 @@ export type Conflict = {
   sku: string;
   type: 'duplicate' | 'data_mismatch' | 'immutable_violation';
   message: string;
-  details?: any;
+  details?: unknown;
   reportedAt: number;
 };
 

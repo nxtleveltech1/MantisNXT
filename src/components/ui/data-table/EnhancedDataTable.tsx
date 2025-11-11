@@ -9,10 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
@@ -23,59 +21,27 @@ import {
   ArrowUpDown,
   MoreHorizontal,
   Download,
-  Upload,
   RefreshCw,
-  Settings,
-  Eye,
-  Edit,
-  Trash2,
-  Copy,
-  Share2,
-  Bookmark,
-  Star,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  PieChart,
-  LineChart,
-  Calendar,
-  MapPin,
-  Building2,
-  Package,
-  DollarSign,
-  Percent,
-  Hash,
-  Type,
-  Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
   Columns,
-  Grid,
-  List,
   Maximize2,
   Minimize2,
   Pin,
   PinOff,
   Loader2,
-  Zap,
-  Sparkles,
-  Target,
   Activity,
-  Gauge,
-  Info,
-  HelpCircle,
-  ExternalLink
+  HelpCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // Enhanced Column Configuration
-export interface ColumnDef<T = any> {
+export interface ColumnDef<T = unknown> {
   id: string
   key: keyof T
   header: string
@@ -92,12 +58,12 @@ export interface ColumnDef<T = any> {
   hideable?: boolean
   sticky?: 'left' | 'right'
   align?: 'left' | 'center' | 'right'
-  formatter?: (value: any, row: T) => React.ReactNode
-  accessor?: (row: T) => any
+  formatter?: (value: unknown, row: T) => React.ReactNode
+  accessor?: (row: T) => unknown
   aggregation?: 'sum' | 'avg' | 'count' | 'min' | 'max' | 'none'
-  filterOptions?: Array<{ label: string; value: any }>
+  filterOptions?: Array<{ label: string; value: unknown }>
   validationRules?: Array<{
-    rule: (value: any) => boolean
+    rule: (value: unknown) => boolean
     message: string
     severity: 'error' | 'warning' | 'info'
   }>
@@ -106,14 +72,14 @@ export interface ColumnDef<T = any> {
     precision?: number
     currency?: string
     dateFormat?: string
-    icon?: React.ComponentType<any>
+    icon?: React.ComponentType<unknown>
   }
 }
 
 // Enhanced Filter Configuration
 export interface FilterState {
   [key: string]: {
-    value: any
+    value: unknown
     operator: 'equals' | 'contains' | 'starts_with' | 'ends_with' | 'greater_than' | 'less_than' | 'between' | 'in' | 'not_in'
     enabled: boolean
   }
@@ -133,7 +99,7 @@ export interface GroupBy {
 }
 
 // Data Table Props with Enhanced Features
-export interface EnhancedDataTableProps<T = any> {
+export interface EnhancedDataTableProps<T = unknown> {
   data: T[]
   columns: ColumnDef<T>[]
   loading?: boolean
@@ -197,14 +163,14 @@ export interface EnhancedDataTableProps<T = any> {
     bulk?: Array<{
       id: string
       label: string
-      icon?: React.ComponentType<any>
+      icon?: React.ComponentType<unknown>
       handler: (selectedRows: T[]) => void
       confirmation?: string
     }>
     row?: Array<{
       id: string
       label: string
-      icon?: React.ComponentType<any>
+      icon?: React.ComponentType<unknown>
       handler: (row: T, index: number) => void
       condition?: (row: T) => boolean
     }>
@@ -233,7 +199,7 @@ export interface EnhancedDataTableProps<T = any> {
   keyboardNavigation?: boolean
 }
 
-const EnhancedDataTable = <T extends Record<string, any>>({
+const EnhancedDataTable = <T extends Record<string, unknown>>({
   data = [],
   columns = [],
   loading = false,
@@ -465,7 +431,7 @@ const EnhancedDataTable = <T extends Record<string, any>>({
   }, [paginatedData, startIndex])
 
   // Format cell values
-  const formatCellValue = useCallback((column: ColumnDef<T>, value: any, row: T) => {
+  const formatCellValue = useCallback((column: ColumnDef<T>, value: unknown, row: T) => {
     if (column.formatter) {
       return column.formatter(value, row)
     }

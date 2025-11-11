@@ -11,7 +11,7 @@ export interface WebSocketMessage {
   type: 'subscribe' | 'unsubscribe' | 'data' | 'error' | 'heartbeat';
   channel?: string;
   table?: string;
-  data?: any;
+  data?: unknown;
   timestamp: string;
   clientId: string;
 }
@@ -20,7 +20,7 @@ export interface SubscriptionFilter {
   table: string;
   organizationId?: string;
   userId?: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }
 
 export class RealTimeWebSocketServer extends EventEmitter {
@@ -200,7 +200,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
   /**
    * Broadcast table changes to subscribed clients
    */
-  private broadcastTableChange(change: any): void {
+  private broadcastTableChange(change: unknown): void {
     const { operation, table, record } = change;
 
     for (const [clientId, subscriptions] of this.subscriptions) {
@@ -228,7 +228,7 @@ export class RealTimeWebSocketServer extends EventEmitter {
   /**
    * Check if record matches subscription filters
    */
-  private matchesSubscriptionFilters(record: any, subscription: SubscriptionFilter): boolean {
+  private matchesSubscriptionFilters(record: unknown, subscription: SubscriptionFilter): boolean {
     // Organization filter
     if (subscription.organizationId && record.organization_id !== subscription.organizationId) {
       return false;

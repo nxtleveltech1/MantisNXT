@@ -18,9 +18,6 @@ import { MetricsCalculator } from '@/lib/analytics/MetricsCalculator';
 import type {
   MetricType,
   TimePeriod,
-  SalesMetrics,
-  InventoryMetrics,
-  SupplierPerformanceMetrics,
 } from '@/lib/analytics/MetricsCalculator';
 
 // ============================================================================
@@ -39,7 +36,7 @@ export interface CachedMetric {
   orgId: string;
   metricType: MetricType;
   metricKey: string;
-  metricValue: any;
+  metricValue: unknown;
   timePeriod: TimePeriod;
   periodStart: Date;
   periodEnd: Date;
@@ -59,8 +56,8 @@ export interface MetricsSummary {
     activeAlerts: number;
     resolvedAlerts: number;
   };
-  byService: Record<string, any>;
-  trends: Record<string, any>;
+  byService: Record<string, unknown>;
+  trends: Record<string, unknown>;
   calculatedAt: string;
   cacheExpires: string;
 }
@@ -96,7 +93,7 @@ export class AIMetricsService {
     orgId: string,
     metricType: MetricType,
     options: MetricOptions = {}
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { period = 'daily', fresh = false, cacheMaxAge = DEFAULT_CACHE_TTL } = options;
 
     // If not requesting fresh data, try to get from cache
@@ -129,7 +126,7 @@ export class AIMetricsService {
     orgId: string,
     metricType: MetricType,
     timeRange: TimeRange
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { startDate, endDate } = timeRange;
 
     switch (metricType) {
@@ -172,7 +169,7 @@ export class AIMetricsService {
     orgId: string,
     metricType: MetricType,
     key: string
-  ): Promise<any | null> {
+  ): Promise<unknown | null> {
     const result = await db.query(
       `
       SELECT metric_value, calculated_at
@@ -238,8 +235,8 @@ export class AIMetricsService {
   static async recalculateMetrics(
     orgId: string,
     metricTypes: MetricType[]
-  ): Promise<Record<MetricType, any>> {
-    const results: Record<string, any> = {};
+  ): Promise<Record<MetricType, unknown>> {
+    const results: Record<string, unknown> = {};
 
     for (const metricType of metricTypes) {
       // Invalidate existing cache
@@ -283,7 +280,7 @@ export class AIMetricsService {
     let totalPredictions = 0;
     let totalConfidence = 0;
     let activeAlerts = 0;
-    const byService: Record<string, any> = {};
+    const byService: Record<string, unknown> = {};
 
     aiHealthResult.rows.forEach((row) => {
       const predictions = parseInt(row.total_predictions || '0');
@@ -424,7 +421,7 @@ export class AIMetricsService {
   private static async cacheMetric(
     orgId: string,
     metricType: MetricType,
-    metricValue: any,
+    metricValue: unknown,
     period: TimePeriod,
     timeRange: TimeRange
   ): Promise<void> {
@@ -520,7 +517,7 @@ export class AIMetricsService {
     orgId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<any> {
+  ): Promise<unknown> {
     const result = await db.query(
       `
       WITH customer_stats AS (
@@ -560,7 +557,7 @@ export class AIMetricsService {
     orgId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<any> {
+  ): Promise<unknown> {
     const result = await db.query(
       `
       WITH financial_data AS (
@@ -603,7 +600,7 @@ export class AIMetricsService {
     orgId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<any> {
+  ): Promise<unknown> {
     const result = await db.query(
       `
       WITH operational_data AS (

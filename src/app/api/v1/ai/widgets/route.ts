@@ -4,7 +4,7 @@
  * POST /api/v1/ai/widgets - Create widget
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

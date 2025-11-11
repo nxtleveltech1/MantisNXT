@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, Send, Bot, User } from 'lucide-react'
@@ -38,7 +37,7 @@ export default function ChatAssistant() {
         body: JSON.stringify({ conversationId, messages: next, stream: false }),
       })
       const raw = await res.text()
-      let data: any = undefined
+      let data: unknown = undefined
       try { data = raw ? JSON.parse(raw) : undefined } catch {}
 
       if (!res.ok) {
@@ -58,7 +57,7 @@ export default function ChatAssistant() {
         setMessages((prev) => [...prev, { role: 'assistant', content: 'No content returned from provider.' }])
       }
       if (data?.data?.conversationId) setConversationId(data.data.conversationId)
-    } catch (e: any) {
+    } catch (e: unknown) {
       setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${e?.message || 'Unknown error'}` }])
     } finally {
       setLoading(false)

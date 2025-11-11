@@ -6,7 +6,7 @@
  * - POST /api/v1/ai/conversations - Save a new message
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import {
   handleAIError,

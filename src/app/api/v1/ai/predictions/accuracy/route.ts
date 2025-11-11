@@ -3,7 +3,7 @@
  * GET /api/v1/ai/predictions/accuracy
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const { startDate, endDate } = extractDateRange(searchParams);
 
-    const serviceType = searchParams.get('serviceType') as any;
+    const serviceType = searchParams.get('serviceType') as unknown;
     const predictionType = searchParams.get('predictionType') || undefined;
 
     // Get overall stats

@@ -11,12 +11,12 @@ export interface AIServiceRow {
   updated_at: string | Date;
 }
 
-function iso(v: any): string { return v instanceof Date ? v.toISOString() : new Date(v).toISOString(); }
+function iso(v: unknown): string { return v instanceof Date ? v.toISOString() : new Date(v).toISOString(); }
 
 export async function listServices(orgId?: string | null): Promise<AIServiceRow[]> {
   const resolved = resolveOrgId(orgId);
   const { rows } = await query<AIServiceRow>(`SELECT * FROM ai_service WHERE org_id = $1 ORDER BY service_label`, [resolved]);
-  return rows.map((r: any) => ({ ...r, created_at: iso(r.created_at), updated_at: iso(r.updated_at) }));
+  return rows.map((r: unknown) => ({ ...r, created_at: iso(r.created_at), updated_at: iso(r.updated_at) }));
 }
 
 export async function createService(orgId: string, label: string, key?: string): Promise<AIServiceRow> {
@@ -36,7 +36,7 @@ export async function createService(orgId: string, label: string, key?: string):
 export async function updateService(orgId: string, id: string, updates: Partial<{ label: string; key: string; is_enabled: boolean }>): Promise<AIServiceRow | null> {
   const resolved = resolveOrgId(orgId);
   const sets: string[] = [];
-  const values: any[] = [resolved, id];
+  const values: unknown[] = [resolved, id];
   let i = 3;
   if (updates.label !== undefined) { sets.push(`service_label = $${i++}`); values.push(updates.label); }
   if (updates.key !== undefined) { sets.push(`service_key = $${i++}`); values.push(updates.key); }

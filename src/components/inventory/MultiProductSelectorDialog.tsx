@@ -129,7 +129,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
         if (res.ok) {
           const data = await res.json()
           const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
-          const opts = rows.map((s: any) => ({ id: s.id || s.supplier_id, name: s.name || s.supplier_name || 'Unknown Supplier' }))
+          const opts = rows.map((s: unknown) => ({ id: s.id || s.supplier_id, name: s.name || s.supplier_name || 'Unknown Supplier' }))
           if (!cancelled) {
             setSupplierOptions(opts)
             // Auto-select first supplier if none selected yet (use functional update to read current state)
@@ -194,7 +194,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
             if (catRes.ok && !cancelled) {
               const catJson = await catRes.json()
               const items = Array.isArray(catJson?.data) ? catJson.data : []
-              setCategoryList(items.map((c: any) => ({ id: c.category_id || c.id, name: c.name })))
+              setCategoryList(items.map((c: unknown) => ({ id: c.category_id || c.id, name: c.name })))
             }
           } catch (e) {
             console.error('Failed to load categories:', e)
@@ -203,7 +203,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
 
         if (cancelled) return
         
-        const normalized: SelectorRow[] = data.map((r: any) => ({
+        const normalized: SelectorRow[] = data.map((r: unknown) => ({
           supplier_product_id: r.supplier_product_id,
           supplier_id: r.supplier_id,
           supplier_sku: r.supplier_sku,
@@ -246,7 +246,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
     }
     const t = setTimeout(load, 300)
     return () => { cancelled = true; clearTimeout(t) }
-  }, [open, supplierId, search, page, categoryList.length])
+  }, [addNotification, categoryList, open, page, search, supplierId])
 
   const categories = useMemo(() => {
     // Prefer canonical category list when available
@@ -335,7 +335,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
       onOpenChange(false)
       setSelected(new Set())
       setQuantities({})
-    } catch (e: any) {
+    } catch (e: unknown) {
       addNotification({ type: 'error', title: 'Failed to add products', message: e?.message || 'Unknown error' })
     }
   }
@@ -405,8 +405,8 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               {Object.keys(visibleCols).map((key) => (
                 <DropdownMenuCheckboxItem
                   key={key}
-                  checked={(visibleCols as any)[key]}
-                  onCheckedChange={() => setVisibleCols(v => ({ ...v, [key]: !(v as any)[key] }))}
+                  checked={(visibleCols as unknown)[key]}
+                  onCheckedChange={() => setVisibleCols(v => ({ ...v, [key]: !(v as unknown)[key] }))}
                 >
                   {key}
                 </DropdownMenuCheckboxItem>
@@ -434,7 +434,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               {filtered.map(p => (
                 <TableRow key={p.supplier_product_id}>
                   <TableCell>
-                    <Checkbox checked={selected.has(p.supplier_product_id)} onCheckedChange={(c) => toggleSelect(p.supplier_product_id, c as any)} />
+                    <Checkbox checked={selected.has(p.supplier_product_id)} onCheckedChange={(c) => toggleSelect(p.supplier_product_id, c as unknown)} />
                   </TableCell>
                   <TableCell>
                     <div>

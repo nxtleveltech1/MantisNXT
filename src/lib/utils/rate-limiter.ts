@@ -113,17 +113,17 @@ export function getRateLimiter(
  * Exponential backoff utility for retries
  */
 export async function exponentialBackoff(
-  fn: () => Promise<any>,
+  fn: () => Promise<unknown>,
   maxRetries: number = 5,
   baseDelay: number = 1000,
   maxDelay: number = 32000
-): Promise<any> {
+): Promise<unknown> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error;
 
       // Check if error is rate limit (429)

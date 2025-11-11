@@ -82,18 +82,18 @@ export const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
 };
 
 // Helper function to check permissions
-function hasPermission(user: any, permission: string): boolean {
+function hasPermission(user: unknown, permission: string): boolean {
   if (!user) return false;
   
   // Check role permissions
   if (user.role?.permissions) {
-    const rolePermissions = user.role.permissions.map((p: any) => p.name);
+    const rolePermissions = user.role.permissions.map((p: unknown) => p.name);
     if (rolePermissions.includes(permission)) return true;
   }
   
   // Check direct user permissions
   if (user.permissions) {
-    const userPermissions = user.permissions.map((p: any) => p.name);
+    const userPermissions = user.permissions.map((p: unknown) => p.name);
     if (userPermissions.includes(permission)) return true;
   }
   
@@ -129,13 +129,13 @@ export function usePermissions() {
     
     // Check role permissions
     if (user.role?.permissions) {
-      const rolePermissions = user.role.permissions.map((p: any) => p.name);
+      const rolePermissions = user.role.permissions.map((p: unknown) => p.name);
       if (rolePermissions.includes(permission)) return true;
     }
     
     // Check direct user permissions
     if (user.permissions) {
-      const userPermissions = user.permissions.map((p: any) => p.name);
+      const userPermissions = user.permissions.map((p: unknown) => p.name);
       if (userPermissions.includes(permission)) return true;
     }
     

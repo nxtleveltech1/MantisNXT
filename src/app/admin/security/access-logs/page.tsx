@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Eye, Download, Filter, Search, User, Clock, MapPin, Shield, AlertTriangle } from 'lucide-react';
+import { Eye, Download, Filter, Search, User, Clock, MapPin, Shield } from 'lucide-react';
 
 interface AccessLog {
   id: string;

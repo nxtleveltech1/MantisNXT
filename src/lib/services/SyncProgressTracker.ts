@@ -97,7 +97,7 @@ export class SyncProgressTracker {
     jobId: string,
     totalItems: number,
     orgId: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<ProgressState> {
     const now = new Date();
 
@@ -389,7 +389,7 @@ export class SyncProgressTracker {
   /**
    * Notify all subscribers of progress update
    */
-  private notifySubscribers(jobId: string, data: any): void {
+  private notifySubscribers(jobId: string, data: unknown): void {
     const listeners = this.subscribers.get(jobId);
     if (listeners) {
       listeners.forEach((listener) => {
@@ -428,7 +428,7 @@ export class SyncProgressTracker {
   /**
    * Get job history for audit trail
    */
-  async getJobHistory(jobId: string, limit: number = 100): Promise<any[]> {
+  async getJobHistory(jobId: string, limit: number = 100): Promise<unknown[]> {
     const result = await query(
       `SELECT * FROM sync_progress_history
        WHERE job_id = $1

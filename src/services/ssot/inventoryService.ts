@@ -25,7 +25,7 @@ export async function listBySupplier(supplierId: string): Promise<InventoryItem[
     `SELECT * FROM public.inventory_items WHERE supplier_id::text = $1`,
     [supplierId]
   )
-  return res.rows.map((row: any) => ({
+  return res.rows.map((row: unknown) => ({
     sku: row.sku,
     supplierId: String(row.supplier_id ?? ''),
     productId: row.product_id ? String(row.product_id) : undefined,

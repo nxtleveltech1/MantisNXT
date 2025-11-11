@@ -12,7 +12,7 @@
 
 import { query, withTransaction } from '@/lib/database';
 import { AIDatabaseService } from '../database-integration';
-import { PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -41,7 +41,7 @@ export interface DemandForecast {
   algorithm_used: string;
   actual_quantity: number | null;
   accuracy_score: number | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 
@@ -59,7 +59,7 @@ export interface GenerateForecastOptions {
   horizon: ForecastHorizon;
   days: number;
   includeConfidenceIntervals?: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AccuracyMetrics {
@@ -101,7 +101,7 @@ export class DemandForecastService {
 
     // Build dynamic WHERE clause
     const conditions: string[] = ['org_id = $1'];
-    const params: any[] = [orgId];
+    const params: unknown[] = [orgId];
     let paramIndex = 2;
 
     if (productId) {

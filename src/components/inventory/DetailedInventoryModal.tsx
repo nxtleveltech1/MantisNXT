@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useState, useEffect, useCallback } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -23,26 +23,20 @@ import {
   Building2,
   Package,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Clock,
   MapPin,
   DollarSign,
   Star,
   Calendar,
-  FileText,
   Edit,
   Save,
   X,
   RefreshCw,
   BarChart3,
   History,
-  Settings,
   Users,
-  Truck,
-  Target,
-  Zap,
-  ChevronRight
+  Target
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
@@ -63,14 +57,14 @@ interface DetailedInventoryItem {
   currency: string
   location: string
   weight: number
-  dimensions: any
+  dimensions: unknown
   status: string
   lastStockUpdate: string
   createdAt: string
   updatedAt: string
   tags: string[]
   notes: string
-  customFields: any
+  customFields: unknown
 }
 
 interface SupplierDetails {
@@ -131,8 +125,8 @@ interface DetailedInventoryData {
   product: ProductDetails | null
   stockHistory: StockMovement[]
   predictiveAnalytics: PredictiveAnalytics | null
-  relatedItems: any[]
-  documents: any[]
+  relatedItems: unknown[]
+  documents: unknown[]
   metadata: {
     lastUpdated: string
     dataFreshness: string
@@ -162,13 +156,7 @@ export default function DetailedInventoryModal({
   const [saving, setSaving] = useState(false)
   const [editData, setEditData] = useState<Partial<DetailedInventoryItem>>({})
 
-  useEffect(() => {
-    if (isOpen && itemId) {
-      loadDetailedData()
-    }
-  }, [isOpen, itemId])
-
-  const loadDetailedData = async () => {
+  const loadDetailedData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -186,7 +174,13 @@ export default function DetailedInventoryModal({
     } finally {
       setLoading(false)
     }
-  }
+  }, [itemId])
+
+  useEffect(() => {
+    if (isOpen && itemId) {
+      loadDetailedData()
+    }
+  }, [isOpen, itemId, loadDetailedData])
 
   const handleSave = async () => {
     if (!data) return

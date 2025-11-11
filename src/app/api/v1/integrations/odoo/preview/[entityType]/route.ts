@@ -8,7 +8,8 @@
  * Date: 2025-01-XX
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import { OdooService } from '@/lib/services/OdooService';
 
@@ -74,7 +75,7 @@ async function handlePreview(
       LIMIT 1
     `;
 
-    const configResult = await query<any>(configSql);
+    const configResult = await query<unknown>(configSql);
 
     if (configResult.rows.length === 0 && !server_url) {
       return NextResponse.json(
@@ -197,7 +198,7 @@ async function handlePreview(
           fields,
         },
       });
-    } catch (previewError: any) {
+    } catch (previewError: unknown) {
       console.error(`Preview error for ${entityType}:`, previewError);
       console.error(`Config used - Database: "${normalizedDatabaseName}", URL: ${normalizedUrl}, Username: ${finalUsername}`);
 
@@ -275,7 +276,7 @@ async function handlePreview(
 
       throw previewError;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error previewing ${entityType}:`, error);
     return NextResponse.json(
       {

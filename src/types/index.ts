@@ -307,7 +307,7 @@ export interface AnalyticsReport {
     suppliers?: string[];
     categories?: string[];
     regions?: string[];
-    [key: string]: any;
+    [key: string]: unknown;
   };
 
   // Data
@@ -342,7 +342,7 @@ export interface AnalyticsTable {
   id: string;
   title: string;
   columns: AnalyticsColumn[];
-  data: Record<string, any>[];
+  data: Record<string, unknown>[];
   pagination?: {
     page: number;
     size: number;
@@ -363,7 +363,7 @@ export interface AnalyticsDataPoint {
   y: number;
   label?: string;
   category?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AnalyticsInsight {
@@ -419,8 +419,8 @@ export interface AuditLog {
   // Changes
   changes?: {
     field: string;
-    oldValue: any;
-    newValue: any;
+    oldValue: unknown;
+    newValue: unknown;
   }[];
 
   // User
@@ -473,5 +473,5 @@ export interface TableSort {
 }
 
 export interface TableFilter {
-  [key: string]: any;
+  [key: string]: unknown;
 }

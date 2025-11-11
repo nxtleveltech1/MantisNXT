@@ -37,8 +37,8 @@
  * }
  */
 
-import { PoolClient } from 'pg'
-import { withTransaction as enterpriseWithTransaction, query as enterpriseQuery } from '@/lib/database/unified-connection'
+import type { PoolClient } from 'pg'
+import { withTransaction as enterpriseWithTransaction } from '@/lib/database/unified-connection'
 
 export class TransactionHelper {
   /**

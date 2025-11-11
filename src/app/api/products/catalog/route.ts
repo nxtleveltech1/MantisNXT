@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 
 interface ProductCatalogItem {
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = (searchParams.get('sortOrder') || 'asc').toLowerCase()
 
     const whereClauses: string[] = ['p.active = true']
-    const filterParams: any[] = []
+    const filterParams: unknown[] = []
     let paramIndex = 1
 
     if (search) {

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
 function getJwtSecret(): string {
@@ -44,7 +45,7 @@ export function withAuth(
       const token = authHeader.substring(7);
 
       // Verify JWT token
-      const decoded = jwt.verify(token, getJwtSecret()) as any;
+      const decoded = jwt.verify(token, getJwtSecret()) as unknown;
 
       // Create auth context
       const authContext: AuthContext = {
@@ -184,7 +185,7 @@ export function getUserFromRequest(request: NextRequest): AuthenticatedUser | nu
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, getJwtSecret()) as any;
+    const decoded = jwt.verify(token, getJwtSecret()) as unknown;
 
     return {
       userId: decoded.userId,

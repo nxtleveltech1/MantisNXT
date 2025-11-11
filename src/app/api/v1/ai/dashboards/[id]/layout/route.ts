@@ -3,7 +3,7 @@
  * PATCH /api/v1/ai/dashboards/[id]/layout
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

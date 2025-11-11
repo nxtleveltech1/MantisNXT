@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,43 +9,29 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {
   Search,
   Globe,
-  Brain,
   Sparkles,
   Loader2,
   AlertTriangle,
   CheckCircle,
   ExternalLink,
   Copy,
-  Download,
   RefreshCw,
   Building2,
   Mail,
   Phone,
   MapPin,
-  FileText,
   Users,
-  DollarSign,
-  Calendar,
   Tag,
   Lightbulb,
   ArrowRight,
-  Loader,
   Zap,
   Package,
   Layers
@@ -86,7 +72,7 @@ interface WebSearchResult {
 }
 
 interface WebSupplierDiscoveryProps {
-  onDataFound: (data: any) => void
+  onDataFound: (data: unknown) => void
   initialQuery?: string
 }
 
@@ -170,7 +156,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
       }
 
       // Ensure data is in the correct format
-      const formattedResults = result.data.map((item: any, index: number) => ({
+      const formattedResults = result.data.map((item: unknown, index: number) => ({
         id: item.id || `search_${Date.now()}_${index}`,
         url: item.url || `https://www.${(item.companyName || 'company').toLowerCase().replace(/\s+/g, '')}.com`,
         title: item.title || `${item.companyName || 'Unknown Company'} - ${item.industry || 'Professional Services'}`,
@@ -288,7 +274,7 @@ const WebSupplierDiscovery: React.FC<WebSupplierDiscoveryProps> = ({
                 
                 <div className="text-sm text-gray-600">
                   <Lightbulb className="h-4 w-4 inline mr-1" />
-                  Try searches like: "technology suppliers in South Africa", "manufacturing companies Europe", or specific company names
+                  Try searches like: &ldquo;technology suppliers in South Africa&rdquo;, &ldquo;manufacturing companies Europe&rdquo;, or specific company names
                 </div>
               </CardContent>
             </Card>

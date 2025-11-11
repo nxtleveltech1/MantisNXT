@@ -9,14 +9,15 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
-import {
-  PRICING_TABLES,
+import type {
   OptimizationRun,
   OptimizationRecommendation,
+  PriceChangeLog} from '@/lib/db/pricing-schema';
+import {
+  PRICING_TABLES,
   OptimizationStatus,
   RecommendationStatus,
-  PricingStrategy,
-  PriceChangeLog,
+  PricingStrategy
 } from '@/lib/db/pricing-schema';
 import { CORE_TABLES } from '@/lib/db/schema-contract';
 import { v4 as uuidv4 } from 'uuid';
@@ -138,7 +139,7 @@ export class PricingOptimizationService {
       await this.updateRunStatus(run.run_id, OptimizationStatus.COMPLETED);
       await this.updateRunField(run.run_id, 'completed_at', 'NOW()');
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       await this.updateRunStatus(run.run_id, OptimizationStatus.FAILED, error.message);
       throw error;
     }
@@ -184,7 +185,7 @@ export class PricingOptimizationService {
     }
   ): Promise<OptimizationRecommendation[]> {
     let sql = `SELECT * FROM ${PRICING_TABLES.OPTIMIZATION_RECOMMENDATIONS} WHERE run_id = $1`;
-    const params: any[] = [runId];
+    const params: unknown[] = [runId];
     let paramCount = 2;
 
     if (filter?.status) {
@@ -320,7 +321,7 @@ export class PricingOptimizationService {
 
         return { success: true, priceChangeLog };
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return { success: false, error: error.message };
     }
   }
@@ -389,7 +390,7 @@ export class PricingOptimizationService {
   /**
    * Get products in optimization scope
    */
-  private static async getProductsInScope(scope: OptimizationRun['scope']): Promise<any[]> {
+  private static async getProductsInScope(scope: OptimizationRun['scope']): Promise<unknown[]> {
     let sql = `
       SELECT p.*, sp.cost, sp.price, sp.supplier_id, b.name as brand_name, c.name as category_name
       FROM ${CORE_TABLES.PRODUCT} p
@@ -399,7 +400,7 @@ export class PricingOptimizationService {
       WHERE 1=1
     `;
 
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramCount = 1;
 
     if (scope.category_ids && scope.category_ids.length > 0) {
@@ -422,15 +423,15 @@ export class PricingOptimizationService {
       params.push(scope.product_ids);
     }
 
-    const result = await query<any>(sql, params);
+    const result = await query<unknown>(sql, params);
     return result.rows;
   }
 
   /**
    * Get appropriate optimizers based on strategy
    */
-  private static getOptimizers(strategy: PricingStrategy, config: OptimizationRun['config']): any[] {
-    const optimizers: any[] = [];
+  private static getOptimizers(strategy: PricingStrategy, config: OptimizationRun['config']): unknown[] {
+    const optimizers: unknown[] = [];
 
     if (config.algorithms) {
       if (config.algorithms.includes('cost_plus')) {
@@ -472,7 +473,7 @@ export class PricingOptimizationService {
     if (recommendations.length === 0) return;
 
     const values: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramCount = 1;
 
     for (const rec of recommendations) {
@@ -598,7 +599,7 @@ export class PricingOptimizationService {
   /**
    * Parse optimization run from database
    */
-  private static parseOptimizationRun(row: any): OptimizationRun {
+  private static parseOptimizationRun(row: unknown): OptimizationRun {
     return {
       ...row,
       config: typeof row.config === 'string' ? JSON.parse(row.config) : row.config,
@@ -612,7 +613,7 @@ export class PricingOptimizationService {
   /**
    * Parse recommendation from database
    */
-  private static parseRecommendation(row: any): OptimizationRecommendation {
+  private static parseRecommendation(row: unknown): OptimizationRecommendation {
     return {
       ...row,
       competitor_prices: typeof row.competitor_prices === 'string'

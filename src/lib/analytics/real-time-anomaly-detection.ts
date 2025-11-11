@@ -2,7 +2,7 @@
 // Real-Time Anomaly Detection with Machine Learning
 // Implements advanced anomaly detection algorithms for continuous monitoring
 
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import EventEmitter from 'events';
 
 // Types for Anomaly Detection
@@ -17,7 +17,7 @@ export interface AnomalyDetectionModel {
   lastTrained: Date;
   accuracy: number;
   falsePositiveRate: number;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   status: 'active' | 'training' | 'inactive';
 }
 
@@ -190,7 +190,7 @@ export class StatisticalAnomalyDetector {
 export class IsolationForestDetector {
   private model: AnomalyDetectionModel;
   private trees: Array<{
-    root: any;
+    root: unknown;
     height: number;
   }> = [];
   private numTrees: number = 100;
@@ -221,7 +221,7 @@ export class IsolationForestDetector {
     return subsample;
   }
 
-  private buildTree(data: number[][], depth: number): any {
+  private buildTree(data: number[][], depth: number): unknown {
     if (data.length <= 1 || depth >= 10) {
       return { size: data.length, isLeaf: true, depth };
     }
@@ -273,7 +273,7 @@ export class IsolationForestDetector {
     };
   }
 
-  private pathLength(point: number[], node: any): number {
+  private pathLength(point: number[], node: unknown): number {
     if (node.isLeaf) {
       return node.depth + this.cFunction(node.size);
     }
@@ -384,7 +384,7 @@ export class LSTMAutoencoderDetector {
 export class RealTimeAnomalyDetectionEngine extends EventEmitter {
   private db: Pool;
   private models: Map<string, AnomalyDetectionModel> = new Map();
-  private detectors: Map<string, any> = new Map();
+  private detectors: Map<string, unknown> = new Map();
   private alertHistory: AnomalyAlert[] = [];
   private patterns: Map<string, AnomalyPattern> = new Map();
   private isMonitoring: boolean = false;
@@ -468,7 +468,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     }
   }
 
-  private async createModel(config: any): Promise<string> {
+  private async createModel(config: unknown): Promise<string> {
     const modelId = `model_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date();
 
@@ -534,7 +534,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     this.detectors.set(model.id, detector);
   }
 
-  private async trainDetector(detector: any, model: AnomalyDetectionModel): Promise<void> {
+  private async trainDetector(detector: unknown, model: AnomalyDetectionModel): Promise<void> {
     try {
       // Get historical data based on target metric
       const data = await this.getHistoricalData(model.targetMetric, model.windowSize * 2);
@@ -560,7 +560,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
 
   private async getHistoricalData(targetMetric: string, limit: number): Promise<number[]> {
     let query = '';
-    const params: any[] = [limit];
+    const params: unknown[] = [limit];
 
     switch (targetMetric) {
       case 'supplier_performance':
@@ -643,9 +643,9 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     }
   }
 
-  private async getRecentData(targetMetric: string, organizationId: string): Promise<any[]> {
+  private async getRecentData(targetMetric: string, organizationId: string): Promise<unknown[]> {
     let query = '';
-    const params: any[] = [organizationId];
+    const params: unknown[] = [organizationId];
 
     switch (targetMetric) {
       case 'supplier_performance':
@@ -692,7 +692,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     }
   }
 
-  private async performDetection(detector: any, model: AnomalyDetectionModel, dataPoint: any): Promise<any> {
+  private async performDetection(detector: unknown, model: AnomalyDetectionModel, dataPoint: unknown): Promise<unknown> {
     let value: number;
     let sequence: number[];
 
@@ -739,8 +739,8 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
 
   private async createAnomalyAlert(
     model: AnomalyDetectionModel,
-    detection: any,
-    dataPoint: any
+    detection: unknown,
+    dataPoint: unknown
   ): Promise<AnomalyAlert> {
     const alertId = `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -804,7 +804,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     return mapping[targetMetric] || 'system_performance';
   }
 
-  private getEntityId(dataPoint: any, targetMetric: string): string {
+  private getEntityId(dataPoint: unknown, targetMetric: string): string {
     switch (targetMetric) {
       case 'supplier_performance': return dataPoint.supplier_id;
       case 'inventory_movement': return dataPoint.item_id;
@@ -822,7 +822,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     }
   }
 
-  private getEntityName(dataPoint: any, targetMetric: string): string {
+  private getEntityName(dataPoint: unknown, targetMetric: string): string {
     switch (targetMetric) {
       case 'supplier_performance': return dataPoint.supplier_name || 'Unknown Supplier';
       case 'inventory_movement': return dataPoint.item_name || 'Unknown Item';
@@ -831,7 +831,7 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     }
   }
 
-  private async getHistoricalStatistics(targetMetric: string): Promise<any> {
+  private async getHistoricalStatistics(targetMetric: string): Promise<unknown> {
     const data = await this.getHistoricalData(targetMetric, 100);
 
     if (data.length === 0) {
@@ -871,14 +871,14 @@ export class RealTimeAnomalyDetectionEngine extends EventEmitter {
     return operations[targetMetric] || ['General Operations'];
   }
 
-  private generateAlertDescription(model: AnomalyDetectionModel, detection: any, dataPoint: any): string {
+  private generateAlertDescription(model: AnomalyDetectionModel, detection: unknown, dataPoint: unknown): string {
     return `Anomaly detected in ${model.targetMetric} with confidence ${(detection.score * 100).toFixed(1)}%. ` +
            `Current value: ${detection.value}, Detection method: ${detection.method}`;
   }
 
   private generateRecommendation(
     model: AnomalyDetectionModel,
-    detection: any,
+    detection: unknown,
     severity: string
   ): AnomalyAlert['recommendation'] {
     const urgentActions = {

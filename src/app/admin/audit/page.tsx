@@ -13,7 +13,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Activity,
   Search,
-  Filter,
   Download,
   Eye,
   Calendar as CalendarIcon,
@@ -27,8 +26,7 @@ import {
   CheckCircle,
   XCircle,
   Info,
-  RefreshCw,
-  ExternalLink
+  RefreshCw
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -48,7 +46,7 @@ interface AuditLog {
   status: 'success' | 'warning' | 'error' | 'info'
   organizationId: string
   organizationName: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export default function AuditPage() {

@@ -5,7 +5,7 @@
  * Maps event types to cache key patterns that should be invalidated.
  */
 
-import { CacheInvalidationEventType } from './events';
+import type { CacheInvalidationEventType } from './events';
 
 /**
  * Cache invalidation patterns mapping
@@ -186,7 +186,7 @@ export const QueryKeys = {
   dashboardAnalytics: () => ['dashboard-analytics'] as const,
 
   // Inventory queries
-  inventoryList: (filters?: Record<string, any>) =>
+  inventoryList: (filters?: Record<string, unknown>) =>
     ['inventory-list', filters] as const,
   inventoryItem: (id: string) =>
     [`inventory-item-${id}`] as const,
@@ -194,11 +194,11 @@ export const QueryKeys = {
     [`supplier-inventory-${supplierId}`] as const,
   inventoryByCategory: (category: string) =>
     [`inventory-category-${category}`] as const,
-  inventoryAnalytics: (filters?: Record<string, any>) =>
+  inventoryAnalytics: (filters?: Record<string, unknown>) =>
     ['inventory-analytics', filters] as const,
 
   // Supplier queries
-  supplierList: (filters?: Record<string, any>) =>
+  supplierList: (filters?: Record<string, unknown>) =>
     ['suppliers-list', filters] as const,
   supplier: (id: string) =>
     [`supplier-${id}`] as const,
@@ -206,13 +206,13 @@ export const QueryKeys = {
     [`supplier-metrics-${id}`] as const,
 
   // Analytics queries
-  analyticsOverview: (filters?: Record<string, any>) =>
+  analyticsOverview: (filters?: Record<string, unknown>) =>
     ['analytics-overview', filters] as const,
-  stockMovements: (filters?: Record<string, any>) =>
+  stockMovements: (filters?: Record<string, unknown>) =>
     ['stock-movements', filters] as const,
 
   // Product queries
-  productsList: (filters?: Record<string, any>) =>
+  productsList: (filters?: Record<string, unknown>) =>
     ['products-list', filters] as const,
   product: (id: string) =>
     [`product-${id}`] as const,

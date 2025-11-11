@@ -22,7 +22,7 @@ export interface AnalyticsDashboard {
     width: number;
     height: number;
   }>;
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   isDefault: boolean;
   isShared: boolean;
   createdBy: string;
@@ -40,7 +40,7 @@ export interface CreateDashboardData {
     width: number;
     height: number;
   }>;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   isDefault?: boolean;
   isShared?: boolean;
   createdBy: string;
@@ -49,7 +49,7 @@ export interface CreateDashboardData {
 export interface UpdateDashboardData {
   name?: string;
   description?: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   isDefault?: boolean;
   isShared?: boolean;
 }
@@ -126,7 +126,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
       'dashboard.update',
       async () => {
         const setClauses: string[] = [];
-        const values: any[] = [];
+        const values: unknown[] = [];
         let paramIndex = 1;
 
         if (updates.name !== undefined) {
@@ -436,7 +436,7 @@ export class AnalyticsDashboardService extends AIServiceBase<AIServiceRequestOpt
   /**
    * Map database row to AnalyticsDashboard
    */
-  private mapDashboardRow(row: any): AnalyticsDashboard {
+  private mapDashboardRow(row: unknown): AnalyticsDashboard {
     return {
       id: row.id,
       orgId: row.org_id,

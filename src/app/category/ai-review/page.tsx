@@ -52,8 +52,11 @@ export default function AIReviewPage() {
     <div style={{ padding: 24 }}>
       <h1>AI Category Suggestions Review</h1>
       <div style={{ margin: '12px 0' }}>
-        <label style={{ marginRight: 8 }}>Limit:</label>
+        <label htmlFor="ai-review-limit" style={{ marginRight: 8 }}>
+          Limit:
+        </label>
         <input
+          id="ai-review-limit"
           type="number"
           value={limit}
           onChange={e => setLimit(parseInt(e.target.value || '0', 10))}

@@ -2,13 +2,13 @@
  * Test utilities and helpers for sync service testing
  */
 
-import { generateCustomerData, generateSyncQueueData, generateDeltaData } from '../fixtures/sync-test-data';
+import { generateCustomerData, generateDeltaData } from '../fixtures/sync-test-data';
 
 /**
  * Mock database query function
  */
 export const createMockDatabase = () => {
-  const data: Record<string, any[]> = {
+  const data: Record<string, unknown[]> = {
     customer: [],
     woo_customer_sync_queue: [],
     woo_customer_sync_queue_line: [],
@@ -17,7 +17,7 @@ export const createMockDatabase = () => {
   };
 
   return {
-    async query<T = any>(sql: string, params?: any[]): Promise<{ rows: T[] }> {
+    async query<T = unknown>(sql: string, params?: unknown[]): Promise<{ rows: T[] }> {
       // Simulate INSERT operations
       if (sql.includes('INSERT INTO customer')) {
         const customerId = `cust-${Date.now()}`;
@@ -52,7 +52,7 @@ export const createMockDatabase = () => {
       return { rows: [] };
     },
 
-    async insert(table: string, values: Record<string, any>) {
+    async insert(table: string, values: Record<string, unknown>) {
       const record = {
         id: `${table}-${Date.now()}`,
         ...values,
@@ -64,7 +64,7 @@ export const createMockDatabase = () => {
       return record;
     },
 
-    async update(table: string, id: string, values: Record<string, any>) {
+    async update(table: string, id: string, values: Record<string, unknown>) {
       if (!data[table]) return null;
       const idx = data[table].findIndex((r) => r.id === id);
       if (idx >= 0) {
@@ -94,9 +94,9 @@ export const createMockDatabase = () => {
 /**
  * Mock WooCommerce service
  */
-export const createMockWooCommerceService = (overrides: Record<string, any> = {}) => {
+export const createMockWooCommerceService = (overrides: Record<string, unknown> = {}) => {
   return {
-    async getCustomers(params: any = {}) {
+    async getCustomers(params: unknown = {}) {
       return {
         data: generateCustomerData(params.per_page || 10),
       };
@@ -109,7 +109,7 @@ export const createMockWooCommerceService = (overrides: Record<string, any> = {}
       };
     },
 
-    async getOrders(params: any = {}) {
+    async getOrders(params: unknown = {}) {
       return {
         data: [
           {
@@ -130,7 +130,7 @@ export const createMockWooCommerceService = (overrides: Record<string, any> = {}
       };
     },
 
-    async fetchAllPages(callback: Function, params: any = {}) {
+    async fetchAllPages(callback: Function, params: unknown = {}) {
       return generateCustomerData(100);
     },
 
@@ -141,9 +141,9 @@ export const createMockWooCommerceService = (overrides: Record<string, any> = {}
 /**
  * Mock Odoo service
  */
-export const createMockOdooService = (overrides: Record<string, any> = {}) => {
+export const createMockOdooService = (overrides: Record<string, unknown> = {}) => {
   return {
-    async getPartners(params: any = {}) {
+    async getPartners(params: unknown = {}) {
       return generateCustomerData(params.limit || 10);
     },
 
@@ -151,14 +151,14 @@ export const createMockOdooService = (overrides: Record<string, any> = {}) => {
       return generateCustomerData(1)[0];
     },
 
-    async createPartner(data: any) {
+    async createPartner(data: unknown) {
       return {
         id: Math.floor(Math.random() * 10000),
         ...data,
       };
     },
 
-    async updatePartner(id: number, data: any) {
+    async updatePartner(id: number, data: unknown) {
       return {
         id,
         ...data,
@@ -225,16 +225,16 @@ export const createMockSyncProgressTracker = () => {
  * Create mock conflict resolver
  */
 export const createMockConflictResolver = () => {
-  const conflicts: Record<string, any> = {};
-  const resolutions: Record<string, any> = {};
+  const conflicts: Record<string, unknown> = {};
+  const resolutions: Record<string, unknown> = {};
 
   return {
-    async registerConflict(conflict: any) {
+    async registerConflict(conflict: unknown) {
       conflicts[conflict.id] = conflict;
       return conflict.id;
     },
 
-    async resolveConflict(conflictId: string, strategy: 'auto-retry' | 'manual' | 'skip', resolution: any = {}) {
+    async resolveConflict(conflictId: string, strategy: 'auto-retry' | 'manual' | 'skip', resolution: unknown = {}) {
       if (!conflicts[conflictId]) throw new Error(`Conflict not found: ${conflictId}`);
 
       const resolved = {
@@ -273,10 +273,10 @@ export const createMockConflictResolver = () => {
  * Create mock delta detection service
  */
 export const createMockDeltaDetectionService = () => {
-  const cache = new Map<string, any>();
+  const cache = new Map<string, unknown>();
 
   return {
-    async detectDelta(externalIds: string[], localData: any) {
+    async detectDelta(externalIds: string[], localData: unknown) {
       const cacheKey = `delta-${externalIds.join('-')}`;
 
       if (cache.has(cacheKey)) {
@@ -289,8 +289,8 @@ export const createMockDeltaDetectionService = () => {
       return delta;
     },
 
-    async compareRecords(external: any, local: any) {
-      const changes: Record<string, any> = {};
+    async compareRecords(external: unknown, local: unknown) {
+      const changes: Record<string, unknown> = {};
 
       Object.keys(external).forEach((key) => {
         if (JSON.stringify(external[key]) !== JSON.stringify(local?.[key])) {
@@ -323,7 +323,7 @@ export const createMockDeltaDetectionService = () => {
 /**
  * API request/response builders
  */
-export const createApiRequest = (method: string = 'POST', body: any = {}) => {
+export const createApiRequest = (method: string = 'POST', body: unknown = {}) => {
   return {
     method,
     headers: {
@@ -334,7 +334,7 @@ export const createApiRequest = (method: string = 'POST', body: any = {}) => {
   };
 };
 
-export const createAuthenticatedRequest = (token: string, method: string = 'POST', body: any = {}) => {
+export const createAuthenticatedRequest = (token: string, method: string = 'POST', body: unknown = {}) => {
   return {
     method,
     headers: {
@@ -358,7 +358,7 @@ export const createMockSSEStream = () => {
       listeners[eventType].push(callback);
     },
 
-    emit(eventType: string, data: any) {
+    emit(eventType: string, data: unknown) {
       if (listeners[eventType]) {
         listeners[eventType].forEach((cb) => cb(data));
       }
@@ -372,15 +372,15 @@ export const createMockSSEStream = () => {
       });
     },
 
-    emitMetrics(metrics: any) {
+    emitMetrics(metrics: unknown) {
       this.emit('metrics', metrics);
     },
 
-    emitComplete(summary: any) {
+    emitComplete(summary: unknown) {
       this.emit('complete', summary);
     },
 
-    emitError(error: any) {
+    emitError(error: unknown) {
       this.emit('error', error);
     },
 
@@ -425,7 +425,7 @@ export const expectValidEmail = (email: string) => {
 /**
  * Pagination helpers
  */
-export const createPaginationHelper = (items: any[], pageSize: number = 50) => {
+export const createPaginationHelper = (items: unknown[], pageSize: number = 50) => {
   const pages = Math.ceil(items.length / pageSize);
 
   return {
@@ -455,7 +455,7 @@ export const createPaginationHelper = (items: any[], pageSize: number = 50) => {
 /**
  * Performance measurement helpers
  */
-export const measurePerformance = async (fn: () => Promise<any>, label: string = 'Operation') => {
+export const measurePerformance = async (fn: () => Promise<unknown>, label: string = 'Operation') => {
   const startTime = performance.now();
   const startMemory = process.memoryUsage().heapUsed;
 

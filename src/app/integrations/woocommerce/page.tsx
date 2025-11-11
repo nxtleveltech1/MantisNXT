@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, RefreshCw, Settings, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, Clock, XCircle, Loader2, Play, Square, Eye } from "lucide-react";
+import { ShoppingBag, RefreshCw, Settings, AlertCircle, CheckCircle2, Package, ShoppingCart, Users, Save, TestTube2, Clock, XCircle, Loader2, Play, Eye } from "lucide-react";
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -172,7 +172,7 @@ export default function WooCommercePage() {
       } else {
         throw new Error(data.error || 'Failed to save configuration');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: error.message,
@@ -207,7 +207,7 @@ export default function WooCommercePage() {
       } else {
         throw new Error(data.error || 'Connection test failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Connection Failed",
         description: error.message,
@@ -329,7 +329,7 @@ export default function WooCommercePage() {
       } else {
         throw new Error(data.error);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       const endTime = Date.now();
       const startTime = syncProgress[entityType].startTime || endTime;
 
@@ -377,7 +377,7 @@ export default function WooCommercePage() {
         title: "All Syncs Completed",
         description: "All entities have been synced successfully.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Sync Error",
         description: "Some syncs may have failed. Check sync history for details.",
@@ -392,7 +392,7 @@ export default function WooCommercePage() {
     syncManager.openPreview('woocommerce', entityType);
   };
 
-  const handleSyncConfirmed = async (config: any) => {
+  const handleSyncConfirmed = async (config: unknown) => {
     syncManager.closePreview();
     // Generate job ID and start progress tracking
     const jobId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

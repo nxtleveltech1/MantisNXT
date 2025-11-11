@@ -3,7 +3,7 @@
  * Processes and structures data from multiple sources into comprehensive supplier information
  */
 
-import {
+import type {
   WebSearchResult,
   WebsiteContent,
   ExtractedDataField,
@@ -12,9 +12,6 @@ import {
   DiscoverySource,
   DiscoveryConfiguration
 } from './enhanced-types';
-import { webSearchService } from './web-search-service';
-import { webScrapingService } from './web-scraping-service';
-import { DISCOVERY_CONFIG } from './config';
 
 interface ProcessingStats {
   sourcesProcessed: number;
@@ -267,16 +264,16 @@ export class EnhancedDataProcessor {
   /**
    * Validate and clean extracted data
    */
-  private validateAndCleanData(organizedData: any) {
+  private validateAndCleanData(organizedData: unknown) {
     const cleaned = {
       ...organizedData,
-      fields: {} as any
+      fields: {} as unknown
     };
 
     // Clean each category of fields
     for (const [category, fields] of Object.entries(organizedData.fields)) {
       const cleanedFields = this.cleanFieldCategory(fields as ExtractedDataField[]);
-      (cleaned.fields as any)[category] = cleanedFields;
+      (cleaned.fields as unknown)[category] = cleanedFields;
     }
 
     return cleaned;
@@ -350,7 +347,7 @@ export class EnhancedDataProcessor {
   /**
    * Structure data into supplier format
    */
-  private structureSupplierData(validatedData: any): StructuredData {
+  private structureSupplierData(validatedData: unknown): StructuredData {
     const fields = validatedData.fields;
     
     // Extract the best values for each field
@@ -555,7 +552,7 @@ export class EnhancedDataProcessor {
   /**
    * Get nested object value using dot notation
    */
-  private getNestedValue(obj: any, path: string): any {
+  private getNestedValue(obj: unknown, path: string): unknown {
     return path.split('.').reduce((current, key) => current?.[key], obj);
   }
 
@@ -716,7 +713,7 @@ export class EnhancedDataProcessor {
     }
   }
 
-  private parseNumber(value: any): number {
+  private parseNumber(value: unknown): number {
     if (typeof value === 'number') return value;
     if (typeof value === 'string') {
       const match = value.match(/\d+/);

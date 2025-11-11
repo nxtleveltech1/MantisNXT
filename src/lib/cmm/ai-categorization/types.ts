@@ -3,7 +3,7 @@
  * Comprehensive type definitions for job management and categorization tracking
  */
 
-import { EnrichedProduct } from '../sip-product-enrichment';
+import type { EnrichedProduct } from '../sip-product-enrichment';
 
 // ==================== Job Types ====================
 
@@ -289,7 +289,7 @@ export interface CategorizationError {
   code: 'NETWORK_ERROR' | 'API_ERROR' | 'DATABASE_ERROR' | 'VALIDATION_ERROR' | 'RATE_LIMIT' | 'TIMEOUT' | 'UNKNOWN';
   message: string;
   product_id?: string;
-  details?: any;
+  details?: unknown;
   retryable: boolean;
 }
 

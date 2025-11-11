@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
 import { z } from 'zod';
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, data: res });
-  } catch (e: any) {
+  } catch (e: unknown) {
     const code = e?.message === 'NEGATIVE_STOCK' || e?.message === 'ITEM_NOT_FOUND' ? 400 : 500;
     return NextResponse.json({ success: false, error: e?.message ?? String(e) }, { status: code });
   }

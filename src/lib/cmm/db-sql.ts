@@ -96,8 +96,8 @@ export async function upsertProductAttributes(
   if (p.supplierId) {
     // Extract cost from attributes if available
     const cost =
-      (p.attributes as any)?.cost ||
-      (p.attributes as any)?.dealerPrice ||
+      (p.attributes as unknown)?.cost ||
+      (p.attributes as unknown)?.dealerPrice ||
       undefined
 
     const ruleData = {
@@ -148,7 +148,7 @@ export async function upsertProductAttributes(
     price: number | null
     stockType: string | null
     imageUrl: string | null
-    attributes: any | null
+    attributes: unknown | null
   }>(`
     select sku,
            supplier_id as "supplierId",
@@ -216,15 +216,15 @@ export async function upsertProductAttributes(
     }
 
     // Core field immutability for existing SKUs: differences are conflicts, not updates
-    const coreChanges: Record<string, { existing: any; attempted: any }> = {}
+    const coreChanges: Record<string, { existing: unknown; attempted: unknown }> = {}
     const compare = (
       field: "description" | "price" | "stockType" | "imageUrl",
-      attempted: any
+      attempted: unknown
     ) => {
       // only compare if provided on import
       if (attempted === undefined || attempted === null || attempted === "")
         return
-      const ex = (exists as any)[field]
+      const ex = (exists as unknown)[field]
       const same =
         field === "price"
           ? Number(ex ?? null) === Number(attempted)
@@ -235,8 +235,8 @@ export async function upsertProductAttributes(
     }
 
     compare("description", p.description)
-    compare("price", p.price as any)
-    compare("stockType", p.stockType as any)
+    compare("price", p.price as unknown)
+    compare("stockType", p.stockType as unknown)
     compare("imageUrl", p.imageUrl)
 
     let hadConflict = false
@@ -415,7 +415,7 @@ export async function recordUpload(params: {
   supplierId: string
   source: "file" | "text" | "api"
   filename?: string
-  mapping: Record<string, any>
+  mapping: Record<string, unknown>
   results: {
     sku: string
     outcome: "inserted" | "updated" | "conflict"

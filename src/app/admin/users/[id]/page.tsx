@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import AppLayout from '@/components/layout/AppLayout'
-import { User } from '@/types/auth'
+import type { User } from '@/types/auth'
 import { authProvider } from '@/lib/auth/mock-provider'
-import { useForm, SubmitHandler } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updateUserFormSchema } from '@/lib/auth/validation'
 import type { z } from 'zod'
@@ -71,11 +71,7 @@ export default function UserProfilePage() {
     resolver: zodResolver(updateUserFormSchema),
   })
 
-  useEffect(() => {
-    loadUser()
-  }, [userId])
-
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
       setIsLoading(true)
       const currentUser = await authProvider.getCurrentUser()
@@ -109,7 +105,11 @@ export default function UserProfilePage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [reset, router, userId])
+
+  useEffect(() => {
+    loadUser()
+  }, [loadUser])
 
   const onSubmit = async (data: UpdateUserFormData) => {
     if (!user) return
@@ -123,7 +123,7 @@ export default function UserProfilePage() {
       const { permissions, ...updateData } = data
       await authProvider.updateUser(userId, {
         ...updateData,
-        role: data.role as any,
+        role: data.role as unknown,
       } as Partial<User>)
       setSuccess('User updated successfully')
       setIsEditing(false)
@@ -418,7 +418,7 @@ export default function UserProfilePage() {
                       <Label htmlFor="role">Role</Label>
                       <Select
                         value={watch('role')}
-                        onValueChange={(value) => setValue('role', value as any, { shouldDirty: true })}
+                        onValueChange={(value) => setValue('role', value as unknown, { shouldDirty: true })}
                         disabled={!isEditing}
                       >
                         <SelectTrigger id="role">
@@ -442,7 +442,7 @@ export default function UserProfilePage() {
                       <Select
                         value={watch('employment_equity') || ''}
                         onValueChange={(value) =>
-                          setValue('employment_equity', value as any, { shouldDirty: true })
+                          setValue('employment_equity', value as unknown, { shouldDirty: true })
                         }
                         disabled={!isEditing}
                       >

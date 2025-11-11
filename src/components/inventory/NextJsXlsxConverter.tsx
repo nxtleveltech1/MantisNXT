@@ -18,15 +18,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Upload,
   CheckCircle,
-  AlertTriangle,
   FileSpreadsheet,
   RefreshCw,
   Brain,
   MapPin,
   Settings,
-  Download,
-  Eye,
-  Trash2
+  Download
 } from 'lucide-react'
 
 // Enhanced types for advanced functionality
@@ -73,7 +70,7 @@ export interface DataValidationResult {
 export interface ValidationError {
   row: number
   field: string
-  value: any
+  value: unknown
   message: string
   severity: 'error' | 'warning'
 }
@@ -81,7 +78,7 @@ export interface ValidationError {
 export interface ValidationWarning {
   row: number
   field: string
-  value: any
+  value: unknown
   message: string
   suggestion?: string
 }
@@ -298,12 +295,19 @@ const NextJsXlsxConverter: React.FC<NextJsXlsxConverterProps> = ({
   maxFileSize = 10
 }) => {
   const [localOpen, setLocalOpen] = useState(false)
-  const isOpen = open ?? localOpen
-  const setOpen = (v: boolean) => (onOpenChange ? onOpenChange(v) : setLocalOpen(v))
+  const isControlled = open !== undefined
+  const isOpen = isControlled ? !!open : localOpen
+  const setOpen = useCallback((value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value)
+    } else {
+      setLocalOpen(value)
+    }
+  }, [onOpenChange])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [rawData, setRawData] = useState<any[][]>([])
+  const [rawData, setRawData] = useState<unknown[][]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [semanticMapping, setSemanticMapping] = useState<SemanticMapping | null>(null)
   const [manualMappings, setManualMappings] = useState<Record<string, string>>({})
@@ -361,7 +365,7 @@ const NextJsXlsxConverter: React.FC<NextJsXlsxConverterProps> = ({
       setProgress(40)
 
       const fileHeaders = data[0] as string[]
-      const fileData = data.slice(1) as any[][]
+      const fileData = data.slice(1) as unknown[][]
 
       setFile(uploadedFile)
       setHeaders(fileHeaders)

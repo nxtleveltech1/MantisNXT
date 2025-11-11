@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -51,11 +51,7 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
   const [sortBy, setSortBy] = useState("categorized_at")
   const [sortOrder, setSortOrder] = useState("desc")
 
-  useEffect(() => {
-    fetchProducts()
-  }, [page, statusFilter, sortBy, sortOrder, refreshTrigger])
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -80,7 +76,11 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [limit, page, search, sortBy, sortOrder, statusFilter])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts, refreshTrigger])
 
   const handleSearch = () => {
     setPage(0)
@@ -282,4 +282,3 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
     </Card>
   )
 }
-

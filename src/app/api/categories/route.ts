@@ -214,7 +214,7 @@ export async function POST(request: Request) {
       },
       { status: 201 },
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.code === "23505") {
       return NextResponse.json(
         { success: false, message: "A category with this name already exists." },

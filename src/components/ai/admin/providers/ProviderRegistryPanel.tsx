@@ -62,7 +62,7 @@ export default function ProviderRegistryPanel() {
       setForm({ name: '', provider_type: 'openai', base_url: '', default_model: '' });
       queryClient.invalidateQueries({ queryKey: ['ai-provider-registry'] });
     },
-    onError: (e: any) => toast.error(e?.message || 'Failed to add provider'),
+    onError: (e: unknown) => toast.error(e?.message || 'Failed to add provider'),
   });
 
   const toggleMutation = useMutation({

@@ -99,10 +99,10 @@ export default function SupplierContactsDirectoryPage() {
   const [deletingContact, setDeletingContact] = useState<ContactWithSupplier | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const form = useForm<ContactFormData & { supplierId: string }, any, ContactFormData & { supplierId: string }>({
+  const form = useForm<ContactFormData & { supplierId: string }, unknown, ContactFormData & { supplierId: string }>({
     resolver: zodResolver(contactFormSchema.extend({
       supplierId: z.string().min(1, 'Supplier is required'),
-    })) as Resolver<ContactFormData & { supplierId: string }, any, ContactFormData & { supplierId: string }>,
+    })) as Resolver<ContactFormData & { supplierId: string }, unknown, ContactFormData & { supplierId: string }>,
     defaultValues: {
       name: '',
       email: '',
@@ -148,7 +148,7 @@ export default function SupplierContactsDirectoryPage() {
       const suppliersData = await suppliersResponse.json()
       
       if (suppliersData.success) {
-        const suppliersList = (suppliersData.data || []).map((s: any) => ({
+        const suppliersList = (suppliersData.data || []).map((s: unknown) => ({
           id: s.id,
           name: s.name,
           code: s.code,
@@ -157,7 +157,7 @@ export default function SupplierContactsDirectoryPage() {
         
         // Flatten contacts with supplier info
         const allContacts: ContactWithSupplier[] = []
-        suppliersData.data.forEach((supplier: any) => {
+        suppliersData.data.forEach((supplier: unknown) => {
           (supplier.contacts || []).forEach((contact: SupplierContact) => {
             allContacts.push({
               ...contact,
@@ -239,13 +239,13 @@ export default function SupplierContactsDirectoryPage() {
       if (!supplierData.success) throw new Error('Supplier not found')
       
       const supplier = supplierData.data
-      const existingContacts = (supplier.contacts || []).map((c: any) => ({
+      const existingContacts = (supplier.contacts || []).map((c: unknown) => ({
         ...c,
         id: c.id || editingContact.id,
       }))
       
       // Update the contact
-      const updatedContacts = existingContacts.map((c: any) => 
+      const updatedContacts = existingContacts.map((c: unknown) => 
         String(c.id) === String(editingContact.id)
           ? {
               ...c,
@@ -303,8 +303,8 @@ export default function SupplierContactsDirectoryPage() {
       
       // Remove the contact (set inactive or remove from array)
       const updatedContacts = existingContacts
-        .filter((c: any) => String(c.id) !== String(deletingContact.id))
-        .map((c: any) => ({
+        .filter((c: unknown) => String(c.id) !== String(deletingContact.id))
+        .map((c: unknown) => ({
           ...c,
           id: c.id,
         }))
@@ -966,7 +966,7 @@ export default function SupplierContactsDirectoryPage() {
           <DialogHeader>
             <DialogTitle>Delete Contact</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete contact "{deletingContact?.name}"? This action cannot be undone.
+              Are you sure you want to delete contact &ldquo;{deletingContact?.name}&rdquo;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

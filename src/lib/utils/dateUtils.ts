@@ -100,7 +100,7 @@ export function safeFormatDate(
 /**
  * Type guard to check if an object has a valid timestamp property
  */
-export function hasValidTimestamp<T extends Record<string, any>>(
+export function hasValidTimestamp<T extends Record<string, unknown>>(
   obj: T,
   timestampKey: keyof T = 'timestamp'
 ): obj is T & { [K in keyof T]: K extends typeof timestampKey ? Date : T[K] } {
@@ -110,7 +110,7 @@ export function hasValidTimestamp<T extends Record<string, any>>(
 /**
  * Transform API response data to ensure timestamps are Date objects
  */
-export function normalizeTimestamps<T extends Record<string, any>>(
+export function normalizeTimestamps<T extends Record<string, unknown>>(
   data: T,
   timestampKeys: (keyof T)[] = ['timestamp', 'createdAt', 'updatedAt']
 ): T {
@@ -131,7 +131,7 @@ export function normalizeTimestamps<T extends Record<string, any>>(
 /**
  * Transform an array of items to ensure timestamps are Date objects
  */
-export function normalizeTimestampsArray<T extends Record<string, any>>(
+export function normalizeTimestampsArray<T extends Record<string, unknown>>(
   items: T[],
   timestampKeys: (keyof T)[] = ['timestamp', 'createdAt', 'updatedAt']
 ): T[] {

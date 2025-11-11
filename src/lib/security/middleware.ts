@@ -53,7 +53,7 @@ export class SecurityMiddleware {
       path: string;
       method: string;
       headers: Record<string, string>;
-      body?: any;
+      body?: unknown;
     },
     context: SecurityContext
   ): SecurityResult {
@@ -231,7 +231,7 @@ export class SecurityMiddleware {
 
   // Request pattern analysis
   private analyzeRequestPattern(
-    request: { path: string; method: string; headers: Record<string, string>; body?: any },
+    request: { path: string; method: string; headers: Record<string, string>; body?: unknown },
     context: SecurityContext
   ): { passed: boolean; risk: number; reason?: string } {
     let riskScore = 0;

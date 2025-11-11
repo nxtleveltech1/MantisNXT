@@ -487,7 +487,7 @@ export default function TagsPage() {
                   <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Badge variant="outline">{rule.kind}</Badge>
-                      <span className="font-medium">"{rule.keyword}"</span>
+                      <span className="font-medium">&ldquo;{rule.keyword}&rdquo;</span>
                       <span className="text-muted-foreground">→</span>
                       <Badge>{rule.tagName}</Badge>
                     </div>

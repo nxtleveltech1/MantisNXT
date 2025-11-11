@@ -3,14 +3,13 @@
  * Provides comprehensive supplier discovery using web search, scraping, and AI
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import {
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import type {
   WebSearchRequest,
   WebSearchResult,
   WebsiteContent,
   ExtractedDataField,
   StructuredData,
-  DiscoveryResult,
   DiscoverySession,
   DiscoveryProgress,
   BulkDiscoveryRequest,
@@ -18,10 +17,12 @@ import {
   WebAddressInput,
   DiscoveryConfiguration
 } from './enhanced-types';
+
+
 import { webSearchService } from './web-search-service';
 import { webScrapingService } from './web-scraping-service';
 import { enhancedDataProcessor } from './enhanced-data-processor';
-import { SupplierDiscoveryRequest, DiscoveredSupplierData } from './types';
+import type { SupplierDiscoveryRequest, DiscoveredSupplierData } from './types';
 
 interface EnhancedDiscoveryState {
   // Session management
@@ -100,7 +101,7 @@ interface EnhancedDiscoveryActions {
   
   // Utility functions
   validateWebAddress: (input: string) => WebAddressInput;
-  generateSearchQuery: (supplierName: string, context?: any) => string;
+  generateSearchQuery: (supplierName: string, context?: unknown) => string;
   
   // Cleanup and reset
   reset: () => void;
@@ -132,7 +133,7 @@ export function useEnhancedSupplierDiscovery(
     costEstimate: 0
   });
 
-  const options: Required<EnhancedDiscoveryOptions> = {
+  const options: Required<EnhancedDiscoveryOptions> = useMemo(() => ({
     enableWebSearch: true,
     maxSearchResults: 20,
     searchEngines: ['google', 'bing', 'duckduckgo'],
@@ -148,7 +149,7 @@ export function useEnhancedSupplierDiscovery(
     enableBulkOperations: true,
     autoSave: false,
     ...initialOptions
-  };
+  }), [initialOptions]);
 
   /**
    * Main discovery function with web capabilities
@@ -295,7 +296,7 @@ export function useEnhancedSupplierDiscovery(
         isProcessing: false
       }));
     }
-  }, [options]);
+  }, [generateSearchQuery, options, startDiscoverySession, updateProgress]);
 
   /**
    * Discover supplier using web address input
@@ -309,7 +310,7 @@ export function useEnhancedSupplierDiscovery(
     
     // For other types, use regular discovery
     return discoverSupplier(typeof request === 'string' ? request : { supplierName: request.value });
-  }, [discoverSupplier]);
+  }, [discoverFromWebsite, discoverSupplier, validateWebAddress]);
 
   /**
    * Direct website discovery
@@ -393,7 +394,7 @@ export function useEnhancedSupplierDiscovery(
         isProcessing: false
       }));
     }
-  }, []);
+  }, [updateProgress]);
 
   /**
    * Start a discovery session
@@ -516,7 +517,7 @@ export function useEnhancedSupplierDiscovery(
   /**
    * Generate optimized search query
    */
-  const generateSearchQuery = useCallback((supplierName: string, context?: any): string => {
+  const generateSearchQuery = useCallback((supplierName: string, context?: unknown): string => {
     let query = `"${supplierName}"`;
     
     if (context?.industry) {

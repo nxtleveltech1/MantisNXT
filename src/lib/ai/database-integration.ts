@@ -11,12 +11,11 @@
  * Uses Vercel AI SDK v5 with Anthropic Claude for optimal database reasoning
  */
 
-import { generateObject, generateText, streamText } from 'ai';
+import { generateObject, streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
-import { query, withTransaction } from '@/lib/database/connection';
-import { PoolClient } from 'pg';
+import { query } from '@/lib/database/connection';
 
 // ============================================================================
 // SCHEMAS FOR STRUCTURED AI OUTPUTS
@@ -137,7 +136,7 @@ export class AIDatabaseService {
    */
   async naturalLanguageToSQL(userQuery: string): Promise<{
     sql: string;
-    parameters: any[];
+    parameters: unknown[];
     explanation: string;
     safety_score: number;
     estimated_rows?: number;
@@ -176,7 +175,7 @@ Return a valid SQL query that answers the user's question.`,
    * Execute natural language query safely
    */
   async executeNaturalLanguageQuery(userQuery: string): Promise<{
-    data: any[];
+    data: unknown[];
     rowCount: number;
     explanation: string;
     query_generated: string;
@@ -515,8 +514,8 @@ Provide real-time analysis as you think through the data.`,
 
   private async storeInsights(data: {
     analysis_type: string;
-    input_data: any;
-    insights: any;
+    input_data: unknown;
+    insights: unknown;
   }): Promise<void> {
     try {
       await query(`
@@ -550,7 +549,7 @@ Provide real-time analysis as you think through the data.`,
   private async cachePrediction(data: {
     prediction_type: string;
     target_id?: number;
-    predictions: any;
+    predictions: unknown;
     confidence: number;
     expires_at: Date;
   }): Promise<void> {

@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
@@ -39,9 +38,6 @@ import {
 import { toast } from 'sonner'
 import type {
   LoyaltyProgram,
-  LoyaltyProgramInsert,
-  TierThresholds,
-  TierBenefits,
   LoyaltyTier
 } from '@/types/loyalty'
 
@@ -225,7 +221,7 @@ export default function ProgramConfiguration({
 
   const nextStep = async () => {
     const fields = getStepFields(currentStep)
-    const isValid = await form.trigger(fields as any)
+    const isValid = await form.trigger(fields as unknown)
     if (isValid && currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1)
     }

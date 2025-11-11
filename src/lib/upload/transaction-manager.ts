@@ -1,7 +1,7 @@
-import { PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { withTransaction } from '@/lib/database';
 import crypto from 'crypto';
-import {
+import type {
   PriceListUpload,
   BulkImportJob,
   ImportSummary
@@ -468,11 +468,11 @@ export class TransactionManager {
     });
   }
 
-  private static async createSupplierProduct(client: PoolClient, data: any, upload: PriceListUpload): Promise<void> {
+  private static async createSupplierProduct(client: PoolClient, data: unknown, upload: PriceListUpload): Promise<void> {
     // Implementation would create supplier product record
   }
 
-  private static async updateSupplierProduct(client: PoolClient, productId: string, data: any): Promise<void> {
+  private static async updateSupplierProduct(client: PoolClient, productId: string, data: unknown): Promise<void> {
     // Implementation would update supplier product record
   }
 }
@@ -505,7 +505,7 @@ class Semaphore {
   private async executeOperation<T>(
     operation: () => Promise<T>,
     resolve: (value: T) => void,
-    reject: (reason: any) => void
+    reject: (reason: unknown) => void
   ): Promise<void> {
     try {
       const result = await operation();

@@ -1,11 +1,10 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import React, { useState, useEffect, useMemo, Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BulletproofErrorBoundary } from '@/components/ui/BulletproofErrorBoundary'
 import {
@@ -13,9 +12,7 @@ import {
   MetricCardSkeleton,
   ActivityFeedSkeleton,
   AlertPanelSkeleton,
-  EmptyState,
-  ErrorState,
-  LoadingSpinner
+  EmptyState
 } from '@/components/ui/BulletproofLoadingStates'
 import {
   Select,
@@ -44,7 +41,6 @@ import {
   AlertTriangle,
   Package,
   DollarSign,
-  Users,
   Calendar,
   BarChart3,
   Zap,
@@ -52,7 +48,6 @@ import {
   Truck,
   ArrowUpRight,
   Eye,
-  Filter,
   Download,
   Bell,
   Clock,
@@ -69,28 +64,22 @@ import {
   useRealTimeDashboard,
   useRealTimeSuppliers,
   useRealTimeInventory,
-  usePriceLists,
   useSupplierMutations,
   useAlerts
 } from '@/hooks/useRealTimeDataFixed';
 
 // Date utilities for safe timestamp handling
 import {
-  safeRelativeTime,
-  safeFormatDate,
-  safeParseDate,
-  compareTimestamps
+  safeRelativeTime
 } from '@/lib/utils/dateUtils';
 
 // Data validation utilities
+import type {
+  ValidatedActivityItem,
+  ValidatedAlertItem} from '@/lib/utils/dataValidation';
 import {
   validateActivityItems,
-  validateAlertItems,
-  ValidatedActivityItem,
-  ValidatedAlertItem,
-  errorLogger,
-  transformAlertItem,
-  debugAlertStructure
+  errorLogger
 } from '@/lib/utils/dataValidation';
 
 import { processAlertsData } from '@/lib/utils/alertValidationEnhancements';
@@ -531,16 +520,16 @@ const RealDataDashboard: React.FC = () => {
 
   // Computed metrics
   const computedMetrics = useMemo(() => {
-    const suppliers = (suppliersData as any)?.data || [];
-    const inventory = (inventoryData as any)?.data || [];
-    const metrics = (inventoryData as any)?.metrics || {};
+    const suppliers = (suppliersData as unknown)?.data || [];
+    const inventory = (inventoryData as unknown)?.data || [];
+    const metrics = (inventoryData as unknown)?.metrics || {};
 
     return {
       totalSuppliers: suppliers.length,
-      activeSuppliers: suppliers.filter((s: any) => s.status === 'active').length,
-      strategicPartners: suppliers.filter((s: any) => s.tier === 'strategic').length,
+      activeSuppliers: suppliers.filter((s: unknown) => s.status === 'active').length,
+      strategicPartners: suppliers.filter((s: unknown) => s.tier === 'strategic').length,
       avgSupplierRating: suppliers.length > 0
-        ? suppliers.reduce((sum: number, s: any) => sum + (s.performance?.overallRating || 0), 0) / suppliers.length
+        ? suppliers.reduce((sum: number, s: unknown) => sum + (s.performance?.overallRating || 0), 0) / suppliers.length
         : 0,
       totalInventoryValue: metrics.totalValue || 0,
       totalInventoryItems: metrics.totalItems || 0,
@@ -568,8 +557,8 @@ const RealDataDashboard: React.FC = () => {
       await Promise.all([
         dashboardQuery.refetch(),
         realTimeData.refetch?.(),
-        (suppliersData as any)?.refetch?.(),
-        (inventoryData as any)?.refetch?.(),
+        (suppliersData as unknown)?.refetch?.(),
+        (inventoryData as unknown)?.refetch?.(),
         alertsQuery.refetch?.()
       ].filter(Boolean));
     } catch (error) {

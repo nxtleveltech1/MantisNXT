@@ -24,11 +24,11 @@ function toIso(value: Date | string): string {
 
 export async function listProviderRegistry(orgId?: string | null): Promise<ProviderRegistryRecord[]> {
   const resolved = resolveOrgId(orgId);
-  const { rows } = await query<any>(
+  const { rows } = await query<unknown>(
     `SELECT * FROM ai_provider_registry WHERE org_id = $1 ORDER BY name`,
     [resolved],
   );
-  return rows.map((r: any) => ({ ...r, created_at: toIso(r.created_at), updated_at: toIso(r.updated_at) }));
+  return rows.map((r: unknown) => ({ ...r, created_at: toIso(r.created_at), updated_at: toIso(r.updated_at) }));
 }
 
 export async function createProviderRegistry(
@@ -43,7 +43,7 @@ export async function createProviderRegistry(
   },
 ): Promise<ProviderRegistryRecord> {
   const resolved = resolveOrgId(orgId);
-  const { rows } = await query<any>(
+  const { rows } = await query<unknown>(
     `INSERT INTO ai_provider_registry (org_id, name, provider_type, base_url, default_model, description, enabled)
      VALUES ($1, $2, $3::ai_provider, $4, $5, $6, COALESCE($7, TRUE))
      RETURNING *`,
@@ -68,7 +68,7 @@ export async function updateProviderRegistry(
 
   // Build dynamic set clause
   const sets: string[] = [];
-  const values: any[] = [resolved, id];
+  const values: unknown[] = [resolved, id];
   let idx = 3;
   if (updates.name !== undefined) { sets.push(`name = $${idx++}`); values.push(updates.name); }
   if (updates.base_url !== undefined) { sets.push(`base_url = $${idx++}`); values.push(updates.base_url); }
@@ -77,14 +77,14 @@ export async function updateProviderRegistry(
   if (updates.enabled !== undefined) { sets.push(`enabled = $${idx++}`); values.push(updates.enabled); }
 
   if (sets.length === 0) {
-    const { rows } = await query<any>(`SELECT * FROM ai_provider_registry WHERE org_id = $1 AND id = $2 LIMIT 1`, [resolved, id]);
+    const { rows } = await query<unknown>(`SELECT * FROM ai_provider_registry WHERE org_id = $1 AND id = $2 LIMIT 1`, [resolved, id]);
     if (rows.length === 0) return null;
     const row = rows[0];
     return { ...row, created_at: toIso(row.created_at), updated_at: toIso(row.updated_at) };
   }
 
   const sql = `UPDATE ai_provider_registry SET ${sets.join(', ')}, updated_at = NOW() WHERE org_id = $1 AND id = $2 RETURNING *`;
-  const { rows } = await query<any>(sql, values);
+  const { rows } = await query<unknown>(sql, values);
   if (rows.length === 0) return null;
   const row = rows[0];
   return { ...row, created_at: toIso(row.created_at), updated_at: toIso(row.updated_at) };

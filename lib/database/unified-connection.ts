@@ -3,7 +3,7 @@
  * Updated to use Enterprise Connection Manager for stability
  */
 
-import { PoolClient, QueryResultRow } from 'pg';
+import type { PoolClient, QueryResultRow } from 'pg';
 import {
   dbManager,
   query as enterpriseQuery,
@@ -46,7 +46,7 @@ export const pool = {
  * DatabaseManager class for backwards compatibility
  */
 export class DatabaseManager {
-  async query<T extends QueryResultRow = any>(text: string, params?: any[]): Promise<{ rows: T[]; rowCount: number }> {
+  async query<T extends QueryResultRow = unknown>(text: string, params?: unknown[]): Promise<{ rows: T[]; rowCount: number }> {
     return query<T>(text, params);
   }
 

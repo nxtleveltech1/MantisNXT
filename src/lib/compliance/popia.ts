@@ -7,7 +7,7 @@ export interface PersonalInformation {
   id: string;
   dataSubjectId: string;
   dataType: 'identity' | 'contact' | 'financial' | 'biometric' | 'location' | 'employment' | 'health' | 'other';
-  data: any;
+  data: unknown;
   purpose: string;
   legalBasis: 'consent' | 'contract' | 'legal_obligation' | 'vital_interests' | 'public_task' | 'legitimate_interests';
   consentGiven: boolean;
@@ -141,7 +141,7 @@ export class POPIACompliance {
   }
 
   // Data Subject Rights
-  static processAccessRequest(dataSubjectId: string, data: PersonalInformation[]): any {
+  static processAccessRequest(dataSubjectId: string, data: PersonalInformation[]): unknown {
     const subjectData = data.filter(item =>
       item.dataSubjectId === dataSubjectId && !item.deletedAt
     );
@@ -163,7 +163,7 @@ export class POPIACompliance {
     };
   }
 
-  static processPortabilityRequest(dataSubjectId: string, data: PersonalInformation[]): any {
+  static processPortabilityRequest(dataSubjectId: string, data: PersonalInformation[]): unknown {
     const subjectData = data.filter(item =>
       item.dataSubjectId === dataSubjectId &&
       !item.deletedAt &&
@@ -334,8 +334,8 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
     consents: ConsentRecord[],
     breaches: DataBreach[]
   ): {
-    summary: any;
-    details: any;
+    summary: unknown;
+    details: unknown;
     recommendations: string[];
   } {
     const now = new Date();
@@ -394,7 +394,7 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
     }, {} as Record<string, number>);
   }
 
-  private static getRetentionAnalysis(data: PersonalInformation[]): any {
+  private static getRetentionAnalysis(data: PersonalInformation[]): unknown {
     const periods = data.map(item => item.retentionPeriod);
     return {
       averageRetention: periods.reduce((a, b) => a + b, 0) / periods.length,
@@ -403,7 +403,7 @@ ${breach.followUpActions.map(action => `- ${action}`).join('\n')}
     };
   }
 
-  private static getConsentAnalysis(consents: ConsentRecord[]): any {
+  private static getConsentAnalysis(consents: ConsentRecord[]): unknown {
     return {
       explicitConsents: consents.filter(c => c.consentMethod === 'explicit').length,
       impliedConsents: consents.filter(c => c.consentMethod === 'implied').length,

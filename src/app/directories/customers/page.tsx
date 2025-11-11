@@ -27,7 +27,7 @@ export default function CustomersDirectoryPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   // Placeholder data - to be replaced with actual customer data
-  const customers: any[] = []
+  const customers: unknown[] = []
 
   const filteredCustomers = customers.filter(customer => {
     const query = searchQuery.toLowerCase()

@@ -21,13 +21,9 @@ import {
 } from '@/components/ui/table';
 import {
   Upload,
-  CheckCircle2,
-  AlertCircle,
-  BarChart3,
   FileUp,
   ArrowRight,
   RefreshCw,
-  Clock,
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import { useDashboardMetrics, usePricelistUploads } from '@/hooks/useNeonSpp';

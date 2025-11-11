@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
-import {
+import type {
   PriceListUpload,
   ImportSummary,
-  SupplierProduct,
   PriceHistoryEntry
 } from '@/types/pricelist-upload';
+
+
 
 /**
  * POST /api/suppliers/pricelists/import - Execute bulk import from validated upload
@@ -307,8 +309,8 @@ async function executeImport(upload: PriceListUpload, dryRun: boolean = false): 
  * Create new supplier product
  */
 async function createSupplierProduct(
-  client: any,
-  data: any,
+  client: unknown,
+  data: unknown,
   upload: PriceListUpload
 ): Promise<string> {
   const productId = randomUUID();
@@ -377,9 +379,9 @@ async function createSupplierProduct(
  * Update existing supplier product
  */
 async function updateSupplierProduct(
-  client: any,
+  client: unknown,
   productId: string,
-  data: any,
+  data: unknown,
   importSource: string
 ): Promise<void> {
   await client.query(`
@@ -431,7 +433,7 @@ async function updateSupplierProduct(
  * Add price history entry
  */
 async function addPriceHistoryEntry(
-  client: any,
+  client: unknown,
   productId: string,
   historyEntry: PriceHistoryEntry
 ): Promise<void> {

@@ -12,7 +12,7 @@ export interface SupplierRule {
     | "enforcement"
   triggerEvent: string
   executionOrder: number
-  ruleConfig: Record<string, any>
+  ruleConfig: Record<string, unknown>
   errorMessageTemplate?: string
   isBlocking: boolean
 }
@@ -20,10 +20,10 @@ export interface SupplierRule {
 export interface SupplierProfile {
   supplierId: string
   profileName: string
-  guidelines: Record<string, any>
-  processingConfig: Record<string, any>
-  qualityStandards: Record<string, any>
-  complianceRules: Record<string, any>
+  guidelines: Record<string, unknown>
+  processingConfig: Record<string, unknown>
+  qualityStandards: Record<string, unknown>
+  complianceRules: Record<string, unknown>
 }
 
 export interface RuleExecutionResult {
@@ -33,9 +33,9 @@ export interface RuleExecutionResult {
   passed: boolean
   blocked: boolean
   errorMessage?: string
-  transformedData?: Record<string, any>
+  transformedData?: Record<string, unknown>
   executionTimeMs: number
-  executionResult: Record<string, any>
+  executionResult: Record<string, unknown>
 }
 
 export interface RuleEngineResult {
@@ -44,7 +44,7 @@ export interface RuleEngineResult {
   results: RuleExecutionResult[]
   errors: string[]
   warnings: string[]
-  transformedData?: Record<string, any>
+  transformedData?: Record<string, unknown>
 }
 
 /**
@@ -84,10 +84,10 @@ export async function getSupplierProfile(
   const result = await query<{
     supplierId: string
     profileName: string
-    guidelines: any
-    processingConfig: any
-    qualityStandards: any
-    complianceRules: any
+    guidelines: unknown
+    processingConfig: unknown
+    qualityStandards: unknown
+    complianceRules: unknown
   }>(`
     SELECT 
       supplier_id as "supplierId",
@@ -110,8 +110,8 @@ export async function getSupplierProfile(
  */
 function executeRule(
   rule: SupplierRule,
-  data: Record<string, any>,
-  context?: Record<string, any>
+  data: Record<string, unknown>,
+  context?: Record<string, unknown>
 ): RuleExecutionResult {
   const startTime = Date.now()
   const result: RuleExecutionResult = {
@@ -173,7 +173,7 @@ function executeRule(
  */
 function executeValidationRule(
   rule: SupplierRule,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   result: RuleExecutionResult
 ): boolean {
   const config = rule.ruleConfig
@@ -281,9 +281,9 @@ function executeValidationRule(
  */
 function executeTransformationRule(
   rule: SupplierRule,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   result: RuleExecutionResult
-): Record<string, any> {
+): Record<string, unknown> {
   const config = rule.ruleConfig
   const transformed = { ...data }
 
@@ -303,7 +303,7 @@ function executeTransformationRule(
 
   // Value transformation
   if (config.transformations) {
-    config.transformations.forEach((transform: any) => {
+    config.transformations.forEach((transform: unknown) => {
       if (transform.field && transformed[transform.field] !== undefined) {
         if (transform.type === "uppercase") {
           transformed[transform.field] = String(
@@ -331,8 +331,8 @@ function executeTransformationRule(
  */
 function executeApprovalRule(
   rule: SupplierRule,
-  data: Record<string, any>,
-  context?: Record<string, any>,
+  data: Record<string, unknown>,
+  context?: Record<string, unknown>,
   result?: RuleExecutionResult
 ): boolean {
   const config = rule.ruleConfig
@@ -401,7 +401,7 @@ function executeApprovalRule(
  */
 function executeNotificationRule(
   rule: SupplierRule,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   result: RuleExecutionResult
 ): boolean {
   // Notification rules typically just log, they don't block
@@ -414,7 +414,7 @@ function executeNotificationRule(
  */
 function executeEnforcementRule(
   rule: SupplierRule,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   result: RuleExecutionResult
 ): boolean {
   // Enforcement rules are similar to validation but stricter
@@ -427,14 +427,14 @@ function executeEnforcementRule(
 export async function executeSupplierRules(
   supplierId: string,
   triggerEvent: string,
-  data: Record<string, any>,
-  context?: Record<string, any>
+  data: Record<string, unknown>,
+  context?: Record<string, unknown>
 ): Promise<RuleEngineResult> {
   const rules = await getSupplierRules(supplierId, triggerEvent)
   const results: RuleExecutionResult[] = []
   const errors: string[] = []
   const warnings: string[] = []
-  let transformedData: Record<string, any> | undefined = { ...data }
+  let transformedData: Record<string, unknown> | undefined = { ...data }
   let blocked = false
 
   // Execute rules in order
@@ -481,7 +481,7 @@ export async function executeSupplierRules(
 async function recordRuleExecutions(
   supplierId: string,
   operationType: string,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   results: RuleExecutionResult[]
 ): Promise<void> {
   const timestamp = new Date()

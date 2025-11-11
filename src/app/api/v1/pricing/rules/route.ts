@@ -8,7 +8,8 @@
  * Date: 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { PricingRuleService } from '@/lib/services/PricingRuleService';
 import { PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
 import { z } from 'zod';
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    const filter: any = {};
+    const filter: unknown = {};
 
     if (searchParams.has('rule_type')) {
       filter.rule_type = searchParams.get('rule_type') as PricingRuleType;
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
       data: rules,
       count: rules.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching pricing rules:', error);
     return NextResponse.json(
       {
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {

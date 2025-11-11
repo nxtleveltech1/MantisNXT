@@ -16,7 +16,7 @@ export interface SessionData {
   organizationId?: string;
   role?: string;
   permissions?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: number;
   lastAccess: number;
   expiresAt: number;

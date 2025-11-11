@@ -1,19 +1,14 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {
   DropdownMenu,
@@ -27,48 +22,30 @@ import {
   Brain,
   Sparkles,
   TrendingUp,
-  TrendingDown,
   DollarSign,
   AlertTriangle,
-  CheckCircle,
   Target,
   Lightbulb,
   BarChart3,
-  Zap,
   Star,
-  Award,
   ShieldCheck,
   Clock,
-  ArrowRight,
   ArrowUp,
   ArrowDown,
   MoreHorizontal,
   RefreshCw,
   Filter,
-  Eye,
   Bookmark,
-  BookmarkCheck,
   Share,
   Download,
-  Bell,
   X,
   Plus,
-  Gauge,
   Activity,
   Building2,
   Package,
-  Users,
   Globe,
-  Calculator,
-  Database,
-  PieChart,
   FileText,
-  Crown,
-  Loader2,
-  Info,
-  ExternalLink,
-  ThumbsUp,
-  ThumbsDown
+  Info
 } from "lucide-react"
 
 // Enhanced AI Insight Types
@@ -106,8 +83,8 @@ export interface AIInsight {
   }
   visualization?: {
     type: 'chart' | 'gauge' | 'progress' | 'comparison'
-    data: any
-    config?: any
+    data: unknown
+    config?: unknown
   }
   relatedInsights: string[]
   createdAt: string
@@ -124,7 +101,7 @@ interface ActionItem {
   description: string
   icon: React.ComponentType<{ className?: string }>
   action: string
-  data?: any
+  data?: unknown
   urgency: 'immediate' | 'this_week' | 'this_month' | 'planned'
   estimatedEffort: 'low' | 'medium' | 'high'
   estimatedValue: number

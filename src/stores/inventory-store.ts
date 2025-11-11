@@ -292,8 +292,8 @@ export const useInventoryStore = create<InventoryState>()(
         // Apply sorting
         filtered.sort((a, b) => {
           const { field, direction } = sortOptions;
-          let aValue: any = a[field as keyof InventoryItem];
-          let bValue: any = b[field as keyof InventoryItem];
+          let aValue: unknown = a[field as keyof InventoryItem];
+          let bValue: unknown = b[field as keyof InventoryItem];
 
           if (typeof aValue === "string") {
             aValue = aValue.toLowerCase();

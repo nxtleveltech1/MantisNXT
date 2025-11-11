@@ -11,7 +11,7 @@
  * - Chat shortcut
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -57,18 +57,8 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
   // Load insights on mount and refresh interval
-  useEffect(() => {
-    loadInsights()
-
-    const interval = setInterval(() => {
-      loadInsights()
-    }, refreshInterval)
-
-    return () => clearInterval(interval)
-  }, [refreshInterval])
-
   // Load quick insights from API
-  const loadInsights = async () => {
+  const loadInsights = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -92,7 +82,7 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({
           // Convert to quick insights format
           const quickInsights: QuickInsight[] = data.data.insights
             .slice(0, maxInsights)
-            .map((insight: any) => ({
+            .map((insight: unknown) => ({
               id: insight.id,
               type: insight.type,
               title: insight.title,
@@ -111,7 +101,17 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({
     } finally {
       setLoading(false)
     }
-  }
+  }, [maxInsights])
+
+  useEffect(() => {
+    loadInsights()
+
+    const interval = setInterval(() => {
+      loadInsights()
+    }, refreshInterval)
+
+    return () => clearInterval(interval)
+  }, [loadInsights, refreshInterval])
 
   // Get icon for insight type
   const getInsightIcon = (type: QuickInsight['type']) => {

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query } from '@/lib/database/unified-connection'
 import type { SupplierContact } from '@/types/supplier'
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       FROM core.supplier
       WHERE 1=1
     `
-    const params: any[] = []
+    const params: unknown[] = []
     let paramIndex = 1
 
     if (search) {
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     // Get count
     let countQuery = `SELECT COUNT(*) as count FROM core.supplier WHERE 1=1`
-    const countParams: any[] = []
+    const countParams: unknown[] = []
     let countParamIndex = 1
 
     if (search) {
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
     const total = parseInt(countResult.rows[0]?.count ?? '0', 10)
 
     // Get contacts for all suppliers
-    const supplierIds = suppliers.map((s: any) => s.id).filter(Boolean)
+    const supplierIds = suppliers.map((s: unknown) => s.id).filter(Boolean)
     
     const contactsBySupplier: Record<string, SupplierContact[]> = {}
     
@@ -87,14 +88,14 @@ export async function GET(request: NextRequest) {
         const contactsResult = await query(contactsQuery, [supplierIds])
 
         // Group contacts by supplier_id
-        contactsResult.rows?.forEach((contact: any) => {
+        contactsResult.rows?.forEach((contact: unknown) => {
           const supplierId = String(contact.supplier_id)
           if (!contactsBySupplier[supplierId]) {
             contactsBySupplier[supplierId] = []
           }
           contactsBySupplier[supplierId].push({
             id: String(contact.id),
-            type: (contact.type || 'primary') as any,
+            type: (contact.type || 'primary') as unknown,
             name: contact.name || '',
             title: contact.title || '',
             email: contact.email || '',
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Combine suppliers with contacts
-    const suppliersWithContacts = suppliers.map((supplier: any) => {
+    const suppliersWithContacts = suppliers.map((supplier: unknown) => {
       const supplierId = String(supplier.id)
       const contactInfo = supplier.contact_info || {}
       

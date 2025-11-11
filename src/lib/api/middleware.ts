@@ -3,9 +3,11 @@
  * Comprehensive API middleware for authentication, authorization, and request validation
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { SecurityMiddleware, SecurityConfig, SecurityContext } from '@/lib/security/middleware'
+import type { SecurityConfig, SecurityContext } from '@/lib/security/middleware';
+import { SecurityMiddleware } from '@/lib/security/middleware'
 
 // Rate limiting configuration
 const RATE_LIMITS = {
@@ -78,11 +80,11 @@ export interface RequestContext {
   }
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
-  details?: any
+  details?: unknown
   message?: string
   pagination?: {
     page: number
@@ -278,7 +280,7 @@ export class ApiMiddleware {
     ) => {
       return this.withAuth(async (request: NextRequest, context: RequestContext) => {
         try {
-          let dataToValidate: any = {}
+          let dataToValidate: unknown = {}
 
           if (options.validateQuery) {
             const { searchParams } = new URL(request.url)
@@ -509,7 +511,7 @@ export class ApiMiddleware {
   /**
    * Safe body reading that handles already consumed streams
    */
-  private static async safeReadBody(request: NextRequest): Promise<any> {
+  private static async safeReadBody(request: NextRequest): Promise<unknown> {
     try {
       const cloned = request.clone()
       return await cloned.json()
@@ -524,7 +526,7 @@ export class ApiMiddleware {
   static createErrorResponse(
     message: string,
     status: number,
-    details?: any
+    details?: unknown
   ): NextResponse {
     const response: ApiResponse = {
       success: false,

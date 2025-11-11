@@ -4,7 +4,6 @@
  */
 
 import { pool } from '@/lib/database';
-import type { PoolClient } from 'pg';
 
 export interface PredictionRequest {
   supplierId?: string;
@@ -57,7 +56,7 @@ export interface AnomalyDetection {
 export interface TimeSeriesData {
   date: string;
   value: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class PredictiveAnalyticsService {
@@ -305,7 +304,7 @@ export class PredictiveAnalyticsService {
     const timeRangeMonths = this.getTimeRangeMonths(request.timeHorizon) * 2; // Get 2x data for training
 
     let query = '';
-    const params: any[] = [timeRangeMonths];
+    const params: unknown[] = [timeRangeMonths];
 
     switch (metric) {
       case 'cost':
@@ -377,7 +376,7 @@ export class PredictiveAnalyticsService {
 
   private async detectMetricAnomalies(
     metric: string,
-    request: any
+    request: unknown
   ): Promise<AnomalyDetection[]> {
     const anomalies: AnomalyDetection[] = [];
 
@@ -419,7 +418,7 @@ export class PredictiveAnalyticsService {
     return anomalies;
   }
 
-  private async getSupplierPerformanceHistory(supplierId: string): Promise<any[]> {
+  private async getSupplierPerformanceHistory(supplierId: string): Promise<unknown[]> {
     const query = `
       SELECT
         evaluation_date,
@@ -440,7 +439,7 @@ export class PredictiveAnalyticsService {
   }
 
   private generatePerformanceForecast(
-    historicalData: any[],
+    historicalData: unknown[],
     months: number
   ): Array<{
     month: string;
@@ -474,8 +473,8 @@ export class PredictiveAnalyticsService {
   }
 
   private calculateRiskTrend(
-    historical: any[],
-    forecast: any[]
+    historical: unknown[],
+    forecast: unknown[]
   ): {
     current: number;
     projected: number;
@@ -606,8 +605,8 @@ export class PredictiveAnalyticsService {
 
   private generateMetricRecommendations(
     metric: string,
-    trends: any,
-    predictions: any[]
+    trends: unknown,
+    predictions: unknown[]
   ): string[] {
     const recommendations = [];
 
@@ -637,7 +636,7 @@ export class PredictiveAnalyticsService {
     return predictions.reduce((sum, p) => sum + p.predictedValues.length, 0);
   }
 
-  private async getRecentMetricData(metric: string, request: any): Promise<any[]> {
+  private async getRecentMetricData(metric: string, request: unknown): Promise<unknown[]> {
     // Simplified implementation
     return [
       { timestamp: Date.now(), value: 100 },
@@ -655,7 +654,7 @@ export class PredictiveAnalyticsService {
     }
   }
 
-  private calculateZScore(dataPoint: any, dataset: any[]): number {
+  private calculateZScore(dataPoint: unknown, dataset: unknown[]): number {
     const values = dataset.map(d => d.value);
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
     const std = Math.sqrt(values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length);
@@ -670,11 +669,11 @@ export class PredictiveAnalyticsService {
     return 'low';
   }
 
-  private calculateExpectedValue(dataPoint: any, dataset: any[]): number {
+  private calculateExpectedValue(dataPoint: unknown, dataset: unknown[]): number {
     return dataset.map(d => d.value).reduce((a, b) => a + b, 0) / dataset.length;
   }
 
-  private identifyPossibleCauses(metric: string, dataPoint: any, expected: number): string[] {
+  private identifyPossibleCauses(metric: string, dataPoint: unknown, expected: number): string[] {
     const causes = ['Data quality issue', 'System anomaly', 'External factor'];
 
     if (metric === 'cost' && dataPoint.value > expected * 1.5) {
@@ -699,11 +698,11 @@ export class PredictiveAnalyticsService {
   }
 
   // Additional placeholder methods
-  private async getSpendData(filters: any): Promise<any[]> {
+  private async getSpendData(filters: unknown): Promise<unknown[]> {
     return [];
   }
 
-  private analyzeCurrentTrends(data: any[]): any {
+  private analyzeCurrentTrends(data: unknown[]): unknown {
     return {
       totalSpend: 100000,
       avgOrderValue: 5000,
@@ -712,7 +711,7 @@ export class PredictiveAnalyticsService {
     };
   }
 
-  private predictFutureSpend(data: any[]): any {
+  private predictFutureSpend(data: unknown[]): unknown {
     return {
       nextQuarterSpend: 125000,
       confidence: 0.8,
@@ -720,7 +719,7 @@ export class PredictiveAnalyticsService {
     };
   }
 
-  private identifySpendOpportunities(data: any[], trends: any): any[] {
+  private identifySpendOpportunities(data: unknown[], trends: unknown): unknown[] {
     return [
       {
         type: 'cost_saving',
@@ -731,7 +730,7 @@ export class PredictiveAnalyticsService {
     ];
   }
 
-  private async analyzeMarketTrends(category: string): Promise<any> {
+  private async analyzeMarketTrends(category: string): Promise<unknown> {
     return {
       priceDirection: 'stable' as const,
       volatility: 0.15,
@@ -739,7 +738,7 @@ export class PredictiveAnalyticsService {
     };
   }
 
-  private async analyzeCompetitivePosition(category: string): Promise<any> {
+  private async analyzeCompetitivePosition(category: string): Promise<unknown> {
     return {
       averagePrice: 1000,
       priceRange: { min: 800, max: 1200 },
@@ -747,11 +746,11 @@ export class PredictiveAnalyticsService {
     };
   }
 
-  private generateMarketRecommendations(trends: any, analysis: any): string[] {
+  private generateMarketRecommendations(trends: unknown, analysis: unknown): string[] {
     return ['Monitor market trends', 'Consider long-term contracts'];
   }
 
-  private generatePerformanceRecommendations(historical: any[], forecast: any[], risk: any): string[] {
+  private generatePerformanceRecommendations(historical: unknown[], forecast: unknown[], risk: unknown): string[] {
     const recommendations = [];
 
     if (risk.trend === 'declining') {
@@ -761,15 +760,15 @@ export class PredictiveAnalyticsService {
     return recommendations;
   }
 
-  private identifyPerformanceFactors(data: any[], period: number): string[] {
+  private identifyPerformanceFactors(data: unknown[], period: number): string[] {
     return ['Historical trend', 'Seasonal factors', 'Market conditions'];
   }
 
-  private calculateCurrentRisk(data: any[]): number {
+  private calculateCurrentRisk(data: unknown[]): number {
     return 0.3; // Simplified
   }
 
-  private calculateProjectedRisk(forecast: any[]): number {
+  private calculateProjectedRisk(forecast: unknown[]): number {
     return 0.25; // Simplified
   }
 

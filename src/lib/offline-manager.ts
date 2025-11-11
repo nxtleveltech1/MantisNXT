@@ -3,7 +3,7 @@
  * Provides comprehensive offline support and intelligent caching strategies
  */
 
-import { QueryClient } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 
 export interface OfflineConfig {
   enableOfflineSupport: boolean;
@@ -16,7 +16,7 @@ export interface OfflineConfig {
 
 export interface CacheEntry {
   key: string;
-  data: any;
+  data: unknown;
   timestamp: number;
   expiry: number;
   priority: 'low' | 'medium' | 'high' | 'critical';
@@ -27,7 +27,7 @@ export interface SyncOperation {
   id: string;
   endpoint: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  data?: any;
+  data?: unknown;
   timestamp: number;
   retryCount: number;
   maxRetries: number;
@@ -108,7 +108,7 @@ class OfflineManager {
    */
   public async cacheData(
     key: string,
-    data: any,
+    data: unknown,
     options: {
       priority?: 'low' | 'medium' | 'high' | 'critical';
       ttl?: number; // time to live in milliseconds
@@ -134,7 +134,7 @@ class OfflineManager {
     console.log(`💾 Cached data for key: ${key} (${this.formatBytes(entry.size)})`);
   }
 
-  public getCachedData(key: string): any | null {
+  public getCachedData(key: string): unknown | null {
     const entry = this.cache.get(key);
 
     if (!entry) return null;
@@ -200,7 +200,7 @@ class OfflineManager {
     return totalSize;
   }
 
-  private calculateSize(data: any): number {
+  private calculateSize(data: unknown): number {
     // Rough estimation of data size in bytes
     const str = JSON.stringify(data);
     return new Blob([str]).size;

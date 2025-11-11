@@ -3,7 +3,7 @@
  * Handles large-scale data processing with chunking, parallelization, and error recovery
  */
 
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 
 export interface BatchConfig {
   batchSize: number;
@@ -11,14 +11,14 @@ export interface BatchConfig {
   retryAttempts: number;
   retryDelay: number;
   onProgress?: (processed: number, total: number) => void;
-  onError?: (error: Error, batch: any[]) => void;
+  onError?: (error: Error, batch: unknown[]) => void;
 }
 
 export interface CursorPaginationOptions {
   cursorColumn: string;
   orderDirection: 'ASC' | 'DESC';
   limit: number;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }
 
 export interface BatchResult<T> {
@@ -32,7 +32,7 @@ export interface BatchResult<T> {
 /**
  * Cursor-based pagination for efficient large dataset queries
  */
-export class CursorPaginator<T = any> {
+export class CursorPaginator<T = unknown> {
   constructor(
     private pool: Pool,
     private table: string,
@@ -40,7 +40,7 @@ export class CursorPaginator<T = any> {
   ) {}
 
   async *paginate(): AsyncGenerator<T[], void, unknown> {
-    let lastCursor: any = null;
+    let lastCursor: unknown = null;
     let hasMore = true;
     let batchCount = 0;
 
@@ -49,7 +49,7 @@ export class CursorPaginator<T = any> {
 
       // Build WHERE clause
       const whereConditions: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let paramCounter = 1;
 
       // Add cursor condition
@@ -116,7 +116,7 @@ export class CursorPaginator<T = any> {
     const { filters } = this.options;
 
     const whereConditions: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramCounter = 1;
 
     if (filters) {
@@ -303,9 +303,9 @@ export class BatchProcessor<TInput, TOutput> {
  * Optimized alert validation using streaming batch processor
  */
 export async function validateAlertsInBatches(
-  alerts: any[],
-  validator: (items: any[]) => any[]
-): Promise<any[]> {
+  alerts: unknown[],
+  validator: (items: unknown[]) => unknown[]
+): Promise<unknown[]> {
   const processor = new BatchProcessor(
     async (batch) => validator(batch),
     {
@@ -332,8 +332,8 @@ export async function validateAlertsInBatches(
  */
 export async function fetchInventoryInBatches(
   pool: Pool,
-  filters: Record<string, any> = {}
-): Promise<any[]> {
+  filters: Record<string, unknown> = {}
+): Promise<unknown[]> {
   const paginator = new CursorPaginator(pool, 'stock_on_hand', {
     cursorColumn: 'id',
     orderDirection: 'ASC',
@@ -341,7 +341,7 @@ export async function fetchInventoryInBatches(
     filters,
   });
 
-  const allItems: any[] = [];
+  const allItems: unknown[] = [];
 
   for await (const batch of paginator.paginate()) {
     allItems.push(...batch);
@@ -356,8 +356,8 @@ export async function fetchInventoryInBatches(
  */
 export async function aggregateMetricsInParallel(
   pool: Pool,
-  queries: Array<{ key: string; query: string; params?: any[] }>
-): Promise<Record<string, any>> {
+  queries: Array<{ key: string; query: string; params?: unknown[] }>
+): Promise<Record<string, unknown>> {
   const startTime = Date.now();
 
   const results = await Promise.allSettled(
@@ -367,7 +367,7 @@ export async function aggregateMetricsInParallel(
     })
   );
 
-  const metrics: Record<string, any> = {};
+  const metrics: Record<string, unknown> = {};
 
   results.forEach((result, idx) => {
     if (result.status === 'fulfilled') {

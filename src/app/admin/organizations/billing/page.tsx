@@ -7,14 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
   CreditCard,
-  DollarSign,
-  Calendar,
   Download,
   Eye,
   Plus,
@@ -22,11 +18,8 @@ import {
   Shield,
   Users,
   CheckCircle,
-  AlertTriangle,
   Clock,
-  TrendingUp,
   Receipt,
-  FileText,
   Send
 } from "lucide-react"
 

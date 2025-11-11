@@ -3,9 +3,9 @@
  * Advanced predictive modeling for supplier and procurement metrics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { PredictiveAnalyticsService } from '@/services/ai/PredictiveAnalyticsService';
-import { getOrSet, makeKey } from '@/lib/cache/responseCache';
 import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
 
 // Initialize the predictive analytics service
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Validation function
-function validatePredictiveRequest(body: any): string | null {
+function validatePredictiveRequest(body: unknown): string | null {
   // Validate timeHorizon
   const validHorizons = ['3months', '6months', '1year', '2years'];
   if (!body.timeHorizon || !validHorizons.includes(body.timeHorizon)) {

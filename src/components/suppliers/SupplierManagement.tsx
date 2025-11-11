@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,13 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,14 +31,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
   Search,
-  Filter,
   Plus,
   Edit,
   Trash2,
@@ -55,10 +46,7 @@ import {
   MapPin,
   Star,
   TrendingUp,
-  Package,
   Clock,
-  AlertTriangle,
-  CheckCircle,
   RefreshCw,
   Download,
   Upload,
@@ -96,19 +84,7 @@ export default function SupplierManagement() {
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
   const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null)
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      setFilters({ search: searchTerm })
-    }, 500)
-
-    return () => clearTimeout(debounceTimer)
-  }, [searchTerm])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       await Promise.all([
         fetchSuppliers(),
@@ -121,7 +97,19 @@ export default function SupplierManagement() {
         message: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     }
-  }
+  }, [addNotification, fetchAnalytics, fetchSuppliers])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      setFilters({ search: searchTerm })
+    }, 500)
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchTerm, setFilters])
 
   const handleDeleteSupplier = async (supplierId: string) => {
     if (!confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
@@ -350,11 +338,11 @@ export default function SupplierManagement() {
               <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Status</label>
+                    <p className="text-sm font-medium mb-2 block">Status</p>
                     <Select
                       value={filters.status?.[0] || 'all_statuses'}
                       onValueChange={(value) =>
-                        setFilters({ status: value && value !== 'all_statuses' ? [value as any] : undefined })
+                        setFilters({ status: value && value !== 'all_statuses' ? [value as unknown] : undefined })
                       }
                     >
                       <SelectTrigger>
@@ -372,11 +360,11 @@ export default function SupplierManagement() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Performance Tier</label>
+                    <p className="text-sm font-medium mb-2 block">Performance Tier</p>
                     <Select
                       value={filters.performance_tier?.[0] || 'all_tiers'}
                       onValueChange={(value) =>
-                        setFilters({ performance_tier: value && value !== 'all_tiers' ? [value as any] : undefined })
+                        setFilters({ performance_tier: value && value !== 'all_tiers' ? [value as unknown] : undefined })
                       }
                     >
                       <SelectTrigger>
@@ -394,7 +382,7 @@ export default function SupplierManagement() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Category</label>
+                    <p className="text-sm font-medium mb-2 block">Category</p>
                     <Select
                       value={filters.category?.[0] || 'all_categories'}
                       onValueChange={(value) =>
@@ -416,7 +404,7 @@ export default function SupplierManagement() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Region</label>
+                    <p className="text-sm font-medium mb-2 block">Region</p>
                     <Select
                       value={filters.region?.[0] || 'all_regions'}
                       onValueChange={(value) =>
@@ -438,7 +426,7 @@ export default function SupplierManagement() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">BEE Level</label>
+                    <p className="text-sm font-medium mb-2 block">BEE Level</p>
                     <Select
                       value={filters.bee_level?.[0] || 'all_levels'}
                       onValueChange={(value) =>

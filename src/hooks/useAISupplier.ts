@@ -1,12 +1,10 @@
 // @ts-nocheck
-import { useState, useEffect, useCallback, useReducer } from 'react'
+import { useEffect, useCallback, useReducer } from 'react'
 import type {
   AISupplierState,
   AISupplierAction,
   UseAISupplierOptions,
-  UseAISupplierReturn,
-  AISupplierRecommendation,
-  AISupplierInsight
+  UseAISupplierReturn
 } from '@/types/ai-supplier'
 
 // Initial state
@@ -211,7 +209,7 @@ export function useAISupplier(options: UseAISupplierOptions = {}): UseAISupplier
   // Fetch AI recommendations
   const fetchRecommendations = useCallback(async (
     query?: string,
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
   ) => {
     dispatch({ type: 'FETCH_RECOMMENDATIONS_START' })
 
@@ -532,12 +530,12 @@ ${supplierId ? 'I can see we\'re focusing on a specific supplier. ' : ''}What wo
 }
 
 // Specialized hooks for specific use cases
-export function useAISupplierRecommendations(query?: string, filters?: Record<string, any>) {
+export function useAISupplierRecommendations(query?: string, filters?: Record<string, unknown>) {
   const { state, fetchRecommendations, clearRecommendations } = useAISupplier({
     autoFetch: false
   })
 
-  const search = useCallback(async (searchQuery?: string, searchFilters?: Record<string, any>) => {
+  const search = useCallback(async (searchQuery?: string, searchFilters?: Record<string, unknown>) => {
     await fetchRecommendations(searchQuery || query, searchFilters || filters)
   }, [fetchRecommendations, query, filters])
 

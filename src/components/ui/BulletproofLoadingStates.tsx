@@ -10,7 +10,7 @@ import React from 'react'
 import { Loader2, RefreshCw, AlertTriangle, Inbox } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 
 // Loading Spinner Component
@@ -283,7 +283,7 @@ export const FullPageLoader: React.FC<{
 export const ConditionalLoader: React.FC<{
   loading: boolean
   error?: Error | null
-  data?: any
+  data?: unknown
   onRetry?: () => void
   loadingComponent?: React.ReactNode
   errorComponent?: React.ReactNode

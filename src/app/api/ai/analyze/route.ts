@@ -1,8 +1,10 @@
 import { createHash } from 'crypto'
 import { ReadableStream } from 'node:stream/web'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'
+import type { RequestContext } from '@/lib/api/middleware';
+import { ApiMiddleware } from '@/lib/api/middleware'
 import {
   AITextService,
   AIChatService,
@@ -56,7 +58,7 @@ interface AnalysisHistoryRecord {
   report?: string
   schedule?: ResolvedSchedule | null
   alerts?: AlertConfiguration | null
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 type AnalysisType = z.infer<typeof AnalysisTypeSchema>
@@ -75,7 +77,7 @@ type AnalysisStreamContext = {
   analysisType: AnalysisType
   prompt: string
   payload: AnalysisRequest
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   schedule?: ResolvedSchedule | null
   alerts?: AlertConfiguration | null
 }
@@ -467,7 +469,7 @@ function buildDatasetSummary(
   }
 }
 
-function computeDatasetStatistics(dataset: Array<Record<string, any>>): Record<string, number> {
+function computeDatasetStatistics(dataset: Array<Record<string, unknown>>): Record<string, number> {
   const numericFields = new Map<string, number[]>()
   dataset.forEach((row) => {
     Object.entries(row).forEach(([key, value]) => {
@@ -569,7 +571,7 @@ function applyPromptOptions(prompt: string, options: TextGenerationOptions): Tex
   }
 }
 
-function buildUserMetadata(context: RequestContext): Record<string, any> | undefined {
+function buildUserMetadata(context: RequestContext): Record<string, unknown> | undefined {
   if (!context.user) return undefined
   return {
     user: {
@@ -582,9 +584,9 @@ function buildUserMetadata(context: RequestContext): Record<string, any> | undef
 }
 
 function mergeMetadata(
-  ...sources: Array<Record<string, any> | undefined>
-): Record<string, any> | undefined {
-  const merged: Record<string, any> = {}
+  ...sources: Array<Record<string, unknown> | undefined>
+): Record<string, unknown> | undefined {
+  const merged: Record<string, unknown> = {}
   for (const source of sources) {
     if (!source) continue
     for (const [key, value] of Object.entries(source)) {
@@ -625,7 +627,7 @@ function resolveSchedule(schedule: z.infer<typeof ScheduleSchema>): ResolvedSche
   return result
 }
 
-function buildMeta(response: { requestId: string; durationMs: number; provider: string }): Record<string, any> {
+function buildMeta(response: { requestId: string; durationMs: number; provider: string }): Record<string, unknown> {
   return {
     requestId: response.requestId,
     processingTime: response.durationMs,
@@ -638,8 +640,8 @@ function storeAnalysisHistory(params: {
   requestId: string
   promptHash: string
   payload: AnalysisRequest
-  response: { provider: string; model?: string; usage?: AIUsageMetrics; data?: any }
-  recommendations?: any
+  response: { provider: string; model?: string; usage?: AIUsageMetrics; data?: unknown }
+  recommendations?: unknown
   visualizations?: VisualizationSuggestion[]
   schedule?: ResolvedSchedule | null
   alerts?: AlertConfiguration | null
@@ -678,7 +680,7 @@ function attachStreamingAnalysisHistory(
   streamingResult.summary
     .then(async (summary) => {
       if (!summary.success) return
-      let recommendations: any
+      let recommendations: unknown
       if (context.payload.output?.includeRecommendations !== false) {
         recommendations = await generateRecommendations(summary.data?.text ?? '', context.payload)
       }

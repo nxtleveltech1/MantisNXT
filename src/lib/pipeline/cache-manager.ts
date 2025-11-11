@@ -32,7 +32,7 @@ export interface CacheStats {
 /**
  * In-Memory LRU Cache with TTL
  */
-export class LRUCache<T = any> {
+export class LRUCache<T = unknown> {
   private cache: Map<string, CacheEntry<T>>;
   private accessOrder: Map<string, number>;
   private stats: CacheStats;
@@ -207,12 +207,12 @@ export class LRUCache<T = any> {
 /**
  * Stale-While-Revalidate Cache Pattern
  */
-export class SWRCache<T = any> {
+export class SWRCache<T = unknown> {
   private cache: LRUCache<T>;
 
   constructor(
     private config: CacheConfig,
-    private fetcher: (key: string, ...args: any[]) => Promise<T>
+    private fetcher: (key: string, ...args: unknown[]) => Promise<T>
   ) {
     this.cache = new LRUCache(config.maxSize || 1000, config.ttl);
   }
@@ -220,7 +220,7 @@ export class SWRCache<T = any> {
   /**
    * Get data with stale-while-revalidate
    */
-  async get(key: string, ...args: any[]): Promise<T> {
+  async get(key: string, ...args: unknown[]): Promise<T> {
     const fullKey = this.buildKey(key);
     const cached = this.cache.get(fullKey);
 
@@ -255,7 +255,7 @@ export class SWRCache<T = any> {
   /**
    * Force refresh cache entry
    */
-  async refresh(key: string, ...args: any[]): Promise<T> {
+  async refresh(key: string, ...args: unknown[]): Promise<T> {
     const fullKey = this.buildKey(key);
     this.cache.delete(fullKey);
     return this.fetchAndCache(fullKey, ...args);
@@ -294,7 +294,7 @@ export class SWRCache<T = any> {
     return this.cache.getStats();
   }
 
-  private async fetchAndCache(fullKey: string, ...args: any[]): Promise<T> {
+  private async fetchAndCache(fullKey: string, ...args: unknown[]): Promise<T> {
     const startTime = Date.now();
 
     try {
@@ -311,7 +311,7 @@ export class SWRCache<T = any> {
     }
   }
 
-  private async revalidate(fullKey: string, ...args: any[]): Promise<void> {
+  private async revalidate(fullKey: string, ...args: unknown[]): Promise<void> {
     try {
       await this.fetchAndCache(fullKey, ...args);
     } catch (error) {
@@ -349,7 +349,7 @@ export class CacheManager {
   static getCache<T>(
     name: string,
     config: CacheConfig,
-    fetcher: (key: string, ...args: any[]) => Promise<T>
+    fetcher: (key: string, ...args: unknown[]) => Promise<T>
   ): SWRCache<T> {
     if (!this.instances.has(name)) {
       this.instances.set(name, new SWRCache({ ...config, namespace: name }, fetcher));
@@ -431,15 +431,15 @@ export const alertsCache = CacheManager.getCache(
 /**
  * Simple cache decorator for functions
  */
-export function cached<T extends (...args: any[]) => Promise<any>>(
+export function cached<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   config: CacheConfig
 ): T {
-  const cache = new SWRCache(config, async (key: string, ...args: any[]) => {
+  const cache = new SWRCache(config, async (key: string, ...args: unknown[]) => {
     return fn(...args);
   });
 
-  return (async (...args: any[]) => {
+  return (async (...args: unknown[]) => {
     const cacheKey = JSON.stringify(args);
     return cache.get(cacheKey, ...args);
   }) as T;

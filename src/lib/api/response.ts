@@ -9,11 +9,11 @@ import { v4 as uuidv4 } from 'uuid';
 /**
  * Standard API response format
  */
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
-  errors?: any[];
+  errors?: unknown[];
   metadata?: {
     timestamp: string;
     requestId?: string;
@@ -27,7 +27,7 @@ export interface APIResponse<T = any> {
  * @param message - Optional success message
  * @param metadata - Optional additional metadata
  */
-export function createSuccessResponse<T = any>(
+export function createSuccessResponse<T = unknown>(
   data: T,
   message?: string,
   metadata?: Partial<APIResponse['metadata']>
@@ -44,7 +44,7 @@ export function createSuccessResponse<T = any>(
   };
 
   if (message) {
-    (response as any).message = message;
+    (response as unknown).message = message;
   }
 
   return NextResponse.json(response, { status: 200 });
@@ -59,7 +59,7 @@ export function createSuccessResponse<T = any>(
 export function createErrorResponse(
   message: string,
   statusCode: number = 500,
-  errors?: any[]
+  errors?: unknown[]
 ): NextResponse<APIResponse> {
   const response: APIResponse = {
     success: false,
@@ -92,7 +92,7 @@ export function handleAPIError(error: unknown): NextResponse<APIResponse> {
       return createErrorResponse(
         'Validation failed',
         400,
-        [(error as any).errors || error.message]
+        [(error as unknown).errors || error.message]
       );
     }
 
@@ -157,7 +157,7 @@ export function handleAPIError(error: unknown): NextResponse<APIResponse> {
 
   // Handle objects with statusCode and message
   if (typeof error === 'object' && error !== null) {
-    const err = error as any;
+    const err = error as unknown;
     if (err.statusCode && err.message) {
       return createErrorResponse(
         err.message,
@@ -181,14 +181,14 @@ export function extractErrorDetails(error: unknown): {
   message: string;
   stack?: string;
   code?: string;
-  details?: any;
+  details?: unknown;
 } {
   if (error instanceof Error) {
     return {
       message: error.message,
       stack: error.stack,
-      code: (error as any).code,
-      details: (error as any).details
+      code: (error as unknown).code,
+      details: (error as unknown).details
     };
   }
 
@@ -198,8 +198,8 @@ export function extractErrorDetails(error: unknown): {
 
   if (typeof error === 'object' && error !== null) {
     return {
-      message: (error as any).message || 'Unknown error',
-      code: (error as any).code,
+      message: (error as unknown).message || 'Unknown error',
+      code: (error as unknown).code,
       details: error
     };
   }
@@ -210,13 +210,13 @@ export function extractErrorDetails(error: unknown): {
 /**
  * Create a paginated success response
  */
-export function createPaginatedResponse<T = any>(
+export function createPaginatedResponse<T = unknown>(
   data: T[],
   page: number,
   limit: number,
   total: number,
   message?: string
-): NextResponse<APIResponse<{ items: T[]; pagination: any }>> {
+): NextResponse<APIResponse<{ items: T[]; pagination: unknown }>> {
   const totalPages = Math.ceil(total / limit);
   const hasNext = page < totalPages;
   const hasPrev = page > 1;
@@ -242,7 +242,7 @@ export function createPaginatedResponse<T = any>(
 /**
  * Type guard to check if response is successful
  */
-export function isSuccessResponse<T = any>(
+export function isSuccessResponse<T = unknown>(
   response: APIResponse<T>
 ): response is APIResponse<T> & { data: T } {
   return response.success === true && response.data !== undefined;

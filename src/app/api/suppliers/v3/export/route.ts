@@ -3,9 +3,9 @@
  * Replaces broken export functionality with working backend implementation
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { pool } from '@/lib/database'
 import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 import { SupplierExportService } from '@/lib/suppliers/services/SupplierExportService'
 import type {
@@ -125,10 +125,10 @@ export async function GET(request: NextRequest) {
       filters.search = searchParams.get('search')!
     }
     if (searchParams.get('status')) {
-      filters.status = searchParams.get('status')!.split(',') as any
+      filters.status = searchParams.get('status')!.split(',') as unknown
     }
     if (searchParams.get('tier')) {
-      filters.tier = searchParams.get('tier')!.split(',') as any
+      filters.tier = searchParams.get('tier')!.split(',') as unknown
     }
     if (searchParams.get('category')) {
       filters.category = searchParams.get('category')!.split(',')

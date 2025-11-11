@@ -5,12 +5,12 @@ import React from 'react';
 import {
   PackageX,
   AlertCircle,
-  FileX,
   Inbox,
   SearchX,
   Database,
   FilterX,
-  CheckCircle2
+  CheckCircle2,
+  InboxOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

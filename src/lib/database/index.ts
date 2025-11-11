@@ -5,7 +5,8 @@
  * exposing pg-compatible pool, query, and transaction helpers.
  */
 
-import { Pool, PoolClient, QueryResult, PoolConfig, QueryResultRow } from 'pg';
+import type { PoolClient, QueryResultRow } from 'pg';
+import { Pool } from 'pg';
 import {
   query as enterpriseQuery,
   withTransaction as enterpriseWithTransaction,
@@ -30,9 +31,9 @@ import {
  * const users: User[] = result.rows;
  * ```
  */
-export async function query<T extends QueryResultRow = any>(
+export async function query<T extends QueryResultRow = unknown>(
   text: string,
-  params?: any[]
+  params?: unknown[]
 ): Promise<{ rows: T[]; rowCount: number }> {
   return enterpriseQuery<T>(text, params || []);
 }
@@ -98,9 +99,9 @@ export const pool = {
    *
    * @template T - Expected row type
    */
-  query: async <T extends QueryResultRow = any>(
+  query: async <T extends QueryResultRow = unknown>(
     text: string,
-    params?: any[]
+    params?: unknown[]
   ): Promise<{ rows: T[]; rowCount: number }> => {
     return query<T>(text, params);
   },
@@ -141,7 +142,7 @@ export const pool = {
  * DatabaseManager class for object-oriented API
  */
 export class DatabaseManager {
-  async query<T extends QueryResultRow = any>(text: string, params?: any[]): Promise<{ rows: T[]; rowCount: number }> {
+  async query<T extends QueryResultRow = unknown>(text: string, params?: unknown[]): Promise<{ rows: T[]; rowCount: number }> {
     return query<T>(text, params);
   }
 

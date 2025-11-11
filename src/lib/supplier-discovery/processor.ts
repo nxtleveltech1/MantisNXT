@@ -2,7 +2,7 @@
  * Data Processing and Validation Pipeline
  */
 
-import {
+import type {
   ExtractionResult,
   DiscoveredSupplierData,
   SupplierAddress,

@@ -15,7 +15,8 @@
  * }
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { aiDatabase } from '@/lib/ai/database-integration';
 import { z } from 'zod';
 

@@ -5,7 +5,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Lock, Key, Shield, Database, FileText, AlertTriangle, CheckCircle, Settings, RefreshCw } from 'lucide-react';
+import { Lock, Key, Shield, Database, AlertTriangle, CheckCircle, Settings, RefreshCw } from 'lucide-react';
 
 interface EncryptionStatus {
   category: string;

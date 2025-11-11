@@ -3,9 +3,9 @@
  * Advanced AI integration for supplier discovery and data enrichment
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { pool } from '@/lib/database'
 import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 import { AISupplierDiscoveryService } from '@/lib/suppliers/services/AISupplierDiscoveryService'
 import type {

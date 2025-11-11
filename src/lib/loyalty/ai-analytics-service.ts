@@ -14,7 +14,7 @@
  * @date 2025-11-04
  */
 
-import { generateObject, generateText } from 'ai';
+import { generateObject } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { query } from '@/lib/database/connection';
@@ -802,7 +802,7 @@ Provide detailed financial analysis with actionable recommendations.`,
   async detectFraudAndAbuse(options: {
     organizationId: string;
     programId?: string;
-  }): Promise<any> {
+  }): Promise<unknown> {
     // Fetch transaction patterns
     const transactionQuery = `
       SELECT

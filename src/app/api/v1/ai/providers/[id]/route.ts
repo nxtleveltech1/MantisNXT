@@ -4,7 +4,7 @@
  * DELETE /api/v1/ai/providers/[id] - Delete a registry entry
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { authenticateRequest, handleAIError, successResponse, noContentResponse } from '@/lib/ai/api-utils';
 import { deleteProviderRegistry, updateProviderRegistry } from '../_store';
 

@@ -1,7 +1,9 @@
 import { ReadableStream } from 'node:stream/web'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'
+import type { RequestContext } from '@/lib/api/middleware';
+import { ApiMiddleware } from '@/lib/api/middleware'
 import { AIChatService, type ChatRequestOptions, type StreamingResult, type ConversationOptions } from '@/lib/ai/services'
 import { getAIConfig, updateAIConfig } from '@/lib/ai/config'
 import { getConfig as getServiceConfig, upsertConfig as upsertServiceConfig } from '@/app/api/v1/ai/config/_store'
@@ -105,12 +107,12 @@ async function ensureAssistantRuntimeConfig(context: RequestContext): Promise<As
       || (await upsertServiceConfig(orgId, 'assistant', { config: {}, enabled: false }))
 
     const activeProvider = normalizeProviderId(record.config.activeProvider || record.config.provider)
-    const providerPartials: Partial<Record<AIProvider, any>> = {}
+    const providerPartials: Partial<Record<AIProvider, unknown>> = {}
     const providerSections = record.config.providers ?? {}
 
     const collectProvider = (key: string) => {
       const normalized = normalizeProviderId(key)
-      const section = providerSections?.[key] as Record<string, any> | undefined
+      const section = providerSections?.[key] as Record<string, unknown> | undefined
       const isActive = normalized === activeProvider
       const inheritedModel = section?.model || (isActive ? record.config.model : undefined)
       const inheritedApiKey = section?.apiKey || (record.config.provider === key ? record.config.apiKey : undefined)
@@ -130,7 +132,7 @@ async function ensureAssistantRuntimeConfig(context: RequestContext): Promise<As
         return inheritedModel
       }
 
-      const partial: Record<string, any> = {}
+      const partial: Record<string, unknown> = {}
       if (enabledFlag !== undefined) {
         partial.enabled = enabledFlag
       }
@@ -482,7 +484,7 @@ function buildConversationOptions(
 
   for (const [key, value] of Object.entries(overrides)) {
     if (value !== undefined) {
-      ;(merged as any)[key] = value
+      ;(merged as unknown)[key] = value
     }
   }
 
@@ -524,9 +526,9 @@ function applyRuntimeOptions(target: ChatRequestOptions, runtime?: RuntimeOption
 }
 
 function mergeDefined(
-  ...sources: Array<Record<string, any> | undefined>
-): Record<string, any> | undefined {
-  const merged: Record<string, any> = {}
+  ...sources: Array<Record<string, unknown> | undefined>
+): Record<string, unknown> | undefined {
+  const merged: Record<string, unknown> = {}
 
   for (const source of sources) {
     if (!source) continue
