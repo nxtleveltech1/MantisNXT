@@ -11,7 +11,7 @@
 
 This document provides step-by-step deployment instructions for:
 - **ADR-4**: Purchase Orders Table Creation
-- **ADR-1**: Logical Replication Setup (Neon → Postgres OLD)
+- **ADR-1**: Logical Replication Setup (Neon Primary → Neon Replica)
 
 **IMPORTANT**: Follow these instructions in the exact order specified.
 
@@ -21,9 +21,9 @@ This document provides step-by-step deployment instructions for:
 
 #### Required Access
 
-- [x] Neon database access (neondb_owner)
-- [x] Postgres OLD database access (nxtdb_admin)
-- [x] Network connectivity from Postgres OLD to Neon (port 5432)
+- [x] Neon primary database access (neondb_owner)
+- [x] Neon replica database access (replica_app)
+- [x] Network connectivity from Neon replica to Neon primary (port 5432)
 - [x] Node.js installed for health check script
 
 #### Required Files
@@ -37,7 +37,7 @@ database/
 │   └── 004_rollback.sql                  (Rollback script)
 ├── replication/
 │   ├── setup-publication.sql             (Neon publication setup)
-│   ├── setup-subscription.sql            (Postgres OLD subscription)
+│   ├── setup-subscription.sql            (Neon replica subscription)
 │   ├── monitoring.sql                    (Monitoring queries)
 │   └── REPLICATION_GUIDE.md              (Complete guide)
 ├── schema/
@@ -62,8 +62,8 @@ scripts/
 # Test Neon connection
 psql "postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/neondb?sslmode=require" -c "SELECT version();"
 
-# Test Postgres OLD connection
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 -c "SELECT version();"
+# Test Neon replica connection
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" -c "SELECT version();"
 ```
 
 **Expected**: Both connections succeed with PostgreSQL version >= 10.
@@ -76,8 +76,8 @@ Ensure both databases have matching core schema from previous migrations:
 # On Neon
 psql "postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/neondb?sslmode=require" -c "\dt core.*"
 
-# On Postgres OLD
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 -c "\dt core.*"
+# On Neon replica
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" -c "\dt core.*"
 ```
 
 **Expected**: Both show the same core schema tables (brand, supplier, product, etc.).
@@ -129,10 +129,10 @@ ORDER BY table_name;
 (2 rows)
 ```
 
-**2.3 Deploy on Postgres OLD (Replica)**
+**2.3 Prepare Neon Replica (Schema Sync)**
 
 ```bash
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 \
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" \
   -f database/migrations/004_create_purchase_orders.sql
 ```
 
@@ -160,7 +160,7 @@ NOTICE:  ALL PURCHASE ORDERS TESTS PASSED ✓
 ROLLBACK
 ```
 
-**Repeat tests on Postgres OLD**.
+**Repeat tests on the Neon replica**.
 
 ---
 
@@ -216,18 +216,14 @@ ORDER BY tablename;
 
 **Expected**: 11 tables listed (including purchase_orders, purchase_order_items).
 
-**3.4 Create Subscription on Postgres OLD**
+**3.4 Create Subscription on Neon Replica**
 
-**IMPORTANT**: Before running, verify the connection string in `setup-subscription.sql` is correct. Open the file and check line ~85:
-
-```sql
-CONNECTION 'host=ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech port=5432 dbname=neondb user=neondb_owner password=npg_84ELeCFbOcGA sslmode=require'
-```
+**IMPORTANT**: Supply the replica connection string when invoking `setup-subscription.sql` (see file header for usage).
 
 Deploy subscription:
 
 ```bash
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 \
+psql -v NEON_CONN_INFO="host=ep-your-replica-pooler.aws.neon.tech port=5432 dbname=mantisnxt_replica user=replica_app password=supersecure sslmode=require" \
   -f database/replication/setup-subscription.sql
 ```
 
@@ -243,10 +239,10 @@ NOTICE:  Subscription setup completed
 
 **3.5 Monitor Initial Sync**
 
-Initial sync copies all existing data from Neon to Postgres OLD. Monitor progress:
+Initial sync copies all existing data from Neon to the Neon replica. Monitor progress:
 
 ```bash
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 -c "
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" -c "
 SELECT
   s.subname,
   srw.relid::regclass AS table_name,
@@ -293,7 +289,7 @@ PUBLISHER (Neon) HEALTH:
   Publication Exists: ✓
   Active Senders: 1
 
-SUBSCRIBER (Postgres OLD) HEALTH:
+SUBSCRIBER (Neon replica) HEALTH:
   Status: OK
   Subscription Exists: ✓
   Worker Running: ✓
@@ -331,7 +327,7 @@ Test subscriber:
 Edit `test_replication.sql` and uncomment Part B section, then:
 
 ```bash
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 \
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" \
   -f database/tests/test_replication.sql
 ```
 
@@ -349,15 +345,15 @@ RETURNING brand_id, name, code;
 "
 ```
 
-Wait 5 seconds, then verify on Postgres OLD:
+Wait 5 seconds, then verify on the Neon replica:
 
 ```bash
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 -c "
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" -c "
 SELECT brand_id, name, code FROM core.brand WHERE code = 'REPTEST';
 "
 ```
 
-**Expected**: Same brand_id and data appears on Postgres OLD.
+**Expected**: Same brand_id and data appears on the Neon replica.
 
 Delete test data on Neon:
 
@@ -367,10 +363,10 @@ DELETE FROM core.brand WHERE code = 'REPTEST';
 "
 ```
 
-Verify deletion replicated to Postgres OLD:
+Verify deletion replicated to the Neon replica:
 
 ```bash
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 -c "
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" -c "
 SELECT COUNT(*) FROM core.brand WHERE code = 'REPTEST';
 "
 ```
@@ -432,7 +428,7 @@ Integration examples:
 #### Verify ADR-1 (Replication)
 
 1. [x] Publication created on Neon with 11 tables
-2. [x] Subscription created on Postgres OLD
+2. [x] Subscription created on Neon replica
 3. [x] All tables synchronized (state = 'r')
 4. [x] Replication lag <5 seconds
 5. [x] Worker running (pg_stat_subscription.pid IS NOT NULL)
@@ -452,8 +448,8 @@ If purchase orders deployment fails:
 psql "postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/neondb?sslmode=require" \
   -f database/migrations/004_rollback.sql
 
-# Rollback on Postgres OLD
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 \
+# Rollback on Neon replica
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" \
   -f database/migrations/004_rollback.sql
 ```
 
@@ -462,8 +458,8 @@ psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 \
 If replication setup fails:
 
 ```bash
-# On Postgres OLD (Subscriber)
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 -c "
+# On Neon replica (Subscriber)
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" -c "
 DROP SUBSCRIPTION IF EXISTS mantisnxt_from_neon CASCADE;
 "
 
@@ -484,7 +480,7 @@ SELECT pg_drop_replication_slot('mantisnxt_replication_slot');
 
 **Solutions**:
 
-1. Check PostgreSQL logs on Postgres OLD
+1. Check PostgreSQL logs on the Neon replica
 2. Verify network connectivity: `telnet ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech 5432`
 3. Verify connection string in subscription
 4. Enable subscription: `ALTER SUBSCRIPTION mantisnxt_from_neon ENABLE;`

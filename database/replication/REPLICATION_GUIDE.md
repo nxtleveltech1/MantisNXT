@@ -74,10 +74,10 @@ This guide covers the complete setup and monitoring of logical replication betwe
 
 ### 2. Network Requirements
 
-- Postgres OLD must be able to connect to Neon on port 5432
+- The Neon replica must be able to connect to the Neon primary on port 5432
 - SSL/TLS enabled for secure replication
-- Firewall rules allowing outbound connections from Postgres OLD
-- Neon IP allowlist (if configured) must include Postgres OLD IP
+- Firewall rules allowing outbound connections from the replica environment
+- Neon IP allowlist (if configured) must include the replica endpoint
 
 ### 3. Schema Synchronization
 
@@ -233,7 +233,7 @@ node scripts/replication-health-check.js
 ```
 
 This script:
-- Checks publisher (Neon) and subscriber (Postgres OLD) health
+- Checks publisher (Neon) and subscriber (Neon replica) health
 - Measures replication lag (bytes and time)
 - Verifies data consistency
 - Logs results to `logs/replication-health.log`
@@ -314,7 +314,7 @@ If disabled, enable it:
 ALTER SUBSCRIPTION mantisnxt_from_neon ENABLE;
 ```
 
-2. Check PostgreSQL logs on Postgres OLD for errors:
+2. Check PostgreSQL logs on the Neon replica for errors:
 
 ```bash
 tail -f /var/log/postgresql/postgresql-*.log | grep "logical replication"
@@ -350,7 +350,7 @@ ping ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech
 2. Check subscriber load:
 
 ```sql
--- On Postgres OLD
+-- On Neon replica
 SELECT * FROM pg_stat_activity WHERE backend_type = 'logical replication worker';
 ```
 
@@ -388,11 +388,11 @@ WHERE s.subname = 'mantisnxt_from_neon' AND srw.srsubstate != 'r';
 2. Check for conflicts (writes on replica):
 
 ```sql
--- On Postgres OLD
-SELECT * FROM pg_stat_database_conflicts WHERE datname = 'nxtprod-db_001';
+-- On Neon replica
+SELECT * FROM pg_stat_database_conflicts WHERE datname = current_database();
 ```
 
-**CRITICAL**: Never write to replicated tables on Postgres OLD. Replica must be READ-ONLY.
+**CRITICAL**: Never write to replicated tables on the Neon replica. Replica must be READ-ONLY.
 
 3. Refresh subscription (re-sync data):
 
@@ -420,7 +420,7 @@ If no results, subscriber is not connected.
 2. Check subscriber subscription status:
 
 ```sql
--- On Postgres OLD
+-- On Neon replica
 SELECT * FROM pg_stat_subscription WHERE subname = 'mantisnxt_from_neon';
 ```
 
@@ -435,30 +435,25 @@ SELECT pg_drop_replication_slot('mantisnxt_replication_slot');
 
 ## Failover Procedure
 
-If Neon (primary) becomes unavailable, promote Postgres OLD to primary:
+If Neon (primary) becomes unavailable, promote the Neon replica to primary:
 
 ### 1. Disable Subscription
 
 ```sql
--- On Postgres OLD
+-- On Neon replica
 DROP SUBSCRIPTION mantisnxt_from_neon;
 ```
 
 ### 2. Enable Writes
 
-Remove any READ-ONLY restrictions and allow application writes to Postgres OLD.
+Remove any READ-ONLY restrictions and allow application writes to the Neon replica.
 
 ### 3. Update Application Connection
 
-Update `.env.local` to point to Postgres OLD:
+Update `.env.local` (or deployment environment) to point to the Neon replica:
 
 ```env
-DATABASE_URL=postgresql://nxtdb_admin:P@33w0rd-1@62.169.20.53:6600/nxtprod-db_001
-DB_HOST=62.169.20.53
-DB_PORT=6600
-DB_USER=nxtdb_admin
-DB_PASSWORD=P@33w0rd-1
-DB_NAME=nxtprod-db_001
+DATABASE_URL=postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require
 ```
 
 ### 4. Restart Application
@@ -472,12 +467,12 @@ npm start
 
 To reverse replication direction:
 
-1. Stop writes to Postgres OLD
-2. Create publication on Postgres OLD
-3. Create subscription on Neon
+1. Stop writes to the promoted Neon replica
+2. Create publication on the replica
+3. Create subscription on the restored Neon primary
 4. Wait for sync to complete
-5. Switch application back to Neon
-6. Drop reverse replication
+5. Switch application back to the primary Neon endpoint
+6. Drop reverse replication once stable
 
 **Note**: This is complex and should be tested in non-production first.
 
@@ -491,7 +486,7 @@ To reverse replication direction:
 - WAL generation increases disk I/O
 - Monitor WAL size to prevent storage issues
 
-### Subscriber (Postgres OLD)
+### Subscriber (Neon replica)
 
 - Replication worker consumes CPU and memory
 - Disk I/O for writes from replication stream
@@ -515,7 +510,7 @@ To reverse replication direction:
 
 ### Network Security
 
-- Restrict Neon IP allowlist to Postgres OLD IP only
+- Restrict Neon IP allowlist to the replica endpoint only
 - Use VPN or private network if possible
 - Monitor connection attempts in logs
 
@@ -568,7 +563,7 @@ For issues or questions:
 | File | Purpose |
 |------|---------|
 | `database/replication/setup-publication.sql` | Create publication on Neon |
-| `database/replication/setup-subscription.sql` | Create subscription on Postgres OLD |
+| `database/replication/setup-subscription.sql` | Create subscription on Neon replica |
 | `database/replication/monitoring.sql` | Comprehensive monitoring queries |
 | `scripts/replication-health-check.js` | Automated health check script |
 | `database/migrations/004_create_purchase_orders.sql` | Purchase orders table migration |

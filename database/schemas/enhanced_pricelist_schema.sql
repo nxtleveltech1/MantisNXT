@@ -6,7 +6,7 @@
 -- heterogeneous supplier price lists with maximum performance
 -- and data integrity.
 --
--- Database: nxtprod-db_001
+-- Database: mantisnxt (Neon environment)
 -- Target: PostgreSQL 15+
 -- Author: Data Oracle
 -- =====================================================
