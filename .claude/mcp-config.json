@@ -94,9 +94,9 @@
       "command": "npx",
       "args": ["-y", "@joshuarileydev/postgres-mcp-server"],
       "env": {
-        "POSTGRES_CONNECTION_STRING": "postgresql://nxtdb_admin:P@33w0rd-1@62.169.20.53:6600/nxtprod-db_001"
+        "POSTGRES_CONNECTION_STRING": "postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require"
       },
-      "description": "PostgreSQL OLD database (62.169.20.53:6600) - READ-ONLY"
+      "description": "PostgreSQL Neon database (mantis_issoh) - PRIMARY"
     },
     "chrome-devtools": {
       "command": "npx",
