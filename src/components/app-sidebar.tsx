@@ -87,6 +87,10 @@ const data = {
           url: "/inventory",
         },
         {
+          title: "Locations",
+          url: "/inventory/locations",
+        },
+        {
           title: "Pricing & Optimization",
           url: "/operations/pricing",
         },
