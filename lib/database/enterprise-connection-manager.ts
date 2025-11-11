@@ -571,7 +571,7 @@ class EnterpriseConnectionManager {
 
     // Normalize SQL by replacing parameter placeholders with ?
 
-    let normalized = text.replace(/\$\d+/g, '?').replace(/\s+/g, ' ').trim().toLowerCase();
+    const normalized = text.replace(/\$\d+/g, '?').replace(/\s+/g, ' ').trim().toLowerCase();
 
 
 

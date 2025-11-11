@@ -14,7 +14,8 @@ import type {
   SupplierSearchResult,
   SupplierMetrics,
   ValidationResult,
-  ValidationError
+  ValidationError,
+  SupplierPerformanceSnapshot
 } from '../types/SupplierDomain'
 
 export class SupplierService {
@@ -332,7 +333,8 @@ export class SupplierService {
     // Don't allow deletion if supplier has performance data
     try {
       const performanceData = await this.repository.getPerformanceData(id)
-      if (performanceData && performanceData.totalOrders > 0) {
+      const totalOrders = this.getTotalOrders(performanceData)
+      if (totalOrders > 0) {
         return { allowed: false, reason: 'Supplier has order history and cannot be deleted' }
       }
     } catch (error) {
@@ -348,7 +350,7 @@ export class SupplierService {
     return this.repository.getMetrics()
   }
 
-  async getSupplierPerformance(id: string): Promise<any> {
+  async getSupplierPerformance(id: string): Promise<SupplierPerformanceSnapshot | null> {
     const supplier = await this.repository.findById(id)
     if (!supplier) {
       throw new Error('Supplier not found')
@@ -399,7 +401,7 @@ export class SupplierService {
 
   private isValidTaxId(taxId: string): boolean {
     // Basic validation - could be enhanced for specific country formats
-    return taxId.length >= 5 && /^[A-Z0-9\-\/]+$/i.test(taxId);
+    return taxId.length >= 5 && /^[A-Z0-9-/]+$/i.test(taxId);
   }
 
   private ensurePrimaryContactAndAddress(data: CreateSupplierData): void {
@@ -424,5 +426,21 @@ export class SupplierService {
         address.isPrimary = index === data.addresses.findIndex(a => a.isPrimary)
       })
     }
+  }
+
+  private getTotalOrders(performance?: SupplierPerformanceSnapshot | null): number {
+    if (!performance) {
+      return 0
+    }
+
+    if (typeof performance.totalOrders === 'number') {
+      return performance.totalOrders
+    }
+
+    if (typeof performance.total_orders === 'number') {
+      return performance.total_orders
+    }
+
+    return 0
   }
 }

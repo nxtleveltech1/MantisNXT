@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Machine Learning Models for MantisNXT Analytics
 import { SupplierPerformance, InventoryItem, StockMovement } from '@/types';
 

@@ -62,7 +62,9 @@ export function safeParseDate(
           fallbackUsed: false
         }
       }
-    } catch {}
+    } catch {
+      // Silent catch for format parsing attempt
+    }
 
     // Try common formats
     const formats = [
@@ -85,7 +87,9 @@ export function safeParseDate(
             fallbackUsed: false
           }
         }
-      } catch {}
+      } catch {
+        // Silent catch for format parsing attempt
+      }
     }
 
     // Try native Date constructor as last resort
@@ -98,7 +102,9 @@ export function safeParseDate(
           fallbackUsed: false
         }
       }
-    } catch {}
+    } catch {
+      // Silent catch for format parsing attempt
+    }
 
     return {
       isValid: false,
@@ -119,7 +125,9 @@ export function safeParseDate(
           fallbackUsed: false
         }
       }
-    } catch {}
+    } catch {
+      // Silent catch for format parsing attempt
+    }
 
     return {
       isValid: false,
@@ -323,7 +331,7 @@ export function safeArray<T>(
  */
 export function safeObject<T extends Record<string, unknown>>(
   input: unknown,
-  schema: Record<keyof T, (value: unknown) => T[keyof T]>,
+  schema: { [K in keyof T]: (value: unknown) => T[K] },
   fallback: T
 ): T {
   if (input == null || typeof input !== 'object') {
@@ -334,11 +342,12 @@ export function safeObject<T extends Record<string, unknown>>(
     const result = {} as T
     const inputObj = input as Record<string, unknown>
 
-    for (const [key, transformer] of Object.entries(schema)) {
+    for (const key of Object.keys(schema) as Array<keyof T>) {
+      const transformer = schema[key]
       try {
-        result[key as keyof T] = transformer(inputObj[key])
+        result[key] = transformer(inputObj[key])
       } catch {
-        result[key as keyof T] = fallback[key as keyof T]
+        result[key] = fallback[key]
       }
     }
 
@@ -388,7 +397,7 @@ export function transformSupplierData(input: unknown): SafeSupplier {
     }
   }
 
-  return safeObject(input, {
+  return safeObject<SafeSupplier>(input, {
     id: (v) => safeString(v, fallback.id),
     name: (v) => safeString(v, fallback.name),
     email: (v) => safeString(v, fallback.email),
@@ -401,7 +410,7 @@ export function transformSupplierData(input: unknown): SafeSupplier {
     createdAt: (v) => safeParseDate(v, fallback.createdAt).date!,
     updatedAt: (v) => safeParseDate(v, fallback.updatedAt).date!,
     lastContactDate: (v) => v == null ? null : safeParseDate(v).date,
-    metrics: (v) => safeObject(v, {
+    metrics: (v) => safeObject<SafeSupplier['metrics']>(v, {
       totalOrders: (v) => safeNumber(v, fallback.metrics.totalOrders),
       totalValue: (v) => safeNumber(v, fallback.metrics.totalValue),
       averageDeliveryTime: (v) => safeNumber(v, fallback.metrics.averageDeliveryTime),
@@ -438,7 +447,7 @@ export function transformInventoryData(input: unknown): SafeInventoryItem {
     supplier: 'Unknown'
   }
 
-  return safeObject(input, {
+  return safeObject<SafeInventoryItem>(input, {
     id: (v) => safeString(v, fallback.id),
     name: (v) => safeString(v, fallback.name),
     sku: (v) => safeString(v, fallback.sku),

@@ -255,7 +255,7 @@ How can I assist you today?`,
       let aiResponse = ""
       let actions: ChatAction[] = []
       let suggestions: string[] = []
-      let confidence = 85
+      const confidence = 85
 
       // Analyze user intent and generate appropriate response
       if (userMessage.toLowerCase().includes('supplier') && userMessage.toLowerCase().includes('performance')) {

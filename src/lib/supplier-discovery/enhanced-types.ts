@@ -26,6 +26,7 @@ export interface WebSearchResult {
   source: 'google' | 'bing' | 'duckduckgo' | 'custom';
   crawlDate: Date;
   relevanceScore: number;
+  snippet?: string;
 }
 
 export interface WebsiteContent {

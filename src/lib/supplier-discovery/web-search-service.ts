@@ -4,11 +4,10 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import { 
-  WebSearchRequest, 
-  WebSearchResult, 
-  WebsiteContent,
-  ExtractionResult
+import {
+  WebSearchRequest,
+  WebSearchResult,
+  WebsiteContent
 } from './enhanced-types';
 import { DISCOVERY_CONFIG } from './config';
 

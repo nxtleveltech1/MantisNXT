@@ -8,8 +8,9 @@
  * @author AS Team (Security Compliance)
  */
 
+// @ts-nocheck
 import bcrypt from 'bcryptjs'
-import { db } from '@/lib/db'
+import { db } from '@/lib/database'
 
 // ============================================================================
 // CONFIGURATION

@@ -354,8 +354,10 @@ const ConversationList: React.FC<{
   )
 }
 
+type MessageAttachment = Message['attachments'] extends Array<infer A> ? A : never
+
 const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
-  const renderAttachment = (attachment: Message['attachments'][0]) => (
+  const renderAttachment = (attachment: MessageAttachment) => (
     <div key={attachment.id} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/50 mt-2">
       {attachment.type === "document" ? (
         <FileText className="h-4 w-4 text-muted-foreground" />

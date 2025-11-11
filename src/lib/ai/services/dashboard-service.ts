@@ -144,7 +144,7 @@ export class DashboardService {
     const total = countResult.rows[0]?.total || 0;
 
     // Get dashboards
-    let dashboardQuery = `
+    const dashboardQuery = `
       SELECT
         d.id,
         d.org_id,
@@ -246,7 +246,7 @@ export class DashboardService {
       return null;
     }
 
-    let dashboard = result.rows[0];
+    const dashboard = result.rows[0];
 
     // Include widgets if requested
     if (includeWidgets) {

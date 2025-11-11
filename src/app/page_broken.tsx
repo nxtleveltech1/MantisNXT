@@ -14,7 +14,7 @@ import {
   Activity,
   Menu,
   X,
-  Home,
+  Home as HomeIcon,
   Users,
   ShoppingCart,
   FileText,
@@ -51,7 +51,7 @@ const mockActivities = [
 ]
 
 const sidebarItems = [
-  { icon: Home, label: "Dashboard", href: "/", active: true },
+  { icon: HomeIcon, label: "Dashboard", href: "/", active: true },
   { icon: Building2, label: "Suppliers", href: "/suppliers", badge: "22" },
   { icon: Users, label: "Add Supplier", href: "/suppliers/new" },
   { icon: ShoppingCart, label: "Purchase Orders", href: "/purchase-orders", badge: "12" },

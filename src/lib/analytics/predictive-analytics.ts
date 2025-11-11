@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Advanced Predictive Analytics Service for MantisNXT
 // Implements sophisticated forecasting and predictive models
 

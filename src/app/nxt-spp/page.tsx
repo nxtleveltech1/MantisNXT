@@ -28,7 +28,7 @@ function NxtSppContent() {
   const { toast } = useToast();
 
   // Get active tab from URL or default to dashboard
-  const activeTab = searchParams.get('tab') || 'dashboard';
+  const activeTab = searchParams?.get('tab') ?? 'dashboard';
 
   // State for component communication
   const [uploadOpen, setUploadOpen] = useState(false);

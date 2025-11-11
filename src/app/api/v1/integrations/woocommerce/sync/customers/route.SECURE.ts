@@ -510,6 +510,7 @@ export async function POST(request: NextRequest) {
     // STEP 11: RETURN INITIAL RESPONSE
     // ========================================================================
     const queueStatus = await CustomerSyncService.getStatus(queueId);
+    const { queueId: _statusQueueId, ...queueStatusData } = queueStatus ?? {};
 
     console.info(`[${requestId}] Sync queue created: ${queueId}`);
 
@@ -518,7 +519,7 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           queueId,
-          ...queueStatus,
+          ...queueStatusData,
           message: 'Sync queue created and processing started',
         },
         requestId,

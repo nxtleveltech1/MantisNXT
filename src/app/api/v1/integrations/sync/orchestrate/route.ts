@@ -297,7 +297,7 @@ async function handleGetStatus(
     }
 
     // Try to find orchestrator in memory first
-    let orchestrator = activeOrchestrators.get(syncId);
+    const orchestrator = activeOrchestrators.get(syncId);
 
     if (!orchestrator) {
       // If not in memory, check database for completed syncs

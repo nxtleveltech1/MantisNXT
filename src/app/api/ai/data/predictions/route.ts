@@ -15,6 +15,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { aiDatabase } from '@/lib/ai/database-integration';
+import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
 import { z } from 'zod';
 
 const PredictionRequestSchema = z.object({
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
       const startTime = Date.now()
       const prediction = await aiDatabase.generatePredictions({
         type: validatedInput.type,
-        target_id: validatedInput.target_id,
+        target_id: validatedInput.target_id?.toString(),
         forecast_days: validatedInput.forecast_days,
       })
 
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
         },
         meta: {
           execution_time_ms: Date.now() - startTime,
-          target_id: validatedInput.target_id,
+          target_id: validatedInput.target_id?.toString(),
           generated_at: new Date().toISOString(),
         },
         timestamp: new Date().toISOString(),

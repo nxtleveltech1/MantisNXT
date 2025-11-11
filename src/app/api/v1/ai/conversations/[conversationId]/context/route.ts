@@ -56,7 +56,7 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateContextSchema.parse(body);
 
-    const orgId = user.organizationId || user.org_id;
+    const orgId = user.org_id;
     const userId = user.id;
 
     // Get the most recent message to update its context

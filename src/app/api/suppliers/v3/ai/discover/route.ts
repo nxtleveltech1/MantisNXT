@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         totalExisting: existingSuppliers.total,
         newFound: sortedMatches.length,
         sources: discoveryRequest.sources,
-        timestamp: new Date().toISOString().toISOString()
+        timestamp: new Date().toISOString()
       }
     }
 

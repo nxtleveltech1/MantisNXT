@@ -1,5 +1,7 @@
+import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
+import { getSupplierById as getSsotSupplierById } from '@/services/ssot/supplierService';
 
 export interface ErrorContext {
   operation: string;
@@ -8,7 +10,7 @@ export interface ErrorContext {
   fileName?: string;
   rowIndex?: number;
   field?: string;
-  additionalData?: Record<string, any>;
+  additionalData?: Record<string, unknown>;
 }
 
 export interface ErrorLog {
@@ -36,7 +38,7 @@ export class UploadErrorHandler {
     level: ErrorLog['level'] = 'error'
   ): Promise<ErrorLog> {
     const errorLog: ErrorLog = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       level,
       operation: context.operation,
       message: error instanceof Error ? error.message : String(error),
@@ -69,7 +71,7 @@ export class UploadErrorHandler {
     context: ErrorContext,
     statusCode: number = 500
   ): NextResponse {
-    const errorId = crypto.randomUUID();
+    const errorId = randomUUID();
 
     // Log the error
     this.handleError(error, context, statusCode >= 500 ? 'error' : 'warn');
@@ -145,16 +147,8 @@ export class UploadErrorHandler {
     }
 
     try {
-      // Check if supplier exists in database
-      const exists = await withTransaction(async (client) => {
-        const result = await client.query(
-          'SELECT id FROM public.suppliers WHERE id = $1 AND status = $2',
-          [supplierId, 'active']
-        );
-        return result.rows.length > 0;
-      });
-
-      if (!exists) {
+      const supplier = await getSsotSupplierById(supplierId);
+      if (!supplier || supplier.status !== 'active') {
         return { valid: false, error: 'Supplier not found or inactive' };
       }
 

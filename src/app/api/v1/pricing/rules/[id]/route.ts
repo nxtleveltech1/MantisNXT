@@ -75,8 +75,8 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const success = await PricingRuleService.deleteRule(id);
     const { id } = await context.params;
+    const success = await PricingRuleService.deleteRule(id);
 
     if (!success) {
       return NextResponse.json(

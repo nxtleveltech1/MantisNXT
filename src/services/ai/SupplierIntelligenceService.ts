@@ -7,17 +7,17 @@ import { createAIDataExtractionService } from './AIDataExtractionService';
 import type { ExtractedSupplierData as AIExtractedSupplierData } from './AIDataExtractionService';
 import type { ExtractedSupplierData, SupplierBrandLink } from './ExtractedSupplierData';
 export type { ExtractedSupplierData } from './ExtractedSupplierData';
-import { SupplierFormData } from '@/types/supplier';
+import type { SupplierFormAddress, SupplierFormData } from '@/types/supplier';
 import type { SupplierDiscoveryConfig } from '@/lib/ai/supplier-discovery-config';
 
 export interface WebDiscoveryResult {
   success: boolean;
-  data: any[];
+  data: ExtractedSupplierData[];
   suppliers?: Array<{
     id: string;
     name: string;
     riskScore: number;
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
   error?: string;
   metadata?: {
@@ -377,7 +377,8 @@ export class SupplierIntelligenceService {
     // Rule-based address: if scraped address exists and AI didn't extract structured addresses,
     // create address from scraped string
     // IMPORTANT: Validate that scraped address is actually an address, not brand/product info
-    if (scrapedMetadata?.address && (!data.addresses || data.addresses.length === 0)) {
+    const scrapedAddress = scrapedMetadata?.address;
+    if (scrapedAddress && (!data.addresses || data.addresses.length === 0)) {
       // Validate it's actually an address, not brand/product information
       const invalidPatterns = [
         /^(enova|gibson|db technologies|pioneer|hpw|flx)/i,
@@ -388,15 +389,15 @@ export class SupplierIntelligenceService {
       ];
 
       const isValidAddress =
-        !invalidPatterns.some(pattern => pattern.test(scrapedMetadata.address)) &&
-        (/\d+/.test(scrapedMetadata.address) ||
+        !invalidPatterns.some(pattern => pattern.test(scrapedAddress)) &&
+        (/\d+/.test(scrapedAddress) ||
           /\b(street|st|avenue|ave|road|rd|drive|dr|court|ct|boulevard|blvd|way|lane|ln|place|pl)\b/i.test(
-            scrapedMetadata.address
+            scrapedAddress
           ));
 
-      if (isValidAddress && scrapedMetadata.address.length < 200) {
+      if (isValidAddress && scrapedAddress.length < 200) {
         // Parse scraped address string into structured format
-        const addressParts = scrapedMetadata.address.split(',').map(p => p.trim());
+        const addressParts = scrapedAddress.split(',').map(p => p.trim());
         if (addressParts.length > 0) {
           data.addresses = [
             {
@@ -411,7 +412,7 @@ export class SupplierIntelligenceService {
         }
       } else {
         console.warn(
-          `⚠️ Rejected scraped address (contains brand/product info or invalid format): "${scrapedMetadata.address.substring(0, 100)}"`
+          `⚠️ Rejected scraped address (contains brand/product info or invalid format): "${scrapedAddress.substring(0, 100)}"`
         );
       }
     }
@@ -481,8 +482,11 @@ export class SupplierIntelligenceService {
           brandsPageContent = brandsPage.content;
           console.log(`✅ Brands page found and scraped: ${brandsPageContent.length} characters`);
         }
-      } catch (brandsError) {
-        console.log('⚠️ Brands page not found or inaccessible, continuing with main page');
+      } catch (error) {
+        console.log(
+          '⚠️ Brands page not found or inaccessible, continuing with main page',
+          error instanceof Error ? error.message : error
+        );
       }
 
       // Step 1.6: Try to find and scrape contact page (often has address info)
@@ -516,13 +520,16 @@ export class SupplierIntelligenceService {
               );
               break;
             }
-          } catch (contactError) {
+          } catch {
             // Try next URL
             continue;
           }
         }
-      } catch (contactError) {
-        console.log('⚠️ Contact page not found or inaccessible, continuing with main page');
+      } catch (error) {
+        console.log(
+          '⚠️ Contact page not found or inaccessible, continuing with main page',
+          error instanceof Error ? error.message : error
+        );
       }
 
       // Step 2: Extract supplier data using ALL configured AI providers
@@ -674,7 +681,7 @@ export class SupplierIntelligenceService {
       // Try all enabled custom providers
       if (this.config?.customProviders) {
         const customProviders = Object.entries(this.config.customProviders).filter(
-          ([_, provider]) =>
+          ([, provider]) =>
             provider.enabled !== false && provider.apiKey && provider.apiUrl && provider.model
         );
 
@@ -735,6 +742,8 @@ export class SupplierIntelligenceService {
           description: websiteContent.description || '',
           content: websiteContent.content || '',
           rawHtml: websiteContent.rawHtml || '',
+          metadata: websiteContent.metadata || {},
+          extractionDate: new Date().toISOString(),
         });
 
         if (!fallbackData) {
@@ -828,7 +837,7 @@ export class SupplierIntelligenceService {
         : '');
 
     // Enhanced business info with all available data
-    const businessInfo: any = {
+    const businessInfo: SupplierFormData['businessInfo'] = {
       legalName: this.generateLegalName(webData.companyName, webData.businessType),
       tradingName: webData.companyName || originalQuery || '',
       website: webData.website || website,
@@ -842,8 +851,8 @@ export class SupplierIntelligenceService {
     // Add optional fields if available
     if (webData.employees) businessInfo.employeeCount = this.parseEmployeeCount(webData.employees);
     if (webData.founded) businessInfo.foundedYear = this.parseYear(webData.founded);
-    if (webData.revenue) businessInfo.estimatedRevenue = webData.revenue;
-    if (webData.certifications) businessInfo.certifications = webData.certifications;
+    const parsedRevenue = this.parseRevenue(webData.revenue);
+    if (parsedRevenue !== undefined) businessInfo.annualRevenue = parsedRevenue;
     if (webData.taxId) businessInfo.taxId = webData.taxId;
     if (webData.registrationNumber) businessInfo.registrationNumber = webData.registrationNumber;
 
@@ -861,6 +870,8 @@ export class SupplierIntelligenceService {
         services: webData.services || [],
         paymentTerms: webData.paymentTerms,
         leadTime: webData.leadTime ? this.parseLeadTime(webData.leadTime) : undefined,
+        certifications: webData.certifications || [],
+        minimumOrderValue: this.parseNumericValue(webData.minimumOrderValue),
       },
     };
 
@@ -880,7 +891,7 @@ export class SupplierIntelligenceService {
           name: webData.contactPerson || 'General Contact',
           email: webData.contactEmail,
           phone: webData.contactPhone,
-          position: 'Contact Person',
+          title: 'Contact Person',
           isPrimary: true,
           isActive: true,
         },
@@ -891,7 +902,7 @@ export class SupplierIntelligenceService {
     if (primaryAddress) {
       transformedData.addresses = [
         {
-          type: primaryAddress.type || 'headquarters',
+          type: this.normalizeAddressType(primaryAddress.type),
           name: 'Head Office',
           addressLine1: primaryAddress.street || '',
           addressLine2: '',
@@ -909,7 +920,7 @@ export class SupplierIntelligenceService {
       // Add additional addresses if available
       if (webData.addresses && webData.addresses.length > 1) {
         const additionalAddresses = webData.addresses.slice(1).map((addr, index) => ({
-          type: addr.type || 'shipping',
+          type: this.normalizeAddressType(addr.type),
           name: `${addr.type || 'Address'} ${index + 2}`,
           addressLine1: addr.street || '',
           addressLine2: '',
@@ -1049,7 +1060,7 @@ export class SupplierIntelligenceService {
       /\b(subscribe|subsribe)\b/i,
     ];
 
-    let filteredBrands = brands.filter(brand => {
+    const filteredBrands = brands.filter(brand => {
       const brandTrimmed = brand.trim();
       const brandLower = brandTrimmed.toLowerCase();
 
@@ -1175,14 +1186,14 @@ export class SupplierIntelligenceService {
   private generateLegalName(companyName?: string, businessType?: string): string {
     if (!companyName) return 'New Supplier (Pty) Ltd';
 
-    const suffix = this.getBusinessSuffix(businessType, companyName);
+    const suffix = this.getBusinessSuffix(businessType);
     return `${companyName} ${suffix}`.trim();
   }
 
   /**
    * Get appropriate business suffix
    */
-  private getBusinessSuffix(businessType?: string, companyName?: string): string {
+  private getBusinessSuffix(businessType?: string): string {
     if (businessType?.toLowerCase().includes('international')) return 'International';
     if (businessType?.toLowerCase().includes('corporation')) return 'Corp';
     if (businessType?.toLowerCase().includes('limited')) return 'Ltd';
@@ -1247,7 +1258,7 @@ export class SupplierIntelligenceService {
   /**
    * Generate default address if none found
    */
-  private generateDefaultAddress(location?: string): any[] {
+  private generateDefaultAddress(location?: string): SupplierFormAddress[] {
     if (!location) return [];
 
     return [
@@ -1398,6 +1409,72 @@ export class SupplierIntelligenceService {
 
     const totalScore = results.reduce((sum, result) => sum + this.calculateConfidence(result), 0);
     return Math.round(totalScore / results.length);
+  }
+
+  /**
+   * Normalize various address type strings to the allowed union
+   */
+  private normalizeAddressType(type?: string): SupplierFormAddress['type'] {
+    switch ((type || '').toLowerCase()) {
+      case 'billing':
+        return 'billing';
+      case 'shipping':
+      case 'distribution':
+        return 'shipping';
+      case 'warehouse':
+        return 'warehouse';
+      case 'manufacturing':
+      case 'factory':
+        return 'manufacturing';
+      case 'headquarters':
+      case 'hq':
+      case 'office':
+        return 'headquarters';
+      default:
+        return 'headquarters';
+    }
+  }
+
+  /**
+   * Parse revenue strings like "$1.2M" or "ZAR 5000000" into numeric values
+   */
+  private parseRevenue(revenue: unknown): number | undefined {
+    if (typeof revenue === 'number' && Number.isFinite(revenue)) {
+      return revenue;
+    }
+
+    if (typeof revenue === 'string') {
+      const cleaned = revenue.replace(/[, ]+/g, '').toLowerCase();
+      const multiplier =
+        cleaned.includes('b') && !cleaned.includes('kb')
+          ? 1_000_000_000
+          : cleaned.includes('m')
+            ? 1_000_000
+            : cleaned.includes('k')
+              ? 1_000
+              : 1;
+
+      const numericPart = parseFloat(cleaned.replace(/[^0-9.]/g, ''));
+      if (Number.isFinite(numericPart)) {
+        return numericPart * multiplier;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Parse generic numeric values from strings with units/currency
+   */
+  private parseNumericValue(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const numeric = parseFloat(value.replace(/[^0-9.]/g, ''));
+      return Number.isFinite(numeric) ? numeric : undefined;
+    }
+    return undefined;
   }
 
   /**
@@ -1951,8 +2028,11 @@ Return ONLY the information that can be clearly identified in the content.`;
   /**
    * Post-process extracted data (helper method)
    */
-  private postProcessExtractedData(data: any, sourceUrl: string): AIExtractedSupplierData {
-    const processed: AIExtractedSupplierData = { ...data };
+  private postProcessExtractedData(
+    data: Record<string, unknown>,
+    sourceUrl: string
+  ): AIExtractedSupplierData {
+    const processed: AIExtractedSupplierData = { ...(data as AIExtractedSupplierData) };
 
     // Normalize website URL
     if (processed.website) {
@@ -1963,16 +2043,30 @@ Return ONLY the information that can be clearly identified in the content.`;
 
     // Ensure addresses have required fields
     if (processed.addresses && processed.addresses.length > 0) {
+      type ExtractedAddress = NonNullable<AIExtractedSupplierData['addresses']>[number];
+      type ExtendedAddress = ExtractedAddress & {
+        addressLine1?: string;
+        postal_code?: string;
+        province?: string;
+      };
+
       processed.addresses = processed.addresses
-        .map((addr: any, index: number) => ({
-          type: addr.type || (index === 0 ? 'headquarters' : 'shipping'),
-          street: addr.street || addr.addressLine1 || '',
-          city: addr.city || '',
-          country: addr.country || '',
-          postalCode: addr.postalCode || addr.postal_code || '',
-          state: addr.state || addr.province || '',
-        }))
-        .filter((addr: any) => addr.street || addr.city);
+        .map((addr, index) => {
+          if (!addr) {
+            return undefined;
+          }
+          const extended = addr as ExtendedAddress;
+          const normalized: ExtractedAddress = {
+            type: addr.type || (index === 0 ? 'headquarters' : 'shipping'),
+            street: addr.street || extended.addressLine1 || '',
+            city: addr.city || '',
+            country: addr.country || '',
+            postalCode: addr.postalCode || extended.postal_code || '',
+            state: addr.state || extended.province || '',
+          };
+          return normalized;
+        })
+        .filter((addr): addr is ExtractedAddress => Boolean(addr && (addr.street || addr.city)));
     }
 
     return processed;
@@ -2004,18 +2098,6 @@ Return ONLY the information that can be clearly identified in the content.`;
 
     // Start with the first result as base
     const aggregated: ExtractedSupplierData = { ...results[0] };
-
-    // Merge arrays (union, deduplicated)
-    const mergeArrays = (arr1?: string[], arr2?: string[]): string[] => {
-      const combined = [...(arr1 || []), ...(arr2 || [])];
-      return Array.from(new Set(combined.map(item => item.trim().toLowerCase()))).map(item => {
-        // Find original case from either array
-        const original = [...(arr1 || []), ...(arr2 || [])].find(
-          orig => orig.trim().toLowerCase() === item
-        );
-        return original || item;
-      });
-    };
 
     // Merge each result into aggregated
     for (const result of results.slice(1)) {
@@ -2169,17 +2251,25 @@ Return ONLY the information that can be clearly identified in the content.`;
     metrics: Record<string, number>;
   }> {
     // Placeholder implementation - would integrate with actual performance data
+    const normalizedSupplierId = supplierId.trim().toLowerCase();
+    const supplierHash = normalizedSupplierId
+      ? normalizedSupplierId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+      : 0;
+    const performanceBase = 0.5 + (supplierHash % 50) / 100;
+    const performanceScore = Math.min(0.99, performanceBase);
+    const modifier = (supplierHash % 10) / 100;
+
     return {
-      performanceScore: Math.random() * 0.5 + 0.5, // Random score between 0.5 and 1.0
+      performanceScore,
       recommendations: [
         'Strong delivery performance',
         'Good quality metrics',
         'Responsive communication',
       ],
       metrics: {
-        onTimeDelivery: 0.92,
-        qualityScore: 0.88,
-        responsiveness: 0.85,
+        onTimeDelivery: Math.min(0.99, 0.85 + modifier),
+        qualityScore: Math.min(0.99, 0.83 + modifier / 2),
+        responsiveness: Math.min(0.99, 0.8 + modifier / 3),
       },
     };
   }
@@ -2203,8 +2293,12 @@ Return ONLY the information that can be clearly identified in the content.`;
   > {
     // Placeholder implementation - would use actual similarity algorithms
     const { maxResults = 5, minSimilarity = 0.7 } = options || {};
+    const normalizedSupplierId = supplierId.trim().toLowerCase();
+    const supplierHash = normalizedSupplierId
+      ? normalizedSupplierId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+      : 0;
 
-    return [
+    const baseResults = [
       {
         id: 'similar_1',
         name: 'Similar Supplier 1',
@@ -2217,7 +2311,26 @@ Return ONLY the information that can be clearly identified in the content.`;
         similarity: 0.78,
         matchingAttributes: ['industry', 'services'],
       },
-    ].slice(0, maxResults);
+      {
+        id: 'similar_3',
+        name: 'Similar Supplier 3',
+        similarity: 0.72,
+        matchingAttributes: ['location', 'services'],
+      },
+    ];
+
+    const adjustedResults = baseResults
+      .map((result, index) => {
+        const adjustment = ((supplierHash + index * 7) % 10) / 200; // small deterministic tweak
+        return {
+          ...result,
+          similarity: Math.max(0, Math.min(1, result.similarity - adjustment)),
+        };
+      })
+      .filter(result => result.similarity >= minSimilarity)
+      .slice(0, maxResults);
+
+    return adjustedResults;
   }
 }
 

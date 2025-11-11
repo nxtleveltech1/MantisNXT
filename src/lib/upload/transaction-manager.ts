@@ -1,5 +1,6 @@
 import { PoolClient } from 'pg';
 import { withTransaction } from '@/lib/database';
+import crypto from 'crypto';
 import {
   PriceListUpload,
   BulkImportJob,

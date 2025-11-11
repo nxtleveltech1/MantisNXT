@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
+import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, LogIn, AlertCircle, Building2 } from 'lucide-react'
 
@@ -31,8 +32,8 @@ export default function LoginPage() {
 
   const router = useRouter()
 
-  const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginFormSchema),
+  const form = useForm<LoginFormData, any, LoginFormData>({
+    resolver: zodResolver(loginFormSchema) as Resolver<LoginFormData, any, LoginFormData>,
     defaultValues: {
       email: '',
       password: '',

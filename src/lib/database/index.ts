@@ -12,7 +12,8 @@ import {
   testConnection as enterpriseTestConnection,
   getPoolStatus as enterpriseGetPoolStatus,
   closePool as enterpriseClosePool,
-  dbManager
+  dbManager,
+  enterpriseDb as enterpriseDbFromManager
 } from '../../../lib/database/enterprise-connection-manager';
 
 /**
@@ -166,6 +167,11 @@ export class DatabaseManager {
  * Singleton database manager instance
  */
 export const db = new DatabaseManager();
+
+/**
+ * Export dbManager and enterpriseDb from enterprise connection manager for backwards compatibility
+ */
+export { dbManager, enterpriseDbFromManager as enterpriseDb };
 
 /**
  * Default export is the pool-compatible interface

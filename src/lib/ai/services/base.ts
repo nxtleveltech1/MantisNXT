@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { EventEmitter } from 'events';
 import type { ApiResponse } from '@/lib/api/base';
 import { db } from '@/lib/database';

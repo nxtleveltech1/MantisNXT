@@ -7,6 +7,8 @@ import {
   BatchCategorySuggestionSchema,
   CategorySuggestionSchema,
   parseStructuredJsonResponse,
+  type BatchSuggestion,
+  type SingleSuggestion,
 } from './parser';
 import { isReasoningModel, supportsJsonSchema } from './fallback';
 import type { ProviderConfig } from './resolver';
@@ -41,7 +43,7 @@ export async function runProviderBatch(
   products: EnrichedProduct[],
   categories: CategoryHierarchy[],
   options: EngineOptions = {}
-): Promise<z.infer<typeof BatchCategorySuggestionSchema> | null> {
+): Promise<BatchSuggestion | null> {
   console.log(
     `[engine] runProviderBatch start: provider=${provider.provider}, model=${provider.model}, products=${products.length}, timeout=${options.timeoutMs ?? DEFAULT_TIMEOUT_MS}`
   );
@@ -121,7 +123,12 @@ Return ONLY valid JSON matching this schema:
     });
     const model = anthropic(modelName || 'claude-3-5-sonnet-20241022');
     try {
-      const opts: any = { model, schema: BatchCategorySuggestionSchema, prompt, maxTokens: 1500 };
+      const opts: any = {
+        model,
+        schema: BatchCategorySuggestionSchema,
+        prompt,
+        maxOutputTokens: 1500,
+      };
       if (!isReasoningModel(modelName)) opts.temperature = 0.1;
       mark('schemaUsed');
       const result = await withTimeout(
@@ -130,16 +137,16 @@ Return ONLY valid JSON matching this schema:
         `anthropic batch generateObject (${modelName || 'default'})`
       );
       console.log(
-        `[engine] runProviderBatch success (anthropic schema) provider=${provider.provider} model=${modelName} suggestions=${result.object?.suggestions?.length ?? 0}`
+        `[engine] runProviderBatch success (anthropic schema) provider=${provider.provider} model=${modelName} suggestions=${(result.object as BatchSuggestion | null)?.suggestions?.length ?? 0}`
       );
-      return result.object;
+      return (result.object as BatchSuggestion | null) ?? null;
     } catch (err: any) {
       // JSON-mode fallback
       mark('providerFallbacks');
       const jsonPrompt = `${prompt}
 
 IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
-      const textOpts: any = { model, prompt: jsonPrompt, maxTokens: 2000 };
+      const textOpts: any = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
       if (!isReasoningModel(modelName)) textOpts.temperature = 0.1;
       const text = await withTimeout(
         generateText(textOpts),
@@ -162,7 +169,12 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
   const model = openai(modelName || 'gpt-4o-mini');
   try {
     if (supportsJsonSchema(modelName)) {
-      const opts: any = { model, schema: BatchCategorySuggestionSchema, prompt, maxTokens: 1500 };
+      const opts: any = {
+        model,
+        schema: BatchCategorySuggestionSchema,
+        prompt,
+        maxOutputTokens: 1500,
+      };
       if (!isReasoningModel(modelName)) opts.temperature = 0.1;
       mark('schemaUsed');
       const result = await withTimeout(
@@ -171,16 +183,16 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
         `openai batch generateObject (${modelName})`
       );
       console.log(
-        `[engine] runProviderBatch success (openai schema) provider=${provider.provider} model=${modelName} suggestions=${result.object?.suggestions?.length ?? 0}`
+        `[engine] runProviderBatch success (openai schema) provider=${provider.provider} model=${modelName} suggestions=${(result.object as BatchSuggestion | null)?.suggestions?.length ?? 0}`
       );
-      return result.object;
+      return (result.object as BatchSuggestion | null) ?? null;
     } else {
       // Direct JSON-mode
       mark('jsonModeUsed');
       const jsonPrompt = `${prompt}
 
 IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
-      const textOpts: any = { model, prompt: jsonPrompt, maxTokens: 2000 };
+      const textOpts: any = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
       if (!isReasoningModel(modelName)) textOpts.temperature = 0.1;
       const text = await withTimeout(
         generateText(textOpts),
@@ -203,7 +215,7 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
     const jsonPrompt = `${prompt}
 
 IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
-    const textOpts: any = { model, prompt: jsonPrompt, maxTokens: 2000 };
+    const textOpts: any = { model, prompt: jsonPrompt, maxOutputTokens: 2000 };
     if (!isReasoningModel(modelName)) textOpts.temperature = 0.1;
     const text = await withTimeout(
       generateText(textOpts),
@@ -223,7 +235,7 @@ export async function runProviderSingle(
   product: EnrichedProduct,
   categories: CategoryHierarchy[],
   options: EngineOptions = {}
-): Promise<z.infer<typeof CategorySuggestionSchema> | null> {
+): Promise<SingleSuggestion | null> {
   const modelName = provider.model ? String(provider.model).trim() : undefined;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const specs = extractSpecifications(product.attrs_json);
@@ -270,7 +282,12 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
     });
     const model = anthropic(modelName || 'claude-3-5-sonnet-20241022');
     try {
-      const opts: any = { model, schema: CategorySuggestionSchema, prompt, maxTokens: 800 };
+      const opts: any = {
+        model,
+        schema: CategorySuggestionSchema,
+        prompt,
+        maxOutputTokens: 800,
+      };
       if (!isReasoningModel(modelName)) opts.temperature = 0.1;
       mark('schemaUsed');
       const result = await withTimeout(
@@ -278,11 +295,11 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
         timeoutMs,
         `anthropic single generateObject (${modelName || 'default'})`
       );
-      return result.object;
+      return (result.object as SingleSuggestion | null) ?? null;
     } catch {
       mark('providerFallbacks');
       const text = await withTimeout(
-        generateText({ model, prompt, maxTokens: 1200 }),
+        generateText({ model, prompt, maxOutputTokens: 1200 }),
         timeoutMs,
         `anthropic single generateText JSON-mode (${modelName || 'default'})`
       );
@@ -297,7 +314,12 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
   const model = openai(modelName || 'gpt-4o-mini');
   try {
     if (supportsJsonSchema(modelName)) {
-      const opts: any = { model, schema: CategorySuggestionSchema, prompt, maxTokens: 800 };
+      const opts: any = {
+        model,
+        schema: CategorySuggestionSchema,
+        prompt,
+        maxOutputTokens: 800,
+      };
       if (!isReasoningModel(modelName)) opts.temperature = 0.1;
       mark('schemaUsed');
       const result = await withTimeout(
@@ -305,11 +327,11 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
         timeoutMs,
         `openai single generateObject (${modelName})`
       );
-      return result.object;
+      return (result.object as SingleSuggestion | null) ?? null;
     } else {
       mark('jsonModeUsed');
       const text = await withTimeout(
-        generateText({ model, prompt, maxTokens: 1200 }),
+        generateText({ model, prompt, maxOutputTokens: 1200 }),
         timeoutMs,
         `openai single generateText JSON-mode (${modelName || 'default'})`
       );
@@ -318,7 +340,7 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
   } catch {
     mark('providerFallbacks');
     const text = await withTimeout(
-      generateText({ model, prompt, maxTokens: 1200 }),
+      generateText({ model, prompt, maxOutputTokens: 1200 }),
       timeoutMs,
       `openai single JSON-fallback generateText (${modelName || 'default'})`
     );

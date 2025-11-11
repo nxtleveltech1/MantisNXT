@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'
-import { AIChatService, type ChatRequestOptions, type StreamingResult } from '@/lib/ai/services'
+import { AIChatService, type ChatRequestOptions, type StreamingResult, type ConversationOptions } from '@/lib/ai/services'
 import { getAIConfig, updateAIConfig } from '@/lib/ai/config'
 import { getConfig as getServiceConfig, upsertConfig as upsertServiceConfig } from '@/app/api/v1/ai/config/_store'
-import type { AIChatMessage, AIStreamChunk, AIProviderId } from '@/types/ai'
+import type { AIChatMessage, AIStreamChunk, AIProviderId, AIProvider, AIConfig, AIProviderConfig } from '@/types/ai'
 import {
   getSupportedModels,
   normalizeModelForProvider,
@@ -85,7 +85,10 @@ type ConversationOptionsInput = z.infer<typeof ConversationOptionsSchema>
 
 const ChatQuerySchema = z.object({
   conversationId: z.string().min(1, 'Conversation ID is required'),
-  includeMessages: z.string().optional().transform(value => (value === undefined ? true : value === 'true')),
+  includeMessages: z.preprocess(
+    (val) => val === undefined ? true : val === 'true' || val === true,
+    z.boolean()
+  ).default(true),
 })
 
 type ChatQueryParams = z.infer<typeof ChatQuerySchema>
@@ -101,7 +104,7 @@ async function ensureAssistantRuntimeConfig(context: RequestContext): Promise<As
       || (await upsertServiceConfig(orgId, 'assistant', { config: {}, enabled: false }))
 
     const activeProvider = normalizeProviderId(record.config.activeProvider || record.config.provider)
-    const providerPartials: Record<AIProviderId, any> = {}
+    const providerPartials: Partial<Record<AIProvider, any>> = {}
     const providerSections = record.config.providers ?? {}
 
     const collectProvider = (key: string) => {
@@ -175,7 +178,9 @@ async function ensureAssistantRuntimeConfig(context: RequestContext): Promise<As
       ...currentConfig.fallbackOrder.filter((id) => id !== activeProvider),
     ]
 
-    const providerUpdate = Object.keys(providerPartials).length > 0 ? { providers: providerPartials } : {}
+    const providerUpdate: Partial<AIConfig> = Object.keys(providerPartials).length > 0 
+      ? { providers: providerPartials as Record<AIProviderId, AIProviderConfig> }
+      : {}
 
     updateAIConfig({
       defaultProvider: activeProvider,
@@ -183,7 +188,7 @@ async function ensureAssistantRuntimeConfig(context: RequestContext): Promise<As
       enableFeatures: true,
       enableStreaming: true,
       ...providerUpdate,
-    })
+    } as Partial<AIConfig>)
 
     return {
       provider: activeProvider,
@@ -196,7 +201,8 @@ async function ensureAssistantRuntimeConfig(context: RequestContext): Promise<As
 }
 
 const postHandler = ApiMiddleware.withValidation(ChatRequestSchema, { validateBody: true }, { allowAnonymous: true })(
-  async (request: NextRequest, context: RequestContext, payload: ChatRequestPayload) => {
+  async (request: NextRequest, context: RequestContext, rawPayload) => {
+    const payload = rawPayload as ChatRequestPayload
     try {
       const messages = payload.messages.map(cloneMessage)
       const latestMessage = messages[messages.length - 1]
@@ -361,7 +367,7 @@ When asked about specific data, provide accurate information from the system con
       }
 
       // Persist assistant message if requested
-      if (shouldPersist && context.user && response.message) {
+      if (shouldPersist && context.user && response.data?.text) {
         const orgId = resolveOrgId(context.user.organizationId)
         const userId = context.user.id
 
@@ -370,12 +376,12 @@ When asked about specific data, provide accurate information from the system con
           userId,
           conversationId,
           'assistant',
-          response.message,
+          response.data.text,
           {
             provider: response.provider,
             model: response.model,
-            finishReason: response.finishReason,
-            tokenUsage: response.tokenUsage,
+            finishReason: response.data.finishReason,
+            tokenUsage: response.data.usage,
             timestamp: new Date().toISOString(),
             requestId,
           }
@@ -391,10 +397,8 @@ When asked about specific data, provide accurate information from the system con
         },
         'Chat response generated successfully',
         {
-          requestId: response.requestId,
+          requestId: response.requestId || requestId,
           processingTime: response.durationMs,
-          provider: response.provider,
-          persisted: shouldPersist,
         }
       )
     } catch (error) {
@@ -408,7 +412,8 @@ When asked about specific data, provide accurate information from the system con
 )
 
 const getHandler = ApiMiddleware.withValidation(ChatQuerySchema, { validateQuery: true, validateBody: false }, { allowAnonymous: true })(
-  async (_request: NextRequest, _context: RequestContext, query: ChatQueryParams) => {
+  async (_request, _context, rawQuery) => {
+    const query = rawQuery as ChatQueryParams
     try {
       const conversation = chatService.getConversationHistory(query.conversationId)
       const includeMessages = query.includeMessages
@@ -471,7 +476,7 @@ function buildUserMetadata(context: RequestContext) {
 function buildConversationOptions(
   options: ConversationOptionsInput,
   overrides: Partial<ConversationOptionsInput>
-): ConversationOptionsInput {
+): ConversationOptions {
   const merged: ConversationOptionsInput = { ...options }
 
   for (const [key, value] of Object.entries(overrides)) {
@@ -480,7 +485,7 @@ function buildConversationOptions(
     }
   }
 
-  return merged
+  return merged as ConversationOptions
 }
 
 function buildChatOptions(
@@ -601,8 +606,8 @@ function toEventStream(
             if (done) break
 
             // Collect chunks for persistence
-            if (value.type === 'content' && value.content) {
-              chunks.push(value.content)
+            if (value.token) {
+              chunks.push(value.token)
             }
 
             const chunkEvent = `event: chunk\ndata: ${JSON.stringify(value)}\n\n`

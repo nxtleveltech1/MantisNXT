@@ -376,7 +376,7 @@ async function getBulkImportHistory(
   try {
     return await withTransaction(async (client) => {
       let whereClause = '';
-      const params = [limit, offset];
+      const params: Array<number | string> = [limit, offset];
 
       if (status) {
         whereClause = 'WHERE status = $3';
@@ -396,33 +396,33 @@ async function getBulkImportHistory(
       `, params);
 
       return result.rows.map(row => ({
-        id: row.id,
-        uploads: row.upload_ids,
+        id: String(row.id),
+        uploads: Array.isArray(row.upload_ids) ? row.upload_ids : [],
         status: row.status,
         config: {
-          batchSize: row.batch_size,
+          batchSize: Number(row.batch_size) || 0,
           parallelProcessing: true,
           validateBeforeImport: true,
           stopOnError: false
         },
         progress: {
-          uploadsProcessed: row.uploads_processed,
-          totalUploads: row.total_uploads,
-          currentPhase: 'completed',
-          percentage: row.percentage
+          uploadsProcessed: Number(row.uploads_processed) || 0,
+          totalUploads: Number(row.total_uploads) || 0,
+          currentPhase: 'cleanup',
+          percentage: Number(row.percentage) || 0
         },
         results: {
-          successful: row.successful_uploads,
-          failed: row.failed_uploads,
-          totalRowsProcessed: row.total_rows_processed,
-          totalRowsImported: row.total_rows_imported
+          successful: Array.isArray(row.successful_uploads) ? row.successful_uploads : [],
+          failed: Array.isArray(row.failed_uploads) ? row.failed_uploads : [],
+          totalRowsProcessed: Number(row.total_rows_processed) || 0,
+          totalRowsImported: Number(row.total_rows_imported) || 0
         },
-        createdBy: row.created_by,
+        createdBy: String(row.created_by),
         createdAt: row.created_at,
-        startedAt: row.started_at,
-        completedAt: row.completed_at,
-        duration: row.duration
-      }));
+        startedAt: row.started_at ?? undefined,
+        completedAt: row.completed_at ?? undefined,
+        duration: row.duration ?? undefined
+      } as BulkImportJob));
     });
 
   } catch (error) {

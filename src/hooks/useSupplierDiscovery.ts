@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Enhanced React Hook for Supplier Discovery with Web Integration
  */

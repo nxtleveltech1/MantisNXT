@@ -42,29 +42,9 @@ import {
   Info,
 } from 'lucide-react'
 import AIChatInterfaceV5 from '@/components/ai/ChatInterfaceV5'
-import AIInsightCards from '@/components/ai/InsightCards'
+import AIInsightCards, { type AIInsight as InsightCardInsight } from '@/components/ai/InsightCards'
 
-interface AIInsight {
-  id: string
-  type: 'opportunity' | 'risk' | 'trend' | 'anomaly' | 'prediction' | 'recommendation'
-  priority: 'critical' | 'high' | 'medium' | 'low'
-  title: string
-  description: string
-  summary: string
-  impact: {
-    financial: number
-    operational: string
-    timeline: string
-    probability: number
-  }
-  confidence: number
-  dataPoints: number
-  sources: string[]
-  category: string
-  tags: string[]
-  createdAt: string
-  status: 'new' | 'viewed' | 'bookmarked' | 'actioned' | 'dismissed'
-}
+type AIInsight = InsightCardInsight
 
 export default function AIInsightsPage() {
   // State

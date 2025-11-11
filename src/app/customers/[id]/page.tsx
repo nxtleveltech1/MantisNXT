@@ -27,6 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
 interface Customer {
   id: string;
@@ -85,7 +86,8 @@ export default function CustomerDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const customerId = params.id as string;
+  const rawId = params && 'id' in params ? params.id : undefined;
+  const customerId = Array.isArray(rawId) ? rawId[0] : rawId ?? '';
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loyalty, setLoyalty] = useState<CustomerLoyalty | null>(null);
@@ -208,39 +210,7 @@ export default function CustomerDetailsPage() {
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'N/A';
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch (error) {
-      console.warn('Failed to format date:', dateString, error);
-      return 'N/A';
-    }
-  };
 
-  const formatDateTime = (dateString: string | null | undefined) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'N/A';
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch (error) {
-      console.warn('Failed to format date:', dateString, error);
-      return 'N/A';
-    }
-  };
 
   const formatCurrency = (value: number | null) => {
     if (value === null || value === undefined) return 'N/A';

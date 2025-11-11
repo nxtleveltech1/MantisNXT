@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthContext } from '@/middleware/auth';
 import { getPerformanceStats, getEndpointMetrics } from '@/lib/performance/api-monitor';
 import { PerformanceOptimizer } from '@/lib/performance/optimizer';
-import { query } from '@/lib/database';
+import { pool } from '@/lib/database';
 
 // GET /api/performance/monitor - Get performance metrics
 export const GET = withAuth(async (request: NextRequest, context: AuthContext) => {
@@ -33,7 +33,7 @@ export const GET = withAuth(async (request: NextRequest, context: AuthContext) =
     // Get database performance metrics
     let dbMetrics = null;
     try {
-      const optimizer = new PerformanceOptimizer(query);
+      const optimizer = new PerformanceOptimizer(pool as any);
       dbMetrics = await optimizer.analyzeDatabasePerformance();
     } catch (error) {
       console.warn('Failed to get database metrics:', error);
@@ -90,7 +90,7 @@ export const POST = withAuth(async (request: NextRequest, context: AuthContext) 
     const body = await request.json();
     const { action, options = {} } = body;
 
-    const optimizer = new PerformanceOptimizer(query);
+    const optimizer = new PerformanceOptimizer(pool as any);
     let result;
 
     switch (action) {

@@ -152,10 +152,14 @@ const GenerationQuerySchema = z.object({
   format: z.enum(['json', 'csv']).optional(),
 })
 
-const postHandler = ApiMiddleware.withValidation(GenerationRequestSchema, {
-  requiredPermissions: ['write'],
-  rateLimitType: 'aiGenerate',
-})(async (request: NextRequest, context: RequestContext, payload: GenerationRequest) => {
+type GenerationQueryParams = z.infer<typeof GenerationQuerySchema>
+
+const postHandler = ApiMiddleware.withValidation(
+  GenerationRequestSchema,
+  { validateBody: true },
+  { requiredPermissions: ['write'], rateLimitType: 'aiGenerate' }
+)(async (request, context, rawPayload) => {
+  const payload = rawPayload as GenerationRequest
   if (payload.batch && payload.stream) {
     return ApiMiddleware.createErrorResponse('Batch generation does not support streaming', 400)
   }
@@ -239,12 +243,12 @@ const postHandler = ApiMiddleware.withValidation(GenerationRequestSchema, {
   }
 })
 
-const getHandler = ApiMiddleware.withValidation(GenerationQuerySchema, {
-  validateQuery: true,
-  validateBody: false,
-  requiredPermissions: ['read'],
-  rateLimitType: 'aiGenerate',
-})(async (_request: NextRequest, _context: RequestContext, query) => {
+const getHandler = ApiMiddleware.withValidation(
+  GenerationQuerySchema,
+  { validateQuery: true, validateBody: false },
+  { requiredPermissions: ['read'], rateLimitType: 'aiGenerate' }
+)(async (_request, _context, rawQuery) => {
+  const query = rawQuery as GenerationQueryParams
   if (query.historyId) {
     const record = generationHistory.get(query.historyId)
     if (!record) {
@@ -503,7 +507,7 @@ function storeHistory(params: {
     promptHash: params.promptHash,
     requestId: params.requestId,
     createdAt: new Date().toISOString(),
-    provider: params.response.provider,
+    _provider: params.response.provider,
     model: params.response.model,
     usage: params.response.usage,
     costInCents: params.response.usage?.costInCents,
@@ -654,7 +658,7 @@ function toCsv(records: GenerationHistoryRecord[]): string {
       record.id,
       record.mode,
       record.promptHash,
-      record.provider ?? '',
+      record._provider ?? '',
       record.model ?? '',
       record.costInCents ?? '',
       record.createdAt,

@@ -15,7 +15,7 @@ import type {
 } from '@/lib/suppliers/types/SupplierDomain'
 
 // Initialize services
-  const repository = new PostgreSQLSupplierRepository()
+const repository = new PostgreSQLSupplierRepository()
 const exportService = new SupplierExportService(repository)
 
 // Validation Schema
@@ -70,20 +70,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const exportRequest: ExportRequest = validationResult.data
-
-    // Convert date strings to Date objects if present
-    if (exportRequest.filters.createdAfter) {
-      exportRequest.filters.createdAfter = new Date(exportRequest.filters.createdAfter)
-    }
-    if (exportRequest.filters.createdBefore) {
-      exportRequest.filters.createdBefore = new Date(exportRequest.filters.createdBefore)
+    const parsed = validationResult.data
+    const exportRequest: ExportRequest = {
+      format: parsed.format,
+      template: parsed.template,
+      filters: {
+        ...parsed.filters,
+        createdAfter: parsed.filters.createdAfter ? new Date(parsed.filters.createdAfter) : undefined,
+        createdBefore: parsed.filters.createdBefore ? new Date(parsed.filters.createdBefore) : undefined
+      },
+      includePerformance: parsed.includePerformance,
+      includeContacts: parsed.includeContacts,
+      includeAddresses: parsed.includeAddresses,
+      title: parsed.title,
+      description: parsed.description
     }
 
     const exportResult = await exportService.exportSuppliers(exportRequest)
+    const payload = new Uint8Array(exportResult.data)
 
     // Return file as download
-    return new NextResponse(exportResult.data, {
+    return new NextResponse(payload, {
       status: 200,
       headers: {
         'Content-Type': exportResult.mimeType,
@@ -137,8 +144,9 @@ export async function GET(request: NextRequest) {
     }
 
     const exportResult = await exportService.exportSuppliers(exportRequest)
+    const payload = new Uint8Array(exportResult.data)
 
-    return new NextResponse(exportResult.data, {
+    return new NextResponse(payload, {
       status: 200,
       headers: {
         'Content-Type': exportResult.mimeType,

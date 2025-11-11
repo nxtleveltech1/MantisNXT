@@ -1,51 +1,27 @@
 import { NextResponse } from "next/server";
-import { dbManager } from "@/lib/database/enterprise-connection-manager";
+import { pool } from "@/lib/database";
 
 export async function GET() {
   try {
-    // Get connection manager status
-    const status = dbManager.getStatus();
-
-    // Get query metrics
-    const queryMetrics = dbManager.getQueryMetrics();
-
-    // Calculate pool utilization
-    const poolUtilization =
-      status.poolStatus.total > 0
-        ? ((status.poolStatus.active / status.poolStatus.total) * 100).toFixed(
-            1
-          )
-        : "0.0";
+    const total = (pool as any).totalCount ?? 0;
+    const idle = (pool as any).idleCount ?? 0;
+    const waiting = (pool as any).waitingCount ?? 0;
+    const active = total - idle;
+    const utilization = total > 0 ? ((active / total) * 100).toFixed(1) : "0.0";
 
     return NextResponse.json(
       {
         poolStatus: {
-          total: status.poolStatus.total,
-          active: status.poolStatus.active,
-          idle: status.poolStatus.idle,
-          waiting: status.poolStatus.waiting,
-          utilization: `${poolUtilization}%`,
-        },
-        circuitBreaker: {
-          state: status.state,
-          failures: status.circuitBreakerFailures,
-          consecutiveSuccesses: status.circuitBreakerConsecutiveSuccesses,
-          threshold: status.circuitBreakerThreshold,
+          total,
+          active,
+          idle,
+          waiting,
+          utilization: `${utilization}%`,
         },
         queryMetrics: {
-          totalQueries: queryMetrics.totalQueries,
-          successfulQueries: queryMetrics.successfulQueries,
-          slowQueries: queryMetrics.slowQueries,
-          avgQueryDuration: queryMetrics.avgQueryDuration.toFixed(2),
+          message: "Detailed query metrics unavailable without enterprise DB manager",
         },
-        topSlowQueries: queryMetrics.topSlowQueries.map((q: any) => ({
-          fingerprint: q.fingerprint,
-          count: q.count,
-          avgDuration: q.avgDuration.toFixed(2),
-          maxDuration: q.maxDuration.toFixed(2),
-          minDuration: q.minDuration.toFixed(2),
-          lastExecuted: new Date(q.lastExecuted).toISOString(),
-        })),
+        topSlowQueries: [],
         timestamp: new Date().toISOString(),
       },
       {
@@ -65,11 +41,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
-import { NextResponse } from 'next/server'
-export async function GET() {
-  return NextResponse.json(
-    { success: false, error: 'Deprecated. Use /api/health', deprecated: true, redirectTo: '/api/health' },
-    { status: 410 }
-  )
 }

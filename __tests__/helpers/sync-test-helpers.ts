@@ -173,7 +173,7 @@ export const createMockOdooService = (overrides: Record<string, any> = {}) => {
  * Create mock sync progress tracker
  */
 export const createMockSyncProgressTracker = () => {
-  let progress = {
+  const progress = {
     jobId: `job-${Date.now()}`,
     state: 'draft',
     startTime: null as number | null,

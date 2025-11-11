@@ -84,11 +84,9 @@ export async function POST(request: NextRequest) {
               services: supplier.services || [],
               products: supplier.products || [],
               certifications: supplier.certifications || [],
-              tags: supplier.tags || [],
               addresses: supplier.addresses || [],
               socialMedia: supplier.socialMedia || {},
               // Include transformed form data fields
-              category: transformedData.categories?.[0], // For backwards compatibility
               categories: transformedData.categories || [],
               tags: transformedData.tags || supplier.tags || [],
               brands: transformedData.brands || [],

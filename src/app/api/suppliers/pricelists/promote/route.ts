@@ -1,4 +1,4 @@
-/* eslint-disable ssot/no-legacy-supplier-inventory */ // TODO(SSOT): Migrate writes to core.supplier_product/core.stock_on_hand
+  // TODO(SSOT): Migrate writes to core.supplier_product/core.stock_on_hand
 import { NextRequest, NextResponse } from 'next/server'
 import { query, withTransaction } from '@/lib/database'
 import { z } from 'zod'

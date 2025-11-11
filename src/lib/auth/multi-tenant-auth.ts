@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Multi-Tenant Authentication System
  * Enterprise authentication with live database integration

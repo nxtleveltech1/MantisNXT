@@ -107,7 +107,7 @@ async function handlePreview(
 
     // Normalize server URL - but don't guess Odoo.sh URLs
     // Use the exact URL from config/form, only remove trailing slash
-    let normalizedUrl = String(finalServerUrl).replace(/\/$/, '').trim();
+    const normalizedUrl = String(finalServerUrl).replace(/\/$/, '').trim();
     
     // Don't auto-normalize Odoo.sh project URLs - use exactly what's provided
     // If the URL format is wrong, the user should fix it in config
@@ -127,7 +127,7 @@ async function handlePreview(
     
     // Ensure database_name is a string (handle potential JSONB parsing issues)
     // For Odoo.sh, the database name should match exactly what was used in test connection
-    let normalizedDatabaseName = String(finalDatabaseName).trim();
+    const normalizedDatabaseName = String(finalDatabaseName).trim();
     
     // Normalize Odoo.sh database name - remove trailing numbers if present
     // Some Odoo.sh instances store database names like "charlesb-pixel-main-production-5308779"

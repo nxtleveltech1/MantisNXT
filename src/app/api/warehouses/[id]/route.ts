@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { CacheInvalidator } from '@/lib/cache/invalidation'
 
 // Import mock data from parent route
-let mockWarehouseData = [
+const mockWarehouseData = [
   {
     id: 'wh_001',
     name: 'Main Warehouse',

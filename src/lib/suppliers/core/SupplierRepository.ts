@@ -11,7 +11,8 @@ import type {
   UpdateSupplierData,
   SupplierFilters,
   SupplierSearchResult,
-  SupplierMetrics
+  SupplierMetrics,
+  SupplierPerformanceSnapshot
 } from '../types/SupplierDomain'
 
 export interface SupplierRepository {
@@ -29,7 +30,7 @@ export interface SupplierRepository {
 
   // Analytics and metrics
   getMetrics(): Promise<SupplierMetrics>
-  getPerformanceData(supplierId: string): Promise<any>
+  getPerformanceData(supplierId: string): Promise<SupplierPerformanceSnapshot | null>
 
   // Search and discovery
   search(query: string, filters?: SupplierFilters): Promise<SupplierSearchResult>
@@ -221,7 +222,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   async create(data: CreateSupplierData): Promise<Supplier> {
     const supplierId: string = await withTransaction(async (client: PoolClient) => {
       const supplierQuery = `
-        INSERT INTO suppliers (
+        INSERT INTO public.suppliers (
           name, code, legal_name, website, industry, tier, status, category, subcategory,
           tags, brands, tax_id, registration_number, founded_year, employee_count, annual_revenue,
           currency, created_at, updated_at
@@ -704,7 +705,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       })
 
       const supplierResult = await client.query(`
-        INSERT INTO suppliers (
+        INSERT INTO public.suppliers (
           name, code, legal_name, website, industry, tier, status, category, subcategory,
           tags, tax_id, registration_number, founded_year, employee_count, annual_revenue,
           currency, created_at, updated_at
@@ -918,9 +919,24 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     }
   }
 
-  async getPerformanceData(supplierId: string): Promise<any> {
+  async getPerformanceData(supplierId: string): Promise<SupplierPerformanceSnapshot | null> {
     const result = await query('SELECT * FROM supplier_performance WHERE supplier_id = $1', [supplierId])
-    return result.rows[0] || null
+    const row = result.rows[0] as (SupplierPerformanceSnapshot & { total_orders?: number }) | undefined
+    if (!row) {
+      return null
+    }
+
+    const totalOrders =
+      typeof row.totalOrders === 'number'
+        ? row.totalOrders
+        : typeof row.total_orders === 'number'
+          ? row.total_orders
+          : undefined
+
+    return {
+      ...row,
+      ...(totalOrders !== undefined ? { totalOrders } : {})
+    }
   }
 
   async search(query: string, filters?: SupplierFilters): Promise<SupplierSearchResult> {
@@ -939,9 +955,12 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     }
 
     const filters: SupplierFilters = {
-      category: [supplier.category],
       tier: [supplier.tier],
       limit: 5
+    }
+
+    if (supplier.category) {
+      filters.category = [supplier.category]
     }
 
     const result = await this.findMany(filters)
@@ -1063,6 +1082,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       tier: row.tier || 'approved',
       category: row.category,
       subcategory: row.subcategory,
+      categories: row.categories ?? (row.category ? [row.category] : []),
       tags: row.tags || [],
       brands: row.brands || [],
 

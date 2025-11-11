@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
     const allAlerts = await alertsCache.get(cacheKey);
 
     // Apply filters
-    let filteredAlerts = allAlerts.filter(alert => {
+    const filteredAlerts = allAlerts.filter(alert => {
       if (validatedParams.type && validatedParams.type.length > 0) {
         if (!validatedParams.type.includes(alert.type)) return false;
       }

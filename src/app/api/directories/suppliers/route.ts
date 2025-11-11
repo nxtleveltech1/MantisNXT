@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     // Get contacts for all suppliers
     const supplierIds = suppliers.map((s: any) => s.id).filter(Boolean)
     
-    let contactsBySupplier: Record<string, SupplierContact[]> = {}
+    const contactsBySupplier: Record<string, SupplierContact[]> = {}
     
     if (supplierIds.length > 0) {
       try {

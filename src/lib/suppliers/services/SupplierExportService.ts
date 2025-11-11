@@ -10,6 +10,8 @@ import type {
   ExportResult
 } from '../types/SupplierDomain'
 
+type ExportedSupplierJSON = Record<string, unknown>
+
 export class SupplierExportService {
   constructor(private repository: SupplierRepository) {}
 
@@ -196,14 +198,17 @@ export class SupplierExportService {
   }
 
   private supplierToCSVRow(supplier: Supplier, request: ExportRequest): string[] {
+    const primaryCategory = supplier.category ?? supplier.categories?.[0] ?? ''
+    const primarySubcategory = supplier.subcategory ?? ''
+
     const row = [
       supplier.id,
       supplier.name,
       supplier.code,
       supplier.status,
       supplier.tier,
-      supplier.category,
-      supplier.subcategory || ''
+      primaryCategory,
+      primarySubcategory
     ]
 
     if (request.template === 'detailed' || request.template === 'compliance') {
@@ -281,15 +286,18 @@ export class SupplierExportService {
     return row
   }
 
-  private formatSupplierForJSON(supplier: Supplier, request: ExportRequest): any {
-    const formatted: any = {
+  private formatSupplierForJSON(supplier: Supplier, request: ExportRequest): ExportedSupplierJSON {
+    const primaryCategory = supplier.category ?? supplier.categories?.[0] ?? null
+    const primarySubcategory = supplier.subcategory ?? null
+
+    const formatted: ExportedSupplierJSON = {
       id: supplier.id,
       name: supplier.name,
       code: supplier.code,
       status: supplier.status,
       tier: supplier.tier,
-      category: supplier.category,
-      subcategory: supplier.subcategory,
+      category: primaryCategory,
+      subcategory: primarySubcategory,
       tags: supplier.tags,
       createdAt: supplier.createdAt.toISOString(),
       updatedAt: supplier.updatedAt.toISOString()

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
+import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, UserPlus, AlertCircle, Building2, CheckCircle2 } from 'lucide-react'
 
@@ -18,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { authProvider } from '@/lib/auth/mock-provider'
 import { registerFormSchema, type RegisterFormData } from '@/lib/auth/validation'
+import type { RegistrationData } from '@/types/auth'
 import { SOUTH_AFRICAN_PROVINCES, BEE_LEVELS } from '@/types/auth'
 
 const steps = [
@@ -37,8 +39,8 @@ export default function RegisterPage() {
 
   const router = useRouter()
 
-  const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerFormSchema),
+  const form = useForm<RegisterFormData, any, RegisterFormData>({
+    resolver: zodResolver(registerFormSchema) as Resolver<RegisterFormData, any, RegisterFormData>,
     defaultValues: {
       organization_name: '',
       organization_legal_name: '',
@@ -102,7 +104,7 @@ export default function RegisterPage() {
       setIsLoading(true)
       setError(null)
 
-      const result = await authProvider.register(data)
+      const result = await authProvider.register(data as RegistrationData)
 
       if (result.success) {
         setSuccess(true)

@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import type { SupplierFormContact, SupplierFormData } from '@/types/supplier';
+
+type ValidationErrorNode = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is ValidationErrorNode =>
+  typeof value === 'object' && value !== null;
 
 // Supplier validation schemas
 export const SupplierContactSchema = z.object({
@@ -120,8 +126,8 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const validatePhone = (phone: string): boolean => {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-  return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+  const phoneRegex = /^[+]?([1-9]\d{0,15})$/;
+  return phoneRegex.test(phone.replace(/[\s()-]/g, ''));
 };
 
 export const validateTaxId = (taxId: string, country: string): boolean => {
@@ -161,27 +167,44 @@ export const validateWebsite = (website: string): boolean => {
 };
 
 // Form validation helpers
-export const getFieldError = (errors: any, fieldPath: string): string | undefined => {
-  const keys = fieldPath.split('.');
-  let current = errors;
-
-  for (const key of keys) {
-    if (current?.[key]) {
-      current = current[key];
-    } else {
-      return undefined;
-    }
+export const getFieldError = (
+  errors: ValidationErrorNode | undefined,
+  fieldPath: string
+): string | undefined => {
+  if (!errors) {
+    return undefined;
   }
 
-  return current?.message;
+  const keys = fieldPath.split('.');
+  let current: unknown = errors;
+
+  for (const key of keys) {
+    if (!isRecord(current) || !(key in current)) {
+      return undefined;
+    }
+    current = current[key];
+  }
+
+  if (typeof current === 'string') {
+    return current;
+  }
+
+  if (isRecord(current) && typeof current.message === 'string') {
+    return current.message;
+  }
+
+  return undefined;
 };
 
-export const hasFieldError = (errors: any, fieldPath: string): boolean => {
+export const hasFieldError = (
+  errors: ValidationErrorNode | undefined,
+  fieldPath: string
+): boolean => {
   return !!getFieldError(errors, fieldPath);
 };
 
 // Data transformation helpers
-export const sanitizeSupplierData = (data: any) => {
+export const sanitizeSupplierData = (data: Partial<SupplierFormData>) => {
   return {
     ...data,
     name: data.name?.trim(),
@@ -189,14 +212,14 @@ export const sanitizeSupplierData = (data: any) => {
     businessInfo: {
       ...data.businessInfo,
       legalName: data.businessInfo?.legalName?.trim(),
-      taxId: data.businessInfo?.taxId?.replace(/[\s\-]/g, ''),
+      taxId: data.businessInfo?.taxId?.replace(/[\s-]/g, ''),
       website: data.businessInfo?.website?.toLowerCase().trim(),
     },
-    contacts: data.contacts?.map((contact: any) => ({
+    contacts: data.contacts?.map((contact: SupplierFormContact) => ({
       ...contact,
       name: contact.name?.trim(),
       email: contact.email?.toLowerCase().trim(),
-      phone: contact.phone?.replace(/[\s\-\(\)]/g, ''),
+      phone: contact.phone?.replace(/[\s()-]/g, ''),
     })),
   };
 };

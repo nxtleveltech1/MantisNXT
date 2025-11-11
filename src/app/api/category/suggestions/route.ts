@@ -239,7 +239,11 @@ export async function POST(request: NextRequest) {
     for (const id of missingIds) {
       suggestions.push({
         supplier_product_id: id,
-        error: 'Product not found',
+        supplier_sku: '',
+        product_name: '',
+        current_category_id: null,
+        current_category_name: null,
+        suggestion: null,
       });
     }
 

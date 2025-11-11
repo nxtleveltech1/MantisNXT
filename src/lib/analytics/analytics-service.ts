@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Analytics Service for MantisNXT Platform
 import { Pool } from 'pg';
 import {

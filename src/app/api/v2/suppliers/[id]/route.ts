@@ -5,13 +5,30 @@
 import { NextRequest } from 'next/server'
 import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'
 import { UpdateSupplierSchema, EnhancedSupplier } from '@/lib/api/validation'
-import { mockSupplierData } from '../route'
+import { z } from 'zod'
+
+type InternalSupplier = EnhancedSupplier & Record<string, any> & { id: string }
+const mockSupplierData: InternalSupplier[] = []
+const UpdateSupplierBodySchema = UpdateSupplierSchema.omit({ id: true })
+type UpdateSupplierInput = z.infer<typeof UpdateSupplierBodySchema>
+
+function getSupplierIdFromRequest(request: NextRequest): string {
+  const segments = request.nextUrl.pathname.split('/').filter(Boolean)
+  return segments[segments.length - 1] ?? ''
+}
 
 // GET /api/v2/suppliers/[id] - Get specific supplier
 export const GET = ApiMiddleware.withAuth(
-  async (request: NextRequest, context: RequestContext, { params }: { params: Promise<{ id: string }> }) => {
+  async (request: NextRequest, context: RequestContext) => {
     try {
-      const { id } = await params
+      const id = getSupplierIdFromRequest(request)
+
+      if (!id) {
+        return ApiMiddleware.createErrorResponse(
+          'Supplier ID is required',
+          400
+        )
+      }
 
       const supplier = mockSupplierData.find(supplier => supplier.id === id)
       if (!supplier) {
@@ -145,10 +162,28 @@ export const GET = ApiMiddleware.withAuth(
 )
 
 // PUT /api/v2/suppliers/[id] - Update specific supplier
-export const PUT = ApiMiddleware.withValidation(UpdateSupplierSchema)(
-  async (request: NextRequest, context: RequestContext, validatedData, { params }: { params: Promise<{ id: string }> }) => {
+export const PUT = ApiMiddleware.withAuth(
+  async (request: NextRequest, context: RequestContext) => {
     try {
-      const { id } = await params
+      const id = getSupplierIdFromRequest(request)
+      if (!id) {
+        return ApiMiddleware.createErrorResponse(
+          'Supplier ID is required',
+          400
+        )
+      }
+
+      const body = await request.json()
+      const validation = UpdateSupplierBodySchema.safeParse(body)
+      if (!validation.success) {
+        return ApiMiddleware.createErrorResponse(
+          'Validation error',
+          400,
+          { validationErrors: validation.error.issues }
+        )
+      }
+
+      const validatedData = validation.data
 
       const supplierIndex = mockSupplierData.findIndex(supplier => supplier.id === id)
       if (supplierIndex === -1) {
@@ -197,8 +232,7 @@ export const PUT = ApiMiddleware.withValidation(UpdateSupplierSchema)(
 
       // Track what fields are being updated for audit purposes
       const changedFields = Object.keys(validatedData).filter(key => {
-        if (key === 'id') return false
-        const oldValue = existingSupplier[key as keyof EnhancedSupplier]
+        const oldValue = existingSupplier[key as keyof typeof existingSupplier]
         const newValue = validatedData[key as keyof typeof validatedData]
         return JSON.stringify(oldValue) !== JSON.stringify(newValue)
       })
@@ -226,7 +260,7 @@ export const PUT = ApiMiddleware.withValidation(UpdateSupplierSchema)(
       }
 
       // Update supplier
-      const updatedSupplier: EnhancedSupplier = {
+      const updatedSupplier: InternalSupplier = {
         ...existingSupplier,
         ...validatedData,
         // Merge nested objects properly
@@ -248,10 +282,10 @@ export const PUT = ApiMiddleware.withValidation(UpdateSupplierSchema)(
         action: 'update',
         changedFields,
         previousValues: Object.fromEntries(
-          changedFields.map(field => [field, existingSupplier[field as keyof EnhancedSupplier]])
+          changedFields.map(field => [field, existingSupplier[field as keyof typeof existingSupplier]])
         ),
         newValues: Object.fromEntries(
-          changedFields.map(field => [field, updatedSupplier[field as keyof EnhancedSupplier]])
+          changedFields.map(field => [field, updatedSupplier[field as keyof InternalSupplier]])
         ),
         performedBy: context.user?.email,
         timestamp: new Date().toISOString(),
@@ -278,9 +312,16 @@ export const PUT = ApiMiddleware.withValidation(UpdateSupplierSchema)(
 
 // DELETE /api/v2/suppliers/[id] - Delete specific supplier
 export const DELETE = ApiMiddleware.withAuth(
-  async (request: NextRequest, context: RequestContext, { params }: { params: Promise<{ id: string }> }) => {
+  async (request: NextRequest, context: RequestContext) => {
     try {
-      const { id } = await params
+      const id = getSupplierIdFromRequest(request)
+
+      if (!id) {
+        return ApiMiddleware.createErrorResponse(
+          'Supplier ID is required',
+          400
+        )
+      }
 
       const supplierIndex = mockSupplierData.findIndex(supplier => supplier.id === id)
       if (supplierIndex === -1) {

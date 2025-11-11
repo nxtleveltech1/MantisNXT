@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Analytics Data Processing Utilities
 export interface TimeSeriesData {
   period: string

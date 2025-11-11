@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
     const result = await inventorySelectionService.executeWorkflow(validated);
 
     return NextResponse.json({
-      success: result.success,
       ...result
     }, {
       status: result.success ? 200 : 500

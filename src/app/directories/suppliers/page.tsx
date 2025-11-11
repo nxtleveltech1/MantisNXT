@@ -46,6 +46,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
+import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -98,10 +99,10 @@ export default function SupplierContactsDirectoryPage() {
   const [deletingContact, setDeletingContact] = useState<ContactWithSupplier | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const form = useForm<ContactFormData & { supplierId: string }>({
+  const form = useForm<ContactFormData & { supplierId: string }, any, ContactFormData & { supplierId: string }>({
     resolver: zodResolver(contactFormSchema.extend({
       supplierId: z.string().min(1, 'Supplier is required'),
-    })),
+    })) as Resolver<ContactFormData & { supplierId: string }, any, ContactFormData & { supplierId: string }>,
     defaultValues: {
       name: '',
       email: '',

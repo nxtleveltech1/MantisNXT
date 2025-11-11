@@ -72,7 +72,7 @@ import {
 } from "lucide-react"
 
 // Enhanced AI Insight Types
-interface AIInsight {
+export interface AIInsight {
   id: string
   type: 'opportunity' | 'risk' | 'trend' | 'anomaly' | 'prediction' | 'recommendation'
   priority: 'critical' | 'high' | 'medium' | 'low'
