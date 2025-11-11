@@ -4,21 +4,7 @@ import type { ProviderConfig } from './resolver';
 import { loadCategoryAIConfig } from './resolver';
 import { processBatchesAcrossProviders } from './batcher';
 import { runProviderSingle } from './engine';
-
-export type CategorySuggestion = {
-  categoryId: string | null;
-  categoryName: string | null;
-  confidence: number;
-  reasoning: string | null;
-  alternatives?: Array<{
-    categoryId: string;
-    categoryName: string;
-    confidence: number;
-    reasoning: string | null;
-  }>;
-  provider: string | null;
-  proposedCategoryName: string | null;
-};
+import type { CategorySuggestion } from '@/lib/cmm/ai-categorization/types';
 
 export async function suggestCategoriesBatch(
   enrichedProducts: EnrichedProduct[],
@@ -119,10 +105,14 @@ export async function suggestCategorySingle(
       if (!categoryId) return null;
       const cat = cats.find(c => c.category_id === categoryId);
       if (!cat) return null;
+      const confidence = s.confidence ?? 0.5;
       return {
+        supplier_product_id: enrichedProduct.supplier_product_id,
+        category_id: cat.category_id,
+        category_name: cat.name,
         categoryId: cat.category_id,
         categoryName: cat.name,
-        confidence: s.confidence || 0.5,
+        confidence,
         reasoning: s.reasoning ?? null,
         alternatives: s.alternatives
           ? s.alternatives
@@ -133,6 +123,8 @@ export async function suggestCategorySingle(
                   ? {
                       categoryId: ac.category_id,
                       categoryName: ac.name,
+                      category_id: ac.category_id,
+                      category_name: ac.name,
                       confidence: a.confidence || 0.5,
                       reasoning: a.reasoning ?? null,
                     }
@@ -141,11 +133,12 @@ export async function suggestCategorySingle(
               .filter((x): x is NonNullable<typeof x> => !!x)
           : undefined,
         provider: r.provider ?? null,
+        proposed_category_name: s.proposed_category_name ?? s.proposedCategoryName ?? null,
         proposedCategoryName: s.proposed_category_name ?? s.proposedCategoryName ?? null,
       } as CategorySuggestion;
     })
     .filter((x): x is CategorySuggestion => !!x);
 
   if (valid.length === 0) return null;
-  return valid.sort((a, b) => b.confidence - a.confidence)[0];
+  return valid.sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
 }
