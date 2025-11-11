@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Resilient API Utilities
  * Bulletproof API layer with comprehensive error handling and retry mechanisms

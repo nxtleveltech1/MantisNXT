@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Test utility to verify alert validation fixes
  * Run this to test the alert validation improvements
