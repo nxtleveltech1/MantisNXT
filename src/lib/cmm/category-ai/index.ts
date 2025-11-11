@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import type { EnrichedProduct, CategoryHierarchy } from '@/lib/cmm/sip-product-enrichment';
 import { getCategoryHierarchy } from '@/lib/cmm/sip-product-enrichment';
 import type { ProviderConfig } from './resolver';

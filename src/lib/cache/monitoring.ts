@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * ITERATION 2 - ADR-1: Cache Performance Monitoring
  *

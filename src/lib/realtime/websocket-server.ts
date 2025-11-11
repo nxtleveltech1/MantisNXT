@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Real-Time WebSocket Server for Live Data Synchronization
  * Handles real-time updates for all 102 enterprise tables

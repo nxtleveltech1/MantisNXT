@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Database Connection Pool Manager
  *

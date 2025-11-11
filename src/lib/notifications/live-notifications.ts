@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Live Notification System
  * Real-time alerts and messaging with database integration

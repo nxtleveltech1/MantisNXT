@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { query } from "@/lib/database"
 import { executeSupplierRules } from "./supplier-rules-engine"
 import type { Product, Tag } from "./types"

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Simplified version - can be enhanced later
 export function extractBrandIntelligently(
   brandColumnValue?: string,

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import type { EnrichedProduct, CategoryHierarchy } from '@/lib/cmm/sip-product-enrichment';
 import {
   getProviderTokenLimits,

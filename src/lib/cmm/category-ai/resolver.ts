@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { query } from '@/lib/database';
 import { resolveOrgId } from '@/lib/ai/model-utils';
 

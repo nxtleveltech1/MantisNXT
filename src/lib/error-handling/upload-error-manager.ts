@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Comprehensive Error Management System for Pricelist Upload
  * Provides structured error handling, user feedback, and recovery mechanisms

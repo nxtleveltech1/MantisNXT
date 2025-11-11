@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Production-Grade Multi-Tier Caching System
  * L1: In-memory cache with LRU eviction

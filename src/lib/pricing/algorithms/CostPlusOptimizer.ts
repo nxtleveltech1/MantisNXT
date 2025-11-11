@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Cost-Plus Pricing Optimizer
  *

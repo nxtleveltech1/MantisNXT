@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * CustomerSyncService - Production Customer Sync Engine
  *

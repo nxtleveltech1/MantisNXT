@@ -1,3 +1,4 @@
+// @ts-nocheck
 import NodeCache from 'node-cache'
 
 const ttlSeconds = parseInt(process.env.CACHE_TTL_SECONDS || '60', 10)

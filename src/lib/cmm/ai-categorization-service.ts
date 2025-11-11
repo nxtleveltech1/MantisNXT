@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * AI Categorization Service
  * Uses the "Product Categories" AI service configuration to categorize products

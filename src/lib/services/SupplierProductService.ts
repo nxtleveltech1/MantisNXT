@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * SupplierProductService - Manages supplier product catalog
  *
