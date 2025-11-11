@@ -25,7 +25,6 @@ export const createMockDatabase = () => {
           id: customerId,
           email: params?.[2],
           name: params?.[1],
-          ...params?.slice(3).reduce((acc, val, idx) => acc, {}),
         });
         return { rows: [{ id: customerId } as T] };
       }
@@ -130,7 +129,11 @@ export const createMockWooCommerceService = (overrides: Record<string, unknown> 
       };
     },
 
-    async fetchAllPages(callback: Function, params: unknown = {}) {
+    async fetchAllPages(
+      callback: (page: number, options: Record<string, unknown>) => Promise<unknown> | unknown,
+      params: Record<string, unknown> = {}
+    ) {
+      await callback(1, params);
       return generateCustomerData(100);
     },
 
@@ -148,7 +151,7 @@ export const createMockOdooService = (overrides: Record<string, unknown> = {}) =
     },
 
     async getPartner(id: number) {
-      return generateCustomerData(1)[0];
+      return { ...generateCustomerData(1)[0], id };
     },
 
     async createPartner(data: unknown) {
@@ -276,7 +279,7 @@ export const createMockDeltaDetectionService = () => {
   const cache = new Map<string, unknown>();
 
   return {
-    async detectDelta(externalIds: string[], localData: unknown) {
+    async detectDelta(externalIds: string[], _localData: unknown) {
       const cacheKey = `delta-${externalIds.join('-')}`;
 
       if (cache.has(cacheKey)) {
@@ -350,10 +353,10 @@ export const createAuthenticatedRequest = (token: string, method: string = 'POST
  * SSE event stream emulator
  */
 export const createMockSSEStream = () => {
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, Array<(payload: unknown) => void>> = {};
 
   return {
-    on(eventType: string, callback: Function) {
+    on(eventType: string, callback: (payload: unknown) => void) {
       if (!listeners[eventType]) listeners[eventType] = [];
       listeners[eventType].push(callback);
     },
@@ -467,6 +470,7 @@ export const measurePerformance = async (fn: () => Promise<unknown>, label: stri
   return {
     result,
     metrics: {
+      label,
       durationMs: endTime - startTime,
       memoryDeltaBytes: endMemory - startMemory,
       memoryDeltaMB: (endMemory - startMemory) / 1024 / 1024,

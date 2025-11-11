@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import {
   Select,
@@ -132,7 +133,6 @@ export default function InventoryManagement() {
   const [stockLevelFilter, setStockLevelFilter] = useState<string>('all')
   const [pagination, setPagination] = useState({ page: 1, pageSize: 25 })
   const [quickEditingStock, setQuickEditingStock] = useState<string | null>(null)
-  const [stockMovements, setStockMovements] = useState<Record<string, unknown[]>>({})
 
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -183,31 +183,6 @@ export default function InventoryManagement() {
     }
   }, [searchTerm, products, items])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch(e.key) {
-          case 'k': // Ctrl+K for search
-            e.preventDefault()
-            searchInputRef.current?.focus()
-            break
-          case 'n': // Ctrl+N for new product
-            e.preventDefault()
-            setShowAddMode(true)
-            break
-          case 'e': // Ctrl+E for export
-            e.preventDefault()
-            handleExport()
-            break
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [handleExport])
-
   // Debug logging for investigating item count
   useEffect(() => {
     console.log('[Inventory Debug] Raw items count:', items.length)
@@ -225,13 +200,6 @@ export default function InventoryManagement() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
     }).format(Number.isFinite(value) ? value : 0)
-  }
-
-  const getStockStatusColor = (status: string, currentStock: number, reorderPoint: number) => {
-    if (currentStock === 0) return 'destructive'
-    if (currentStock <= reorderPoint) return 'secondary'
-    if (status === 'overstocked') return 'outline'
-    return 'default'
   }
 
   const getStockStatusLabel = (item: InventoryItem) => {
@@ -453,6 +421,31 @@ export default function InventoryManagement() {
     })
   }, [enrichedItems, addNotification])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'k': // Ctrl+K for search
+            e.preventDefault()
+            searchInputRef.current?.focus()
+            break
+          case 'n': // Ctrl+N for new product
+            e.preventDefault()
+            setShowAddMode(true)
+            break
+          case 'e': // Ctrl+E for export
+            e.preventDefault()
+            handleExport()
+            break
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [handleExport])
+
   // Export selected items
   const handleExportSelected = useCallback(() => {
     const selectedItemsData = enrichedItems.filter(item => selectedItems.has(item.id))
@@ -529,11 +522,21 @@ export default function InventoryManagement() {
   const categories = [...new Set(products.map(p => p.category))].sort()
   const locations = [...new Set(items.map(i => i.location).filter(Boolean))].sort()
   const stockStatuses = ['in_stock', 'low_stock', 'out_of_stock', 'overstocked']
-  const abcClassifications = ['A', 'B', 'C']
 
   return (
     <TooltipProvider>
       <div className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>{typeof error === 'string' ? error : 'An inventory error occurred'}</span>
+              <Button variant="outline" size="sm" onClick={clearError}>
+                Dismiss
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -1078,7 +1081,6 @@ export default function InventoryManagement() {
                                       type="number"
                                       className="w-20 h-8 text-right"
                                       defaultValue={item.current_stock}
-                                      autoFocus
                                       onBlur={(e) => {
                                         handleQuickStockUpdate(item.id, e.target.value)
                                       }}
@@ -1093,12 +1095,13 @@ export default function InventoryManagement() {
                                   ) : (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <p
-                                          className="font-medium cursor-pointer hover:text-blue-600"
+                                        <button
+                                          type="button"
+                                          className="font-medium cursor-pointer hover:text-blue-600 focus:outline-none"
                                           onClick={() => setQuickEditingStock(item.id)}
                                         >
                                           {item.current_stock} {item.product?.unit_of_measure}
-                                        </p>
+                                        </button>
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         Click to quick edit stock level
