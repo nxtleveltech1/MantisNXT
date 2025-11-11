@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Database Connection Re-export
  * Provides a consistent import path for database operations

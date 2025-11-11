@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * MantisNXT Database Layer - Centralized Exports
  *

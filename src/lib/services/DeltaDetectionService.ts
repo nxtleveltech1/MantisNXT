@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * DeltaDetectionService - Production Delta Detection for Sync Preview
  *

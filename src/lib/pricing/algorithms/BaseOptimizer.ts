@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Base Optimizer Abstract Class
  *

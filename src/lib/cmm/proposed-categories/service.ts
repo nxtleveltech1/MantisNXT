@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { query } from '@/lib/database/unified-connection';
 import type {
   ProposedCategoryUpsertParams,

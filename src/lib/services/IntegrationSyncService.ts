@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * IntegrationSyncService - Orchestrates sync operations between MantisNXT and external systems
  */

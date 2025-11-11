@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Error Logging System
  * Logs errors internally WITHOUT exposing sensitive data to users

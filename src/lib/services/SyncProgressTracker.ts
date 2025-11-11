@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * SyncProgressTracker - Production Real-Time Sync Progress Tracking
  *

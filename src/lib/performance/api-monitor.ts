@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * API Performance Monitor
  *

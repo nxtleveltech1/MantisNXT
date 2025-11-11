@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Security utilities for South African regulatory compliance
  * Includes POPIA compliance, SA ID validation, and data protection

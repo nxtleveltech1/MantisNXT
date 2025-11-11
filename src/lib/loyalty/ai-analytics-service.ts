@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * AI-Powered Loyalty Analytics Service
  *

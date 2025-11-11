@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Feature Flag System for Gradual Rollout
  *

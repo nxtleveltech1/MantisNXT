@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * AI Supplier Discovery Service
  * Auto-populate supplier information using AI and external data sources

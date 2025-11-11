@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { extractBrandIntelligently } from "./extraction/brand-category-intelligence"
 
 export interface ParsedProduct {

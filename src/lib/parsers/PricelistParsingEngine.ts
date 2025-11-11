@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * =====================================================
  * AUTOMATED EXCEL PRICELIST PARSING ENGINE

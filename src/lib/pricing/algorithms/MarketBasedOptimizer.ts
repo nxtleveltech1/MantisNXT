@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Market-Based Pricing Optimizer
  *

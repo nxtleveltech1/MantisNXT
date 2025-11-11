@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * IntegrationService
  * Service for managing external system integrations

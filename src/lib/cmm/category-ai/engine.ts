@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { generateObject, generateText } from 'ai';

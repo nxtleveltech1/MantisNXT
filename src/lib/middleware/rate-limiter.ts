@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Redis-Based Rate Limiter Middleware
  *

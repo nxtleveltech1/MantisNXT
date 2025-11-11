@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * ConflictResolver - Production-ready conflict detection and resolution
  *

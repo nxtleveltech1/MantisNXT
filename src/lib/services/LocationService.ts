@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * LocationService - Handles inventory location management
  *

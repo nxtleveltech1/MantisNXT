@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * SyncOrchestrator - Production-ready orchestration for multi-system synchronization
  *

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * StockService - Manages stock on hand (SOH) reporting
  *

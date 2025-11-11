@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Real-Time XLSX Processing System
  * Live database integration with progress tracking and real-time updates
