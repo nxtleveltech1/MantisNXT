@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server'
 import { query, withTransaction } from '@/lib/database'
 import { z } from 'zod'
 import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
+import { sohPricingService } from '@/lib/services/SOHPricingService'
+import { aiPricingRecommendationService } from '@/lib/services/pricing/AIPricingRecommendationService'
 
 // Schema for promoting pricelist items to Product table
 const PromoteItemsSchema = z.object({
@@ -209,7 +211,17 @@ export async function POST(request: NextRequest) {
             results.updated++
 
             await upsertSupplierProduct({ supplierId: validatedData.supplierId, sku: item.sku, name: item.name })
-            await setStock({ supplierId: validatedData.supplierId, sku: item.sku, quantity: 0, unitCost: item.unitPrice, reason: 'pricelist promote update' })
+            const stockResult = await setStock({ supplierId: validatedData.supplierId, sku: item.sku, quantity: 0, unitCost: item.unitPrice, reason: 'pricelist promote update' })
+
+            // Calculate pricing for the updated SOH item
+            if (stockResult?.supplier_product_id) {
+              await calculateAndApplyPricing({
+                supplier_product_id: stockResult.supplier_product_id,
+                product_name: item.name,
+                unit_cost: item.unitPrice,
+                org_id: validatedData.supplierId, // Using supplier ID as org context
+              })
+            }
 
           } else {
             results.skipped++
@@ -240,7 +252,17 @@ export async function POST(request: NextRequest) {
           results.created++
 
           await upsertSupplierProduct({ supplierId: validatedData.supplierId, sku: item.sku, name: item.name })
-          await setStock({ supplierId: validatedData.supplierId, sku: item.sku, quantity: 0, unitCost: item.unitPrice, reason: 'pricelist promote create' })
+          const stockResult = await setStock({ supplierId: validatedData.supplierId, sku: item.sku, quantity: 0, unitCost: item.unitPrice, reason: 'pricelist promote create' })
+
+          // Calculate pricing for the new SOH item
+          if (stockResult?.supplier_product_id) {
+            await calculateAndApplyPricing({
+              supplier_product_id: stockResult.supplier_product_id,
+              product_name: item.name,
+              unit_cost: item.unitPrice,
+              org_id: validatedData.supplierId, // Using supplier ID as org context
+            })
+          }
         }
 
       } catch (itemError) {
@@ -261,3 +283,48 @@ export async function POST(request: NextRequest) {
 
   })
 }
+
+/**
+ * Helper function to calculate and apply pricing for a SOH item
+ * 1. Calculate rule-based price
+ * 2. Generate AI recommendation
+ * 3. Apply rule-based price immediately
+ * 4. Queue AI recommendation for review (or auto-apply if eligible)
+ */
+async function calculateAndApplyPricing(data: {
+  supplier_product_id: string;
+  product_name: string;
+  unit_cost: number;
+  org_id: string;
+}) {
+  try {
+    // Step 1: Calculate rule-based price
+    const ruleBasedPrice = await sohPricingService.calculatePrice({
+      supplier_product_id: data.supplier_product_id,
+      unit_cost: data.unit_cost,
+      org_id: data.org_id,
+    })
+
+    // Step 2: Apply rule-based price immediately to SOH
+    await sohPricingService.updateSOHPrice(data.supplier_product_id, ruleBasedPrice)
+
+    // Step 3: Generate AI recommendation (async, queued for review)
+    // This will auto-apply if confidence > threshold, otherwise stays in review queue
+    try {
+      await aiPricingRecommendationService.generateRecommendation({
+        supplier_product_id: data.supplier_product_id,
+        product_name: data.product_name,
+        unit_cost: data.unit_cost,
+        current_price: ruleBasedPrice.selling_price,
+        org_id: data.org_id,
+      })
+    } catch (aiError) {
+      // AI recommendation failure should not block the promote flow
+      console.error('AI pricing recommendation failed (continuing with rule-based price):', aiError)
+    }
+  } catch (pricingError) {
+    // Pricing errors should not block the promote flow
+    console.error('Pricing calculation failed:', pricingError)
+  }
+}
+
