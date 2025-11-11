@@ -10,19 +10,15 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import {
   Package,
-  Building2,
-  MapPin,
   Calendar,
   DollarSign,
   Truck,
   Scale,
   Ruler,
   Clock,
-  Shield,
   Globe,
   Barcode,
   Tag

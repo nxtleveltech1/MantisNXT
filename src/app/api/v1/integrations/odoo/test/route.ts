@@ -8,7 +8,8 @@
  * Date: 2025-11-04 (Updated with rate limiting)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { OdooService } from '@/lib/services/OdooService';
 
 export async function POST(request: NextRequest) {

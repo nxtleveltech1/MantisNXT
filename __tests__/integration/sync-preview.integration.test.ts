@@ -11,8 +11,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { createMockDatabase, createAuthenticatedRequest, createMockSSEStream } from '../helpers/sync-test-helpers';
-import { generateCustomerData, generateDeltaData, mockApiResponse } from '../fixtures/sync-test-data';
+import { createMockDatabase, createAuthenticatedRequest } from '../helpers/sync-test-helpers';
+import { generateCustomerData, mockApiResponse } from '../fixtures/sync-test-data';
 
 /**
  * Mock implementation of sync preview endpoint

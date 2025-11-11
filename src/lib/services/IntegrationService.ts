@@ -11,7 +11,7 @@ export interface IntegrationConnector {
   org_id: string;
   name: string;
   provider: 'woocommerce' | 'odoo' | 'custom';
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   credentials_encrypted?: string;
   status: 'active' | 'inactive' | 'error' | 'configuring';
   sync_frequency_minutes: number;
@@ -28,16 +28,16 @@ export interface CreateConnectorInput {
   org_id: string;
   name: string;
   provider: 'woocommerce' | 'odoo' | 'custom';
-  config: Record<string, any>;
-  credentials: Record<string, any>;
+  config: Record<string, unknown>;
+  credentials: Record<string, unknown>;
   sync_frequency_minutes?: number;
   created_by: string;
 }
 
 export interface UpdateConnectorInput {
   name?: string;
-  config?: Record<string, any>;
-  credentials?: Record<string, any>;
+  config?: Record<string, unknown>;
+  credentials?: Record<string, unknown>;
   sync_frequency_minutes?: number;
   status?: 'active' | 'inactive' | 'error' | 'configuring';
 }
@@ -57,7 +57,7 @@ export class IntegrationService {
   /**
    * Encrypt credentials using AES-256-CBC
    */
-  private static encryptCredentials(credentials: Record<string, any>): string {
+  private static encryptCredentials(credentials: Record<string, unknown>): string {
     const key = Buffer.from(this.ENCRYPTION_KEY.padEnd(32, '0').substring(0, 32));
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
@@ -72,7 +72,7 @@ export class IntegrationService {
   /**
    * Decrypt credentials
    */
-  private static decryptCredentials(encryptedData: string): Record<string, any> {
+  private static decryptCredentials(encryptedData: string): Record<string, unknown> {
     const key = Buffer.from(this.ENCRYPTION_KEY.padEnd(32, '0').substring(0, 32));
     const parts = encryptedData.split(':');
     const iv = Buffer.from(parts[0], 'hex');
@@ -133,7 +133,7 @@ export class IntegrationService {
    */
   static async getConnectorWithCredentials(
     connectorId: string
-  ): Promise<(IntegrationConnector & { credentials: Record<string, any> }) | null> {
+  ): Promise<(IntegrationConnector & { credentials: Record<string, unknown> }) | null> {
     const connector = await this.getConnector(connectorId);
 
     if (!connector) {
@@ -160,7 +160,7 @@ export class IntegrationService {
    */
   static async listConnectors(orgId: string, provider?: string): Promise<IntegrationConnector[]> {
     let sql = 'SELECT * FROM integration_connector WHERE org_id = $1';
-    const params: any[] = [orgId];
+    const params: unknown[] = [orgId];
 
     if (provider) {
       sql += ' AND provider = $2';
@@ -182,7 +182,7 @@ export class IntegrationService {
     updates: UpdateConnectorInput
   ): Promise<IntegrationConnector> {
     const setClauses: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramIndex = 1;
 
     if (updates.name !== undefined) {
@@ -252,7 +252,7 @@ export class IntegrationService {
     errorMessage?: string
   ): Promise<void> {
     const setClauses = ['status = $1', 'updated_at = NOW()'];
-    const values: any[] = [status];
+    const values: unknown[] = [status];
     let paramIndex = 2;
 
     if (errorMessage !== undefined) {
@@ -284,7 +284,7 @@ export class IntegrationService {
       'last_sync_status = $1',
       'updated_at = NOW()'
     ];
-    const values: any[] = [status];
+    const values: unknown[] = [status];
     let paramIndex = 2;
 
     if (status === 'success') {

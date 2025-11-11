@@ -3,7 +3,8 @@
  * Natural language powered supplier search and matching
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { SupplierIntelligenceService } from '@/services/ai/SupplierIntelligenceService';
 import { authenticateRequest } from '@/lib/ai/api-utils';
 import { getSupplierDiscoveryConfig } from '@/lib/ai/supplier-discovery-config';
@@ -144,7 +145,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Validation function
-function validateDiscoveryRequest(body: any): string | null {
+function validateDiscoveryRequest(body: unknown): string | null {
   if (!body.query || typeof body.query !== 'string') {
     return 'Query is required and must be a string';
   }

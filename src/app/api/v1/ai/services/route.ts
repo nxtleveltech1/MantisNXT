@@ -4,7 +4,7 @@
  * POST /api/v1/ai/services - create
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { authenticateRequest, handleAIError, successResponse, createdResponse } from '@/lib/ai/api-utils';
 import { createService, listServices } from './_store';
 

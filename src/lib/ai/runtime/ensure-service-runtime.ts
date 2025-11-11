@@ -1,4 +1,4 @@
-import { updateAIConfig, getAIConfig } from '@/lib/ai/config';
+import { updateAIConfig } from '@/lib/ai/config';
 import type { AIProviderId } from '@/types/ai';
 import { getConfig as getServiceConfig } from '@/app/api/v1/ai/config/_store';
 
@@ -11,12 +11,12 @@ function normalizeToAIProviderId(key?: string | null): AIProviderId {
   return 'openai-compatible';
 }
 
-function pickActiveInstance(config: any): { provider: string; model?: string; baseUrl?: string; apiKey?: string } {
+function pickActiveInstance(config: unknown): { provider: string; model?: string; baseUrl?: string; apiKey?: string } {
   // New instances shape
   const instances = Array.isArray(config?.providerInstances) ? config.providerInstances : undefined;
   const activeId = config?.activeProviderInstanceId;
   if (instances && instances.length) {
-    const target = activeId ? instances.find((i: any) => i?.id === activeId) : instances.find((i: any) => i?.enabled);
+    const target = activeId ? instances.find((i: unknown) => i?.id === activeId) : instances.find((i: unknown) => i?.enabled);
     if (target) {
       return {
         provider: target.providerType || config.activeProvider || config.provider || 'openai',
@@ -29,7 +29,7 @@ function pickActiveInstance(config: any): { provider: string; model?: string; ba
 
   // Legacy providers shape
   const prov = config?.activeProvider || config?.provider || 'openai';
-  const section = (config?.providers?.[prov] || {}) as any;
+  const section = (config?.providers?.[prov] || {}) as unknown;
   return {
     provider: prov,
     model: section.model || config?.model,
@@ -57,7 +57,7 @@ export async function ensureServiceRuntime(orgId: string, serviceType: ServiceTy
         models: model ? { default: model, chat: model } : undefined,
       },
     },
-  } as any;
+  } as unknown;
 
   // Merge into runtime config (validated by AI_CONFIG_SCHEMA)
   updateAIConfig(partial);

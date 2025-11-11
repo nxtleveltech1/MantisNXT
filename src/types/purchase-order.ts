@@ -237,9 +237,9 @@ export interface InvoiceReference {
 
 export interface ThreeWayMatchResult {
   field: string
-  poValue: any
-  invoiceValue: any
-  receiptValue?: any
+  poValue: unknown
+  invoiceValue: unknown
+  receiptValue?: unknown
   matched: boolean
   variance?: number
   toleranceExceeded: boolean
@@ -308,8 +308,8 @@ export interface AuditEntry {
   userName: string
   action: string
   details: string
-  oldValue?: any
-  newValue?: any
+  oldValue?: unknown
+  newValue?: unknown
   ipAddress?: string
 }
 
@@ -460,7 +460,7 @@ export interface TrendDataPoint {
 export interface BulkOperation {
   type: 'approve' | 'reject' | 'send' | 'cancel' | 'export' | 'update_status' | 'reassign_approver'
   orderIds: string[]
-  parameters?: Record<string, any>
+  parameters?: Record<string, unknown>
   notes?: string
 }
 
@@ -559,7 +559,7 @@ export interface ReorderCondition {
 
 export interface ReorderAction {
   type: 'create_po' | 'notify' | 'flag_review'
-  parameters: Record<string, any>
+  parameters: Record<string, unknown>
 }
 
 export interface ReorderNotification {

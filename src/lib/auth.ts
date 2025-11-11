@@ -4,7 +4,8 @@
  */
 
 // @ts-nocheck
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/database'
@@ -49,7 +50,7 @@ export async function generateToken(user: AuthUser): Promise<string> {
  */
 export async function verifyToken(token: string): Promise<AuthUser | null> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const decoded = jwt.verify(token, JWT_SECRET) as unknown
 
     // Check if token is expired
     if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
@@ -245,7 +246,7 @@ export async function loginUser(email: string, password: string): Promise<{ user
  */
 export async function refreshToken(currentToken: string): Promise<string | null> {
   try {
-    const decoded = jwt.verify(currentToken, JWT_SECRET) as any
+    const decoded = jwt.verify(currentToken, JWT_SECRET) as unknown
 
     // Check if token expires within next 15 minutes
     const expiryTime = decoded.exp * 1000

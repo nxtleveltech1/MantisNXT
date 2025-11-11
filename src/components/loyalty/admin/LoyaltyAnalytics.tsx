@@ -35,14 +35,11 @@ import {
   Gift,
   Award,
   Download,
-  Calendar,
-  DollarSign,
   Percent,
   ArrowUpRight,
-  ArrowDownRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns'
+import { format } from 'date-fns'
 import type { LoyaltyProgramMetrics, LoyaltyTier } from '@/types/loyalty'
 
 const TIER_COLORS: Record<LoyaltyTier, string> = {
@@ -75,7 +72,7 @@ export default function LoyaltyAnalytics() {
   // Set default program
   React.useEffect(() => {
     if (programs && programs.length > 0 && !programId) {
-      const defaultProgram = programs.find((p: any) => p.is_default) || programs[0]
+      const defaultProgram = programs.find((p: unknown) => p.is_default) || programs[0]
       setProgramId(defaultProgram.id)
     }
   }, [programs, programId])
@@ -204,7 +201,7 @@ export default function LoyaltyAnalytics() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {programs?.map((program: any) => (
+              {programs?.map((program: unknown) => (
                 <SelectItem key={program.id} value={program.id}>
                   {program.name}
                 </SelectItem>

@@ -18,7 +18,8 @@
  * Date: 2025-11-06
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { authenticateRequest, authorizeUser, AuthError } from '@/lib/auth/middleware';
 import { WooCommerceService } from '@/lib/services/WooCommerceService';
 import { CustomerSyncService } from '@/lib/services/CustomerSyncService';
@@ -271,7 +272,7 @@ export async function POST(request: NextRequest) {
     let validatedBody: SyncRequest;
     try {
       validatedBody = SyncRequestSchema.parse(body);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn(`[${requestId}] Validation error: ${error.message}`);
       return NextResponse.json(
         {
@@ -310,7 +311,7 @@ export async function POST(request: NextRequest) {
         authUser.organizationId,
         validatedBody.config.url
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         `[${requestId}] Failed to retrieve credentials: ${error.message}`
       );
@@ -537,7 +538,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`[${requestId}] Unhandled error:`, {
       message: error.message,
       code: error.code,

@@ -22,14 +22,12 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger
+  DialogTitle
 } from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
@@ -51,9 +49,7 @@ import {
   XCircle,
   AlertTriangle,
   TrendingUp,
-  Download,
   Upload,
-  Filter,
   Search,
   Plus,
   MoreHorizontal,
@@ -64,18 +60,13 @@ import {
   Building2,
   Globe,
   ShieldCheck,
-  BarChart3,
   FileText,
   Settings,
   RefreshCw,
-  CheckSquare,
-  ArrowUpDown,
   ArrowRight,
-  History,
   Banknote,
   Wallet,
   PiggyBank,
-  CreditCardIcon,
 } from "lucide-react"
 import { format, addDays, isAfter, isBefore } from "date-fns"
 

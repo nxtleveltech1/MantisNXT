@@ -9,12 +9,13 @@
  */
 
 import { query } from '@/lib/database';
-import {
-  PRICING_TABLES,
+import type {
   PriceChangeLog,
   CompetitorPrice,
   PriceElasticity,
-  PricePerformanceMetrics,
+  PricePerformanceMetrics} from '@/lib/db/pricing-schema';
+import {
+  PRICING_TABLES
 } from '@/lib/db/pricing-schema';
 import { CORE_TABLES } from '@/lib/db/schema-contract';
 
@@ -72,7 +73,7 @@ export class PriceAnalyticsService {
       WHERE product_id = $1
     `;
 
-    const params: any[] = [productId];
+    const params: unknown[] = [productId];
     let paramCount = 2;
 
     if (startDate) {
@@ -107,7 +108,7 @@ export class PriceAnalyticsService {
       LIMIT $1
     `;
 
-    const result = await query<any>(sql, [limit]);
+    const result = await query<unknown>(sql, [limit]);
 
     return result.rows.map(row => ({
       ...row,
@@ -137,7 +138,7 @@ export class PriceAnalyticsService {
       LIMIT 1
     `;
 
-    const result = await query<any>(sql, [productId]);
+    const result = await query<unknown>(sql, [productId]);
 
     if (result.rows.length === 0) {
       return null;
@@ -387,7 +388,7 @@ export class PriceAnalyticsService {
       ORDER BY ph2.created_at DESC
       LIMIT 10
     `;
-    const recentChangesListResult = await query<any>(recentChangesListSql, [startDate]);
+    const recentChangesListResult = await query<unknown>(recentChangesListSql, [startDate]);
 
     // Count active pricing rules
     const activeRulesSql = `
@@ -442,7 +443,7 @@ export class PriceAnalyticsService {
       WHERE pcl.changed_at >= $1
     `;
 
-    const params: any[] = [startDate];
+    const params: unknown[] = [startDate];
     let paramCount = 2;
 
     if (categoryId) {
@@ -460,7 +461,7 @@ export class PriceAnalyticsService {
       ORDER BY DATE(pcl.changed_at) ASC
     `;
 
-    const result = await query<any>(sql, params);
+    const result = await query<unknown>(sql, params);
 
     return result.rows.map(row => ({
       date: new Date(row.date),

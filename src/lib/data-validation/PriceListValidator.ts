@@ -16,7 +16,7 @@ export interface ValidationResult {
 export interface ValidationError {
   type: string;
   field: string;
-  value: any;
+  value: unknown;
   message: string;
   severity: 'error' | 'warning' | 'info';
   rowIndex?: number;
@@ -26,7 +26,7 @@ export interface ValidationError {
 export interface ValidationWarning {
   type: string;
   field: string;
-  value: any;
+  value: unknown;
   message: string;
   suggestions?: string[];
 }
@@ -596,7 +596,7 @@ export class PriceListValidator {
   /**
    * Parse price from string or number
    */
-  private parsePrice(price: any): number | null {
+  private parsePrice(price: unknown): number | null {
     if (price === null || price === undefined || price === '') {
       return null;
     }

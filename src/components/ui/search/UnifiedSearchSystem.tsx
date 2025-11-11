@@ -10,12 +10,12 @@ export interface SearchableField {
   key: string;
   label: string;
   type: 'text' | 'number' | 'currency' | 'date' | 'boolean' | 'enum' | 'tags';
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<unknown>;
   searchable?: boolean;
   filterable?: boolean;
   sortable?: boolean;
   options?: { value: string; label: string }[];
-  format?: (value: any) => string;
+  format?: (value: unknown) => string;
   weight?: number; // For search relevance scoring
 }
 
@@ -32,8 +32,8 @@ export interface SearchConfig {
 export interface SearchFilter {
   field: string;
   operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'gt' | 'lt' | 'gte' | 'lte' | 'between' | 'in' | 'not_in';
-  value: any;
-  values?: any[]; // For 'between', 'in', 'not_in' operators
+  value: unknown;
+  values?: unknown[]; // For 'between', 'in', 'not_in' operators
   active: boolean;
 }
 
@@ -57,7 +57,7 @@ export interface SavedSearch {
   usageCount: number;
 }
 
-export interface SearchResult<T = any> {
+export interface SearchResult<T = unknown> {
   item: T;
   score: number;
   matches: {
@@ -68,16 +68,16 @@ export interface SearchResult<T = any> {
 }
 
 // Advanced Search Engine
-class AdvancedSearchEngine<T = any> {
+class AdvancedSearchEngine<T = unknown> {
   private config: SearchConfig;
-  private indexCache = new Map<string, any>();
+  private indexCache = new Map<string, unknown>();
 
   constructor(config: SearchConfig) {
     this.config = config;
   }
 
   search(data: T[], state: SearchState): SearchResult<T>[] {
-    let results = data.map(item => ({ item, score: 0, matches: [] as any[] }));
+    let results = data.map(item => ({ item, score: 0, matches: [] as unknown[] }));
 
     // Apply text search
     if (state.query.trim()) {
@@ -105,7 +105,7 @@ class AdvancedSearchEngine<T = any> {
 
     return results.map(result => {
       let totalScore = 0;
-      const matches: any[] = [];
+      const matches: unknown[] = [];
 
       searchFields.forEach(field => {
         const value = this.getFieldValue(result.item, field.key);
@@ -202,7 +202,7 @@ class AdvancedSearchEngine<T = any> {
     });
   }
 
-  private evaluateFilter(value: any, filter: SearchFilter): boolean {
+  private evaluateFilter(value: unknown, filter: SearchFilter): boolean {
     const { operator, value: filterValue, values } = filter;
 
     switch (operator) {
@@ -262,7 +262,7 @@ class AdvancedSearchEngine<T = any> {
     });
   }
 
-  private getFieldValue(item: any, fieldKey: string): any {
+  private getFieldValue(item: unknown, fieldKey: string): unknown {
     const keys = fieldKey.split('.');
     let value = item;
     for (const key of keys) {
@@ -276,8 +276,8 @@ class AdvancedSearchEngine<T = any> {
 // Search Components
 export interface UnifiedSearchProps {
   config: SearchConfig;
-  onSearch: (results: any[], state: SearchState) => void;
-  data: any[];
+  onSearch: (results: unknown[], state: SearchState) => void;
+  data: unknown[];
   initialState?: Partial<SearchState>;
   className?: string;
   placeholder?: string;

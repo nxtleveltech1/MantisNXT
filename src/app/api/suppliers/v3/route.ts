@@ -3,7 +3,8 @@
  * Replaces all conflicting supplier endpoints with single, robust API
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { APIResponse, PaginatedAPIResponse } from '@/lib/suppliers/types/SupplierDomain';
 import { listSuppliers, upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService';
@@ -117,7 +118,7 @@ const SupplierFiltersSchema = z.object({
 });
 
 // Error handling utility
-function createErrorResponse(message: string, status: number = 400, details?: any): NextResponse {
+function createErrorResponse(message: string, status: number = 400, details?: unknown): NextResponse {
   const response: APIResponse<null> = {
     success: false,
     data: null,
@@ -143,7 +144,7 @@ function createSuccessResponse<T>(data: T, message?: string): NextResponse {
   return NextResponse.json(response);
 }
 
-function createPaginatedResponse<T>(data: T, pagination: any, message?: string): NextResponse {
+function createPaginatedResponse<T>(data: T, pagination: unknown, message?: string): NextResponse {
   const response: PaginatedAPIResponse<T> = {
     success: true,
     data,
@@ -208,10 +209,10 @@ export async function GET(request: NextRequest) {
     const limit = validationResult.data.limit;
     const result = await listSuppliers({
       search: validationResult.data.search,
-      status: validationResult.data.status as any,
+      status: validationResult.data.status as unknown,
       page,
       limit,
-      sortBy: validationResult.data.sortBy as any,
+      sortBy: validationResult.data.sortBy as unknown,
       sortOrder: validationResult.data.sortOrder,
     });
 
@@ -296,7 +297,7 @@ export async function PUT(request: NextRequest) {
         return createErrorResponse('Updates must be an array');
       }
 
-      const updated: any[] = [];
+      const updated: unknown[] = [];
       for (const u of updates) {
         const res = await upsertSupplier({ id: u.id, name: u.data?.name, status: u.data?.status });
         updated.push(res);

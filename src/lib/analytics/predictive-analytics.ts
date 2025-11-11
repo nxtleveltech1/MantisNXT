@@ -2,7 +2,7 @@
 // Advanced Predictive Analytics Service for MantisNXT
 // Implements sophisticated forecasting and predictive models
 
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import { advancedMLModels } from './advanced-ml-models';
 import { queryOptimization } from './query-optimizer';
 
@@ -19,7 +19,7 @@ export interface PredictiveModel {
   trainingData: number;
   lastTrained: Date;
   nextRetraining: Date;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   status: 'active' | 'training' | 'deprecated' | 'error';
 }
 
@@ -114,7 +114,7 @@ export interface MarketIntelligence {
 export class PredictiveAnalyticsEngine {
   private db: Pool;
   private models: Map<string, PredictiveModel> = new Map();
-  private queryOptimizer: any;
+  private queryOptimizer: unknown;
 
   constructor(database: Pool) {
     this.db = database;
@@ -237,7 +237,7 @@ export class PredictiveAnalyticsEngine {
     modelType: string,
     targetId: string,
     targetType: 'inventory_item' | 'supplier' | 'category' | 'organization',
-    options: { horizon?: number; features?: Record<string, any> } = {}
+    options: { horizon?: number; features?: Record<string, unknown> } = {}
   ): Promise<PredictionResult> {
     const startTime = Date.now();
 
@@ -294,7 +294,7 @@ export class PredictiveAnalyticsEngine {
   private async predictDemand(
     model: PredictiveModel,
     itemId: string,
-    options: any
+    options: unknown
   ): Promise<PredictionResult> {
     const forecaster = advancedMLModels.timeSeriesForecaster(this.db);
     const forecast = await forecaster.forecastDemand(itemId, options.horizon || 30);
@@ -356,7 +356,7 @@ export class PredictiveAnalyticsEngine {
   private async predictSupplierRisk(
     model: PredictiveModel,
     supplierId: string,
-    options: any
+    options: unknown
   ): Promise<PredictionResult> {
     // Get supplier performance history
     const performanceQuery = `
@@ -399,7 +399,7 @@ export class PredictiveAnalyticsEngine {
   private async predictPrice(
     model: PredictiveModel,
     itemId: string,
-    options: any
+    options: unknown
   ): Promise<PredictionResult> {
     // Get price history
     const priceQuery = `
@@ -465,7 +465,7 @@ export class PredictiveAnalyticsEngine {
   private async optimizeInventory(
     model: PredictiveModel,
     itemId: string,
-    options: any
+    options: unknown
   ): Promise<PredictionResult> {
     // Get inventory data
     const inventoryQuery = `
@@ -551,7 +551,7 @@ export class PredictiveAnalyticsEngine {
     return Math.sqrt(variance) / mean;
   }
 
-  private calculateInventoryEfficiency(item: any): number {
+  private calculateInventoryEfficiency(item: unknown): number {
     // Simple efficiency metric based on turnover and stockout risk
     const turnover = item.avg_daily_demand * 365 / Math.max(item.current_stock, 1);
     const stockoutRisk = item.current_stock <= item.reorder_point ? 0.5 : 0.1;
@@ -559,7 +559,7 @@ export class PredictiveAnalyticsEngine {
     return Math.max(0, Math.min(1, turnover / 10 - stockoutRisk));
   }
 
-  private calculateOptimizedEfficiency(item: any, optimalReorder: number, optimalQuantity: number): number {
+  private calculateOptimizedEfficiency(item: unknown, optimalReorder: number, optimalQuantity: number): number {
     const turnover = item.avg_daily_demand * 365 / Math.max(optimalQuantity / 2, 1);
     const stockoutRisk = 0.05; // 5% with optimized levels
 
@@ -609,7 +609,7 @@ export class PredictiveAnalyticsEngine {
     }
   }
 
-  private async generatePriceAnalysis(organizationId: string): Promise<any> {
+  private async generatePriceAnalysis(organizationId: string): Promise<unknown> {
     // Get recent price movements by category
     const priceQuery = `
       SELECT
@@ -678,7 +678,7 @@ export class PredictiveAnalyticsEngine {
     };
   }
 
-  private async generateDemandAnalysis(organizationId: string): Promise<any> {
+  private async generateDemandAnalysis(organizationId: string): Promise<unknown> {
     // Get seasonal patterns
     const seasonalQuery = `
       SELECT
@@ -721,7 +721,7 @@ export class PredictiveAnalyticsEngine {
     };
   }
 
-  private async generateSupplierIntelligence(organizationId: string): Promise<any> {
+  private async generateSupplierIntelligence(organizationId: string): Promise<unknown> {
     // Get supplier performance data
     const supplierQuery = `
       SELECT

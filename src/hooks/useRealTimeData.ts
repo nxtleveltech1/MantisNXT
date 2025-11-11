@@ -11,19 +11,19 @@ export interface RealTimeConfig {
   table: string;
   organizationId?: string;
   userId?: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   autoReconnect?: boolean;
   reconnectInterval?: number;
 }
 
 export interface RealTimeMessage {
   type: 'subscribe' | 'unsubscribe' | 'data' | 'error' | 'heartbeat';
-  data?: any;
+  data?: unknown;
   timestamp: string;
   clientId: string;
 }
 
-export interface RealTimeData<T = any> {
+export interface RealTimeData<T = unknown> {
   data: T[];
   loading: boolean;
   error: string | null;
@@ -31,17 +31,17 @@ export interface RealTimeData<T = any> {
   lastUpdate: string | null;
 }
 
-export interface UseRealTimeDataReturn<T = any> extends RealTimeData<T> {
+export interface UseRealTimeDataReturn<T = unknown> extends RealTimeData<T> {
   subscribe: (config: RealTimeConfig) => void;
   unsubscribe: (table?: string) => void;
   refresh: () => Promise<void>;
-  sendMessage: (message: any) => void;
+  sendMessage: (message: unknown) => void;
 }
 
 /**
  * Hook for real-time database integration
  */
-export function useRealTimeData<T = any>(
+export function useRealTimeData<T = unknown>(
   initialConfig?: RealTimeConfig
 ): UseRealTimeDataReturn<T> {
   const [data, setData] = useState<T[]>([]);
@@ -51,6 +51,7 @@ export function useRealTimeData<T = any>(
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const connectRef = useRef<() => void>(() => {});
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const configRef = useRef<RealTimeConfig | null>(initialConfig || null);
   const reconnectAttemptsRef = useRef<number>(0);
@@ -114,7 +115,11 @@ export function useRealTimeData<T = any>(
       setError('Failed to connect');
       scheduleReconnect();
     }
-  }, []);
+  }, [handleMessage, scheduleReconnect, subscribe]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   /**
    * Schedule reconnection with exponential backoff
@@ -131,9 +136,9 @@ export function useRealTimeData<T = any>(
     console.log(`🔄 Scheduling reconnect attempt ${reconnectAttemptsRef.current} in ${delay}ms`);
 
     reconnectTimeoutRef.current = setTimeout(() => {
-      connect();
+      connectRef.current();
     }, delay);
-  }, [connect]);
+  }, []);
 
   /**
    * Handle incoming WebSocket messages
@@ -161,12 +166,12 @@ export function useRealTimeData<T = any>(
       default:
         console.log('📡 Unknown message type:', message.type);
     }
-  }, []);
+  }, [handleDataUpdate]);
 
   /**
    * Handle real-time data updates
    */
-  const handleDataUpdate = useCallback((updateData: any) => {
+  const handleDataUpdate = useCallback((updateData: unknown) => {
     const { operation, table, record } = updateData;
 
     if (!configRef.current || configRef.current.table !== table) {
@@ -179,14 +184,14 @@ export function useRealTimeData<T = any>(
       switch (operation) {
         case 'INSERT':
           // Add new record if not already present
-          if (!newData.find((item: any) => item.id === record.id)) {
+          if (!newData.find((item: unknown) => item.id === record.id)) {
             newData.unshift(record);
           }
           break;
 
         case 'UPDATE':
           // Update existing record
-          const updateIndex = newData.findIndex((item: any) => item.id === record.id);
+          const updateIndex = newData.findIndex((item: unknown) => item.id === record.id);
           if (updateIndex !== -1) {
             newData[updateIndex] = record;
           }
@@ -194,7 +199,7 @@ export function useRealTimeData<T = any>(
 
         case 'DELETE':
           // Remove deleted record
-          newData = newData.filter((item: any) => item.id !== record.id);
+          newData = newData.filter((item: unknown) => item.id !== record.id);
           break;
 
         default:
@@ -298,7 +303,7 @@ export function useRealTimeData<T = any>(
   /**
    * Send custom message to server
    */
-  const sendMessage = useCallback((messageData: any) => {
+  const sendMessage = useCallback((messageData: unknown) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.warn('⚠️ WebSocket not connected, cannot send message');
       return;
@@ -501,7 +506,7 @@ export const useSupplierMutations = () => {
   const queryClient = useQueryClient()
 
   const createSupplier = useMutation({
-    mutationFn: async (supplierData: any) => {
+    mutationFn: async (supplierData: unknown) => {
       const response = await fetch('/api/suppliers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -516,7 +521,7 @@ export const useSupplierMutations = () => {
     },
     onSuccess: (data) => {
       // Update all relevant queries
-      queryClient.setQueryData(['suppliers'], (old: any) => ({
+      queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
         data: [data.data, ...(old?.data || [])]
       }))
@@ -527,7 +532,7 @@ export const useSupplierMutations = () => {
   })
 
   const updateSupplier = useMutation({
-    mutationFn: async ({ id, data: supplierData }: { id: string, data: any }) => {
+    mutationFn: async ({ id, data: supplierData }: { id: string, data: unknown }) => {
       const response = await fetch(`/api/suppliers/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -548,9 +553,9 @@ export const useSupplierMutations = () => {
       const previousSuppliers = queryClient.getQueryData(['suppliers'])
 
       // Optimistically update
-      queryClient.setQueryData(['suppliers'], (old: any) => ({
+      queryClient.setQueryData(['suppliers'], (old: unknown) => ({
         ...old,
-        data: old?.data?.map((supplier: any) =>
+        data: old?.data?.map((supplier: unknown) =>
           supplier.id === id ? { ...supplier, ...newData } : supplier
         ) || []
       }))

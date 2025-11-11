@@ -75,7 +75,7 @@ export interface TierBenefit {
   free_shipping?: boolean;
   priority_support?: boolean;
   dedicated_rep?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TierBenefits {
@@ -189,7 +189,7 @@ export interface LoyaltyTransaction {
   reference_type?: ReferenceType;
   reference_id?: string;
   description: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   expires_at?: Date;
   created_by?: string;
   created_at: Date;
@@ -204,7 +204,7 @@ export interface LoyaltyTransactionInsert {
   reference_type?: ReferenceType;
   reference_id?: string;
   description: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   expires_at?: Date;
   created_by?: string;
 }
@@ -229,7 +229,7 @@ export interface RewardCatalog {
   is_featured: boolean;
   valid_from: Date;
   valid_until?: Date;
-  terms_conditions?: Record<string, any>;
+  terms_conditions?: Record<string, unknown>;
   image_url?: string;
   created_at: Date;
   updated_at: Date;
@@ -249,7 +249,7 @@ export interface RewardCatalogInsert {
   is_featured?: boolean;
   valid_from?: Date;
   valid_until?: Date;
-  terms_conditions?: Record<string, any>;
+  terms_conditions?: Record<string, unknown>;
   image_url?: string;
 }
 
@@ -266,7 +266,7 @@ export interface RewardCatalogUpdate {
   is_featured?: boolean;
   valid_from?: Date;
   valid_until?: Date;
-  terms_conditions?: Record<string, any>;
+  terms_conditions?: Record<string, unknown>;
   image_url?: string;
 }
 
@@ -323,7 +323,7 @@ export interface LoyaltyRuleConditions {
   customer_segment?: string[];
   order_count_min?: number;
   order_count_max?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface LoyaltyRule {
@@ -487,7 +487,7 @@ export interface AwardPointsRequest {
   customer_id: string;
   order_amount: number;
   order_id: string;
-  order_metadata?: Record<string, any>;
+  order_metadata?: Record<string, unknown>;
 }
 
 export interface RedeemRewardRequest {
@@ -529,7 +529,7 @@ export interface CreateRewardRequest {
   is_featured?: boolean;
   valid_from?: Date;
   valid_until?: Date;
-  terms_conditions?: Record<string, any>;
+  terms_conditions?: Record<string, unknown>;
   image_url?: string;
 }
 
@@ -583,7 +583,7 @@ export class LoyaltyError extends Error {
     message: string,
     public code: string,
     public statusCode: number = 400,
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'LoyaltyError';

@@ -6,18 +6,18 @@ const FALLBACK_URL =
 const connectionString = process.env.NEON_SPP_DATABASE_URL || FALLBACK_URL;
 
 // Base Neon client (tagged template)
-const sql = neon(connectionString) as any;
+const sql = neon(connectionString) as unknown;
 
 // Lightweight wrapper exposing a pg-like query(text, params) API
-type QueryResult<T = any> = { rows: T[]; rowCount: number };
+type QueryResult<T = unknown> = { rows: T[]; rowCount: number };
 
-async function runQuery<T = any>(queryText: string, params?: any[]): Promise<QueryResult<T>> {
+async function runQuery<T = unknown>(queryText: string, params?: unknown[]): Promise<QueryResult<T>> {
   const hasParams = Array.isArray(params) && params.length > 0;
 
   if (hasParams) {
     // Convert $1 style to tagged template: split by placeholders and interpolate values
     const parts: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     const re = /\$(\d+)/g;
     let last = 0;
     let m: RegExpExecArray | null;
@@ -39,7 +39,7 @@ async function runQuery<T = any>(queryText: string, params?: any[]): Promise<Que
     }
     call += '`';
     const fn = new Function('sql', ...valueNames, `return ${call};`);
-    const res = await (fn as any)(sql, ...values);
+    const res = await (fn as unknown)(sql, ...values);
     const rows = Array.isArray(res) ? res : [res];
     return { rows: rows.filter(Boolean) as T[], rowCount: rows.length };
   } else {
@@ -52,7 +52,7 @@ async function runQuery<T = any>(queryText: string, params?: any[]): Promise<Que
 
 async function withTransaction<T>(
   fn: (client: {
-    query: <U = any>(queryText: string, params?: any[]) => Promise<QueryResult<U>>;
+    query: <U = unknown>(queryText: string, params?: unknown[]) => Promise<QueryResult<U>>;
   }) => Promise<T>
 ): Promise<T> {
   await sql.unsafe('BEGIN');

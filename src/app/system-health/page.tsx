@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,9 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Database,
-  Server,
   Activity,
-  Zap,
   Clock,
   CheckCircle,
   XCircle,
@@ -22,14 +20,8 @@ import {
   
   Wifi,
   Shield,
-  Globe,
   RefreshCw,
-  TrendingUp,
-  TrendingDown,
   Minus,
-  Eye,
-  Bell,
-  Settings,
   Play,
   Pause,
   Download,
@@ -109,30 +101,11 @@ const SystemHealth: React.FC = () => {
   const [systemData, setSystemData] = useState<SystemHealthData | null>(null)
   const [loading, setLoading] = useState(false)
   const [autoRefresh, setAutoRefresh] = useState(true)
-  const [alerts, setAlerts] = useState<any[]>([])
+  const [alerts, setAlerts] = useState<unknown[]>([])
 
   // Fetch system health data from API
-  const fetchSystemData = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/system-health')
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          setSystemData(result.data)
-          generateAlerts(result.data)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch system health data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Generate alerts based on system data
-  const generateAlerts = (data: SystemHealthData) => {
-    const newAlerts: any[] = []
+  const generateAlerts = useCallback((data: SystemHealthData) => {
+    const newAlerts: unknown[] = []
     
     // Check service health
     data.services.forEach(service => {
@@ -164,8 +137,27 @@ const SystemHealth: React.FC = () => {
     }
     
     setAlerts(newAlerts)
-  }
+  }, [])
 
+  const fetchSystemData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/system-health')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setSystemData(result.data)
+          generateAlerts(result.data)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch system health data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [generateAlerts])
+
+  // Generate alerts based on system data
   useEffect(() => {
     fetchSystemData()
     
@@ -177,7 +169,7 @@ const SystemHealth: React.FC = () => {
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [autoRefresh])
+  }, [autoRefresh, fetchSystemData])
 
   const getStatusIcon = (status: string) => {
     switch (status) {

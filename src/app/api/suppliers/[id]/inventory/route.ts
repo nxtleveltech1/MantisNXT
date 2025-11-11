@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';
 
 type Action = 'allocate_to_supplier' | 'deallocate_from_supplier' | 'transfer_allocation' | 'consignment_in' | 'consignment_out';
@@ -71,7 +72,7 @@ export async function POST(
     });
 
     return NextResponse.json({ success: true, data: out });
-  } catch (e: any) {
+  } catch (e: unknown) {
     const msg = e?.message || String(e);
     return NextResponse.json({ success: false, error: 'ALLOCATION_FAILED', detail: msg }, { status: 400 });
   }

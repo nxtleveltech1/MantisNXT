@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
-  CurrencyManager,
   CURRENCY_DEFINITIONS,
   VAT_RATES,
   DEFAULT_CURRENCY_CONFIG,
@@ -20,22 +19,17 @@ import {
   type CurrencyConfig
 } from '@/lib/config/currency-config'
 import {
-  Settings,
   DollarSign,
   Globe,
   RefreshCw,
   Save,
   RotateCcw,
   AlertTriangle,
-  CheckCircle,
   TrendingUp,
   Calculator,
   Eye,
   Edit,
-  Plus,
-  Trash2,
-  Download,
-  Upload
+  Plus
 } from 'lucide-react'
 import AppLayout from '@/components/layout/AppLayout'
 

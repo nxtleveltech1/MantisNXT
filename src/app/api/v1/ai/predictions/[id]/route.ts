@@ -4,7 +4,8 @@
  * PATCH /api/v1/ai/predictions/[id] - Update with actual outcome
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

@@ -22,16 +22,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,14 +41,12 @@ import {
   Calendar,
   Download,
   Trash2,
-  Filter,
   ChevronRight,
   MoreVertical,
   Loader2,
   History,
   Copy,
   ExternalLink,
-  X,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, startOfDay, endOfDay } from 'date-fns';
 import { toast } from 'sonner';
@@ -68,7 +59,7 @@ interface ConversationMessage {
   conversation_id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   created_at: string;
 }
 

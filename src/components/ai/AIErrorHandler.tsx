@@ -1,13 +1,12 @@
 "use client"
 
-import React, { useState, useEffect, ReactNode } from "react"
+import type { ReactNode } from "react";
+import React, { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Separator } from "@/components/ui/separator"
 import {
   Tooltip,
   TooltipContent,
@@ -16,35 +15,18 @@ import {
 } from "@/components/ui/tooltip"
 import {
   AlertTriangle,
-  AlertCircle,
   XCircle,
-  CheckCircle,
   Clock,
   RefreshCw,
   Wifi,
   WifiOff,
   Server,
-  Brain,
-  Zap,
   Shield,
-  Activity,
   TrendingDown,
-  ArrowRight,
-  ExternalLink,
-  Settings,
-  HelpCircle,
-  MessageSquare,
   FileText,
-  Download,
-  Database,
   CloudOff,
   Loader2,
   RotateCcw,
-  Play,
-  Pause,
-  Info,
-  Eye,
-  EyeOff,
   ChevronDown,
   ChevronUp
 } from "lucide-react"
@@ -66,7 +48,7 @@ export interface AIError {
   context?: {
     endpoint?: string
     method?: string
-    payload?: any
+    payload?: unknown
     userAction?: string
   }
 }
@@ -106,10 +88,83 @@ interface AIErrorHandlerProps {
   compactMode?: boolean
 }
 
+const MOCK_SERVICE_STATUS: AIServiceStatus[] = [
+  {
+    service: 'AI Analytics',
+    status: 'operational',
+    lastChecked: new Date(),
+    responseTime: 245,
+    uptime: 99.8,
+    errorRate: 0.2,
+    features: {
+      'predictions': 'available',
+      'anomaly_detection': 'available',
+      'recommendations': 'available',
+      'chat': 'available'
+    }
+  },
+  {
+    service: 'Supplier Discovery',
+    status: 'degraded',
+    lastChecked: new Date(),
+    responseTime: 1250,
+    uptime: 97.5,
+    errorRate: 2.1,
+    features: {
+      'search': 'limited',
+      'recommendations': 'available',
+      'market_intelligence': 'unavailable'
+    }
+  },
+  {
+    service: 'Predictive Engine',
+    status: 'operational',
+    lastChecked: new Date(),
+    responseTime: 890,
+    uptime: 99.9,
+    errorRate: 0.1,
+    features: {
+      'forecasting': 'available',
+      'trend_analysis': 'available',
+      'risk_assessment': 'available'
+    }
+  }
+]
+
+const MOCK_FALLBACK_STRATEGIES: FallbackStrategy[] = [
+  {
+    id: 'cached_data',
+    name: 'Cached Data',
+    description: 'Use recently cached AI results when services are unavailable',
+    available: true,
+    performance: 'high',
+    accuracy: 85,
+    enabled: true
+  },
+  {
+    id: 'simplified_analysis',
+    name: 'Simplified Analysis',
+    description: 'Provide basic analytics using local algorithms',
+    available: true,
+    performance: 'medium',
+    accuracy: 70,
+    enabled: true
+  },
+  {
+    id: 'manual_mode',
+    name: 'Manual Mode',
+    description: 'Disable AI features and provide manual controls',
+    available: true,
+    performance: 'low',
+    accuracy: 60,
+    enabled: false
+  }
+]
+
 interface ErrorBoundaryState {
   hasError: boolean
   error: Error | null
-  errorInfo: any
+  errorInfo: unknown
 }
 
 const AIErrorHandler: React.FC<AIErrorHandlerProps> = ({
@@ -133,85 +188,10 @@ const AIErrorHandler: React.FC<AIErrorHandlerProps> = ({
   const [networkStatus, setNetworkStatus] = useState<'online' | 'offline'>('online')
   const [lastStatusCheck, setLastStatusCheck] = useState<Date>(new Date())
 
-  // Mock service status data
-  const mockServiceStatus: AIServiceStatus[] = [
-    {
-      service: 'AI Analytics',
-      status: 'operational',
-      lastChecked: new Date(),
-      responseTime: 245,
-      uptime: 99.8,
-      errorRate: 0.2,
-      features: {
-        'predictions': 'available',
-        'anomaly_detection': 'available',
-        'recommendations': 'available',
-        'chat': 'available'
-      }
-    },
-    {
-      service: 'Supplier Discovery',
-      status: 'degraded',
-      lastChecked: new Date(),
-      responseTime: 1250,
-      uptime: 97.5,
-      errorRate: 2.1,
-      features: {
-        'search': 'limited',
-        'recommendations': 'available',
-        'market_intelligence': 'unavailable'
-      }
-    },
-    {
-      service: 'Predictive Engine',
-      status: 'operational',
-      lastChecked: new Date(),
-      responseTime: 890,
-      uptime: 99.9,
-      errorRate: 0.1,
-      features: {
-        'forecasting': 'available',
-        'trend_analysis': 'available',
-        'risk_assessment': 'available'
-      }
-    }
-  ]
-
-  // Mock fallback strategies
-  const mockFallbackStrategies: FallbackStrategy[] = [
-    {
-      id: 'cached_data',
-      name: 'Cached Data',
-      description: 'Use recently cached AI results when services are unavailable',
-      available: true,
-      performance: 'high',
-      accuracy: 85,
-      enabled: true
-    },
-    {
-      id: 'simplified_analysis',
-      name: 'Simplified Analysis',
-      description: 'Provide basic analytics using local algorithms',
-      available: true,
-      performance: 'medium',
-      accuracy: 70,
-      enabled: true
-    },
-    {
-      id: 'manual_mode',
-      name: 'Manual Mode',
-      description: 'Disable AI features and provide manual controls',
-      available: true,
-      performance: 'low',
-      accuracy: 60,
-      enabled: false
-    }
-  ]
-
   // Initialize mock data
   useEffect(() => {
-    setServiceStatus(mockServiceStatus)
-    setFallbackStrategies(mockFallbackStrategies)
+    setServiceStatus(MOCK_SERVICE_STATUS)
+    setFallbackStrategies(MOCK_FALLBACK_STRATEGIES)
   }, [])
 
   // Network status monitoring
@@ -257,10 +237,10 @@ const AIErrorHandler: React.FC<AIErrorHandlerProps> = ({
     }, 1000)
 
     return () => clearInterval(retryTimer)
-  }, [errors, enableAutoRetry])
+  }, [errors, enableAutoRetry, retryOperation])
 
   // Error reporting function
-  const reportError = (error: Partial<AIError>) => {
+  const reportError = useCallback((error: Partial<AIError>) => {
     const newError: AIError = {
       id: Date.now().toString(),
       type: error.type || 'unknown',
@@ -284,10 +264,10 @@ const AIErrorHandler: React.FC<AIErrorHandlerProps> = ({
     if (newError.severity === 'critical' && enableFallbacks) {
       activateFallback()
     }
-  }
+  }, [activateFallback, enableFallbacks, maxRetries, onErrorReported, retryDelay])
 
   // Retry operation
-  const retryOperation = async (error: AIError) => {
+  const retryOperation = useCallback(async (error: AIError) => {
     setIsRetrying(error.id)
 
     try {
@@ -317,23 +297,34 @@ const AIErrorHandler: React.FC<AIErrorHandlerProps> = ({
     } finally {
       setIsRetrying(null)
     }
-  }
+  }, [onRetrySuccess, retryDelay])
 
   // Activate fallback strategy
-  const activateFallback = () => {
-    const availableFallback = fallbackStrategies.find(
-      strategy => strategy.available && !strategy.enabled
-    )
+  const activateFallback = useCallback(() => {
+    let activated: FallbackStrategy | null = null
 
-    if (availableFallback) {
-      setFallbackStrategies(prev => prev.map(strategy =>
+    setFallbackStrategies(prev => {
+      const availableFallback = prev.find(
+        strategy => strategy.available && !strategy.enabled
+      )
+
+      if (!availableFallback) {
+        return prev
+      }
+
+      activated = { ...availableFallback, enabled: true }
+
+      return prev.map(strategy =>
         strategy.id === availableFallback.id
           ? { ...strategy, enabled: true }
           : strategy
-      ))
-      onFallbackActivated?.(availableFallback)
+      )
+    })
+
+    if (activated) {
+      onFallbackActivated?.(activated)
     }
-  }
+  }, [onFallbackActivated])
 
   // Get status color
   const getStatusColor = (status: AIServiceStatus['status']) => {
@@ -423,7 +414,7 @@ const AIErrorHandler: React.FC<AIErrorHandlerProps> = ({
         }
       })
     }, 5000)
-  }, [])
+  }, [reportError])
 
   const unresolvedErrors = errors.filter(error => !error.resolved)
   const criticalErrors = unresolvedErrors.filter(error => error.severity === 'critical')
@@ -722,10 +713,10 @@ const AIErrorHandler: React.FC<AIErrorHandlerProps> = ({
 
 // Error Boundary Component
 export class AIErrorBoundary extends React.Component<
-  { children: ReactNode; onError?: (error: Error, errorInfo: any) => void },
+  { children: ReactNode; onError?: (error: Error, errorInfo: unknown) => void },
   ErrorBoundaryState
 > {
-  constructor(props: { children: ReactNode; onError?: (error: Error, errorInfo: any) => void }) {
+  constructor(props: { children: ReactNode; onError?: (error: Error, errorInfo: unknown) => void }) {
     super(props)
     this.state = { hasError: false, error: null, errorInfo: null }
   }
@@ -734,7 +725,7 @@ export class AIErrorBoundary extends React.Component<
     return { hasError: true, error, errorInfo: null }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: unknown) {
     this.setState({ errorInfo })
     this.props.onError?.(error, errorInfo)
   }

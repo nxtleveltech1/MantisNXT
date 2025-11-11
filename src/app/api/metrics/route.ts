@@ -8,7 +8,8 @@
  * - Application metrics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { getDbMetrics } from '@/lib/database/connection-pool';
 import { sessionStore } from '@/lib/cache/redis-session-store';
 
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function formatPrometheus(metrics: any): string {
+function formatPrometheus(metrics: unknown): string {
   const lines: string[] = [];
 
   // Application metrics

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -50,7 +50,7 @@ const STATUS_OPTIONS = [
 export function FilterPanel({ filters, onFiltersChange, onClearFilters }: FilterPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const updateFilter = (key: keyof FilterValue, value: any) => {
+  const updateFilter = (key: keyof FilterValue, value: unknown) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
@@ -115,9 +115,9 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
         <div className="p-4 pt-0 space-y-6 border-t border-gray-200">
           {/* Segment Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <p className="block text-sm font-medium text-gray-700 mb-2">
               Segment
-            </label>
+            </p>
             <div className="flex flex-wrap gap-2">
               {SEGMENT_OPTIONS.map(option => (
                 <button
@@ -137,9 +137,9 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <p className="block text-sm font-medium text-gray-700 mb-2">
               Status
-            </label>
+            </p>
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map(option => (
                 <button
@@ -159,9 +159,9 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
           {/* Lifetime Value Range */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <p className="block text-sm font-medium text-gray-700 mb-2">
               Lifetime Value
-            </label>
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <input
@@ -186,9 +186,9 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
           {/* Acquisition Date Range */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <p className="block text-sm font-medium text-gray-700 mb-2">
               Acquisition Date
-            </label>
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <input
@@ -211,9 +211,9 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
           {/* Last Interaction Date Range */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <p className="block text-sm font-medium text-gray-700 mb-2">
               Last Interaction
-            </label>
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <input

@@ -3,7 +3,7 @@
  * GET /api/v1/ai/conversations/history
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

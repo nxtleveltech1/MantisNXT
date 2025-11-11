@@ -14,7 +14,6 @@ import {
   Search,
   Save,
   Undo2,
-  CheckCircle,
   AlertTriangle,
   Lock,
   Unlock,
@@ -23,10 +22,7 @@ import {
   FileText,
   CreditCard,
   Settings,
-  BarChart3,
-  Database,
-  Mail,
-  Webhook
+  BarChart3
 } from "lucide-react"
 
 interface Permission {

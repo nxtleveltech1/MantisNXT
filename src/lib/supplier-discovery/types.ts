@@ -65,7 +65,7 @@ export interface DataSource {
 
 export interface ExtractionResult {
   field: string;
-  value: any;
+  value: unknown;
   confidence: number;
   source: string;
   timestamp: Date;

@@ -1,20 +1,21 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import type {
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+  RowSelectionState} from '@tanstack/react-table';
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   getPaginationRowModel,
-  ColumnDef,
-  flexRender,
-  SortingState,
-  ColumnFiltersState,
-  VisibilityState,
-  RowSelectionState,
+  flexRender
 } from '@tanstack/react-table'
-import { User } from '@/types/auth'
+import type { User } from '@/types/auth'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -162,7 +163,7 @@ export function UserTable({
         cell: ({ row }) => {
           const role = row.getValue('role') as string
           return (
-            <Badge variant={getRoleBadgeVariant(role) as any}>
+            <Badge variant={getRoleBadgeVariant(role) as unknown}>
               {getRoleLabel(role)}
             </Badge>
           )

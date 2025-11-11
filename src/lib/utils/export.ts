@@ -9,14 +9,14 @@ import * as XLSX from 'xlsx';
 export interface ExportColumn {
   key: string;
   label: string;
-  format?: (value: any) => string;
+  format?: (value: unknown) => string;
 }
 
 export class ExportUtils {
   /**
    * Export data to CSV
    */
-  static exportToCSV<T extends Record<string, any>>(
+  static exportToCSV<T extends Record<string, unknown>>(
     data: T[],
     columns: ExportColumn[],
     filename: string
@@ -50,7 +50,7 @@ export class ExportUtils {
   /**
    * Export data to Excel
    */
-  static exportToExcel<T extends Record<string, any>>(
+  static exportToExcel<T extends Record<string, unknown>>(
     data: T[],
     columns: ExportColumn[],
     filename: string,
@@ -132,7 +132,7 @@ export class ExportUtils {
   /**
    * Format array as comma-separated string
    */
-  static formatArray(value: any[] | null | undefined): string {
+  static formatArray(value: unknown[] | null | undefined): string {
     if (!value || !Array.isArray(value)) return '';
     return value.join(', ');
   }

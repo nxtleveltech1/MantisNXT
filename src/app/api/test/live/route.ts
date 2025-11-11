@@ -3,7 +3,8 @@
  * Comprehensive test of all backend functionality
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { pool } from '@/lib/database'
 import { upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService'
 import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'

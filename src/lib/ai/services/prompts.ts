@@ -20,7 +20,7 @@ export interface PromptTemplate {
   updatedAt: string;
   providerHints?: AIProviderId[];
   variants?: Record<string, PromptTemplateVariant>;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PromptTemplateInput {
@@ -31,12 +31,12 @@ export interface PromptTemplateInput {
   tags?: string[];
   providerHints?: AIProviderId[];
   variants?: Record<string, PromptTemplateVariant>;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface RenderPromptOptions {
   variables?: Record<string, string | number | boolean>;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   provider?: AIProviderId;
   variantId?: string;
   sanitize?: boolean;
@@ -46,7 +46,7 @@ export interface PromptRenderResult {
   templateId: string;
   prompt: string;
   version: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface PromptPerformanceMetrics {
@@ -55,7 +55,7 @@ interface PromptPerformanceMetrics {
   failure: number;
   lastUsed?: string;
   variants: Record<string, PromptPerformanceMetrics>;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 const DEFAULT_TEMPLATES: PromptTemplateInput[] = [
@@ -296,7 +296,7 @@ export class PromptManager {
 
   generateAdaptivePrompt(
     baseId: string,
-    signal: { context: Record<string, any>; emphasis?: string[] },
+    signal: { context: Record<string, unknown>; emphasis?: string[] },
   ): PromptRenderResult {
     const template = this.getTemplate(baseId);
     const contextBlock = Object.entries(signal.context)
@@ -320,7 +320,7 @@ ${contextBlock}${emphasis}`;
   private applyVariables(
     template: string,
     variables: Record<string, string | number | boolean> = {},
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ): string {
     let prompt = template;
     Object.entries(variables).forEach(([key, value]) => {

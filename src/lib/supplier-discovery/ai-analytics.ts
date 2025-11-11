@@ -14,7 +14,6 @@
 
 import { aiDatabase } from '@/lib/ai/database-integration';
 import { query } from '@/lib/database/connection';
-import { z } from 'zod';
 
 // ============================================================================
 // TYPES AND SCHEMAS
@@ -174,7 +173,7 @@ export class SupplierAIAnalytics {
             COUNT(DISTINCT p.id) as products_supplied,
             AVG(poi.unit_price) as avg_unit_price,
             SUM(poi.total) as total_revenue
-          FROM suppliers s
+          FROM public.suppliers s
           LEFT JOIN purchase_orders po ON s.id = po.supplier_id
           LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
           LEFT JOIN products p ON p.supplier_id = s.id
@@ -480,15 +479,15 @@ export class SupplierAIAnalytics {
   // PRIVATE HELPER METHODS
   // ============================================================================
 
-  private async fetchSupplierData(supplierId: number): Promise<any> {
+  private async fetchSupplierData(supplierId: number): Promise<unknown> {
     const result = await query(
-      'SELECT * FROM suppliers WHERE id = $1',
+      'SELECT * FROM public.suppliers WHERE id = $1',
       [supplierId]
     );
     return result.rows[0];
   }
 
-  private calculateScores(supplierData: any, analysis: any): {
+  private calculateScores(supplierData: unknown, analysis: unknown): {
     overall: number;
     reliability: number;
     quality: number;
@@ -540,13 +539,13 @@ export class SupplierAIAnalytics {
     return 'F';
   }
 
-  private calculateRiskScore(anomalies: any): number {
+  private calculateRiskScore(anomalies: unknown): number {
     const criticalWeight = 25;
     const highWeight = 15;
     const mediumWeight = 8;
     const lowWeight = 3;
 
-    const score = anomalies.anomalies.reduce((total: number, anomaly: any) => {
+    const score = anomalies.anomalies.reduce((total: number, anomaly: unknown) => {
       switch (anomaly.severity) {
         case 'critical': return total + criticalWeight;
         case 'high': return total + highWeight;
@@ -567,7 +566,7 @@ export class SupplierAIAnalytics {
   }
 
   private mapAnomalyToRiskType(anomalyType: string): 'financial' | 'operational' | 'compliance' | 'quality' | 'delivery' | 'reputation' {
-    const mapping: Record<string, any> = {
+    const mapping: Record<string, unknown> = {
       'data_quality': 'operational',
       'statistical': 'quality',
       'business_rule': 'compliance',
@@ -577,7 +576,7 @@ export class SupplierAIAnalytics {
   }
 
   private mapPredictionType(predictionType: string): 'inventory_demand' | 'supplier_performance' | 'price_trends' | 'stock_levels' {
-    const mapping: Record<string, any> = {
+    const mapping: Record<string, unknown> = {
       'on_time_delivery': 'supplier_performance',
       'quality_score': 'supplier_performance',
       'cost_trend': 'price_trends',
@@ -586,7 +585,7 @@ export class SupplierAIAnalytics {
     return mapping[predictionType] || 'supplier_performance';
   }
 
-  private analyzeTrend(predictions: any[]): 'improving' | 'stable' | 'declining' {
+  private analyzeTrend(predictions: unknown[]): 'improving' | 'stable' | 'declining' {
     if (predictions.length < 2) return 'stable';
 
     const firstValue = predictions[0].value;
@@ -598,7 +597,7 @@ export class SupplierAIAnalytics {
     return 'stable';
   }
 
-  private calculateTrendStrength(predictions: any[]): number {
+  private calculateTrendStrength(predictions: unknown[]): number {
     if (predictions.length < 2) return 0;
 
     const values = predictions.map(p => p.value);
@@ -636,7 +635,7 @@ export class SupplierAIAnalytics {
     return weaknesses;
   }
 
-  private generateRecommendation(supplier: any, score: SupplierScore): string {
+  private generateRecommendation(supplier: unknown, score: SupplierScore): string {
     if (supplier.rank === 1) {
       return 'Primary supplier - maintain relationship';
     } else if (supplier.rank <= 3) {
@@ -648,7 +647,7 @@ export class SupplierAIAnalytics {
     }
   }
 
-  private generateRecommendationReason(supplier: any, score: SupplierScore): string {
+  private generateRecommendationReason(supplier: unknown, score: SupplierScore): string {
     if (supplier.rank === 1) {
       return `Top performer with ${score.overallScore}/100 overall score`;
     } else {

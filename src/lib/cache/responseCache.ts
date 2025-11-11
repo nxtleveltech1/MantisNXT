@@ -21,7 +21,7 @@ export async function getOrSet<T>(key: string, fetcher: () => Promise<T>, ttl?: 
   return data
 }
 
-export function makeKey(url: string, extras?: Record<string, any>): string {
+export function makeKey(url: string, extras?: Record<string, unknown>): string {
   const base = url
   const extra = extras ? '|' + JSON.stringify(extras) : ''
   return `resp:${base}${extra}`

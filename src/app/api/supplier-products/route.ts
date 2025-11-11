@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server";
 import { query as dbQuery } from "@/lib/database";
 import { z } from "zod";
 
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Build WHERE conditions with parameterized queries
     const whereConditions: string[] = ["1=1"];
-    const sqlParams: any[] = [];
+    const sqlParams: unknown[] = [];
     let paramIndex = 1;
 
     if (selectionId) {

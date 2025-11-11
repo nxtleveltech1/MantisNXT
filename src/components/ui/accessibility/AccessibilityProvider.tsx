@@ -4,7 +4,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
@@ -13,36 +12,15 @@ import { Separator } from '@/components/ui/separator'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Eye,
-  EyeOff,
   Volume2,
-  VolumeX,
   MousePointer,
   Keyboard,
-  Type,
-  Palette,
-  Monitor,
   Settings,
   Shield,
-  CheckCircle,
-  AlertCircle,
-  Info,
-  Zap,
-  Focus,
   Navigation,
-  Headphones,
-  Moon,
-  Sun,
-  Contrast,
   RotateCcw,
-  Play,
-  Pause,
-  SkipForward,
-  SkipBack,
-  X,
   Plus,
-  Minus,
-  ChevronUp,
-  ChevronDown
+  Minus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -283,7 +261,7 @@ export const AccessibleButton: React.FC<{
 }
 
 // Accessibility Settings Panel
-const AccessibilitySettings: React.FC = () => {
+const AccessibilitySettingsPanel: React.FC = () => {
   const { settings, updateSetting, resetSettings, isSettingsOpen, setIsSettingsOpen } = useAccessibility()
   const [activeTab, setActiveTab] = useState<'visual' | 'audio' | 'navigation' | 'interaction'>('visual')
 
@@ -332,7 +310,7 @@ const AccessibilitySettings: React.FC = () => {
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
+                        onClick={() => setActiveTab(tab.id as unknown)}
                         className={cn(
                           "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all",
                           "min-h-[44px] focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
@@ -448,7 +426,7 @@ const AccessibilitySettings: React.FC = () => {
                             </label>
                             <Select
                               value={settings.fontFamily}
-                              onValueChange={(value) => updateSetting('fontFamily', value as any)}
+                              onValueChange={(value) => updateSetting('fontFamily', value as unknown)}
                             >
                               <SelectTrigger id="font-family">
                                 <SelectValue />
@@ -470,7 +448,7 @@ const AccessibilitySettings: React.FC = () => {
                             </label>
                             <Select
                               value={settings.colorBlindMode}
-                              onValueChange={(value) => updateSetting('colorBlindMode', value as any)}
+                              onValueChange={(value) => updateSetting('colorBlindMode', value as unknown)}
                             >
                               <SelectTrigger id="color-blind-mode">
                                 <SelectValue />
@@ -765,7 +743,7 @@ export const AccessibilityProvider: React.FC<{
     if (saved) {
       try {
         setSettings(JSON.parse(saved))
-      } catch (e) {
+      } catch {
         console.warn('Failed to load accessibility settings')
       }
     }
@@ -860,7 +838,7 @@ export const AccessibilityProvider: React.FC<{
       )}
 
       {/* Accessibility Settings Panel */}
-      <AccessibilitySettings />
+      <AccessibilitySettingsPanel />
 
       {/* Main Content */}
       <div
@@ -900,11 +878,11 @@ export const AccessibilityStatusIndicator: React.FC = () => {
   const activeFeatures = Object.entries(settings).filter(([key, value]) => {
     if (typeof value === 'boolean') return value
     if (typeof value === 'number') {
-      const defaults = defaultSettings as any
+      const defaults = defaultSettings as unknown
       return value !== defaults[key]
     }
     if (typeof value === 'string') {
-      const defaults = defaultSettings as any
+      const defaults = defaultSettings as unknown
       return value !== defaults[key]
     }
     return false

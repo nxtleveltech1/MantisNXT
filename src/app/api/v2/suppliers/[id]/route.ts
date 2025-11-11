@@ -2,12 +2,14 @@
  * Individual Supplier API v2 - GET, PUT, DELETE for specific suppliers
  */
 
-import { NextRequest } from 'next/server'
-import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'
-import { UpdateSupplierSchema, EnhancedSupplier } from '@/lib/api/validation'
-import { z } from 'zod'
+import type { NextRequest } from 'next/server'
+import type { RequestContext } from '@/lib/api/middleware';
+import { ApiMiddleware } from '@/lib/api/middleware'
+import type { EnhancedSupplier } from '@/lib/api/validation';
+import { UpdateSupplierSchema } from '@/lib/api/validation'
+import type { z } from 'zod'
 
-type InternalSupplier = EnhancedSupplier & Record<string, any> & { id: string }
+type InternalSupplier = EnhancedSupplier & Record<string, unknown> & { id: string }
 const mockSupplierData: InternalSupplier[] = []
 const UpdateSupplierBodySchema = UpdateSupplierSchema.omit({ id: true })
 type UpdateSupplierInput = z.infer<typeof UpdateSupplierBodySchema>

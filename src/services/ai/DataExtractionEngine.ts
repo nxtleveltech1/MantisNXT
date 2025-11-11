@@ -1,6 +1,6 @@
 // Data Extraction Engine for parsing and structuring supplier information
-import { SearchResult } from './WebSearchService';
-import { ScrapedWebsite } from './WebScrapingService';
+import type { SearchResult } from './WebSearchService';
+import type { ScrapedWebsite } from './WebScrapingService';
 import type { ExtractedSupplierData } from './ExtractedSupplierData';
 
 export class DataExtractionEngine {

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Plus,
   Search,
@@ -17,7 +17,6 @@ import {
   Clock,
   AlertTriangle,
   DollarSign,
-  Calendar,
   Package,
   Truck,
   FileText,
@@ -28,40 +27,28 @@ import {
   Star,
   TrendingUp
 } from 'lucide-react'
-import { format } from 'date-fns'
 
-import { cn, formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
+import { formatCurrency, getStatusColor } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter
-} from '@/components/ui/dialog'
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
 
 import POCreationWizard from './POCreationWizard'
 import PODetailsModal from './PODetailsModal'
-import ApprovalWorkflow from './ApprovalWorkflow'
 import BulkOperations from './BulkOperations'
 import POTemplates from './POTemplates'
 import CurrencyManager from './CurrencyManager'
@@ -243,7 +230,7 @@ const PurchaseOrdersManagement: React.FC = () => {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [currentView, setCurrentView] = useState<'grid' | 'list'>('list')
   const [isWizardOpen, setIsWizardOpen] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<unknown | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isBulkOperationsOpen, setIsBulkOperationsOpen] = useState(false)
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
@@ -325,7 +312,7 @@ const PurchaseOrdersManagement: React.FC = () => {
     }
   }
 
-  const openOrderDetails = (order: any) => {
+  const openOrderDetails = (order: unknown) => {
     setSelectedOrder(order)
     setIsDetailsOpen(true)
   }

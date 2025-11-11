@@ -39,7 +39,7 @@ export type {
 import { AITextService, type AITextServiceOptions } from './text';
 import { AIChatService, type AIChatServiceOptions } from './chat';
 import { AIEmbeddingService, type AIEmbeddingServiceOptions } from './embedding';
-import { AIServiceBase } from './base';
+import type { AIServiceBase } from './base';
 
 const registry = new Map<string, AIServiceBase>();
 

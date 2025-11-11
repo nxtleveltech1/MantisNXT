@@ -12,7 +12,6 @@
  * Rate Limit: 30 requests/min per org
  */
 
-import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 
 interface ActivityLogEntry {
@@ -60,7 +59,7 @@ export async function GET(req: Request) {
 
     const rows = await query(sql, [orgId])
     return new Response(JSON.stringify({ data: rows }), { status: 200 })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return new Response(JSON.stringify({ error: err?.message || 'Internal error' }), { status: 500 })
   }
 }

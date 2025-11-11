@@ -3,7 +3,8 @@
  * Real-time integration with PostgreSQL for supplier price lists
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import * as XLSX from 'xlsx'
 import { query, withTransaction } from '@/lib/database'
@@ -96,7 +97,7 @@ interface UploadSession {
 interface ValidationIssue {
   row: number
   field: string
-  value: any
+  value: unknown
   severity: 'error' | 'warning' | 'info'
   message: string
   suggestion?: string
@@ -106,12 +107,12 @@ interface ValidationIssue {
 interface ProcessedRow {
   id: string
   rowNumber: number
-  originalData: Record<string, any>
-  mappedData: Record<string, any>
+  originalData: Record<string, unknown>
+  mappedData: Record<string, unknown>
   status: 'valid' | 'warning' | 'error' | 'skipped'
   issues: ValidationIssue[]
   action: 'create' | 'update' | 'skip'
-  existingRecord?: any
+  existingRecord?: unknown
   resolvedConflicts?: string[]
 }
 
@@ -270,7 +271,7 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
 
     // Process file
     const arrayBuffer = await file.arrayBuffer()
-    let data: any[][]
+    let data: unknown[][]
     let headers: string[]
 
     if (file.type === 'text/csv') {
@@ -298,8 +299,8 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
       headers = jsonData[0] as string[]
       data = jsonData
         .slice(1)
-        .filter((row): row is any[] => Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== ''))
-        .map(row => row as any[])
+        .filter((row): row is unknown[] => Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== ''))
+        .map(row => row as unknown[])
     }
 
     // Create upload session in database
@@ -536,12 +537,12 @@ function calculateMappingConfidence(mappings: Record<string, string>, headers: s
 }
 
 async function processAndValidateData(
-  data: any[][],
+  data: unknown[][],
   headers: string[],
   fieldMappings: Record<string, string>,
-  conflictResolution: any,
-  validationOptions: any,
-  client: any
+  conflictResolution: unknown,
+  validationOptions: unknown,
+  client: unknown
 ): Promise<ValidationResult> {
   const issues: ValidationIssue[] = []
   const processedRows: ProcessedRow[] = []
@@ -564,7 +565,7 @@ async function processAndValidateData(
 
     // Skip empty rows if configured
     if (validationOptions.skipEmptyRows &&
-        row.every((cell: any) => !cell || cell.toString().trim() === '')) {
+        row.every((cell: unknown) => !cell || cell.toString().trim() === '')) {
       continue
     }
 
@@ -660,11 +661,11 @@ async function processAndValidateData(
 
 function transformAndValidateField(
   fieldName: string,
-  value: any,
+  value: unknown,
   issues: ValidationIssue[],
   rowNumber: number,
-  validationOptions: any
-): any {
+  validationOptions: unknown
+): unknown {
   if (value === null || value === undefined || value === '') {
     // Check if field is required
     const requiredFields = ['sku', 'name', 'category', 'cost_price', 'stock_qty']
@@ -747,8 +748,8 @@ function transformAndValidateField(
 
 function resolveConflict(
   processedRow: ProcessedRow,
-  existingRecord: any,
-  conflictResolution: any
+  existingRecord: unknown,
+  conflictResolution: unknown
 ): { action: 'create' | 'update' | 'skip', resolvedFields: string[] } {
   const resolvedFields: string[] = []
 
@@ -776,7 +777,7 @@ function resolveConflict(
   }
 }
 
-async function createBackup(client: any, sessionId: string, processedRows: ProcessedRow[]): Promise<string> {
+async function createBackup(client: unknown, sessionId: string, processedRows: ProcessedRow[]): Promise<string> {
   const backupId = `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
   // Get existing records that will be affected
@@ -807,9 +808,9 @@ async function createBackup(client: any, sessionId: string, processedRows: Proce
 }
 
 async function importToInventory(
-  client: any,
+  client: unknown,
   processedRows: ProcessedRow[],
-  conflictResolution: any,
+  conflictResolution: unknown,
   supplierId: string
 ): Promise<ImportResult> {
   let created = 0
@@ -905,7 +906,7 @@ async function importToInventory(
   }
 }
 
-function generateRecommendations(summary: any, processedRows: ProcessedRow[]): string[] {
+function generateRecommendations(summary: unknown, processedRows: ProcessedRow[]): string[] {
   const recommendations: string[] = []
 
   if (summary.errorRows > 0) {

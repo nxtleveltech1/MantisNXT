@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Tooltip,
@@ -15,17 +13,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
+
 import {
   Brain,
-  MessageCircle,
   Send,
   Mic,
   MicOff,
@@ -36,36 +27,20 @@ import {
   ThumbsUp,
   ThumbsDown,
   Copy,
-  Share,
-  MoreHorizontal,
   Loader2,
   AlertTriangle,
-  CheckCircle,
   Building2,
   TrendingUp,
   DollarSign,
-  Package,
   BarChart3,
-  Lightbulb,
   Search,
-  Filter,
   Download,
   FileText,
-  Zap,
   Target,
-  Star,
   Clock,
-  Globe,
-  ArrowRight,
-  RefreshCw,
   Maximize2,
   Minimize2,
-  Settings,
-  HelpCircle,
-  BookOpen,
-  Database,
-  ShieldCheck,
-  Award
+  ShieldCheck
 } from "lucide-react"
 
 // Types for AI Chat System
@@ -79,7 +54,7 @@ interface ChatMessage {
     sources?: string[]
     actions?: ChatAction[]
     suggestions?: string[]
-    context?: any
+    context?: unknown
   }
   reactions?: {
     helpful?: boolean
@@ -92,7 +67,7 @@ interface ChatAction {
   label: string
   icon: React.ComponentType<{ className?: string }>
   action: string
-  data?: any
+  data?: unknown
   variant?: 'default' | 'primary' | 'secondary' | 'destructive'
 }
 
@@ -112,7 +87,7 @@ interface AIContext {
     focusAreas: string[]
     alertThreshold: number
   }
-  sessionData?: any
+  sessionData?: unknown
 }
 
 interface AIChatInterfaceProps {
@@ -143,7 +118,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const speechRecognition = useRef<any>(null)
+  const speechRecognition = useRef<unknown>(null)
 
   // Quick prompts for common queries
   const quickPrompts: QuickPrompt[] = [
@@ -223,12 +198,12 @@ How can I assist you today?`,
   // Initialize speech recognition
   useEffect(() => {
     if (enableVoice && 'webkitSpeechRecognition' in window) {
-      speechRecognition.current = new (window as any).webkitSpeechRecognition()
+      speechRecognition.current = new (window as unknown).webkitSpeechRecognition()
       speechRecognition.current.continuous = false
       speechRecognition.current.interimResults = false
       speechRecognition.current.lang = 'en-US'
 
-      speechRecognition.current.onresult = (event: any) => {
+      speechRecognition.current.onresult = (event: unknown) => {
         const transcript = event.results[0][0].transcript
         setInputMessage(transcript)
         setIsListening(false)
@@ -619,7 +594,7 @@ What specific area would you like me to focus on?`
                                 onClick={() => setInputMessage(suggestion)}
                                 className="text-xs h-auto py-1 px-2 text-gray-600 hover:text-gray-800"
                               >
-                                "{suggestion}"
+                                &ldquo;{suggestion}&rdquo;
                               </Button>
                             ))}
                           </div>

@@ -5,7 +5,6 @@ import {
   type AIServiceRequestOptions,
   type AIServiceResponse,
 } from './base';
-import type { AIProviderId } from '@/types/ai';
 
 export interface ForecastRequest {
   productId: string;
@@ -25,7 +24,7 @@ export interface ForecastResult {
   algorithm: string;
   seasonalFactors?: Record<string, number>;
   trend?: 'increasing' | 'decreasing' | 'stable';
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface BatchForecastRequest {
@@ -327,7 +326,7 @@ Respond in JSON format:
   /**
    * Store forecast in database
    */
-  private async storeForecast(orgId: string, data: any): Promise<ForecastResult> {
+  private async storeForecast(orgId: string, data: unknown): Promise<ForecastResult> {
     // Store in demand_forecast table
     const forecastResult = await db.query(
       `

@@ -3,7 +3,7 @@
  * GET /api/v1/ai/anomalies/stats
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const { startDate, endDate } = extractDateRange(searchParams);
 
-    const entityType = searchParams.get('entityType') as any;
+    const entityType = searchParams.get('entityType') as unknown;
 
     const stats = await anomalyService.getAnomalyStats(user.organizationId, {
       entityType,

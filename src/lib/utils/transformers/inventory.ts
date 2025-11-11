@@ -25,7 +25,7 @@ export type InventoryItem = {
 };
 
 export function toDisplay(row: DbInventoryRow): InventoryItem {
-  const c = keysToCamel(row) as any;
+  const c = keysToCamel(row) as unknown;
   return {
     id: c.id,
     sku: c.sku,
@@ -39,7 +39,7 @@ export function toDisplay(row: DbInventoryRow): InventoryItem {
   };
 }
 
-export function toRaw(row: DbInventoryRow): Record<string, any> {
+export function toRaw(row: DbInventoryRow): Record<string, unknown> {
   return keysToSnake(row);
 }
 

@@ -11,7 +11,7 @@ export interface AIChatMessage {
   role: AIMessageRole;
   content: string;
   name?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AIUsageMetrics {
@@ -36,7 +36,7 @@ export interface AIStreamChunk {
   model?: string;
   timestamp: number;
   done?: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AIEmbeddingResult {
@@ -59,7 +59,7 @@ export interface AITextResult {
   model?: string;
   finishReason?: string;
   usage?: AIUsageMetrics;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AIChatResult extends AITextResult {
@@ -100,7 +100,7 @@ export interface AIProviderConfig {
   requestTimeoutMs?: number;
   maxRetries?: number;
   compatibility?: 'strict' | 'compatible';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AIProviderHealth {
@@ -137,7 +137,7 @@ export interface AIProviderRuntimeOptions {
   frequencyPenalty?: number;
   stopSequences?: string[];
   signal?: AbortSignal;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   responseFormat?: 'text' | 'json';
 }
 

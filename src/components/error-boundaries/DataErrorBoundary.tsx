@@ -5,7 +5,8 @@
 
 'use client';
 
-import React, { Component, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React, { Component } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,7 +15,7 @@ import { AlertTriangle, RefreshCw, Bug, Database, Clock } from 'lucide-react';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: any) => void;
+  onError?: (error: Error, errorInfo: unknown) => void;
   category?: 'data' | 'ui' | 'api' | 'timestamp';
   retryable?: boolean;
   className?: string;
@@ -23,7 +24,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: any;
+  errorInfo: unknown;
   retryCount: number;
   lastErrorTime: number;
 }
@@ -51,7 +52,7 @@ class DataErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: unknown) {
     // Log the error
     console.error('❌ DataErrorBoundary caught an error:', error, errorInfo);
 
@@ -69,7 +70,7 @@ class DataErrorBoundary extends Component<Props, State> {
     this.logErrorDetails(error, errorInfo);
   }
 
-  private logErrorDetails(error: Error, errorInfo: any) {
+  private logErrorDetails(error: Error, errorInfo: unknown) {
     const category = this.props.category || 'unknown';
 
     // Check for common data-related errors
@@ -99,8 +100,8 @@ class DataErrorBoundary extends Component<Props, State> {
     }
 
     // Report to error tracking service (if available)
-    if (typeof window !== 'undefined' && (window as any).errorReporter) {
-      (window as any).errorReporter.reportError(error, {
+    if (typeof window !== 'undefined' && (window as unknown).errorReporter) {
+      (window as unknown).errorReporter.reportError(error, {
         category,
         componentStack: errorInfo.componentStack,
         timestamp: new Date().toISOString()

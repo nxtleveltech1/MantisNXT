@@ -94,11 +94,11 @@ export interface AnalyticsReport {
     performanceGains: number; // percentage
     costSavings: number; // estimated dollars
   };
-  insights: any[];
-  recommendations: any[];
-  performance: any;
-  trends: any[];
-  alerts: any[];
+  insights: unknown[];
+  recommendations: unknown[];
+  performance: unknown;
+  trends: unknown[];
+  alerts: unknown[];
 }
 
 /**
@@ -169,7 +169,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get comprehensive analytics dashboard
    */
-  async getAnalyticsDashboard(): Promise<any> {
+  async getAnalyticsDashboard(): Promise<unknown> {
     if (!this.isInitialized) {
       throw new Error('Analytics service not initialized');
     }
@@ -262,7 +262,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Execute optimization workflow
    */
-  async executeOptimization(type: string, params: any = {}): Promise<any> {
+  async executeOptimization(type: string, params: unknown = {}): Promise<unknown> {
     try {
       let result;
 
@@ -308,7 +308,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get AI-generated insights
    */
-  async getAIInsights(limit: number = 20): Promise<any[]> {
+  async getAIInsights(limit: number = 20): Promise<unknown[]> {
     if (!this.config.features.aiInsights) {
       return [];
     }
@@ -322,7 +322,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get intelligent recommendations
    */
-  async getRecommendations(type?: string, limit: number = 15): Promise<any[]> {
+  async getRecommendations(type?: string, limit: number = 15): Promise<unknown[]> {
     if (!this.config.features.recommendations) {
       return [];
     }
@@ -338,7 +338,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get anomaly detection results
    */
-  async getAnomalies(limit: number = 10): Promise<any[]> {
+  async getAnomalies(limit: number = 10): Promise<unknown[]> {
     if (!this.config.features.anomalyDetection) {
       return [];
     }
@@ -352,7 +352,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get predictive analytics results
    */
-  async getPredictions(): Promise<any> {
+  async getPredictions(): Promise<unknown> {
     if (!this.config.features.predictiveAnalytics) {
       return null;
     }
@@ -373,7 +373,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get performance metrics
    */
-  async getPerformanceMetrics(): Promise<any> {
+  async getPerformanceMetrics(): Promise<unknown> {
     if (!this.config.features.performance) {
       return null;
     }
@@ -386,7 +386,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get optimization status
    */
-  async getOptimizationStatus(): Promise<any> {
+  async getOptimizationStatus(): Promise<unknown> {
     if (!this.config.features.automation) {
       return null;
     }
@@ -408,7 +408,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get optimization history
    */
-  async getOptimizationHistory(): Promise<any> {
+  async getOptimizationHistory(): Promise<unknown> {
     const workflows = await this.workflowEngine.getWorkflowHistory(
       this.config.organizationId
     );
@@ -423,7 +423,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
   /**
    * Get trends analysis
    */
-  async getTrends(startDate: Date, endDate: Date): Promise<any[]> {
+  async getTrends(startDate: Date, endDate: Date): Promise<unknown[]> {
     const trends = await this.performanceManager.getMonitor()
       .getPerformanceTrends(this.config.organizationId, '7d');
 
@@ -502,8 +502,8 @@ export class AnalyticsIntegrationService extends EventEmitter {
 
   private initializeModules(): void {
     this.mlModels = new AdvancedMLModels();
-    this.queryOptimizer = new QueryOptimizer(null as any); // Mock DB connection
-    this.dbMonitor = new DatabasePerformanceMonitor(null as any);
+    this.queryOptimizer = new QueryOptimizer(null as unknown); // Mock DB connection
+    this.dbMonitor = new DatabasePerformanceMonitor(null as unknown);
     this.predictiveService = new PredictiveAnalyticsService();
     this.recommendationEngine = new IntelligentRecommendationEngine();
     this.anomalyDetection = new RealTimeAnomalyDetectionEngine();
@@ -630,7 +630,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
     this.emit('reportGenerated', report);
   }
 
-  private calculatePerformanceGains(performance: any): number {
+  private calculatePerformanceGains(performance: unknown): number {
     if (!performance?.summary?.score) {
       return 0;
     }
@@ -641,7 +641,7 @@ export class AnalyticsIntegrationService extends EventEmitter {
     return Math.max(0, ((currentScore - baselineScore) / baselineScore) * 100);
   }
 
-  private estimateCostSavings(recommendations: any[], optimizations: any): number {
+  private estimateCostSavings(recommendations: unknown[], optimizations: unknown): number {
     if (!recommendations?.length) {
       return 0;
     }

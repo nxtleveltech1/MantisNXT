@@ -9,7 +9,7 @@
  */
 
 import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
-import { SupplierProduct, ProductTableBySupplier, BulkOperationResult } from '../../types/nxt-spp';
+import type { SupplierProduct, ProductTableBySupplier, BulkOperationResult } from '../../types/nxt-spp';
 
 export class SupplierProductService {
   /**
@@ -34,7 +34,7 @@ export class SupplierProductService {
     offset?: number;
   }): Promise<{ products: SupplierProduct[]; total: number }> {
     const conditions: string[] = ['1=1'];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (filters.supplier_id) {
@@ -106,7 +106,7 @@ export class SupplierProductService {
     }
   ): Promise<{ products: ProductTableBySupplier[]; total: number }> {
     const conditions: string[] = ['sp.supplier_id = $1'];
-    const params: any[] = [supplierId];
+    const params: unknown[] = [supplierId];
     let paramIndex = 2;
 
     if (!options?.include_inactive) {
@@ -255,7 +255,7 @@ export class SupplierProductService {
     }>
   ): Promise<BulkOperationResult<SupplierProduct>> {
     const results: SupplierProduct[] = [];
-    const errors: Array<{ item: any; error: string }> = [];
+    const errors: Array<{ item: unknown; error: string }> = [];
     let processed = 0;
     let failed = 0;
 

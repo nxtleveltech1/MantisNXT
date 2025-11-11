@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -52,15 +52,12 @@ import {
   ShoppingCart,
   Star,
   Share2,
-  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import type {
   LoyaltyRule,
   RuleTriggerType,
-  LoyaltyTier,
-  LoyaltyRuleConditions,
 } from '@/types/loyalty'
 
 const ruleSchema = z.object({
@@ -86,7 +83,7 @@ const ruleSchema = z.object({
 
 type RuleFormData = z.infer<typeof ruleSchema>
 
-const TRIGGER_ICONS: Record<RuleTriggerType, any> = {
+const TRIGGER_ICONS: Record<RuleTriggerType, unknown> = {
   order_placed: ShoppingCart,
   referral: Users,
   review: Star,
@@ -113,7 +110,7 @@ export default function RuleEngineBuilder() {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false)
   const [selectedRule, setSelectedRule] = useState<LoyaltyRule | null>(null)
   const [testOrderAmount, setTestOrderAmount] = useState(100)
-  const [testResult, setTestResult] = useState<any>(null)
+  const [testResult, setTestResult] = useState<unknown>(null)
 
   const queryClient = useQueryClient()
 
@@ -509,7 +506,7 @@ export default function RuleEngineBuilder() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {programs?.map((program: any) => (
+                        {programs?.map((program: unknown) => (
                           <SelectItem key={program.id} value={program.id}>
                             {program.name}
                           </SelectItem>
@@ -804,7 +801,7 @@ export default function RuleEngineBuilder() {
           <DialogHeader>
             <DialogTitle>Delete Rule</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedRule?.name}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{selectedRule?.name}&rdquo;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -828,7 +825,7 @@ export default function RuleEngineBuilder() {
           <DialogHeader>
             <DialogTitle>Test Rule</DialogTitle>
             <DialogDescription>
-              Test "{selectedRule?.name}" with sample data
+              Test &ldquo;{selectedRule?.name}&rdquo; with sample data
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

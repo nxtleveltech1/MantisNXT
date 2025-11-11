@@ -11,7 +11,8 @@
  * Coverage target: 10% of test pyramid (but high-impact flows)
  */
 
-import { test, expect, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 test.describe('Sync Workflow E2E', () => {
   let page: Page;

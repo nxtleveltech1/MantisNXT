@@ -1,5 +1,6 @@
 import { withAuth } from '@/middleware/api-auth'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query } from '@/lib/database/unified-connection'
 
 export const DELETE = withAuth(async (

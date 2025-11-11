@@ -29,8 +29,10 @@
  * @date 2025-11-06
  */
 
-import { ReadableStream, ReadableStreamDefaultController } from 'node:stream/web';
-import { NextRequest, NextResponse } from 'next/server';
+import type { ReadableStreamDefaultController } from 'node:stream/web';
+import { ReadableStream } from 'node:stream/web';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { authenticateRequest, handleError } from '@/lib/auth/middleware';
 import { syncProgressTracker } from '@/lib/services/SyncProgressTracker';
 
@@ -102,7 +104,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           const maxUpdatesPerJob = 3600; // Max 30 min of updates @ 500ms
 
           // Subscription callback
-          const handleUpdate = async (data: any) => {
+          const handleUpdate = async (data: unknown) => {
             if (updateCount >= maxUpdatesPerJob) return;
 
             try {
@@ -238,7 +240,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 async function sendEvent(
   controller: ReadableStreamDefaultController<Uint8Array>,
   eventType: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): Promise<void> {
   try {
     const message = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;

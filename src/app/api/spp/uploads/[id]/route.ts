@@ -6,7 +6,8 @@
  * DELETE: Soft delete upload (mark as rejected)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { pricelistService } from '@/lib/services/PricelistService';
 import { createErrorResponse, validateRequestBody } from '@/lib/utils/neon-error-handler';
 

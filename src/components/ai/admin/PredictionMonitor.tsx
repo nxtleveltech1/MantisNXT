@@ -40,15 +40,15 @@ interface Prediction {
   service_type: string;
   entity_type: string;
   entity_id: string;
-  prediction_data: any;
+  prediction_data: unknown;
   confidence_score: number;
   accuracy_score?: number;
   status: 'pending' | 'validated' | 'expired' | 'rejected';
   created_at: string;
   expires_at: string;
   feedback_received: boolean;
-  actual_outcome?: any;
-  metadata?: any;
+  actual_outcome?: unknown;
+  metadata?: unknown;
 }
 
 interface AccuracyStats {

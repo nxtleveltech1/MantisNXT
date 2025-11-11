@@ -39,7 +39,6 @@ import {
 } from '@/components/ui/popover'
 import {
   Search,
-  Filter,
   CheckCircle,
   XCircle,
   Clock,
@@ -324,7 +323,7 @@ export default function RedemptionQueue() {
                   className="pl-9"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as unknown)}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>

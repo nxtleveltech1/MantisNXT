@@ -4,7 +4,6 @@
  */
 
 import { readFileSync, writeFileSync } from 'fs';
-import { glob } from 'glob';
 
 async function fixFiles() {
   console.log('Starting TypeScript fixes...');

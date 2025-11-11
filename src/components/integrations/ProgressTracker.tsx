@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, CheckCircle2, Loader2, XCircle, Clock, Zap, HardDrive } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { AlertCircle, CheckCircle2, Loader2, XCircle, Clock, Zap } from 'lucide-react';
 
 interface SyncProgressData {
   jobId: string;
@@ -72,7 +71,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const variant = variants[status] || variants.processing;
 
   return (
-    <Badge variant={variant.color as any} className="gap-1">
+    <Badge variant={variant.color as unknown} className="gap-1">
       {variant.icon}
       {variant.label}
     </Badge>
@@ -113,7 +112,7 @@ MetricCard.displayName = 'MetricCard';
 
 // Failed items list component (memoized)
 const FailedItemsList = React.memo(
-  ({ items, isExpanded, onToggle }: { items: any[]; isExpanded: boolean; onToggle: () => void }) => (
+  ({ items, isExpanded, onToggle }: { items: unknown[]; isExpanded: boolean; onToggle: () => void }) => (
     <div className="mt-4 space-y-2">
       <Button
         variant="outline"

@@ -3,7 +3,8 @@
  * Provides comprehensive error tracking, reporting, and analytics for upload operations
  */
 
-import { UploadError, ErrorStatistics, ErrorCategory, ErrorSeverity } from '@/lib/error-handling/upload-error-manager'
+import type { UploadError, ErrorStatistics} from '@/lib/error-handling/upload-error-manager';
+import { ErrorCategory, ErrorSeverity } from '@/lib/error-handling/upload-error-manager'
 
 export interface ErrorReport {
   sessionId: string
@@ -37,8 +38,8 @@ export interface DetailedErrorEntry {
   userMessage: string
   severity: ErrorSeverity
   category: ErrorCategory
-  originalValue?: any
-  expectedValue?: any
+  originalValue?: unknown
+  expectedValue?: unknown
   suggestion?: string
   autoFixPossible: boolean
   relatedErrors: string[]
@@ -118,7 +119,7 @@ export class ErrorReportGenerator {
   private static generateSummary(
     errors: UploadError[],
     statistics: ErrorStatistics,
-    sessionMetadata: any
+    sessionMetadata: unknown
   ): ErrorReportSummary {
     const criticalErrors = errors.filter(e => e.severity === ErrorSeverity.CRITICAL).length
     const recoverableErrors = errors.filter(e =>
@@ -237,7 +238,7 @@ export class ErrorReportGenerator {
    * Generate technical diagnostics
    */
   private static generateTechnicalDiagnostics(
-    sessionMetadata: any,
+    sessionMetadata: unknown,
     correlationId: string
   ): TechnicalDiagnostics {
     const sessionDuration = sessionMetadata.endTime

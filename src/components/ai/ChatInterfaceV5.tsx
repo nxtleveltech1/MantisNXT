@@ -15,7 +15,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useChat } from 'ai/react'
 import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -48,9 +47,6 @@ import {
   ShieldCheck,
   Maximize2,
   Minimize2,
-  FileText,
-  Download,
-  Target,
 } from "lucide-react"
 
 // Types
@@ -59,7 +55,7 @@ interface ChatAction {
   label: string
   icon: React.ComponentType<{ className?: string }>
   action: string
-  data?: any
+  data?: unknown
   variant?: 'default' | 'primary' | 'secondary' | 'destructive'
 }
 
@@ -115,7 +111,7 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const speechRecognition = useRef<any>(null)
+  const speechRecognition = useRef<unknown>(null)
 
   // Quick prompts for common queries
   const quickPrompts: QuickPrompt[] = [
@@ -171,14 +167,14 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
   // Initialize speech recognition
   useEffect(() => {
     if (enableVoice && 'webkitSpeechRecognition' in window) {
-      speechRecognition.current = new (window as any).webkitSpeechRecognition()
+      speechRecognition.current = new (window as unknown).webkitSpeechRecognition()
       speechRecognition.current.continuous = false
       speechRecognition.current.interimResults = false
       speechRecognition.current.lang = 'en-US'
 
-      speechRecognition.current.onresult = (event: any) => {
+      speechRecognition.current.onresult = (event: unknown) => {
         const transcript = event.results[0][0].transcript
-        handleInputChange({ target: { value: transcript } } as any)
+        handleInputChange({ target: { value: transcript } } as unknown)
         setIsListening(false)
       }
 
@@ -198,7 +194,7 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
 
   // Handle quick prompt selection
   const handleQuickPrompt = (prompt: QuickPrompt) => {
-    handleInputChange({ target: { value: prompt.text } } as any)
+    handleInputChange({ target: { value: prompt.text } } as unknown)
     inputRef.current?.focus()
   }
 
@@ -312,7 +308,7 @@ const AIChatInterfaceV5: React.FC<AIChatInterfaceV5Props> = ({
                     <Brain className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Hello! I'm your AI procurement assistant.
+                    Hello! I&apos;m your AI procurement assistant.
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
                     I can help you with supplier analysis, cost optimization, market intelligence, and much more.

@@ -16,10 +16,9 @@ import {
   AlertTriangle,
   FileText
 } from 'lucide-react'
-import { format } from 'date-fns'
 
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
-import { ApprovalStep } from './PurchaseOrdersManagement'
+import type { ApprovalStep } from './PurchaseOrdersManagement'
 
 interface ApprovalWorkflowProps {
   workflow: ApprovalStep[]
@@ -142,8 +141,10 @@ const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Approval Steps</h3>
 
-        {workflow.map((step, index) => (
-          <Card key={step.id} className={cn('transition-colors', getStepColor(step.status))}>
+        {workflow.map((step, index) => {
+          const commentFieldId = `approval-comment-${step.id}`
+          return (
+            <Card key={step.id} className={cn('transition-colors', getStepColor(step.status))}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -208,8 +209,9 @@ const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
               <CardContent className="pt-0">
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm text-muted-foreground">Add Comments (Optional)</label>
+                    <label htmlFor={commentFieldId} className="text-sm text-muted-foreground">Add Comments (Optional)</label>
                     <Textarea
+                      id={commentFieldId}
                       placeholder="Add your comments here..."
                       className="mt-1"
                     />
@@ -233,8 +235,9 @@ const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
                 </div>
               </CardContent>
             )}
-          </Card>
-        ))}
+            </Card>
+          )
+        })}
       </div>
 
       {/* Approval Rules */}

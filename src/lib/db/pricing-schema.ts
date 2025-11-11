@@ -100,7 +100,7 @@ export interface PricingRule {
       end_time: string;
       adjustment_percent: number;
     }>;
-    conditions?: Record<string, any>;
+    conditions?: Record<string, unknown>;
   };
 
   // Applicability filters
@@ -124,7 +124,7 @@ export interface PricingRuleCondition {
   rule_id: string;
   condition_type: 'category' | 'brand' | 'supplier' | 'product' | 'price_range' | 'stock_level' | 'custom';
   operator: 'equals' | 'not_equals' | 'in' | 'not_in' | 'greater_than' | 'less_than' | 'between';
-  value: any;
+  value: unknown;
   created_at: Date;
 }
 
@@ -211,7 +211,7 @@ export interface OptimizationRecommendation {
     last_checked: Date;
   }>;
   elasticity_estimate?: number;
-  historical_performance?: Record<string, any>;
+  historical_performance?: Record<string, unknown>;
 
   // Status
   status: RecommendationStatus;
@@ -343,14 +343,14 @@ export interface PricePerformanceMetrics {
 /**
  * Type guards
  */
-export function isPricingRule(obj: any): obj is PricingRule {
+export function isPricingRule(obj: unknown): obj is PricingRule {
   return obj && typeof obj.rule_id === 'string' && typeof obj.rule_type === 'string';
 }
 
-export function isOptimizationRun(obj: any): obj is OptimizationRun {
+export function isOptimizationRun(obj: unknown): obj is OptimizationRun {
   return obj && typeof obj.run_id === 'string' && typeof obj.strategy === 'string';
 }
 
-export function isOptimizationRecommendation(obj: any): obj is OptimizationRecommendation {
+export function isOptimizationRecommendation(obj: unknown): obj is OptimizationRecommendation {
   return obj && typeof obj.recommendation_id === 'string' && typeof obj.recommended_price === 'number';
 }

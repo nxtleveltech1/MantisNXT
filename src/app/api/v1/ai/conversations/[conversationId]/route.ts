@@ -4,7 +4,7 @@
  * DELETE /api/v1/ai/conversations/[conversationId] - Delete conversation
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sign as signJwt, verify as verifyJwt } from 'jsonwebtoken';
 import type { JwtPayload, SignOptions } from 'jsonwebtoken';

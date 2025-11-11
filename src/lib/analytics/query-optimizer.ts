@@ -2,7 +2,7 @@
 // Intelligent Query Optimization and Database Performance Monitoring
 // Implements ML-based query optimization and real-time performance monitoring
 
-import { Pool, QueryResult } from 'pg';
+import type { Pool, QueryResult } from 'pg';
 
 // Types for Query Optimization
 export interface QueryAnalysis {
@@ -116,7 +116,7 @@ export class QueryPerformanceAnalyzer {
 
   private performQueryAnalysis(
     query: string,
-    plan: any,
+    plan: unknown,
     result: QueryResult,
     executionTime: number
   ): QueryAnalysis {
@@ -142,10 +142,10 @@ export class QueryPerformanceAnalyzer {
     };
   }
 
-  private extractIndexesUsed(plan: any): string[] {
+  private extractIndexesUsed(plan: unknown): string[] {
     const indexes: string[] = [];
 
-    const extractFromNode = (node: any) => {
+    const extractFromNode = (node: unknown) => {
       if (node['Node Type'] === 'Index Scan' || node['Node Type'] === 'Index Only Scan') {
         indexes.push(node['Index Name'] || 'unknown');
       }
@@ -164,10 +164,10 @@ export class QueryPerformanceAnalyzer {
     return matches.map(match => match.split(/\s+/).pop()!).filter(Boolean);
   }
 
-  private calculateJoinComplexity(plan: any): number {
+  private calculateJoinComplexity(plan: unknown): number {
     let joinCount = 0;
 
-    const countJoins = (node: any) => {
+    const countJoins = (node: unknown) => {
       if (node['Node Type']?.includes('Join')) {
         joinCount++;
       }
@@ -180,7 +180,7 @@ export class QueryPerformanceAnalyzer {
     return joinCount;
   }
 
-  private calculatePerformanceScore(executionTime: number, plan: any, rowCount: number): number {
+  private calculatePerformanceScore(executionTime: number, plan: unknown, rowCount: number): number {
     // Base score calculation
     let score = 100;
 
@@ -204,17 +204,17 @@ export class QueryPerformanceAnalyzer {
     return Math.max(0, Math.round(score));
   }
 
-  private hasSequentialScan(plan: any): boolean {
+  private hasSequentialScan(plan: unknown): boolean {
     if (plan['Node Type'] === 'Seq Scan') return true;
     if (plan['Plans']) {
-      return plan['Plans'].some((child: any) => this.hasSequentialScan(child));
+      return plan['Plans'].some((child: unknown) => this.hasSequentialScan(child));
     }
     return false;
   }
 
   private generateOptimizationSuggestions(
     query: string,
-    plan: any,
+    plan: unknown,
     executionTime: number,
     joinComplexity: number
   ): string[] {
@@ -347,7 +347,7 @@ export class IntelligentQueryOptimizer {
               return {
                 originalQuery: query,
                 optimizedQuery,
-                optimizationType: pattern.type as any,
+                optimizationType: pattern.type as unknown,
                 expectedSpeedup: pattern.expectedSpeedup,
                 explanation: this.getOptimizationExplanation(pattern.type),
                 confidence: this.calculateOptimizationConfidence(originalAnalysis, optimizedAnalysis)

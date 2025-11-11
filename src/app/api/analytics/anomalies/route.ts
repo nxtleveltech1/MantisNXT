@@ -3,7 +3,8 @@
  * Now powered by AI Anomaly Detection Service
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
 import { anomalyService } from '@/lib/ai/services/anomaly-service';
 
@@ -17,8 +18,8 @@ export async function GET(request: NextRequest) {
     const organizationId = searchParams.get('organizationId');
     const limit = parseInt(searchParams.get('limit') || '10');
     const useAI = searchParams.get('useAI') === 'true';
-    const entityType = searchParams.get('entityType') as any;
-    const severity = searchParams.get('severity') as any;
+    const entityType = searchParams.get('entityType') as unknown;
+    const severity = searchParams.get('severity') as unknown;
 
     if (!organizationId) {
       return NextResponse.json({

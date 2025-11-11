@@ -17,7 +17,6 @@ import {
   Undo2,
   CheckCircle,
   AlertTriangle,
-  Eye,
   Globe
 } from "lucide-react"
 

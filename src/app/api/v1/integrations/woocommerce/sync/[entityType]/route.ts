@@ -7,7 +7,8 @@
  * Date: 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 
 export async function POST(
@@ -43,7 +44,7 @@ export async function POST(
       LIMIT 1
     `;
 
-    const configResult = await query<any>(configSql);
+    const configResult = await query<unknown>(configSql);
 
     if (configResult.rows.length === 0) {
       return NextResponse.json(
@@ -117,7 +118,7 @@ export async function POST(
         records_found: Array.isArray(data) ? data.length : 0,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error syncing ${entityType}:`, error);
     return NextResponse.json(
       {

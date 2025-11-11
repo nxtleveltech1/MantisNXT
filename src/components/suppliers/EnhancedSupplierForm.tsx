@@ -28,7 +28,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Dialog,
@@ -44,33 +43,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
 import WebSupplierDiscovery from "./WebSupplierDiscovery"
 import {
   Building2,
   User,
   MapPin,
-  DollarSign,
-  Star,
   Plus,
   Trash2,
   Save,
   X,
-  Upload,
   AlertTriangle,
   CheckCircle,
   Globe,
-  Phone,
-  Mail,
-  Calendar,
   FileText,
   Settings,
-  Brain,
-  Sparkles,
   Loader2,
   ArrowLeft,
-  HelpCircle,
-  Info
+  HelpCircle
 } from "lucide-react"
 
 // Enhanced validation schemas with better accessibility
@@ -199,7 +188,7 @@ const useAISupplierDiscovery = () => {
 
 // Web Discovery Integration Component
 interface WebDiscoveryIntegrationProps {
-  onDataFound: (data: any) => void
+  onDataFound: (data: unknown) => void
   initialQuery?: string
   onClose?: () => void
 }
@@ -210,7 +199,7 @@ const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
   onClose
 }) => {
   // Handle web discovery data transformation
-  const handleWebDataFound = (webData: any) => {
+  const handleWebDataFound = (webData: unknown) => {
     // Transform web discovery data to form format - comprehensive mapping
     const transformedData: Partial<SupplierFormData> = {
       name: webData.companyName || webData.name,
@@ -235,7 +224,7 @@ const WebDiscoveryIntegration: React.FC<WebDiscoveryIntegrationProps> = ({
         paymentTerms: webData.paymentTerms,
         leadTime: webData.leadTime,
       },
-      addresses: webData.addresses?.map((addr: any, index: number) => ({
+      addresses: webData.addresses?.map((addr: unknown, index: number) => ({
         type: addr.type || (index === 0 ? "headquarters" : "shipping"),
         name: addr.name || (index === 0 ? "Head Office" : `Address ${index + 1}`),
         addressLine1: addr.street || addr.addressLine1 || '',
@@ -302,7 +291,7 @@ const FieldTooltip: React.FC<{ content: string; children: React.ReactNode }> = (
 
 // Main Form Component
 interface EnhancedSupplierFormProps {
-  supplier?: any // Type this properly based on your supplier type
+  supplier?: unknown // Type this properly based on your supplier type
   onSubmit?: (data: SupplierFormData) => Promise<void>
   onCancel?: () => void
   isLoading?: boolean
@@ -339,12 +328,12 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
         employeeCount: supplier.businessInfo?.employeeCount ?? undefined,
         annualRevenue: supplier.businessInfo?.annualRevenue ?? undefined,
       },
-      contacts: supplier.contacts.map((contact: any) => ({
+      contacts: supplier.contacts.map((contact: unknown) => ({
         ...contact,
         mobile: contact.mobile || "",
         department: contact.department || "",
       })),
-      addresses: supplier.addresses.map((address: any) => ({
+      addresses: supplier.addresses.map((address: unknown) => ({
         ...address,
         name: address.name || "",
         addressLine2: address.addressLine2 || "",
@@ -396,6 +385,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
     name: "addresses"
   })
 
+  const watchedName = form.watch("name")
   const watchedTags = form.watch("tags")
   const watchedCategories = form.watch("categories")
   const watchedBrands = form.watch("brands")
@@ -408,17 +398,17 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
       if (value !== undefined && value !== null) {
         if (key === 'businessInfo' && typeof value === 'object') {
           // Handle nested businessInfo object
-          form.setValue('businessInfo', value as any, { shouldValidate: true })
+          form.setValue('businessInfo', value as unknown, { shouldValidate: true })
         } else if (key === 'contacts' && Array.isArray(value)) {
-          form.setValue('contacts', value as any, { shouldValidate: true })
+          form.setValue('contacts', value as unknown, { shouldValidate: true })
         } else if (key === 'addresses' && Array.isArray(value)) {
-          form.setValue('addresses', value as any, { shouldValidate: true })
+          form.setValue('addresses', value as unknown, { shouldValidate: true })
         } else if (key === 'capabilities' && typeof value === 'object') {
-          form.setValue('capabilities', value as any, { shouldValidate: true })
+          form.setValue('capabilities', value as unknown, { shouldValidate: true })
         } else if (key === 'financial' && typeof value === 'object') {
-          form.setValue('financial', value as any, { shouldValidate: true })
+          form.setValue('financial', value as unknown, { shouldValidate: true })
         } else {
-          form.setValue(key as keyof SupplierFormData, value as any, { shouldValidate: true })
+          form.setValue(key as keyof SupplierFormData, value as unknown, { shouldValidate: true })
         }
       }
     })
@@ -431,15 +421,14 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
 
   // Generate supplier code based on name
   useEffect(() => {
-    const name = form.watch("name")
-    if (name && !supplier) {
-      const code = name
+    if (watchedName && !supplier) {
+      const code = watchedName
         .toUpperCase()
         .replace(/[^A-Z0-9]/g, "")
         .substring(0, 6)
       form.setValue("code", code)
     }
-  }, [form.watch("name")])
+  }, [form, supplier, watchedName])
 
   const handleSubmit = async (data: SupplierFormData) => {
     console.log('🟢 Form submit handler called with data:', data)
@@ -1276,7 +1265,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                   <CardContent className="space-y-6">
                     {contactFields.length === 0 && (
                       <div className="text-center py-8 text-muted-foreground">
-                        <p>No contacts added. Click "Add Contact" to add one, or submit without contacts.</p>
+                        <p>No contacts added. Click &ldquo;Add Contact&rdquo; to add one, or submit without contacts.</p>
                       </div>
                     )}
                     {contactFields.map((contact, index) => (
@@ -1501,7 +1490,7 @@ const EnhancedSupplierForm: React.FC<EnhancedSupplierFormProps> = ({
                   <CardContent className="space-y-6">
                     {addressFields.length === 0 && (
                       <div className="text-center py-8 text-muted-foreground">
-                        <p>No addresses added. Click "Add Address" to add one, or submit without addresses.</p>
+                        <p>No addresses added. Click &ldquo;Add Address&rdquo; to add one, or submit without addresses.</p>
                       </div>
                     )}
                     {addressFields.map((address, index) => (

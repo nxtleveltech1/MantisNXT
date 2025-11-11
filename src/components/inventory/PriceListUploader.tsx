@@ -155,7 +155,7 @@ const PriceListUploader: React.FC<PriceListUploaderProps> = ({ supplierId, open,
                   ] as Array<[keyof PriceListMapping, string]>).map(([key, label]) => (
                     <div key={key} className="space-y-1">
                       <Label className="text-xs">{label}</Label>
-                      <Select value={(effectiveMapping as any)?.[key] ?? ''} onValueChange={(v) => setMapping(m => ({ ...m, [key]: v || undefined }))}>
+                      <Select value={(effectiveMapping as unknown)?.[key] ?? ''} onValueChange={(v) => setMapping(m => ({ ...m, [key]: v || undefined }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select column" />
                         </SelectTrigger>

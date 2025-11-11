@@ -7,16 +7,14 @@ import { query as dbQuery } from '@/lib/database/unified-connection';
 import { enrichProductsForCategorization } from '../sip-product-enrichment';
 import { CategorizationEngine } from './CategorizationEngine';
 import { ProgressTracker } from './ProgressTracker';
-import {
+import type {
   Job,
   JobParams,
   JobStatus,
-  JobType,
   JobFilters,
-  JobConfig,
-  JobStatus_Detail,
+  JobStatus_Detail} from './types';
+import {
   DEFAULT_JOB_CONFIG,
-  CategorizationStatus,
 } from './types';
 
 export class JobManager {
@@ -168,7 +166,7 @@ export class JobManager {
           const batchResult = await this.categorizationEngine.categorizeBatch(
             products,
             config,
-            (config as any)?.org_id || (config as any)?.orgId || null,
+            (config as unknown)?.org_id || (config as unknown)?.orgId || null,
             jobId
           );
           batchResult.batch_number = batchNumber;
@@ -467,7 +465,7 @@ export class JobManager {
     batchSize: number,
     offset: number,
     filters: JobFilters
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     const productIds = await this.getProductIdsForBatch(batchSize, offset, filters);
     console.log(
       `[JobManager] fetchProductsForBatch offset=${offset} batchSize=${batchSize} -> ids=${productIds.length}`
@@ -490,7 +488,7 @@ export class JobManager {
     filters: JobFilters
   ): Promise<string[]> {
     const whereClauses: string[] = [];
-    const queryParams: any[] = [];
+    const queryParams: unknown[] = [];
     let paramCounter = 1;
 
     if (filters.supplier_id) {
@@ -550,7 +548,7 @@ export class JobManager {
    */
   private async estimateProducts(filters: JobFilters): Promise<number> {
     const whereClauses: string[] = [];
-    const queryParams: any[] = [];
+    const queryParams: unknown[] = [];
     let paramCounter = 1;
 
     if (filters.supplier_id) {

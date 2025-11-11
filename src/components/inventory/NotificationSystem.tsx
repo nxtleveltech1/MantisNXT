@@ -10,9 +10,6 @@ import {
   Info,
   X,
   Clock,
-  TrendingUp,
-  Download,
-  Upload,
   RefreshCw,
   Bell,
   BellOff
@@ -39,7 +36,7 @@ export interface BaseNotification {
   dismissible?: boolean
   persistent?: boolean
   groupId?: string // For grouping related notifications
-  data?: any // Additional data for the notification
+  data?: unknown // Additional data for the notification
 }
 
 export interface ProgressNotification extends BaseNotification {
@@ -97,7 +94,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       try {
         const stored = localStorage.getItem('notifications')
         if (stored) {
-          const parsedNotifications = JSON.parse(stored).map((n: any) => ({
+          const parsedNotifications = JSON.parse(stored).map((n: unknown) => ({
             ...n,
             timestamp: new Date(n.timestamp)
           }))
@@ -125,6 +122,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       }
     }
   }, [notifications, readNotifications, enablePersistence])
+
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id))
+    setReadNotifications(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(id)
+      return newSet
+    })
+  }, [])
 
   const addNotification = useCallback((notificationData: Omit<Notification, 'id' | 'timestamp'>): string => {
     const id = `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -155,7 +161,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     }
 
     return id
-  }, [defaultDuration, maxNotifications])
+  }, [defaultDuration, maxNotifications, removeNotification])
 
   const updateNotification = useCallback((id: string, updates: Partial<Notification>) => {
     setNotifications(prev =>
@@ -165,15 +171,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
           : notification
       )
     )
-  }, [])
-
-  const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id))
-    setReadNotifications(prev => {
-      const newSet = new Set(prev)
-      newSet.delete(id)
-      return newSet
-    })
   }, [])
 
   const clearNotifications = useCallback((groupId?: string) => {

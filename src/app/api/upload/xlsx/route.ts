@@ -3,8 +3,10 @@
  * Real-time file upload with progress tracking and live database integration
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { xlsxProcessor, ValidationRule } from '@/lib/integrations/xlsx-processor';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
+import type { ValidationRule } from '@/lib/integrations/xlsx-processor';
+import { xlsxProcessor } from '@/lib/integrations/xlsx-processor';
 import { multiTenantAuth } from '@/lib/auth/multi-tenant-auth';
 
 export async function POST(request: NextRequest) {

@@ -7,7 +7,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 
 export interface Migration {
   id: string;

@@ -3,7 +3,7 @@
  * Eliminates data layer chaos by providing consistent interface
  */
 
-import { PoolClient } from 'pg'
+import type { PoolClient } from 'pg'
 import { query, withTransaction } from '@/lib/database'
 import type {
   Supplier,
@@ -81,7 +81,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     const supplierResult = await query(supplierQuery, [id])
     if (supplierResult.rows.length === 0) return null
     
-    const row: any = supplierResult.rows[0]
+    const row: unknown = supplierResult.rows[0]
     
     // Debug: Log what we're getting from the database
     console.log('🔍 [findById] Raw database row:', {
@@ -134,7 +134,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     console.log('🔍 [findById] Addresses found:', addressesResult.rows.length)
     
     // Map contacts and addresses
-    row.contacts = contactsResult.rows.map((c: any) => ({
+    row.contacts = contactsResult.rows.map((c: unknown) => ({
       id: c.id,
       type: c.type || 'primary',
       name: c.name || contactInfo.contactPerson || contactInfo.name || '',
@@ -165,7 +165,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     
     console.log('🔍 [findById] Mapped contacts:', JSON.stringify(row.contacts, null, 2))
     
-    row.addresses = addressesResult.rows.map((a: any) => ({
+    row.addresses = addressesResult.rows.map((a: unknown) => ({
       id: a.id,
       type: a.type || 'headquarters',
       name: a.name || '',
@@ -208,7 +208,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     const total = parseInt(countResult.rows[0]?.count ?? '0')
 
     const result = await query(queryText, params)
-    const suppliers = result.rows.map((row: any) => this.mapRowToSupplier(row))
+    const suppliers = result.rows.map((row: unknown) => this.mapRowToSupplier(row))
 
     return {
       suppliers,
@@ -399,10 +399,10 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         WHERE table_schema = $1 
           AND table_name = $2
       `, [tableSchema, tableName])
-      const existingColumns = new Set(columnCheck.rows.map((r: any) => r.column_name))
+      const existingColumns = new Set(columnCheck.rows.map((r: unknown) => r.column_name))
 
       const updateFields: string[] = []
-      const params: any[] = []
+      const params: unknown[] = []
       let paramIndex = 1
 
       const updateBusinessInfo = data.businessInfo
@@ -743,7 +743,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
 
       const supplierIds = supplierResult.rows.map(row => row.id)
 
-      const allContacts: any[] = []
+      const allContacts: unknown[] = []
       data.forEach((supplier, idx) => {
         if (supplier.contacts && supplier.contacts.length > 0) {
           supplier.contacts.forEach(contact => {
@@ -800,7 +800,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         ])
       }
 
-      const allAddresses: any[] = []
+      const allAddresses: unknown[] = []
       data.forEach((supplier, idx) => {
         if (supplier.addresses && supplier.addresses.length > 0) {
           supplier.addresses.forEach(address => {
@@ -982,7 +982,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     }
   }
 
-  private buildFilterQuery(filters: SupplierFilters): { query: string, countQuery: string, params: any[] } {
+  private buildFilterQuery(filters: SupplierFilters): { query: string, countQuery: string, params: unknown[] } {
     let query = `
       SELECT
         s.id,
@@ -1022,7 +1022,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       WHERE 1=1
     `
 
-    const params: any[] = []
+    const params: unknown[] = []
     let paramIndex = 1
 
     if (filters.search) {
@@ -1073,7 +1073,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     return { query, countQuery, params }
   }
 
-  private mapRowToSupplier(row: any): Supplier {
+  private mapRowToSupplier(row: unknown): Supplier {
     return {
       id: row.id,
       name: row.name,
@@ -1098,7 +1098,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         currency: row.currency || 'ZAR'
       },
 
-      contacts: (row.contacts || []).map((c: any) => ({
+      contacts: (row.contacts || []).map((c: unknown) => ({
         id: c.id,
         type: c.type,
         name: c.name,
@@ -1110,7 +1110,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         isPrimary: c.isPrimary ?? c.is_primary ?? false,
         isActive: c.isActive ?? c.is_active !== false
       })),
-      addresses: (row.addresses || []).map((a: any) => ({
+      addresses: (row.addresses || []).map((a: unknown) => ({
         id: a.id,
         type: a.type,
         name: a.name,
@@ -1132,7 +1132,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     }
   }
 
-  private mapPerformanceData(data: any): any {
+  private mapPerformanceData(data: unknown): unknown {
     return {
       overallRating: data.overall_rating || 0,
       qualityRating: data.quality_rating || 0,

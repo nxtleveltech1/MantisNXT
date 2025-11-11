@@ -27,7 +27,7 @@ interface DeltaRecord {
   email?: string;
   sku?: string;
   title?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface DeltaSnapshot {
@@ -69,21 +69,21 @@ interface PreviewCacheRecord {
 /**
  * Generate content hash for change detection
  */
-function generateHash(data: any): string {
+function generateHash(data: unknown): string {
   return crypto.createHash('md5').update(JSON.stringify(data)).digest('hex');
 }
 
 /**
  * Check if records have changed using hash comparison
  */
-function hasRecordChanged(current: any, previous: any): boolean {
+function hasRecordChanged(current: unknown, previous: unknown): boolean {
   return generateHash(current) !== generateHash(previous);
 }
 
 /**
  * Extract comparable fields from record
  */
-function extractComparableFields(record: any, entityType: EntityType): any {
+function extractComparableFields(record: unknown, entityType: EntityType): unknown {
   switch (entityType) {
     case 'customers':
       return {
@@ -176,7 +176,7 @@ export class DeltaDetectionService {
       });
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[DeltaDetectionService] Error getting preview snapshot:`, error);
       await this.logActivity(orgId, entityType, 'delta_computed', 'failed', {
         error: error.message,
@@ -257,7 +257,7 @@ export class DeltaDetectionService {
           records: deletedCustomers.slice(0, 20),
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error detecting customer delta:', error);
       throw error;
     }
@@ -335,7 +335,7 @@ export class DeltaDetectionService {
           records: deletedProducts.slice(0, 20),
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error detecting product delta:', error);
       throw error;
     }
@@ -412,7 +412,7 @@ export class DeltaDetectionService {
           records: deletedOrders.slice(0, 20),
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error detecting order delta:', error);
       throw error;
     }
@@ -441,7 +441,7 @@ export class DeltaDetectionService {
       }
 
       console.log(`[DeltaDetectionService] Cache invalidated for org ${orgId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[DeltaDetectionService] Error invalidating cache:`, error);
       throw error;
     }
@@ -450,7 +450,7 @@ export class DeltaDetectionService {
   /**
    * Fetch external customers with timeout
    */
-  private static async fetchExternalCustomers(orgId: string, syncType: SyncType): Promise<any[]> {
+  private static async fetchExternalCustomers(orgId: string, syncType: SyncType): Promise<unknown[]> {
     const timeout = 30000; // 30 second timeout
 
     try {
@@ -463,7 +463,7 @@ export class DeltaDetectionService {
             order: 'desc',
             orderby: 'registered_date',
           }),
-          new Promise<any[]>((_, reject) =>
+          new Promise<unknown[]>((_, reject) =>
             setTimeout(() => reject(new Error('WooCommerce API timeout')), timeout)
           ),
         ]);
@@ -472,13 +472,13 @@ export class DeltaDetectionService {
         const odooService = new OdooService(config);
         return await Promise.race([
           odooService.getCustomers({ limit: 100 }),
-          new Promise<any[]>((_, reject) =>
+          new Promise<unknown[]>((_, reject) =>
             setTimeout(() => reject(new Error('Odoo API timeout')), timeout)
           ),
         ]);
       }
       return [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[DeltaDetectionService] Error fetching external customers:`, error);
       throw error;
     }
@@ -487,7 +487,7 @@ export class DeltaDetectionService {
   /**
    * Fetch external products with timeout
    */
-  private static async fetchExternalProducts(orgId: string, syncType: SyncType): Promise<any[]> {
+  private static async fetchExternalProducts(orgId: string, syncType: SyncType): Promise<unknown[]> {
     const timeout = 30000;
 
     try {
@@ -498,7 +498,7 @@ export class DeltaDetectionService {
           wooService.fetchAllPages((params) => wooService.getProducts(params), {
             per_page: 100,
           }),
-          new Promise<any[]>((_, reject) =>
+          new Promise<unknown[]>((_, reject) =>
             setTimeout(() => reject(new Error('WooCommerce API timeout')), timeout)
           ),
         ]);
@@ -507,13 +507,13 @@ export class DeltaDetectionService {
         const odooService = new OdooService(config);
         return await Promise.race([
           odooService.getProducts({ limit: 100 }),
-          new Promise<any[]>((_, reject) =>
+          new Promise<unknown[]>((_, reject) =>
             setTimeout(() => reject(new Error('Odoo API timeout')), timeout)
           ),
         ]);
       }
       return [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[DeltaDetectionService] Error fetching external products:`, error);
       throw error;
     }
@@ -522,7 +522,7 @@ export class DeltaDetectionService {
   /**
    * Fetch external orders with timeout
    */
-  private static async fetchExternalOrders(orgId: string, syncType: SyncType): Promise<any[]> {
+  private static async fetchExternalOrders(orgId: string, syncType: SyncType): Promise<unknown[]> {
     const timeout = 30000;
 
     try {
@@ -535,7 +535,7 @@ export class DeltaDetectionService {
             orderby: 'date',
             order: 'desc',
           }),
-          new Promise<any[]>((_, reject) =>
+          new Promise<unknown[]>((_, reject) =>
             setTimeout(() => reject(new Error('WooCommerce API timeout')), timeout)
           ),
         ]);
@@ -546,7 +546,7 @@ export class DeltaDetectionService {
         return [];
       }
       return [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[DeltaDetectionService] Error fetching external orders:`, error);
       throw error;
     }
@@ -555,7 +555,7 @@ export class DeltaDetectionService {
   /**
    * Fetch local customers from database
    */
-  private static async fetchLocalCustomers(orgId: string): Promise<any[]> {
+  private static async fetchLocalCustomers(orgId: string): Promise<unknown[]> {
     try {
       const result = await query(
         `SELECT id, email, name, phone, company, tags, metadata
@@ -566,7 +566,7 @@ export class DeltaDetectionService {
         [orgId]
       );
       return result.rows || [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error fetching local customers:', error);
       return [];
     }
@@ -575,7 +575,7 @@ export class DeltaDetectionService {
   /**
    * Fetch local products from database
    */
-  private static async fetchLocalProducts(orgId: string): Promise<any[]> {
+  private static async fetchLocalProducts(orgId: string): Promise<unknown[]> {
     try {
       const result = await query(
         `SELECT id, sku, name, price, stock_quantity, description
@@ -586,7 +586,7 @@ export class DeltaDetectionService {
         [orgId]
       );
       return result.rows || [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error fetching local products:', error);
       return [];
     }
@@ -595,7 +595,7 @@ export class DeltaDetectionService {
   /**
    * Fetch local orders from database
    */
-  private static async fetchLocalOrders(orgId: string): Promise<any[]> {
+  private static async fetchLocalOrders(orgId: string): Promise<unknown[]> {
     try {
       const result = await query(
         `SELECT id, status, total, customer_id, billing
@@ -606,7 +606,7 @@ export class DeltaDetectionService {
         [orgId]
       );
       return result.rows || [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error fetching local orders:', error);
       return [];
     }
@@ -615,7 +615,7 @@ export class DeltaDetectionService {
   /**
    * Get integration configuration from database
    */
-  private static async getIntegrationConfig(orgId: string, provider: string): Promise<any> {
+  private static async getIntegrationConfig(orgId: string, provider: string): Promise<unknown> {
     try {
       const result = await query(
         `SELECT id, name, config
@@ -630,7 +630,7 @@ export class DeltaDetectionService {
       }
 
       return result.rows[0].config;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[DeltaDetectionService] Error getting integration config:`, error);
       throw error;
     }
@@ -658,8 +658,8 @@ export class DeltaDetectionService {
         return null;
       }
 
-      return result.rows[0].delta_data as any;
-    } catch (error: any) {
+      return result.rows[0].delta_data as unknown;
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error reading cache:', error);
       return null;
     }
@@ -679,7 +679,7 @@ export class DeltaDetectionService {
          SET delta_data = $4::jsonb, computed_at = $5, expires_at = $6, updated_at = NOW()`,
         [orgId, result.syncType, result.entityType, JSON.stringify(result), result.computedAt, expiresAt]
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error storing cache:', error);
       // Non-fatal error - continue without caching
     }
@@ -693,7 +693,7 @@ export class DeltaDetectionService {
     entityType: EntityType,
     activityType: string,
     status: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     try {
       await query(
@@ -701,7 +701,7 @@ export class DeltaDetectionService {
          VALUES ($1, $2, $3, $4, $5::jsonb)`,
         [orgId, entityType, activityType, status, JSON.stringify(details || {})]
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error logging activity:', error);
       // Non-fatal error
     }

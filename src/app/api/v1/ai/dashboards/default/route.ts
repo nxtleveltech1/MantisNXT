@@ -3,7 +3,7 @@
  * GET /api/v1/ai/dashboards/default
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

@@ -32,7 +32,7 @@ export interface SPPPricelistRow {
   category_raw: string | null
   vat_code: string | null
   barcode: string | null
-  attrs_json: Record<string, any> | null
+  attrs_json: Record<string, unknown> | null
 }
 
 // Core Domain Types
@@ -188,7 +188,7 @@ export interface SOHRolledUp {
 export interface ValidationError {
   row: number
   field: string
-  value: any
+  value: unknown
   message: string
   severity: 'error' | 'warning' | 'info'
   suggestion?: string
@@ -357,7 +357,7 @@ export interface PricelistUploadWizardProps {
 }
 
 // API Response Types
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -367,5 +367,5 @@ export interface APIResponse<T = any> {
 export interface APIErrorResponse {
   success: false
   error: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 }

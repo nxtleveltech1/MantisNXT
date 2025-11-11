@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query as dbQuery } from '@/lib/database/unified-connection'
 
 export async function GET(
@@ -28,7 +29,7 @@ export async function GET(
       WHERE sp.supplier_product_id = $1
       LIMIT 1
     `
-    const res = await dbQuery<any>(sql, [id])
+    const res = await dbQuery<unknown>(sql, [id])
     if (res.rowCount === 0) {
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
     }

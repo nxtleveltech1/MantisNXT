@@ -46,8 +46,6 @@ import {
   Download,
   RefreshCw,
   Filter,
-  Info,
-  Loader2,
   CheckCircle2,
   Search,
   X,
@@ -95,7 +93,7 @@ export function ISSohReports({ onExport }: ISSohReportsProps) {
     }, 5 * 60 * 1000) // 5 minutes
 
     return () => clearInterval(interval)
-  }, [loading, refreshing])
+  }, [fetchData, loading, refreshing])
 
   // Fetch active selection
   const fetchActiveSelection = useCallback(async () => {

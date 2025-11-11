@@ -10,7 +10,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,8 +32,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Edit, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { PricingRule, PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
+import { Plus, Edit, Trash2, CheckCircle2 } from 'lucide-react';
+import type { PricingRule} from '@/lib/db/pricing-schema';
+import { PricingRuleType, PricingStrategy } from '@/lib/db/pricing-schema';
 
 export function PricingRuleManager() {
   const [rules, setRules] = useState<PricingRule[]>([]);
@@ -41,11 +42,7 @@ export function PricingRuleManager() {
   const [filterType, setFilterType] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchRules();
-  }, [filterType, searchTerm]);
-
-  const fetchRules = async () => {
+  const fetchRules = useCallback(async () => {
     try {
       let url = '/api/v1/pricing/rules?';
       if (filterType !== 'all') url += `rule_type=${filterType}&`;
@@ -61,7 +58,11 @@ export function PricingRuleManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterType, searchTerm]);
+
+  useEffect(() => {
+    fetchRules();
+  }, [fetchRules]);
 
   const toggleRuleActivation = async (ruleId: string, currentState: boolean) => {
     try {

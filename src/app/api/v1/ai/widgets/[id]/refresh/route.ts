@@ -3,7 +3,7 @@
  * POST /api/v1/ai/widgets/[id]/refresh
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

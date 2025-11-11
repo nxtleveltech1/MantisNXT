@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { authProvider } from '@/lib/auth/mock-provider'
-import { User } from '@/types/auth'
+import type { User } from '@/types/auth'
 
 import { UserTable } from '@/components/admin/users/UserTable'
-import { UserFilters, UserFilterState } from '@/components/admin/users/UserFilters'
+import type { UserFilterState } from '@/components/admin/users/UserFilters';
+import { UserFilters } from '@/components/admin/users/UserFilters'
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])

@@ -37,8 +37,8 @@ export type ResolutionStrategy = 'auto-retry' | 'manual' | 'skip';
 export interface Conflict {
   itemId: string;
   entityType: string;
-  sourceData: Record<string, any>;
-  targetData: Record<string, any>;
+  sourceData: Record<string, unknown>;
+  targetData: Record<string, unknown>;
   retryCount: number;
 }
 
@@ -47,13 +47,13 @@ export interface ConflictDetails {
   itemId: string;
   entityType: string;
   type: ConflictType;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface ResolutionResult {
   resolved: boolean;
   action: 'auto-retry' | 'manual' | 'skip' | 'use_resolved';
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   reason?: string;
 }
 
@@ -154,8 +154,8 @@ export class ConflictResolver {
    * Find fields where source and target data differ
    */
   private findMismatchedFields(
-    sourceData: Record<string, any>,
-    targetData: Record<string, any>
+    sourceData: Record<string, unknown>,
+    targetData: Record<string, unknown>
   ): string[] {
     const mismatched: string[] = [];
 
@@ -185,7 +185,7 @@ export class ConflictResolver {
    * Validate data against target system schema
    * Returns error message if invalid, null if valid
    */
-  private async validateData(data: Record<string, any>): Promise<string | null> {
+  private async validateData(data: Record<string, unknown>): Promise<string | null> {
     // Basic validation checks
     const required = ['name', 'email'];
 
@@ -311,9 +311,9 @@ export class ConflictResolver {
    * Merge source data with target overrides
    */
   private resolveDataMismatch(
-    sourceData: Record<string, any>,
-    targetData: Record<string, any>
-  ): Record<string, any> {
+    sourceData: Record<string, unknown>,
+    targetData: Record<string, unknown>
+  ): Record<string, unknown> {
     // Strategy: Use source as base, apply target overrides (remote is source of truth)
     return {
       ...sourceData,
@@ -362,7 +362,7 @@ export class ConflictResolver {
   async getUnresolvedConflicts(
     syncId: string,
     limit: number = 100
-  ): Promise<Array<{ id: string; itemId: string; type: ConflictType; data: Record<string, any> }>> {
+  ): Promise<Array<{ id: string; itemId: string; type: ConflictType; data: Record<string, unknown> }>> {
     try {
       const result = await query(
         `SELECT id, item_id, conflict_type, data
@@ -391,7 +391,7 @@ export class ConflictResolver {
   async resolveConflictManually(
     conflictId: string,
     resolution: 'accept' | 'reject' | 'custom',
-    customData?: Record<string, any>
+    customData?: Record<string, unknown>
   ): Promise<void> {
     try {
       const setClauses = [
@@ -399,7 +399,7 @@ export class ConflictResolver {
         'resolution_action = $1',
         'resolved_at = NOW()',
       ];
-      const values: any[] = [resolution];
+      const values: unknown[] = [resolution];
       let paramIndex = 2;
 
       if (resolution === 'custom' && customData) {
@@ -441,7 +441,7 @@ export class ConflictResolver {
         [syncId]
       );
 
-      const byType: Record<ConflictType, number> = {} as any;
+      const byType: Record<ConflictType, number> = {} as unknown;
       let totalConflicts = 0;
 
       result.rows.forEach(row => {

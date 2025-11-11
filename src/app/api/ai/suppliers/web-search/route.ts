@@ -3,7 +3,8 @@
  * Searches the internet for real supplier information using the SupplierIntelligenceService
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/ai/api-utils';
 import { getSupplierDiscoveryConfig } from '@/lib/ai/supplier-discovery-config';
 import { SupplierIntelligenceService } from '@/services/ai/SupplierIntelligenceService';

@@ -10,7 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertCircle,
   AlertTriangle,
-  Ban,
   Database,
   FileX,
   RefreshCw,
@@ -72,7 +71,7 @@ export function PermissionError({ className }: { className?: string }) {
       <ShieldAlert className="h-4 w-4" />
       <AlertTitle>Permission Denied</AlertTitle>
       <AlertDescription className="mt-2">
-        <p>You don't have permission to perform this action. Please contact your administrator.</p>
+        <p>You don&apos;t have permission to perform this action. Please contact your administrator.</p>
       </AlertDescription>
     </Alert>
   );

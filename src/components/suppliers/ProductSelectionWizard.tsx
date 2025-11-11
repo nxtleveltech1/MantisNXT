@@ -6,7 +6,7 @@
  * This component bridges the gap between the page-level API and the dialog-based wizard
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import ProductToInventoryWizard from './ProductToInventoryWizard'
 import { RefreshCw, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -30,11 +30,7 @@ export default function ProductSelectionWizard({
   const [error, setError] = useState<string | null>(null)
   const [productIds, setProductIds] = useState<string[]>([])
 
-  useEffect(() => {
-    loadPricelistProducts()
-  }, [pricelistId])
-
-  const loadPricelistProducts = async () => {
+  const loadPricelistProducts = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -52,16 +48,20 @@ export default function ProductSelectionWizard({
       }
 
       // Extract product IDs from the pricelist
-      const ids = data.data.map((product: any) => product.id)
+      const ids = data.data.map((product: unknown) => product.id)
       setProductIds(ids)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load pricelist products')
     } finally {
       setLoading(false)
     }
-  }
+  }, [pricelistId, supplierId])
 
-  const handleWizardComplete = (results: any[]) => {
+  useEffect(() => {
+    loadPricelistProducts()
+  }, [loadPricelistProducts])
+
+  const handleWizardComplete = (results: unknown[]) => {
     // Transform wizard results to match expected format
     const created = results.filter(r => r.status === 'success').length
     const updated = 0 // Wizard creates new inventory items, doesn't update existing ones

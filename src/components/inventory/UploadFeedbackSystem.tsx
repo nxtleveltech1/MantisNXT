@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { AlertCircle, CheckCircle, Info, XCircle, RefreshCw, Download, Eye, ArrowRight, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -51,7 +51,7 @@ interface UploadFeedbackSystemProps {
   statistics?: ErrorStatistics
   progress?: UploadProgress
   status?: string
-  onAction?: (action: string, parameters?: any) => void
+  onAction?: (action: string, parameters?: unknown) => void
   onDismiss?: (feedbackId: string) => void
   className?: string
 }
@@ -81,7 +81,7 @@ export function UploadFeedbackSystem({
     onDismiss?.(id)
   }
 
-  const handleAction = (action: string, parameters?: any) => {
+  const handleAction = (action: string, parameters?: unknown) => {
     onAction?.(action, parameters)
   }
 

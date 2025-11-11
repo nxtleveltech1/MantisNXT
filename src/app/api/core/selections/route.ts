@@ -2,7 +2,8 @@
  * /api/core/selections - Inventory selection management
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { inventorySelectionService } from '@/lib/services/InventorySelectionService';
 import { InventorySelectionSchema } from '@/types/nxt-spp';
 import { z } from 'zod';
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
       : undefined;
 
     const filters = {
-      status: statuses as any,
+      status: statuses as unknown,
       created_by: searchParams.get('created_by') || undefined,
       limit: parseInt(searchParams.get('limit') || '50'),
       offset: parseInt(searchParams.get('offset') || '0')

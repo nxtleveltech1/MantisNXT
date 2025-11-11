@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query, withTransaction } from '@/lib/database'
 import { z } from 'zod'
 import { CacheInvalidator } from '@/lib/cache/invalidation'
@@ -23,13 +24,13 @@ const supplierSchema = z.object({
 // OPTIMIZATION 1: Query Result Caching
 // ============================================================================
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
-const queryCache = new Map<string, { data: any; timestamp: number }>()
+const queryCache = new Map<string, { data: unknown; timestamp: number }>()
 
-function getCacheKey(params: any): string {
+function getCacheKey(params: unknown): string {
   return JSON.stringify(params)
 }
 
-function getCached(key: string): any | null {
+function getCached(key: string): unknown | null {
   const cached = queryCache.get(key)
   if (!cached) return null
 
@@ -42,7 +43,7 @@ function getCached(key: string): any | null {
   return cached.data
 }
 
-function setCache(key: string, data: any): void {
+function setCache(key: string, data: unknown): void {
   queryCache.set(key, { data, timestamp: Date.now() })
 
   // Limit cache size to 1000 entries
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `
 
-    const queryParams: any[] = []
+    const queryParams: unknown[] = []
     let paramIndex = 1
 
     // ========================================================================
@@ -310,7 +311,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const results: Record<string, any>[] = []
+    const results: Record<string, unknown>[] = []
     const errors: Array<{ name: string; error: string }> = []
 
     // Use transaction for batch insert

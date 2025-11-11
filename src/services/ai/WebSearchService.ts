@@ -234,7 +234,7 @@ export class WebSearchService {
   /**
    * Convert AI-scraped data to search result format
    */
-  private convertAIToSearchResult(scrapedData: any, source: string): SearchResult {
+  private convertAIToSearchResult(scrapedData: unknown, source: string): SearchResult {
     const companyName = scrapedData.metadata.companyName || 'Unknown Company';
     const industry = scrapedData.metadata.industry || 'Professional Services';
 
@@ -273,7 +273,7 @@ export class WebSearchService {
   /**
    * Calculate AI confidence score based on extracted data quality
    */
-  private calculateAIConfidenceScore(scrapedData: any): number {
+  private calculateAIConfidenceScore(scrapedData: unknown): number {
     let score = 0.5; // Base score
 
     const metadata = scrapedData.metadata || {};
@@ -596,7 +596,7 @@ export class WebSearchService {
    */
   private generateIntelligentResults(
     query: string,
-    analysis: any,
+    analysis: unknown,
     maxResults: number
   ): SearchResult[] {
     const results: SearchResult[] = [];
@@ -627,7 +627,7 @@ export class WebSearchService {
   /**
    * Generate industry-specific results
    */
-  private generateIndustryResults(industry: string, analysis: any, count: number): SearchResult[] {
+  private generateIndustryResults(industry: string, analysis: unknown, count: number): SearchResult[] {
     const industryData = this.getIndustryData(industry);
 
     return industryData.slice(0, count).map((company, index) => ({
@@ -643,7 +643,7 @@ export class WebSearchService {
   /**
    * Generate location-specific results
    */
-  private generateLocationResults(location: string, analysis: any, count: number): SearchResult[] {
+  private generateLocationResults(location: string, analysis: unknown, count: number): SearchResult[] {
     const locationData = this.getLocationData(location, analysis.industries[0]);
 
     return locationData.slice(0, count).map((company, index) => ({
@@ -659,7 +659,7 @@ export class WebSearchService {
   /**
    * Generate generic results
    */
-  private generateGenericResults(query: string, analysis: any, count: number): SearchResult[] {
+  private generateGenericResults(query: string, analysis: unknown, count: number): SearchResult[] {
     const keyword = analysis.keywords[0] || 'business';
 
     return [
@@ -883,7 +883,7 @@ export class WebSearchService {
   /**
    * Parse search results from API response
    */
-  private parseSearchResults(apiResponse: any): SearchResult[] {
+  private parseSearchResults(apiResponse: unknown): SearchResult[] {
     // Placeholder for parsing real search API responses
     // This would parse results from Google, Bing, etc.
     return [];

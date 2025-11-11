@@ -1,7 +1,6 @@
 // @ts-nocheck
-import { query, withTransaction } from '@/lib/database/unified-connection';
+import { query } from '@/lib/database/unified-connection';
 import type { Supplier, SupplierSearchFilters, DashboardMetrics } from '@/types/supplier';
-import { sanitizeUrl } from '@/lib/utils/url-validation';
 import {
   listSuppliers as ssotList,
   getSupplierById as ssotGet,
@@ -60,7 +59,7 @@ export class SupplierAPI {
   static async getSuppliers(filters?: SupplierSearchFilters): Promise<Supplier[]> {
     const res = await ssotList({
       search: filters?.query,
-      status: filters?.status as any,
+      status: filters?.status as unknown,
       page: 1,
       limit: 1000,
       sortBy: 'name',
@@ -77,7 +76,7 @@ export class SupplierAPI {
         primary_category: '',
         created_at: row.createdAt,
         updated_at: row.updatedAt,
-      } as any)
+      } as unknown)
     );
   }
 
@@ -95,7 +94,7 @@ export class SupplierAPI {
       primary_category: '',
       created_at: s.createdAt,
       updated_at: s.updatedAt,
-    } as any);
+    } as unknown);
   }
 
   // Create new supplier
@@ -188,7 +187,7 @@ export class SupplierAPI {
   }
 
   // Private helper method to map database row to Supplier interface
-  private static mapRowToSupplier(row: any): Supplier {
+  private static mapRowToSupplier(row: unknown): Supplier {
     return {
       id: row.id,
       name: row.name,

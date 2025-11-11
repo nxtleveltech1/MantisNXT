@@ -16,8 +16,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -31,16 +29,14 @@ import {
   Printer,
   CheckCircle,
   XCircle,
-  Clock,
   AlertTriangle,
   FileText,
   Package,
-  User,
   Calendar
 } from 'lucide-react'
 
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
-import { PurchaseOrder } from './PurchaseOrdersManagement'
+import { cn, formatCurrency } from '@/lib/utils'
+import type { PurchaseOrder } from './PurchaseOrdersManagement'
 
 interface BulkOperationsProps {
   open: boolean
@@ -201,7 +197,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
   orders
 }) => {
   const [selectedAction, setSelectedAction] = useState<BulkAction | null>(null)
-  const [inputData, setInputData] = useState<Record<string, any>>({})
+  const [inputData, setInputData] = useState<Record<string, unknown>>({})
   const [processing, setProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [results, setResults] = useState<{

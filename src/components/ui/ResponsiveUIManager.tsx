@@ -8,7 +8,6 @@
 
 import React, { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -19,14 +18,10 @@ import {
   Server,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Zap,
-  Gauge,
   Activity,
   Settings,
   RefreshCw,
-  Pause,
-  Play,
   X
 } from 'lucide-react'
 
@@ -117,11 +112,11 @@ class PerformanceMonitor {
   }
 
   // Measure API latency
-  static async measureApiLatency(apiCall: () => Promise<any>): Promise<number> {
+  static async measureApiLatency(apiCall: () => Promise<unknown>): Promise<number> {
     const start = performance.now()
     try {
       await apiCall()
-    } catch (error) {
+    } catch {
       // Still measure latency even if call fails
     }
     const latency = performance.now() - start
@@ -143,7 +138,7 @@ class PerformanceMonitor {
   // Get memory usage (if available)
   static getMemoryUsage(): number {
     if ('memory' in performance) {
-      const memory = (performance as any).memory
+      const memory = (performance as unknown).memory
       return memory.usedJSHeapSize / memory.jsHeapSizeLimit
     }
     return 0
@@ -453,9 +448,12 @@ export const PerformanceStatusIndicator: React.FC<{
   return (
     <Card className={`w-full max-w-md ${className}`}>
       <CardContent className="p-3">
-        <div
-          className="flex items-center justify-between cursor-pointer"
+        <button
+          type="button"
+          className="flex w-full items-center justify-between cursor-pointer bg-transparent p-0 text-left"
           onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+          aria-controls="responsive-ui-status-details"
         >
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
@@ -466,10 +464,10 @@ export const PerformanceStatusIndicator: React.FC<{
             {getHealthIcon()}
             {isExpanded ? <X className="h-3 w-3" /> : <Settings className="h-3 w-3" />}
           </div>
-        </div>
+        </button>
 
         {(isExpanded || showDetails) && (
-          <div className="mt-3 space-y-2">
+          <div id="responsive-ui-status-details" className="mt-3 space-y-2">
             {/* Connection Quality */}
             <div className="flex items-center justify-between text-xs">
               <span>Connection:</span>
@@ -579,29 +577,32 @@ export const OperationManager: React.FC<{
   fallback?: React.ReactNode
   showProgress?: boolean
 }> = ({ children, operationName, priority = 'medium', fallback, showProgress = false }) => {
-  const { isPending, startOperation, endOperation, uiState } = useResponsiveUI()
+  const { startOperation, endOperation, uiState } = useResponsiveUI()
   const [isOperationPending, setIsOperationPending] = useState(false)
 
-  const executeOperation = useCallback(async (operation: () => Promise<any>) => {
-    if (!uiState.isResponsive && priority !== 'high') {
-      toast.warning('System is busy. Please wait and try again.')
-      return
-    }
+  const _executeOperation = useCallback(
+    async (operation: () => Promise<unknown>) => {
+      if (!uiState.isResponsive && priority !== 'high') {
+        toast.warning('System is busy. Please wait and try again.')
+        return
+      }
 
-    if (!startOperation(operationName)) {
-      toast.warning('Too many operations running. Please wait.')
-      return
-    }
+      if (!startOperation(operationName)) {
+        toast.warning('Too many operations running. Please wait.')
+        return
+      }
 
-    setIsOperationPending(true)
+      setIsOperationPending(true)
 
-    try {
-      await operation()
-    } finally {
-      endOperation(operationName)
-      setIsOperationPending(false)
-    }
-  }, [operationName, priority, startOperation, endOperation, uiState.isResponsive])
+      try {
+        await operation()
+      } finally {
+        endOperation(operationName)
+        setIsOperationPending(false)
+      }
+    },
+    [operationName, priority, startOperation, endOperation, uiState.isResponsive]
+  )
 
   if (isOperationPending && fallback) {
     return <>{fallback}</>

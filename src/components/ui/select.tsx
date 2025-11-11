@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 function Select(
   props: React.ComponentProps<typeof SelectPrimitive.Root>
 ) {
-  const { value, defaultValue, onValueChange, ...rest } = props as any
+  const { value, defaultValue, onValueChange, ...rest } = props as unknown
   const isControlled = value !== undefined
   const [internalValue, setInternalValue] = React.useState<string>(
     (defaultValue as string | undefined) ?? ''
@@ -122,8 +122,8 @@ function SelectItem({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Item>) {
   // Guard against empty-string/undefined values which Radix disallows
-  const safeProps = (props as any)?.value === '' || (props as any)?.value == null
-    ? { ...(props as any), value: '__invalid__', disabled: true }
+  const safeProps = (props as unknown)?.value === '' || (props as unknown)?.value == null
+    ? { ...(props as unknown), value: '__invalid__', disabled: true }
     : props
   return (
     <SelectPrimitive.Item

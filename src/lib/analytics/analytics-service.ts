@@ -1,15 +1,15 @@
 // @ts-nocheck
 // Analytics Service for MantisNXT Platform
-import { Pool } from 'pg';
-import {
-  mlModels,
+import type { Pool } from 'pg';
+import type {
   SupplierRiskScore,
   DemandForecast,
   PriceOptimization,
-  InventoryOptimization,
   MLPrediction
 } from './ml-models';
-import { SupplierPerformance, InventoryItem, StockMovement } from '@/types';
+import {
+  mlModels
+} from './ml-models';
 
 // Analytics Configuration
 interface AnalyticsConfig {
@@ -65,7 +65,7 @@ class ConcurrencyLimiter {
   async run<T>(fn: () => Promise<T>): Promise<T> {
     while (this.running >= this.maxConcurrent) {
       await new Promise(resolve => {
-        this.queue.push(resolve as any);
+        this.queue.push(resolve as unknown);
       });
     }
 
@@ -312,9 +312,9 @@ export class AnalyticsService {
 
   // Anomaly Detection
   async detectAnomalies(organizationId: string): Promise<{
-    supplierAnomalies: any[];
-    inventoryAnomalies: any[];
-    systemAnomalies: any[];
+    supplierAnomalies: unknown[];
+    inventoryAnomalies: unknown[];
+    systemAnomalies: unknown[];
   }> {
     try {
       // Get recent supplier performance data
@@ -454,7 +454,7 @@ export class AnalyticsService {
   // Helper Methods
   private calculateSupplierRiskScore(
     supplierId: string,
-    performance: any[],
+    performance: unknown[],
     prediction: MLPrediction
   ): SupplierRiskScore {
     const latestPerformance = performance[0];
@@ -484,7 +484,7 @@ export class AnalyticsService {
   }
 
   private generateSupplierRecommendations(
-    supplier: any,
+    supplier: unknown,
     riskScore: SupplierRiskScore,
     prediction: MLPrediction
   ): string[] {
@@ -505,7 +505,7 @@ export class AnalyticsService {
     return recommendations;
   }
 
-  private async detectSystemAnomalies(organizationId: string): Promise<any[]> {
+  private async detectSystemAnomalies(organizationId: string): Promise<unknown[]> {
     // Query REAL system anomalies from analytics_anomalies table
     try {
       const result = await query(
@@ -541,11 +541,11 @@ export class AnalyticsService {
   }
 
   private generateBusinessRecommendations(
-    riskScores: any,
+    riskScores: unknown,
     optimizations: PriceOptimization[],
-    anomalies: any
-  ): Array<any> {
-    const actions: Array<any> = [];
+    anomalies: unknown
+  ): Array<unknown> {
+    const actions: Array<unknown> = [];
 
     // High-priority supplier actions
     riskScores.riskScores.filter((r: SupplierRiskScore) => r.riskScore > 70).forEach((supplier: SupplierRiskScore) => {
@@ -573,7 +573,7 @@ export class AnalyticsService {
   }
 
   // Database persistence methods
-  private async cacheAnalyticsResults(type: string, data: any): Promise<void> {
+  private async cacheAnalyticsResults(type: string, data: unknown): Promise<void> {
     try {
       await this.db.query(
         'INSERT INTO analytics_cache (type, data, created_at) VALUES ($1, $2, NOW())',
@@ -623,7 +623,7 @@ export class AnalyticsService {
     }
   }
 
-  private async storeAnomalies(anomalies: any[]): Promise<void> {
+  private async storeAnomalies(anomalies: unknown[]): Promise<void> {
     try {
       for (const anomaly of anomalies) {
         await this.db.query(`

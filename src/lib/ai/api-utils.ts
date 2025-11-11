@@ -3,19 +3,15 @@
  * Shared utilities for AI service API endpoints
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   AIServiceError,
   RateLimitError,
   ProviderError,
   ConfigurationError,
-  PredictionError,
-  ForecastError,
-  AnomalyError,
   AlertError,
-  ConversationError,
-  DashboardError,
   WidgetError,
   MetricsError,
 } from './errors';

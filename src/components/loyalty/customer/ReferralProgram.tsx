@@ -18,7 +18,6 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import {
   Copy,
   Mail,
@@ -29,7 +28,6 @@ import {
   Clock,
   X,
   Plus,
-  ExternalLink,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -489,14 +487,14 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
               <AccordionContent>
                 Simply share your unique referral link with friends via email,
                 social media, or direct invitation. When they sign up using your
-                link, you'll both receive rewards!
+                link, you&apos;ll both receive rewards!
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2">
               <AccordionTrigger>What rewards do I earn?</AccordionTrigger>
               <AccordionContent>
-                You'll earn 100 points for each successful referral when your
+                You&apos;ll earn 100 points for each successful referral when your
                 friend completes their first purchase. Your friend will also
                 receive 50 bonus points as a welcome gift!
               </AccordionContent>
@@ -516,14 +514,14 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
             <AccordionItem value="item-4">
               <AccordionTrigger>Is there a referral limit?</AccordionTrigger>
               <AccordionContent>
-                No! You can refer as many friends as you'd like. There's no cap
+                No! You can refer as many friends as you&apos;d like. There&apos;s no cap
                 on the rewards you can earn through referrals.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-5">
               <AccordionTrigger>
-                What if my referral doesn't complete a purchase?
+                What if my referral doesn&apos;t complete a purchase?
               </AccordionTrigger>
               <AccordionContent>
                 Referral bonuses are only awarded when the referred customer
@@ -561,7 +559,7 @@ export function ReferralProgram({ customerId }: ReferralProgramProps) {
               <Label htmlFor="name">Name (optional)</Label>
               <Input
                 id="name"
-                placeholder="Friend's name"
+                placeholder="Friend&apos;s name"
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
               />

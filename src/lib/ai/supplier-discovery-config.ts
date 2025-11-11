@@ -94,20 +94,20 @@ export async function getSupplierDiscoveryConfig(orgId?: string): Promise<Suppli
 
         // Find active web search provider (or first enabled web search provider)
         const webSearchProviders = providerInstances.filter(
-          (i: any) => i?.enabled && ['serper', 'tavily', 'google_search'].includes(i.provider)
+          (i: unknown) => i?.enabled && ['serper', 'tavily', 'google_search'].includes(i.provider)
         );
         const activeWebSearch = activeProviderInstanceId
-          ? webSearchProviders.find((i: any) => i?.id === activeProviderInstanceId)
+          ? webSearchProviders.find((i: unknown) => i?.id === activeProviderInstanceId)
           : webSearchProviders[0];
 
         // Find active AI extraction provider (or first enabled AI extraction provider)
         const aiProviders = providerInstances.filter(
-          (i: any) =>
+          (i: unknown) =>
             i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
         );
         console.log('🔍 AI Providers found:', {
           count: aiProviders.length,
-          providers: aiProviders.map((p: any) => ({
+          providers: aiProviders.map((p: unknown) => ({
             id: p.id,
             provider: p.provider,
             hasApiKey: !!p.apiKey,
@@ -120,7 +120,7 @@ export async function getSupplierDiscoveryConfig(orgId?: string): Promise<Suppli
         // Only use activeProviderInstanceId if it actually matches an AI provider
         // If it points to a web search provider, ignore it and use first enabled AI provider
         const activeAIById = activeProviderInstanceId
-          ? aiProviders.find((i: any) => i?.id === activeProviderInstanceId)
+          ? aiProviders.find((i: unknown) => i?.id === activeProviderInstanceId)
           : null;
         const activeAI = activeAIById || aiProviders[0];
         console.log('🔍 Selected AI Provider:', {
@@ -214,7 +214,7 @@ export async function getSupplierDiscoveryConfig(orgId?: string): Promise<Suppli
 
         // Collect ALL enabled AI providers for aggregation
         config.aiProviders = aiProviders
-          .map((instance: any) => ({
+          .map((instance: unknown) => ({
             provider:
               instance.provider === 'openai_compatible'
                 ? 'openai_compatible'
@@ -226,7 +226,7 @@ export async function getSupplierDiscoveryConfig(orgId?: string): Promise<Suppli
             model: instance.model,
             enabled: instance.enabled !== false,
           }))
-          .filter((p: any) => p.enabled && p.apiKey);
+          .filter((p: unknown) => p.enabled && p.apiKey);
 
         console.log(`✅ Found ${config.aiProviders.length} enabled AI provider(s) for aggregation`);
 
@@ -327,18 +327,18 @@ export async function getSupplierDiscoveryConfigFromAPI(): Promise<SupplierDisco
 
       // Find active web search provider (or first enabled web search provider)
       const webSearchProviders = providerInstances.filter(
-        (i: any) => i?.enabled && ['serper', 'tavily', 'google_search'].includes(i.provider)
+        (i: unknown) => i?.enabled && ['serper', 'tavily', 'google_search'].includes(i.provider)
       );
       const activeWebSearch = activeProviderInstanceId
-        ? webSearchProviders.find((i: any) => i?.id === activeProviderInstanceId)
+        ? webSearchProviders.find((i: unknown) => i?.id === activeProviderInstanceId)
         : webSearchProviders[0];
 
       // Find active AI extraction provider (or first enabled AI extraction provider)
       const aiProviders = providerInstances.filter(
-        (i: any) => i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
+        (i: unknown) => i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
       );
       const activeAI = activeProviderInstanceId
-        ? aiProviders.find((i: any) => i?.id === activeProviderInstanceId)
+        ? aiProviders.find((i: unknown) => i?.id === activeProviderInstanceId)
         : aiProviders[0];
 
       // Use active web search provider
@@ -431,10 +431,10 @@ export async function getSupplierDiscoveryConfigFromAPI(): Promise<SupplierDisco
 
       // Collect ALL enabled AI providers for aggregation (API version)
       const apiAiProviders = providerInstances.filter(
-        (i: any) => i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
+        (i: unknown) => i?.enabled && ['anthropic', 'openai', 'openai_compatible'].includes(i.provider)
       );
       config.aiProviders = apiAiProviders
-        .map((instance: any) => ({
+        .map((instance: unknown) => ({
           provider:
             instance.provider === 'openai_compatible'
               ? 'openai_compatible'
@@ -446,7 +446,7 @@ export async function getSupplierDiscoveryConfigFromAPI(): Promise<SupplierDisco
           model: instance.model,
           enabled: instance.enabled !== false,
         }))
-        .filter((p: any) => p.enabled && p.apiKey);
+        .filter((p: unknown) => p.enabled && p.apiKey);
 
       console.log(
         `✅ Found ${config.aiProviders.length} enabled AI provider(s) for aggregation (API)`

@@ -3,7 +3,8 @@
  * Returns enriched products for a specific selection (works for draft/active).
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query as dbQuery } from '@/lib/database/unified-connection'
 
 export async function GET(

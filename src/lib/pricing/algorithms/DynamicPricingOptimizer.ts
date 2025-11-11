@@ -7,8 +7,9 @@
  * Date: 2025-11-02
  */
 
-import { BaseOptimizer, ProductData } from './BaseOptimizer';
-import { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
+import type { ProductData } from './BaseOptimizer';
+import { BaseOptimizer } from './BaseOptimizer';
+import type { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
 import { query } from '@/lib/database';
 import { CORE_TABLES } from '@/lib/db/schema-contract';
 

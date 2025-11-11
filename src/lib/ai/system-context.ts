@@ -11,25 +11,25 @@ export interface SystemContext {
   suppliers: {
     total: number;
     active: number;
-    topSuppliers: any[];
+    topSuppliers: unknown[];
   };
   inventory: {
     total: number;
     lowStock: number;
     outOfStock: number;
-    recentMovements: any[];
+    recentMovements: unknown[];
   };
   customers: {
     total: number;
     totalLoyaltyMembers: number;
-    recentCustomers: any[];
+    recentCustomers: unknown[];
   };
   alerts: {
     critical: number;
     high: number;
-    anomalies: any[];
+    anomalies: unknown[];
   };
-  recentActivity: any[];
+  recentActivity: unknown[];
 }
 
 /**

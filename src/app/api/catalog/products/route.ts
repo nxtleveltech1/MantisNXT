@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query as dbQuery } from '@/lib/database/unified-connection'
 
 export async function GET(request: NextRequest) {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     const conditions: string[] = ['1=1']
-    const params: any[] = []
+    const params: unknown[] = []
     let idx = 1
 
     if (supplierIds && supplierIds.length > 0) {
@@ -181,9 +182,9 @@ export async function GET(request: NextRequest) {
     `
 
     const dataParams = [...params, limit, offset]
-    let dataRows: any[] = []
+    let dataRows: unknown[] = []
     try {
-      const dataRes = await dbQuery<any>(dataSql, dataParams)
+      const dataRes = await dbQuery<unknown>(dataSql, dataParams)
       dataRows = dataRes.rows
     } catch (primaryErr) {
       console.warn('[API] /api/catalog/products primary query failed, attempting fallback without optional tables:', primaryErr)
@@ -249,7 +250,7 @@ export async function GET(request: NextRequest) {
         ORDER BY ${sortColumnFallback} ${sortDir}
         LIMIT $${idx - 1} OFFSET $${idx}
       `
-      const fallbackRes = await dbQuery<any>(fallbackSql, dataParams)
+      const fallbackRes = await dbQuery<unknown>(fallbackSql, dataParams)
       dataRows = fallbackRes.rows
     }
 

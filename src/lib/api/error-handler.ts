@@ -23,7 +23,7 @@ export interface ApiError {
   };
 }
 
-export interface ApiSuccess<T = any> {
+export interface ApiSuccess<T = unknown> {
   success: true;
   data: T;
   meta?: {
@@ -163,7 +163,7 @@ function getHttpStatusCode(errorType: ErrorType): number {
 /**
  * Wrap API route handler with error handling
  */
-export function withErrorHandler<T = any>(
+export function withErrorHandler<T = unknown>(
   handler: (request: Request) => Promise<NextResponse<ApiSuccess<T>>>,
   endpoint: string
 ) {
@@ -182,7 +182,7 @@ export function withErrorHandler<T = any>(
 /**
  * Create success response
  */
-export function createSuccessResponse<T = any>(
+export function createSuccessResponse<T = unknown>(
   data: T,
   meta?: {
     timestamp?: string;
@@ -207,7 +207,7 @@ export function createSuccessResponse<T = any>(
  * Validate request parameters
  */
 export function validateParams(
-  params: Record<string, any>,
+  params: Record<string, unknown>,
   required: string[]
 ): void {
   const missing = required.filter(key => !params[key]);
@@ -262,14 +262,14 @@ export function isConnectionError(error: Error): boolean {
 /**
  * Extract error code from PostgreSQL error
  */
-export function extractPgErrorCode(error: any): string | undefined {
+export function extractPgErrorCode(error: unknown): string | undefined {
   return error?.code || error?.pgCode || undefined;
 }
 
 /**
  * Check if PostgreSQL error is retryable
  */
-export function isPgRetryableError(error: any): boolean {
+export function isPgRetryableError(error: unknown): boolean {
   const code = extractPgErrorCode(error);
 
   // PostgreSQL error codes that are typically retryable

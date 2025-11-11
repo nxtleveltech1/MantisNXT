@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { InventoryItem, InventorySearchFilters, InventoryMetrics } from '@/types/inventory'
+import type { InventorySearchFilters, InventoryMetrics } from '@/types/inventory'
 
 // Simple interface that matches our actual API response
 interface DatabaseInventoryItem {
@@ -15,10 +15,10 @@ interface DatabaseInventoryItem {
   reorderPoint: number
   maxStock: number
   minStock: number
-  locations: any[]
+  locations: unknown[]
   primaryLocationId: string
   batchTracking: boolean
-  lots: any[]
+  lots: unknown[]
   supplierId: string
   supplierName: string
   supplierSku: string
@@ -27,9 +27,9 @@ interface DatabaseInventoryItem {
   currency: string
   unit: string
   weight?: number
-  dimensions?: any
+  dimensions?: unknown
   status: string
-  alerts: any[]
+  alerts: unknown[]
   lastStockUpdate: Date
   lastOrderDate?: Date | null
   nextDeliveryDate?: Date | null
@@ -120,7 +120,7 @@ export function useInventory(options: UseInventoryOptions = {}) {
     }
   }, [filters])
 
-  const createItem = useCallback(async (itemData: any) => {
+  const createItem = useCallback(async (itemData: unknown) => {
     setLoading(true)
     setError(null)
 
@@ -155,7 +155,7 @@ export function useInventory(options: UseInventoryOptions = {}) {
     }
   }, [])
 
-  const updateItem = useCallback(async (id: string, itemData: Partial<any>) => {
+  const updateItem = useCallback(async (id: string, itemData: Partial<unknown>) => {
     setLoading(true)
     setError(null)
 

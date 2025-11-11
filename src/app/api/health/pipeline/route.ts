@@ -3,14 +3,15 @@
  * Tracks cache performance, batch processing metrics, and query performance
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { CacheManager } from '@/lib/pipeline/cache-manager';
 import { pool } from '@/lib/database/unified-connection';
 
 interface PipelineHealth {
   status: 'healthy' | 'degraded' | 'critical';
   timestamp: string;
-  caches: Record<string, any>;
+  caches: Record<string, unknown>;
   database: {
     poolSize: number;
     activeConnections: number;
@@ -28,7 +29,7 @@ interface PipelineHealth {
 /**
  * Calculate health status based on metrics
  */
-function calculateHealthStatus(stats: any): 'healthy' | 'degraded' | 'critical' {
+function calculateHealthStatus(stats: unknown): 'healthy' | 'degraded' | 'critical' {
   const cacheHitRate = stats.caches?.hitRate || 0;
   const dbConnections = stats.database?.activeConnections || 0;
 
@@ -48,7 +49,7 @@ function calculateHealthStatus(stats: any): 'healthy' | 'degraded' | 'critical' 
 /**
  * Generate recommendations based on current metrics
  */
-function generateRecommendations(stats: any): string[] {
+function generateRecommendations(stats: unknown): string[] {
   const recommendations: string[] = [];
 
   const cacheHitRate = stats.caches?.hitRate || 0;
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate aggregate cache metrics
     const aggregateCacheStats = Object.values(cacheStats).reduce(
-      (acc: any, stat: any) => ({
+      (acc: unknown, stat: unknown) => ({
         hits: acc.hits + stat.hits,
         misses: acc.misses + stat.misses,
         sets: acc.sets + stat.sets,

@@ -35,7 +35,7 @@ export enum LineState {
 
 export interface QueueLineData {
   woo_customer_id: number;
-  customer_data: any;
+  customer_data: unknown;
   external_id?: string;
 }
 
@@ -155,7 +155,7 @@ export class WooCommerceSyncQueue {
     queueId: string,
     orgId: string,
     wooCustomerId: number,
-    customerData: any,
+    customerData: unknown,
     externalId?: string
   ): Promise<string> {
     // Validate inputs
@@ -228,7 +228,7 @@ export class WooCommerceSyncQueue {
     queueId: string,
     orgId: string,
     batchSize: number = 50
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     validateUUID(queueId, 'queueId');
     validateUUID(orgId, 'orgId');
 
@@ -383,7 +383,7 @@ export class WooCommerceSyncQueue {
    * - Org_id isolation enforced
    * - Returns null if queue not found (doesn't leak existence)
    */
-  static async getQueueStatus(queueId: string, orgId: string): Promise<any | null> {
+  static async getQueueStatus(queueId: string, orgId: string): Promise<unknown | null> {
     validateUUID(queueId, 'queueId');
     validateUUID(orgId, 'orgId');
 
@@ -534,7 +534,7 @@ export class WooCommerceSyncQueue {
     message: string,
     orgId: string,
     userId: string | null,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ): Promise<void> {
     // Validate inputs
     validateUUID(queueId, 'queueId');
@@ -593,7 +593,7 @@ export class WooCommerceSyncQueue {
     queueId: string,
     orgId: string,
     limit: number = 100
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     validateUUID(queueId, 'queueId');
     validateUUID(orgId, 'orgId');
 
@@ -623,7 +623,7 @@ export class WooCommerceSyncQueue {
     queueId: string,
     orgId: string,
     maxRetries: number = 3
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     validateUUID(queueId, 'queueId');
     validateUUID(orgId, 'orgId');
 
@@ -699,7 +699,7 @@ export class WooCommerceSyncQueue {
   static async getQueueByIdempotencyKey(
     orgId: string,
     idempotencyKey: string
-  ): Promise<any | null> {
+  ): Promise<unknown | null> {
     validateUUID(orgId, 'orgId');
 
     const sanitizedKey = sanitizeString(idempotencyKey, 255);

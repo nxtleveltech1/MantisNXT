@@ -3,7 +3,8 @@
  * Comprehensive health checks with real-time metrics and diagnostics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { enterpriseDb } from '@/lib/database';
 import getDatabaseMetadata from '@/lib/database-info';
 
@@ -197,7 +198,7 @@ async function performConcurrencyTest(): Promise<TestResult> {
   }
 }
 
-async function getServerInformation(): Promise<any> {
+async function getServerInformation(): Promise<unknown> {
   try {
     const serverQuery = await enterpriseDb.query(`
       SELECT
@@ -303,7 +304,7 @@ async function validateDatabaseSchema(): Promise<TestResult> {
   }
 }
 
-async function gatherPerformanceMetrics(): Promise<any> {
+async function gatherPerformanceMetrics(): Promise<unknown> {
   try {
     const performanceQuery = await enterpriseDb.query(`
       SELECT
@@ -351,7 +352,7 @@ interface TestResult {
   name: string;
   status: 'success' | 'warning' | 'error';
   durationMs: number;
-  details?: any;
+  details?: unknown;
   error?: string;
 }
 
@@ -380,7 +381,7 @@ function calculateOverallHealth(tests: TestResult[]): OverallHealth {
   };
 }
 
-function generateHealthRecommendations(health: OverallHealth, connectionStatus: any): string[] {
+function generateHealthRecommendations(health: OverallHealth, connectionStatus: unknown): string[] {
   const recommendations: string[] = [];
 
   if (health.score < 100) {

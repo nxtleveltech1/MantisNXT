@@ -274,7 +274,7 @@ export async function GET(request: NextRequest) {
       legacyQuery(categoryQuery),
     ])
 
-    const transformedTagAnalytics = tagAnalyticsResult.rows.map((row: any) => ({
+    const transformedTagAnalytics = tagAnalyticsResult.rows.map((row: unknown) => ({
       tagId: row.tag_id,
       tagName: row.tag_name,
       totalSales: Number(row.total_sales),
@@ -284,7 +284,7 @@ export async function GET(request: NextRequest) {
       avgPrice: Number(row.avg_price),
     }))
 
-    const transformedSeasonalityData = seasonalityResult.rows.map((row: any) => ({
+    const transformedSeasonalityData = seasonalityResult.rows.map((row: unknown) => ({
       month: row.month,
       sales: Number(row.sales),
       turnover: Number(row.turnover),
@@ -292,7 +292,7 @@ export async function GET(request: NextRequest) {
     }))
 
     const colors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D"]
-    const transformedCategoryData = categoryResult.rows.map((row: any, index: number) => ({
+    const transformedCategoryData = categoryResult.rows.map((row: unknown, index: number) => ({
       name: row.name,
       value: Number(row.value),
       color: colors[index % colors.length],

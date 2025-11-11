@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import AppLayout from "@/components/layout/AppLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -106,11 +106,7 @@ export default function AnalyticsPage() {
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [schemaMode, setSchemaMode] = useState<SchemaMode>("demo")
 
-  useEffect(() => {
-    void fetchAnalytics()
-  }, [selectedTag])
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -137,7 +133,11 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedTag])
+
+  useEffect(() => {
+    void fetchAnalytics()
+  }, [fetchAnalytics])
 
   const totalAssignments = useMemo(
     () => tagAnalytics.reduce((sum, tag) => sum + (tag.productCount || 0), 0),
@@ -359,11 +359,11 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={categoryData as any}
+                    data={categoryData as unknown}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }: any) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    label={({ name, percent }: unknown) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"

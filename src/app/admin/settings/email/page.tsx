@@ -15,11 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   Mail,
   Server,
-  Shield,
   Send,
   Eye,
   TestTube,
-  Settings,
   Save,
   Undo2,
   CheckCircle,

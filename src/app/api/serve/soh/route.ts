@@ -2,7 +2,8 @@
  * GET /api/serve/soh - Stock on Hand reporting
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { stockService } from '@/lib/services/StockService';
 import { SohReportRequestSchema } from '@/types/nxt-spp';
 import { z } from 'zod';
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       location_ids: searchParams.get('location_ids')?.split(',').filter(Boolean),
       product_ids: searchParams.get('product_ids')?.split(',').filter(Boolean),
       as_of_date: searchParams.get('as_of_date') ? new Date(searchParams.get('as_of_date')!) : undefined,
-      group_by: searchParams.get('group_by') as any || undefined,
+      group_by: searchParams.get('group_by') as unknown || undefined,
       include_zero_stock: searchParams.get('include_zero_stock') === 'true',
       selected_only: searchParams.get('selected_only') === 'true'
     };

@@ -1,6 +1,7 @@
 "use client"
 
-import React, { ReactNode } from 'react'
+import type { ReactNode } from 'react';
+import React from 'react'
 import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,13 +9,13 @@ import { Card, CardContent } from '@/components/ui/card'
 interface ErrorBoundaryState {
   hasError: boolean
   error: Error | null
-  errorInfo: any
+  errorInfo: unknown
 }
 
 interface BuildSafeErrorBoundaryProps {
   children: ReactNode
   fallback?: ReactNode
-  onError?: (error: Error, errorInfo: any) => void
+  onError?: (error: Error, errorInfo: unknown) => void
   showDetails?: boolean
   level?: 'page' | 'component' | 'feature'
 }
@@ -36,7 +37,7 @@ export class BuildSafeErrorBoundary extends React.Component<
     return { hasError: true, error, errorInfo: null }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: unknown) {
     this.setState({ errorInfo })
 
     // Report error to monitoring system
@@ -66,7 +67,7 @@ export class BuildSafeErrorBoundary extends React.Component<
               System Temporarily Unavailable
             </h1>
             <p className="text-red-700 mb-6">
-              We're experiencing a technical issue. The system is running in safe mode.
+              We&rsquo;re experiencing a technical issue. The system is running in safe mode.
             </p>
             <div className="space-y-3">
               <Button
@@ -185,7 +186,7 @@ export function withBuildSafeErrorBoundary<P extends object>(
   options: {
     level?: 'page' | 'component' | 'feature'
     fallback?: ReactNode
-    onError?: (error: Error, errorInfo: any) => void
+    onError?: (error: Error, errorInfo: unknown) => void
   } = {}
 ) {
   return function SafeComponent(props: P) {

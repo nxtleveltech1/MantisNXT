@@ -8,15 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { AlertCircle, CheckCircle2, Clock, Download, Loader2, Search, ChevronDown, AlertTriangle } from 'lucide-react';
+
+
+import { AlertCircle, CheckCircle2, Clock, Download, Loader2, Search, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ActivityLogEntry {
@@ -164,7 +158,7 @@ const ActivityRow = React.memo(
           <EntityTypeBadge type={entry.entityType} />
         </TableCell>
         <TableCell>
-          <Badge variant={statusInfo.variant as any} className="gap-1">
+          <Badge variant={statusInfo.variant as unknown} className="gap-1">
             {statusInfo.icon}
             {statusInfo.label}
           </Badge>
@@ -213,7 +207,7 @@ const DetailsModal = React.memo(
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <span>Activity Details</span>
-                  <Badge variant={statusInfo.variant as any} className="gap-1">
+                  <Badge variant={statusInfo.variant as unknown} className="gap-1">
                     {statusInfo.icon}
                     {statusInfo.label}
                   </Badge>
@@ -336,7 +330,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
       try {
         const res = await fetch(`/api/v1/integrations/sync/activity?orgId=${orgId}`)
         if (!res.ok) {
-          const body = await res.json().catch(() => ({} as any))
+          const body = await res.json().catch(() => ({} as unknown))
           const key = `${res.status}:${body?.error || ''}`
           // stop repeated hammering when circuit is open
           if (key === lastErrorKey) {
@@ -347,7 +341,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
           throw new Error(body?.error || `HTTP ${res.status}`)
         }
         const json = await res.json()
-        const entries = (json.data || []).map((row: any) => {
+        const entries = (json.data || []).map((row: unknown) => {
           const a = String(row.action || '').toLowerCase()
           const action = a.includes('preview') ? 'preview' : a.includes('orchestrate') ? 'orchestrate' : a.includes('cancel') ? 'cancel' : 'sync'
           return {
@@ -363,7 +357,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
           }
         })
         if (!cancelled) setEntries(entries)
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!cancelled) setError(e?.message || 'Failed to load activity')
       } finally {
         if (!cancelled) setLoading(false)

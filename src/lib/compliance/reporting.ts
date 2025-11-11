@@ -3,8 +3,10 @@
  * Generate reports for POPIA, BEE, VAT, and audit requirements
  */
 
-import { POPIACompliance, PersonalInformation, ConsentRecord, DataBreach } from './popia';
-import { FinancialCompliance, VATTransaction, BEESpend, AuditTrail } from './financial';
+import type { PersonalInformation, ConsentRecord, DataBreach } from './popia';
+import { POPIACompliance } from './popia';
+import type { VATTransaction, BEESpend, AuditTrail } from './financial';
+import { FinancialCompliance } from './financial';
 
 export interface ComplianceReport {
   id: string;
@@ -15,8 +17,8 @@ export interface ComplianceReport {
   };
   generatedAt: Date;
   generatedBy: string;
-  summary: Record<string, any>;
-  details: Record<string, any>;
+  summary: Record<string, unknown>;
+  details: Record<string, unknown>;
   recommendations: string[];
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   complianceScore: number;
@@ -331,7 +333,7 @@ export class ComplianceReporting {
   // BEE Certificate verification
   static verifyBEECertificate(
     certificate: BEECertificateVerification
-  ): Promise<{ verified: boolean; details: any; errors?: string[] }> {
+  ): Promise<{ verified: boolean; details: unknown; errors?: string[] }> {
     // In a real implementation, this would integrate with SANAS or B-BBEE verification services
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -374,7 +376,7 @@ export class ComplianceReporting {
   }
 
   // Helper methods
-  private static getTopBEESuppliers(spends: BEESpend[], limit: number = 10): any[] {
+  private static getTopBEESuppliers(spends: BEESpend[], limit: number = 10): unknown[] {
     const supplierTotals = spends.reduce((acc, spend) => {
       if (!acc[spend.supplierId]) {
         acc[spend.supplierId] = {
@@ -388,10 +390,10 @@ export class ComplianceReporting {
       acc[spend.supplierId].totalSpend += spend.spendAmount;
       acc[spend.supplierId].recognition += spend.spendAmount * spend.recognitionLevel / 100;
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
 
     return Object.values(supplierTotals)
-      .sort((a: any, b: any) => b.totalSpend - a.totalSpend)
+      .sort((a: unknown, b: unknown) => b.totalSpend - a.totalSpend)
       .slice(0, limit);
   }
 
@@ -419,7 +421,7 @@ export class ComplianceReporting {
     return riskFactors;
   }
 
-  private static generateAuditRecommendations(auditReport: any): string[] {
+  private static generateAuditRecommendations(auditReport: unknown): string[] {
     const recommendations: string[] = [];
 
     if (auditReport.suspiciousActivity.length > 0) {

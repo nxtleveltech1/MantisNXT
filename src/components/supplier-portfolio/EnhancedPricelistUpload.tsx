@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Select,
@@ -32,7 +31,6 @@ import {
   AlertCircle,
   Info,
   TrendingUp,
-  TrendingDown,
   Sparkles,
   ArrowRight,
   X,
@@ -44,7 +42,6 @@ import { cn } from '@/lib/utils'
 import { useUploadPricelist, useMergeUpload } from '@/hooks/useNeonSpp'
 import { useQuery } from '@tanstack/react-query'
 import type {
-  PricelistUploadRequest,
   PricelistValidationResult,
   MergeResult,
   Supplier,
@@ -111,7 +108,7 @@ export function EnhancedPricelistUpload({
         ? data 
         : []
       // Map supplier data to match expected format (id instead of supplier_id)
-      return supplierList.map((s: any) => ({
+      return supplierList.map((s: unknown) => ({
         ...s,
         id: s.id || s.supplier_id, // Ensure id field exists
         supplier_id: s.supplier_id || s.id, // Keep supplier_id for compatibility
@@ -185,7 +182,7 @@ export function EnhancedPricelistUpload({
       // Get supplier's default currency or fall back to ZAR
       const selectedSupplier = suppliers.find(s => s.id === supplierId)
       const currency = selectedSupplier?.default_currency || 
-                       (selectedSupplier as any)?.currency || 
+                       (selectedSupplier as unknown)?.currency || 
                        'ZAR'
       
       const newUploadId = await uploadMutation.mutateAsync({
@@ -397,7 +394,7 @@ export function EnhancedPricelistUpload({
                   (() => {
                     const selectedSupplier = suppliers.find(s => s.id === supplierId)
                     const currency = selectedSupplier?.default_currency || 
-                                     (selectedSupplier as any)?.currency || 
+                                     (selectedSupplier as unknown)?.currency || 
                                      'ZAR'
                     return `Prices will be imported in ${currency}. The system will automatically map columns and validate data.`
                   })()

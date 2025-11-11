@@ -188,7 +188,7 @@ class CriticalFixesVerifier {
     }
   }
 
-  private async testAutoIncrement(client: any): Promise<void> {
+  private async testAutoIncrement(client: unknown): Promise<void> {
     this.log('\n→ Testing auto-increment functionality...', 'blue');
 
     // Test analytics_anomalies
@@ -341,7 +341,7 @@ class CriticalFixesVerifier {
     }
   }
 
-  private async testJSONBOperations(client: any): Promise<void> {
+  private async testJSONBOperations(client: unknown): Promise<void> {
     this.log('\n→ Testing JSONB operations...', 'blue');
 
     try {

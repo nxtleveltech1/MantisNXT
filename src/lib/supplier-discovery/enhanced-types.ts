@@ -46,7 +46,7 @@ export interface ScrapingTarget {
   url: string;
   method: 'GET' | 'POST';
   headers?: Record<string, string>;
-  payload?: any;
+  payload?: unknown;
   waitForSelector?: string;
   waitTimeout?: number;
   extractSelectors: Record<string, string>;
@@ -198,7 +198,7 @@ export interface DiscoveryResult {
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
     timestamp: Date;
   };
   warnings?: string[];
@@ -301,7 +301,7 @@ export interface DiscoveryProgress {
     status: 'pending' | 'running' | 'completed' | 'failed';
     startTime?: Date;
     endTime?: Date;
-    result?: any;
+    result?: unknown;
     error?: string;
   }>;
 }
@@ -310,7 +310,7 @@ export interface BulkDiscoveryRequest {
   requests: Array<{
     supplierName: string;
     websiteUrl?: string;
-    additionalContext?: Record<string, any>;
+    additionalContext?: Record<string, unknown>;
     priority?: 'low' | 'normal' | 'high';
   }>;
   options: {

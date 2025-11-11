@@ -32,7 +32,7 @@ export interface OdooAuthResult {
 }
 
 export interface OdooSearchParams {
-  domain?: any[];
+  domain?: unknown[];
   fields?: string[];
   offset?: number;
   limit?: number;
@@ -304,7 +304,7 @@ export class OdooService {
                 // Check for rate limit error
                 const errorMsg = error.message || String(error);
                 if (errorMsg.includes('429') || errorMsg.includes('too many requests')) {
-                  const rateLimitError: any = new Error(`Odoo authentication rate limited: ${errorMsg}`);
+                  const rateLimitError: unknown = new Error(`Odoo authentication rate limited: ${errorMsg}`);
                   rateLimitError.status = 429;
                   reject(rateLimitError);
                   return;
@@ -389,14 +389,14 @@ export class OdooService {
             `Please verify the server URL is correct and XML-RPC is enabled.`
           );
         }
-      } catch (fetchError: any) {
+      } catch (fetchError: unknown) {
         clearTimeout(timeoutId);
         if (fetchError.name === 'AbortError') {
           throw new Error(`Request timeout after ${this.config.timeout}ms`);
         }
         throw fetchError;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Re-throw with better context if it's not our custom error
       if (error.message && !error.message.includes('Odoo server returned HTML')) {
         throw new Error(
@@ -415,7 +415,7 @@ export class OdooService {
   /**
    * Get Odoo version info
    */
-  async version(): Promise<any> {
+  async version(): Promise<unknown> {
     return new Promise((resolve, reject) => {
       this.commonClient.methodCall('version', [], (error, version) => {
         if (error) {
@@ -445,12 +445,12 @@ export class OdooService {
    * Test connection to Odoo
    * Returns detailed connection info including server version
    */
-  async testConnection(): Promise<{ success: boolean; version?: any; error?: string }> {
+  async testConnection(): Promise<{ success: boolean; version?: unknown; error?: string }> {
     try {
       // First verify endpoint is accessible (helps catch HTML response issues early)
       try {
         await this.verifyEndpoint();
-      } catch (verifyError: any) {
+      } catch (verifyError: unknown) {
         // If verification fails, include helpful error message
         return {
           success: false,
@@ -468,7 +468,7 @@ export class OdooService {
         success: true,
         version: versionInfo,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Odoo connection test failed:', error);
       
       // Provide more helpful error messages
@@ -514,8 +514,8 @@ export class OdooService {
   private async execute<T>(
     model: string,
     method: string,
-    args: any[] = [],
-    kwargs: Record<string, any> = {}
+    args: unknown[] = [],
+    kwargs: Record<string, unknown> = {}
   ): Promise<T> {
     return await this.circuitBreaker.execute(async () => {
       const uid = await this.ensureAuthenticated();
@@ -542,7 +542,7 @@ export class OdooService {
                 // Check for rate limit error
                 const errorMsg = error.message || String(error);
                 if (errorMsg.includes('429') || errorMsg.includes('too many requests')) {
-                  const rateLimitError: any = new Error(`Odoo API rate limited: ${errorMsg}`);
+                  const rateLimitError: unknown = new Error(`Odoo API rate limited: ${errorMsg}`);
                   rateLimitError.status = 429;
                   reject(rateLimitError);
                   return;
@@ -569,10 +569,10 @@ export class OdooService {
    */
   async search(
     model: string,
-    domain: any[] = [],
+    domain: unknown[] = [],
     params: Omit<OdooSearchParams, 'domain'> = {}
   ): Promise<number[]> {
-    const kwargs: any = {};
+    const kwargs: unknown = {};
     if (params.offset !== undefined) kwargs.offset = params.offset;
     if (params.limit !== undefined) kwargs.limit = params.limit;
     if (params.order) kwargs.order = params.order;
@@ -583,7 +583,7 @@ export class OdooService {
   /**
    * Count records matching domain
    */
-  async searchCount(model: string, domain: any[] = []): Promise<number> {
+  async searchCount(model: string, domain: unknown[] = []): Promise<number> {
     return this.execute<number>(model, 'search_count', [domain]);
   }
 
@@ -594,7 +594,7 @@ export class OdooService {
     model: string,
     params: OdooSearchParams = {}
   ): Promise<T[]> {
-    const kwargs: any = {};
+    const kwargs: unknown = {};
     if (params.domain) kwargs.domain = params.domain;
     if (params.fields) kwargs.fields = params.fields;
     if (params.offset !== undefined) kwargs.offset = params.offset;
@@ -620,7 +620,7 @@ export class OdooService {
   /**
    * Create a record
    */
-  async create<T>(model: string, values: Record<string, any>): Promise<number> {
+  async create<T>(model: string, values: Record<string, unknown>): Promise<number> {
     return this.execute<number>(model, 'create', [values]);
   }
 
@@ -630,7 +630,7 @@ export class OdooService {
   async write(
     model: string,
     ids: number | number[],
-    values: Record<string, any>
+    values: Record<string, unknown>
   ): Promise<boolean> {
     const idArray = Array.isArray(ids) ? ids : [ids];
     return this.execute<boolean>(model, 'write', [idArray, values]);
@@ -853,7 +853,7 @@ export class OdooService {
   /**
    * Get field metadata for a model
    */
-  async getFields(model: string, fieldNames?: string[]): Promise<any> {
+  async getFields(model: string, fieldNames?: string[]): Promise<unknown> {
     return this.execute(
       model,
       'fields_get',
@@ -869,8 +869,8 @@ export class OdooService {
     model: string,
     method: string,
     recordIds: number[] = [],
-    args: any[] = [],
-    kwargs: Record<string, any> = {}
+    args: unknown[] = [],
+    kwargs: Record<string, unknown> = {}
   ): Promise<T> {
     return this.execute<T>(model, method, [recordIds, ...args], kwargs);
   }

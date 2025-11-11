@@ -3,7 +3,8 @@
  * Provides section-specific error isolation for dashboard components
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -13,7 +14,6 @@ import {
   RefreshCw,
   Bug,
   Clock,
-  Shield,
   Database,
   BarChart3,
   Package,

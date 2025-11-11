@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ export default function Particles({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const context = useRef<CanvasRenderingContext2D | null>(null);
-  const circles = useRef<any[]>([]);
+  const circles = useRef<unknown[]>([]);
   const mousePosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const mouseMoveRef = useRef<boolean>(false);
   const [canvasSize, setCanvasSize] = useState<{ w: number; h: number }>({
@@ -50,22 +50,22 @@ export default function Particles({
     return () => {
       window.removeEventListener("resize", initCanvas);
     };
-  }, [color]);
+  }, [animate, color, initCanvas]);
 
   useEffect(() => {
     onMouseMove();
-  }, [canvasSize.w, canvasSize.h]);
+  }, [canvasSize, onMouseMove]);
 
   useEffect(() => {
     initCanvas();
-  }, [refresh]);
+  }, [initCanvas, refresh]);
 
-  const initCanvas = () => {
+  const initCanvas = useCallback(() => {
     resizeCanvas();
     drawParticles();
-  };
+  }, [drawParticles, resizeCanvas]);
 
-  const onMouseMove = () => {
+  const onMouseMove = useCallback(() => {
     if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       const { w, h } = canvasSize;
@@ -78,7 +78,7 @@ export default function Particles({
         mouseMoveRef.current = false;
       }
     }
-  };
+  }, [canvasSize]);
 
   type Circle = {
     x: number;
@@ -93,7 +93,7 @@ export default function Particles({
     magnetism: number;
   };
 
-  const resizeCanvas = () => {
+  const resizeCanvas = useCallback(() => {
     if (canvasContainerRef.current && canvasRef.current && context.current) {
       circles.current.length = 0;
       setCanvasSize({
@@ -106,9 +106,9 @@ export default function Particles({
       canvasRef.current.style.height = `${canvasContainerRef.current.offsetHeight}px`;
       context.current.scale(dpr, dpr);
     }
-  };
+  }, [dpr]);
 
-  const circleParams = (): Circle => {
+  const circleParams = useCallback((): Circle => {
     const x = Math.floor(Math.random() * canvasSize.w);
     const y = Math.floor(Math.random() * canvasSize.h);
     const translateX = 0;
@@ -131,11 +131,11 @@ export default function Particles({
       dy,
       magnetism,
     };
-  };
+  }, [canvasSize, size]);
 
-  const rgb = hexToRgb(color);
+  const rgb = useMemo(() => hexToRgb(color), [color]);
 
-  const drawCircle = (circle: Circle, update = false) => {
+  const drawCircle = useCallback((circle: Circle, update = false) => {
     if (context.current) {
       const { x, y, translateX, translateY, size, alpha } = circle;
       context.current.translate(translateX, translateY);
@@ -149,22 +149,22 @@ export default function Particles({
         circles.current.push(circle);
       }
     }
-  };
+  }, [dpr, rgb]);
 
-  const clearContext = () => {
+  const clearContext = useCallback(() => {
     if (context.current) {
       context.current.clearRect(0, 0, canvasSize.w, canvasSize.h);
     }
-  };
+  }, [canvasSize]);
 
-  const drawParticles = () => {
+  const drawParticles = useCallback(() => {
     clearContext();
     const particleCount = quantity;
     for (let i = 0; i < particleCount; i++) {
       const circle = circleParams();
       drawCircle(circle);
     }
-  };
+  }, [circleParams, clearContext, drawCircle, quantity]);
 
   const remapValue = (
     value: number,
@@ -178,7 +178,7 @@ export default function Particles({
     return remapped > 0 ? remapped : 0;
   };
 
-  const animate = () => {
+  const animate = useCallback(() => {
     clearContext();
     circles.current.forEach((circle: Circle, i: number) => {
       const edge = [
@@ -224,7 +224,7 @@ export default function Particles({
       }
     });
     window.requestAnimationFrame(animate);
-  };
+  }, [canvasSize, circleParams, clearContext, drawCircle, ease, staticity, vx, vy]);
 
   return (
     <div className={cn("pointer-events-none", className)} ref={canvasContainerRef} aria-hidden="true">

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { pool } from '@/lib/database'
 import { z } from 'zod'
 import { CacheInvalidator } from '@/lib/cache/invalidation'
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `
 
-    const queryParams: any[] = []
+    const queryParams: unknown[] = []
     let paramIndex = 1
 
     // Add search filter

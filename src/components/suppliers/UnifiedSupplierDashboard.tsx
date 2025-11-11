@@ -1,16 +1,16 @@
 // @ts-nocheck
 "use client"
 
-import React, { useState, useMemo, useCallback, useEffect } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import AppLayout from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -33,7 +33,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -45,14 +44,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useSuppliers } from "@/hooks/useSuppliers"
 import { useSupplierMutations } from "@/hooks/useRealTimeDataFixed"
-import { cn, formatCurrency, formatDate, formatPercentage, getStatusColor, getTierColor } from "@/lib/utils"
+import { cn, formatCurrency, formatDate, getStatusColor, getTierColor } from "@/lib/utils"
 import { getDisplayUrl } from "@/lib/utils/url-validation"
 import { SafeLink } from "@/components/ui/SafeLink"
 import SupplierPricelistUpload from "./SupplierPricelistUpload"
@@ -60,45 +56,32 @@ import SupplierQuickActions from "./SupplierQuickActions"
 import {
   Building2,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
-  CheckCircle,
   Clock,
-  Users,
   Package,
   DollarSign,
   Phone,
   Mail,
-  FileText,
   Star,
   BarChart3,
   Activity,
-  Calendar,
   Globe,
   MapPin,
-  Settings,
   Eye,
   Edit,
   Download,
   Upload,
   RefreshCw,
   Search,
-  Filter,
   Plus,
   MoreHorizontal,
-  History,
   ShoppingCart,
   Target,
   Award,
-  Zap,
   X,
   Trash2,
   SlidersHorizontal,
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  Loader2
+  ExternalLink
 } from "lucide-react"
 
 // Types
@@ -148,7 +131,7 @@ interface SupplierData {
 }
 
 // Transformation function to convert DatabaseSupplier to SupplierData
-function transformDatabaseSupplierToSupplierData(dbSupplier: any): SupplierData {
+function transformDatabaseSupplierToSupplierData(dbSupplier: unknown): SupplierData {
   // Generate a risk level based on performance tier
   const getRiskLevel = (performanceTier: string): 'low' | 'medium' | 'high' | 'critical' => {
     switch (performanceTier) {
@@ -223,7 +206,7 @@ function transformDatabaseSupplierToSupplierData(dbSupplier: any): SupplierData 
 }
 
 // Sample data with South African suppliers
-const sampleSuppliers: SupplierData[] = [
+const _sampleSuppliers: SupplierData[] = [
   {
     id: "SUP-001",
     code: "BKPRC",
@@ -378,7 +361,14 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   initialTab = "overview"
 }) => {
   const router = useRouter()
-  const { suppliers: apiSuppliers, loading: suppliersLoading, error: suppliersError, fetchSuppliers, refresh, deleteSupplier: deleteSupplierHook } = useSuppliers()
+  const {
+    suppliers: apiSuppliers,
+    loading: suppliersLoading,
+    error: suppliersError,
+    fetchSuppliers: _fetchSuppliers,
+    refresh,
+    deleteSupplier: deleteSupplierHook
+  } = useSuppliers()
   const { deleteSupplier: deleteSupplierMutation } = useSupplierMutations()
 
   // Refetch suppliers when component mounts or when refresh param is present
@@ -403,7 +393,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
           const result = await response.json()
           if (result.success && result.data) {
             // Filter for supplier-related activities
-            const supplierRelated = result.data.filter((activity: any) => 
+            const supplierRelated = result.data.filter((activity: unknown) => 
               activity.entityType === 'supplier' || 
               activity.type?.includes('supplier') ||
               activity.metadata?.category === 'supplier_management'
@@ -422,12 +412,12 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
 
   // Convert API suppliers to component format
   const suppliers = useMemo(() => {
-    return apiSuppliers.map((supplier: any) => transformDatabaseSupplierToSupplierData(supplier))
+    return apiSuppliers.map((supplier: unknown) => transformDatabaseSupplierToSupplierData(supplier))
   }, [apiSuppliers])
 
   // Legacy code (remove after confirming new transformation works)
-  const legacyTransform = useMemo(() => {
-    return apiSuppliers.map((supplier: any) => ({
+  const _legacyTransform = useMemo(() => {
+    return apiSuppliers.map((supplier: unknown) => ({
       website: supplier.website || '',
       contactInfo: {
         primaryContact: {
@@ -495,9 +485,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState(initialTab)
   const [showFilters, setShowFilters] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
+  const [, setIsExporting] = useState(false)
   const [showPricelistUpload, setShowPricelistUpload] = useState(false)
-  const [supplierActivities, setSupplierActivities] = useState<any[]>([])
+  const [supplierActivities, setSupplierActivities] = useState<unknown[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(true)
 
   // Filters
@@ -1093,9 +1083,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                   <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Status</label>
+                        <Label htmlFor="supplier-status-filter" className="text-sm font-medium mb-2 block">Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger>
+                          <SelectTrigger id="supplier-status-filter">
                             <SelectValue placeholder="All statuses" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1109,9 +1099,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Tier</label>
+                        <Label htmlFor="supplier-tier-filter" className="text-sm font-medium mb-2 block">Tier</Label>
                         <Select value={tierFilter} onValueChange={setTierFilter}>
-                          <SelectTrigger>
+                          <SelectTrigger id="supplier-tier-filter">
                             <SelectValue placeholder="All tiers" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1125,9 +1115,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Category</label>
+                        <Label htmlFor="supplier-category-filter" className="text-sm font-medium mb-2 block">Category</Label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                          <SelectTrigger>
+                          <SelectTrigger id="supplier-category-filter">
                             <SelectValue placeholder="All categories" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1140,9 +1130,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Risk Level</label>
+                        <Label htmlFor="supplier-risk-filter" className="text-sm font-medium mb-2 block">Risk Level</Label>
                         <Select value={riskFilter} onValueChange={setRiskFilter}>
-                          <SelectTrigger>
+                          <SelectTrigger id="supplier-risk-filter">
                             <SelectValue placeholder="All levels" />
                           </SelectTrigger>
                           <SelectContent>

@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import type { z } from 'zod'
 
 /**
  * Standard error response interface
@@ -12,7 +12,7 @@ import { z } from 'zod'
 export interface ApiError {
   success: false
   error: string
-  details?: any
+  details?: unknown
   timestamp?: string
   code?: string
 }
@@ -20,7 +20,7 @@ export interface ApiError {
 /**
  * Standard success response interface
  */
-export interface ApiSuccess<T = any> {
+export interface ApiSuccess<T = unknown> {
   success: true
   data: T
   message?: string
@@ -39,7 +39,7 @@ export interface ApiSuccess<T = any> {
  * Safely converts database timestamp to ISO string
  * Handles null, undefined, and invalid dates
  */
-export function serializeTimestamp(timestamp: any): string | null {
+export function serializeTimestamp(timestamp: unknown): string | null {
   if (!timestamp) return null
 
   try {
@@ -58,7 +58,7 @@ export function serializeTimestamp(timestamp: any): string | null {
 /**
  * Safely converts multiple timestamps in an object
  */
-export function serializeTimestamps<T extends Record<string, any>>(
+export function serializeTimestamps<T extends Record<string, unknown>>(
   obj: T,
   timestampFields: (keyof T)[]
 ): T {
@@ -76,7 +76,7 @@ export function serializeTimestamps<T extends Record<string, any>>(
 /**
  * Transform database row to API response format with proper timestamp handling
  */
-export function transformDatabaseRow<T extends Record<string, any>>(
+export function transformDatabaseRow<T extends Record<string, unknown>>(
   row: T,
   timestampFields: (keyof T)[] = ['created_at', 'updated_at']
 ): T {
@@ -86,7 +86,7 @@ export function transformDatabaseRow<T extends Record<string, any>>(
 /**
  * Transform array of database rows
  */
-export function transformDatabaseRows<T extends Record<string, any>>(
+export function transformDatabaseRows<T extends Record<string, unknown>>(
   rows: T[],
   timestampFields: (keyof T)[] = ['created_at', 'updated_at']
 ): T[] {
@@ -98,7 +98,7 @@ export function transformDatabaseRows<T extends Record<string, any>>(
  */
 export function createErrorResponse(
   error: string,
-  details?: any,
+  details?: unknown,
   status: number = 500,
   code?: string
 ): NextResponse {
@@ -155,7 +155,7 @@ export function handleValidationError(error: z.ZodError): NextResponse {
 /**
  * Handle database errors with proper error mapping
  */
-export function handleDatabaseError(error: any): NextResponse {
+export function handleDatabaseError(error: unknown): NextResponse {
   console.error('Database error:', error)
 
   // Handle specific PostgreSQL errors
@@ -252,7 +252,7 @@ export function calculatePagination(
 /**
  * Safe JSON serialization with timestamp handling
  */
-export function safeJSONSerialize(obj: any): any {
+export function safeJSONSerialize(obj: unknown): unknown {
   return JSON.parse(JSON.stringify(obj, (key, value) => {
     // Handle Date objects
     if (value instanceof Date) {
@@ -324,8 +324,8 @@ export function addSecurityHeaders(response: NextResponse): NextResponse {
 export function logApiError(
   endpoint: string,
   method: string,
-  error: any,
-  context?: Record<string, any>
+  error: unknown,
+  context?: Record<string, unknown>
 ) {
   console.error(`API Error [${method} ${endpoint}]:`, {
     error: error.message || error,

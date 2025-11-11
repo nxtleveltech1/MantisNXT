@@ -53,7 +53,7 @@ export class AnalyticsExporter {
     document.body.removeChild(link)
   }
 
-  static exportSpendAnalysis(spendData: any[], period: string): void {
+  static exportSpendAnalysis(spendData: unknown[], period: string): void {
     const headers = ['Month', 'Current Year', 'Previous Year', 'Budget', 'Variance']
     const rows = spendData.map(item => [
       item.month,
@@ -71,7 +71,7 @@ export class AnalyticsExporter {
     })
   }
 
-  static exportSupplierPerformance(supplierData: any[]): void {
+  static exportSupplierPerformance(supplierData: unknown[]): void {
     const headers = [
       'Supplier Name',
       'Rating',
@@ -99,7 +99,7 @@ export class AnalyticsExporter {
     })
   }
 
-  static exportSavingsReport(savingsData: any[]): void {
+  static exportSavingsReport(savingsData: unknown[]): void {
     const headers = [
       'Month',
       'Negotiated Savings',
@@ -134,7 +134,7 @@ export class AnalyticsExporter {
     })
   }
 
-  static exportRiskAnalysis(riskData: any[]): void {
+  static exportRiskAnalysis(riskData: unknown[]): void {
     const headers = [
       'Risk Category',
       'Risk Score',
@@ -162,7 +162,7 @@ export class AnalyticsExporter {
     })
   }
 
-  static exportKPIDashboard(kpiData: any): void {
+  static exportKPIDashboard(kpiData: unknown): void {
     const headers = ['KPI', 'Current Value', 'Change', 'Status']
     const rows = [
       ['Total Spend', this.formatCurrency(kpiData.totalSpend), this.formatPercent(kpiData.totalSpendChange), kpiData.totalSpendChange > 0 ? 'Increased' : 'Decreased'],

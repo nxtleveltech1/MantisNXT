@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -44,14 +44,7 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchJobStatus()
-    const interval = setInterval(fetchJobStatus, 3000) // Poll every 3 seconds
-
-    return () => clearInterval(interval)
-  }, [jobId])
-
-  const fetchJobStatus = async () => {
+  const fetchJobStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/category/ai-categorization/status/${jobId}`)
       const data = await response.json()
@@ -69,7 +62,14 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
       console.error("Failed to fetch job status:", error)
       setLoading(false)
     }
-  }
+  }, [jobId, onJobComplete])
+
+  useEffect(() => {
+    fetchJobStatus()
+    const interval = setInterval(fetchJobStatus, 3000) // Poll every 3 seconds
+
+    return () => clearInterval(interval)
+  }, [fetchJobStatus])
 
   const pauseJob = async () => {
     try {

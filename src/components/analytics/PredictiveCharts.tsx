@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Select,
@@ -15,17 +14,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {
   LineChart,
   Line,
   AreaChart,
   Area,
-  BarChart,
   Bar,
   ScatterChart,
   Scatter,
@@ -36,9 +31,7 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
   ReferenceLine,
-  ReferenceArea,
   Dot
 } from 'recharts'
 import {
@@ -47,39 +40,14 @@ import {
   TrendingDown,
   BarChart3,
   Activity,
-  Target,
   AlertTriangle,
-  CheckCircle,
   Clock,
-  DollarSign,
-  Package,
-  Users,
-  Building2,
-  Zap,
-  Star,
-  Award,
-  ShieldCheck,
-  Gauge,
-  Eye,
   RefreshCw,
   Download,
-  Settings,
-  Info,
-  Lightbulb,
-  ArrowUp,
-  ArrowDown,
-  ArrowRight,
-  Calendar,
-  Filter,
   Maximize2,
   Minimize2,
-  Play,
-  Pause,
-  RotateCcw,
   Database,
-  Sparkles,
-  Crown,
-  Calculator
+  Sparkles
 } from "lucide-react"
 
 // Types for Predictive Analytics
@@ -442,12 +410,12 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
   }, [workingCharts])
 
   // Custom tooltip component
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: unknown) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900 mb-2">{label}</p>
-          {payload.map((pld: any, index: number) => (
+          {payload.map((pld: unknown, index: number) => (
             <div key={index} className="flex items-center gap-2 text-sm">
               <div
                 className="w-3 h-3 rounded-full"
@@ -466,7 +434,7 @@ const PredictiveCharts: React.FC<PredictiveChartsProps> = ({
   }
 
   // Custom anomaly dot
-  const AnomalyDot = (props: any) => {
+  const AnomalyDot = (props: unknown) => {
     const { cx, cy, payload } = props
     if (payload.anomaly) {
       return (

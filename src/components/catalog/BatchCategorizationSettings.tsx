@@ -8,7 +8,6 @@ import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Settings, Save, RotateCcw, Info } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -53,7 +52,7 @@ export function BatchCategorizationSettings({
     setHasChanges(false)
   }, [settings])
 
-  const handleChange = (key: keyof BatchSettings, value: any) => {
+  const handleChange = (key: keyof BatchSettings, value: unknown) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }))
     setHasChanges(true)
   }

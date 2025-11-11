@@ -24,12 +24,11 @@ import {
   Play,
   Settings,
   BarChart3,
-  CheckCircle2,
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PricingDashboardPage() {
-  const [metrics, setMetrics] = useState<any>(null);
+  const [metrics, setMetrics] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -222,7 +221,7 @@ export default function PricingDashboardPage() {
               <div className="text-center py-8 text-muted-foreground">Loading price changes...</div>
             ) : metrics?.recent_changes_list && metrics.recent_changes_list.length > 0 ? (
               <div className="space-y-4">
-                {metrics.recent_changes_list.map((change: any, index: number) => {
+                {metrics.recent_changes_list.map((change: unknown, index: number) => {
                   const priceChangePercent = change.price_change_percent || 0;
                   const isDecrease = priceChangePercent < 0;
                   const daysAgo = Math.floor(

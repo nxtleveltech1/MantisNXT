@@ -2,7 +2,8 @@
  * POST /api/spp/merge - Merge validated pricelist into CORE schema
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { pricelistService } from '@/lib/services/PricelistService';
 import { z } from 'zod';
 
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     const url = new URL(request.url);
     const qpUploadId = url.searchParams.get('upload_id');
     const qpSkip = url.searchParams.get('skip_invalid_rows');
-    let body: any = {};
+    let body: unknown = {};
     try {
       body = await request.json();
     } catch (error) {

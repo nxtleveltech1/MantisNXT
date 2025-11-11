@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
@@ -23,30 +23,17 @@ import {
   Bot,
   User,
   Brain,
-  Sparkles,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
-  CheckCircle,
-  Clock,
   Star,
   Target,
   Zap,
   BarChart3,
-  PieChart,
   Activity,
   DollarSign,
-  Calendar,
-  MapPin,
-  Phone,
-  Mail,
-  ExternalLink,
-  Download,
-  Share,
   Bookmark,
   ThumbsUp,
   ThumbsDown,
-  MoreHorizontal,
   Loader2,
   RefreshCw,
   Lightbulb,
@@ -175,12 +162,9 @@ What would you like to explore today?`,
     setMessages([welcomeMessage])
   }, [])
 
-  // Auto-generate insights
-  useEffect(() => {
-    generateInsights()
-  }, [supplierId])
+  const { analysisDepth, focusAreas } = context.preferences
 
-  const generateInsights = async () => {
+  const generateInsights = useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch('/api/ai/suppliers/insights/generate', {
@@ -188,8 +172,8 @@ What would you like to explore today?`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           supplierId,
-          analysisType: context.preferences.analysisDepth,
-          focusAreas: context.preferences.focusAreas
+          analysisType: analysisDepth,
+          focusAreas
         })
       })
 
@@ -202,7 +186,12 @@ What would you like to explore today?`,
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [analysisDepth, focusAreas, supplierId])
+
+  // Auto-generate insights
+  useEffect(() => {
+    generateInsights()
+  }, [generateInsights])
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return

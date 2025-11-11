@@ -5,7 +5,8 @@
  * Target: 70-90% response time reduction (800ms → 80-240ms)
  */
 
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import type { UseQueryResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { QueryKeys } from '@/lib/cache/patterns';
 
 /**
@@ -61,7 +62,7 @@ export interface InventoryListData {
     avg_sale_price: number;
     avg_margin_percentage: number;
   };
-  recentMovements?: any[];
+  recentMovements?: unknown[];
   filters: InventoryFilters;
 }
 
@@ -102,7 +103,7 @@ export interface InventoryItem {
   images: string[];
   status: 'active' | 'inactive' | 'discontinued';
   tax_rate: number;
-  custom_fields: Record<string, any>;
+  custom_fields: Record<string, unknown>;
   notes?: string;
   stock_status: 'normal' | 'low' | 'out' | 'over';
   margin: number;

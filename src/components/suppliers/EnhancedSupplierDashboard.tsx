@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
@@ -30,7 +29,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -40,43 +38,30 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { cn, formatCurrency, formatDate, formatPercentage } from "@/lib/utils"
+import { cn, formatCurrency, formatDate } from "@/lib/utils"
 import {
   Building2,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   CheckCircle,
-  Clock,
-  Users,
-  Package,
   DollarSign,
   Phone,
   Mail,
-  FileText,
   Star,
   BarChart3,
-  Activity,
-  Calendar,
   Globe,
-  MapPin,
-  Settings,
   Eye,
   Edit,
   Download,
   Upload,
   RefreshCw,
   Search,
-  Filter,
   Plus,
   MoreHorizontal,
-  History,
   ShoppingCart,
   Target,
-  Award,
-  Zap
+  Award
 } from "lucide-react"
 import NextJsXlsxConverter from "@/components/inventory/NextJsXlsxConverter"
 import type { DataValidationResult } from "@/components/inventory/NextJsXlsxConverter"
@@ -89,7 +74,6 @@ const AISupplierDiscovery = dynamic(
   }
 )
 import AIInsightCards from "@/components/ai/InsightCards"
-import AIChatInterface from "@/components/ai/ChatInterface"
 import { AIErrorBoundary } from "@/components/ai/AIErrorHandler"
 
 // Enhanced Supplier Types
@@ -375,8 +359,8 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
         legalName: supplier.businessInfo?.legalName || supplier.name,
         website: supplier.businessInfo?.website || '',
         industry: supplier.category,
-        tier: supplier.tier as any,
-        status: supplier.status as any,
+        tier: supplier.tier as unknown,
+        status: supplier.status as unknown,
         primaryContact: {
           ...sampleSuppliers[0].primaryContact,
           name: supplier.contacts[0]?.name || '',
@@ -1094,7 +1078,7 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
               onSupplierSelect={(supplier) => {
                 console.log('AI Supplier selected:', supplier)
                 // Convert AI supplier to enhanced supplier format if needed
-                onSupplierSelect?.(supplier as any)
+                onSupplierSelect?.(supplier as unknown)
               }}
               onSupplierBookmark={(supplierId) => {
                 console.log('AI Supplier bookmarked:', supplierId)

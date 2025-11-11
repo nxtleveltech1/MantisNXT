@@ -3,7 +3,6 @@
  * Provides structured error handling, user feedback, and recovery mechanisms
  */
 
-import { z } from 'zod'
 
 // Error severity levels
 export enum ErrorSeverity {
@@ -32,7 +31,7 @@ export interface ErrorContext {
   supplierId?: string
   rowNumber?: number
   fieldName?: string
-  originalValue?: any
+  originalValue?: unknown
   expectedType?: string
   stackTrace?: string
   timestamp: Date
@@ -51,7 +50,7 @@ export interface UploadError {
   suggestion?: string
   recoveryActions?: RecoveryAction[]
   userMessage: string
-  technicalDetails?: Record<string, any>
+  technicalDetails?: Record<string, unknown>
 }
 
 // Recovery action interface
@@ -60,7 +59,7 @@ export interface RecoveryAction {
   label: string
   description: string
   action: 'retry' | 'skip' | 'fix_data' | 'contact_support' | 'rollback'
-  parameters?: Record<string, any>
+  parameters?: Record<string, unknown>
   automated?: boolean
 }
 
@@ -148,7 +147,7 @@ export class UploadErrorManager {
   recordValidationError(
     rowNumber: number,
     fieldName: string,
-    originalValue: any,
+    originalValue: unknown,
     expectedType: string,
     message: string,
     suggestion?: string
@@ -188,7 +187,7 @@ export class UploadErrorManager {
   recordBusinessLogicError(
     rule: string,
     rowNumber: number,
-    details: Record<string, any>,
+    details: Record<string, unknown>,
     message: string
   ): UploadError {
     return this.recordError(
@@ -483,7 +482,7 @@ export class UploadErrorManager {
     return userFriendlyMessages[code] || message
   }
 
-  private generateTechnicalDetails(context: Partial<ErrorContext>): Record<string, any> {
+  private generateTechnicalDetails(context: Partial<ErrorContext>): Record<string, unknown> {
     return {
       rowNumber: context.rowNumber,
       fieldName: context.fieldName,
@@ -587,11 +586,11 @@ export function createErrorResponse(
  * Helper function to create success response with optional warnings
  */
 export function createSuccessResponse(
-  data: any,
+  data: unknown,
   errorManager?: UploadErrorManager,
   warnings: UploadError[] = []
 ): Response {
-  const response: any = {
+  const response: unknown = {
     success: true,
     data
   }

@@ -5,7 +5,8 @@
  * Usage: Wrap API route handlers with withAuth()
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
 type RouteHandler<TContext extends Record<string, unknown> | undefined = Record<string, unknown>> = (

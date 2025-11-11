@@ -10,12 +10,11 @@
  */
 
 import { query } from '@/lib/database';
-import {
+import type {
   LoyaltyLeaderboardEntry,
-  RewardAnalytics,
-  LoyaltyTier,
+  LoyaltyTier} from '@/types/loyalty';
+import {
   LoyaltyError,
-  CustomerRewardsSummary,
 } from '@/types/loyalty';
 
 // ============================================================================
@@ -131,7 +130,7 @@ export interface LoyaltyReport {
   reportType: ReportType;
   generatedAt: Date;
   orgId: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface ExpiryReport {
@@ -162,7 +161,7 @@ export class LoyaltyAnalyticsService {
       const { tier, limit = 100, offset = 0, period = 'all' } = options;
 
       const conditions: string[] = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
       let paramIndex = 2;
 
       if (tier) {
@@ -237,7 +236,7 @@ export class LoyaltyAnalyticsService {
         WHERE customer_id = $1 AND org_id = $2
       `;
 
-      const result = await query<any>(sql, [customerId, orgId]);
+      const result = await query<unknown>(sql, [customerId, orgId]);
 
       if (result.rows.length === 0) {
         throw new LoyaltyError(
@@ -304,7 +303,7 @@ export class LoyaltyAnalyticsService {
       const programName = programResult.rows[0].name;
 
       // Get member counts
-      const memberStats = await query<any>(
+      const memberStats = await query<unknown>(
         `SELECT
           COUNT(*) as total_members,
           COUNT(*) FILTER (WHERE points_balance > 0) as active_members,
@@ -340,7 +339,7 @@ export class LoyaltyAnalyticsService {
         totalIssued > 0 ? (totalRedeemed / totalIssued) * 100 : 0;
 
       // Get top rewards
-      const topRewardsResult = await query<any>(
+      const topRewardsResult = await query<unknown>(
         `SELECT rc.id as reward_id, rc.name as reward_name, COUNT(rr.id) as redemption_count
          FROM reward_catalog rc
          LEFT JOIN reward_redemption rr ON rc.id = rr.reward_id
@@ -358,7 +357,7 @@ export class LoyaltyAnalyticsService {
       }));
 
       // Get recent activity
-      const activityResult = await query<any>(
+      const activityResult = await query<unknown>(
         `SELECT
           COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) as transactions_today,
           COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '7 days') as transactions_this_week,
@@ -368,7 +367,7 @@ export class LoyaltyAnalyticsService {
         [programId]
       );
 
-      const redemptionActivityResult = await query<any>(
+      const redemptionActivityResult = await query<unknown>(
         `SELECT
           COUNT(*) FILTER (WHERE redeemed_at >= CURRENT_DATE) as redemptions_today,
           COUNT(*) FILTER (WHERE redeemed_at >= CURRENT_DATE - INTERVAL '7 days') as redemptions_this_week,
@@ -452,7 +451,7 @@ export class LoyaltyAnalyticsService {
         ORDER BY date
       `;
 
-      const result = await query<any>(sql, [programId, orgId, truncFunction]);
+      const result = await query<unknown>(sql, [programId, orgId, truncFunction]);
 
       return result.rows.map((row) => ({
         date: row.date,
@@ -498,7 +497,7 @@ export class LoyaltyAnalyticsService {
         ORDER BY total_redemptions DESC
       `;
 
-      const result = await query<any>(sql, [orgId]);
+      const result = await query<unknown>(sql, [orgId]);
 
       return result.rows.map((row) => ({
         rewardId: row.reward_id,
@@ -552,7 +551,7 @@ export class LoyaltyAnalyticsService {
         ORDER BY period
       `;
 
-      const result = await query<any>(sql, [orgId, period]);
+      const result = await query<unknown>(sql, [orgId, period]);
 
       return result.rows.map((row, index, arr) => {
         const value = Number(row.value || 0);
@@ -589,7 +588,7 @@ export class LoyaltyAnalyticsService {
   ): Promise<TierDistribution> {
     try {
       const conditions = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
 
       if (programId) {
         conditions.push('program_id = $2');
@@ -664,7 +663,7 @@ export class LoyaltyAnalyticsService {
         WHERE cl.org_id = $1
       `;
 
-      const result = await query<any>(sql, [orgId]);
+      const result = await query<unknown>(sql, [orgId]);
       const metrics = result.rows[0];
 
       const totalCustomers = parseInt(metrics.total_customers || '0', 10);
@@ -705,7 +704,7 @@ export class LoyaltyAnalyticsService {
     reportType: ReportType
   ): Promise<LoyaltyReport> {
     try {
-      const data: Record<string, any> = {};
+      const data: Record<string, unknown> = {};
 
       switch (reportType) {
         case 'program_overview':
@@ -735,7 +734,7 @@ export class LoyaltyAnalyticsService {
 
         case 'points_expiry':
           // Get upcoming expiries
-          const expiryResult = await query<any>(
+          const expiryResult = await query<unknown>(
             `SELECT
               lt.customer_id,
               c.name as customer_name,
@@ -805,7 +804,7 @@ export class LoyaltyAnalyticsService {
         ORDER BY expiry_date
       `;
 
-      const result = await query<any>(sql, [programId, orgId]);
+      const result = await query<unknown>(sql, [programId, orgId]);
 
       const upcomingExpiries = result.rows.map((row) => ({
         customerId: row.customer_id,

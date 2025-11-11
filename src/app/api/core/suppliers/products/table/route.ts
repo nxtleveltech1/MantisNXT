@@ -2,7 +2,8 @@
  * GET /api/core/suppliers/products/table - Get product table view for supplier selection UI
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { supplierProductService } from '@/lib/services/SupplierProductService';
 
 export async function GET(request: NextRequest) {

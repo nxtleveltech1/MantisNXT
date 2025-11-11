@@ -18,7 +18,7 @@ export interface CachedMetric {
   orgId: string;
   metricType: AnalyticsMetricType;
   metricKey: string;
-  metricValue: Record<string, any>;
+  metricValue: Record<string, unknown>;
   timePeriod: TimePeriod;
   periodStart: Date;
   periodEnd: Date;
@@ -28,7 +28,7 @@ export interface CachedMetric {
 export interface CacheMetricData {
   metricType: AnalyticsMetricType;
   metricKey: string;
-  metricValue: Record<string, any>;
+  metricValue: Record<string, unknown>;
   timePeriod: TimePeriod;
   periodStart: Date;
   periodEnd: Date;
@@ -96,7 +96,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     metricType: AnalyticsMetricType,
     metricKey: string,
     options?: AIServiceRequestOptions,
-  ): Promise<AIServiceResponse<Record<string, any> | null>> {
+  ): Promise<AIServiceResponse<Record<string, unknown> | null>> {
     return this.executeOperation(
       'cache.get',
       async () => {
@@ -282,7 +282,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     const periodEnd = new Date(now);
     periodEnd.setHours(23, 59, 59, 999);
 
-    let metricValue: Record<string, any> = {};
+    let metricValue: Record<string, unknown> = {};
 
     switch (metricType) {
       case 'sales':
@@ -337,7 +337,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     orgId: string,
     periodStart: Date,
     periodEnd: Date,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     const result = await db.query(
       `
       SELECT
@@ -367,7 +367,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
    */
   private async calculateInventoryMetrics(
     orgId: string,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     const result = await db.query(
       `
       SELECT
@@ -397,7 +397,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     orgId: string,
     periodStart: Date,
     periodEnd: Date,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     const result = await db.query(
       `
       SELECT
@@ -429,7 +429,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     orgId: string,
     periodStart: Date,
     periodEnd: Date,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     const result = await db.query(
       `
       SELECT
@@ -457,7 +457,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     orgId: string,
     periodStart: Date,
     periodEnd: Date,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     // Placeholder - would integrate with actual financial data
     return {
       revenue: 0,
@@ -474,7 +474,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
     orgId: string,
     periodStart: Date,
     periodEnd: Date,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     // Placeholder - would integrate with actual operational data
     return {
       efficiency: 0,
@@ -486,7 +486,7 @@ export class MetricsCacheService extends AIServiceBase<AIServiceRequestOptions> 
   /**
    * Map database row to CachedMetric
    */
-  private mapCachedMetricRow(row: any): CachedMetric {
+  private mapCachedMetricRow(row: unknown): CachedMetric {
     return {
       id: row.id,
       orgId: row.org_id,

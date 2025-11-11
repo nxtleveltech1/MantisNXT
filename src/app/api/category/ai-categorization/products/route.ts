@@ -5,9 +5,10 @@
 
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { query as dbQuery } from '@/lib/database/unified-connection';
-import {
+import type {
   ProductsQueryParams,
   ProductsQueryResponse,
   EnrichedProductWithStatus,
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const params: ProductsQueryParams = {
-      status: searchParams.get('status') as any,
+      status: searchParams.get('status') as unknown,
       supplier_id: searchParams.get('supplier_id') || undefined,
       confidence_min: searchParams.get('confidence_min')
         ? parseFloat(searchParams.get('confidence_min')!)
@@ -29,13 +30,13 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') || undefined,
       limit: parseInt(searchParams.get('limit') || '50', 10),
       offset: parseInt(searchParams.get('offset') || '0', 10),
-      sort_by: (searchParams.get('sort_by') as any) || 'categorized_at',
-      sort_order: (searchParams.get('sort_order') as any) || 'desc',
+      sort_by: (searchParams.get('sort_by') as unknown) || 'categorized_at',
+      sort_order: (searchParams.get('sort_order') as unknown) || 'desc',
     };
 
     // Build query
     const whereClauses: string[] = [];
-    const queryParams: any[] = [];
+    const queryParams: unknown[] = [];
     let paramCounter = 1;
 
     if (params.status) {

@@ -1,4 +1,4 @@
-import {
+import type {
   MappedProductData,
   ValidationError,
   ValidationWarning,
@@ -523,7 +523,7 @@ export class DataCleaner {
   /**
    * Clean and normalize text fields
    */
-  static cleanTextField(value: any): string | undefined {
+  static cleanTextField(value: unknown): string | undefined {
     if (!value || typeof value !== 'string') return undefined;
 
     return value
@@ -536,7 +536,7 @@ export class DataCleaner {
   /**
    * Parse numeric values from strings
    */
-  static parseNumeric(value: any): number | undefined {
+  static parseNumeric(value: unknown): number | undefined {
     if (typeof value === 'number' && !isNaN(value)) return value;
     if (!value || typeof value !== 'string') return undefined;
 
@@ -553,7 +553,7 @@ export class DataCleaner {
   /**
    * Normalize currency codes
    */
-  static normalizeCurrency(value: any): string | undefined {
+  static normalizeCurrency(value: unknown): string | undefined {
     if (!value || typeof value !== 'string') return undefined;
 
     const normalized = value.toUpperCase().trim();
@@ -577,7 +577,7 @@ export class DataCleaner {
   /**
    * Clean and validate SKU
    */
-  static cleanSKU(value: any): string | undefined {
+  static cleanSKU(value: unknown): string | undefined {
     if (!value || typeof value !== 'string') return undefined;
 
     return value

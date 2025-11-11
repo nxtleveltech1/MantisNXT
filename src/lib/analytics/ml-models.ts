@@ -1,6 +1,6 @@
 // @ts-nocheck
 // Machine Learning Models for MantisNXT Analytics
-import { SupplierPerformance, InventoryItem, StockMovement } from '@/types';
+import type { SupplierPerformance, InventoryItem, StockMovement } from '@/types';
 
 // Types for ML Analytics
 export interface MLPrediction {
@@ -75,7 +75,7 @@ export class SupplierPerformancePredictor {
   predictPerformance(
     supplierId: string,
     historicalData: SupplierPerformance[],
-    recentMetrics: any
+    recentMetrics: unknown
   ): MLPrediction {
     const features = this.extractFeatures(historicalData, recentMetrics);
     const score = this.calculatePerformanceScore(features);
@@ -88,7 +88,7 @@ export class SupplierPerformancePredictor {
     };
   }
 
-  private extractFeatures(history: SupplierPerformance[], recent: any) {
+  private extractFeatures(history: SupplierPerformance[], recent: unknown) {
     const avgDeliveryRate = history.reduce((sum, p) => sum + p.metrics.onTimeDeliveryRate, 0) / history.length;
     const avgQualityRate = history.reduce((sum, p) => sum + p.metrics.qualityAcceptanceRate, 0) / history.length;
     const avgResponseTime = history.reduce((sum, p) => sum + p.metrics.responseTime, 0) / history.length;
@@ -157,7 +157,7 @@ export class DemandForecaster {
   predictDemand(
     itemId: string,
     stockMovements: StockMovement[],
-    seasonality: any = {}
+    seasonality: unknown = {}
   ): DemandForecast {
     const outboundMovements = stockMovements.filter(m => m.type === 'outbound');
     const dailyDemand = this.aggregateDailyDemand(outboundMovements);
@@ -366,7 +366,7 @@ export class PriceOptimizer {
 // Anomaly Detection System
 export class AnomalyDetector {
   detectSupplierAnomalies(
-    suppliers: any[],
+    suppliers: unknown[],
     performance: SupplierPerformance[]
   ): Array<{
     supplierId: string;
@@ -376,7 +376,7 @@ export class AnomalyDetector {
     value: number;
     threshold: number;
   }> {
-    const anomalies: Array<any> = [];
+    const anomalies: Array<unknown> = [];
 
     // Detect performance drops
     performance.forEach(p => {
@@ -416,7 +416,7 @@ export class AnomalyDetector {
     description: string;
     value: number;
   }> {
-    const anomalies: Array<any> = [];
+    const anomalies: Array<unknown> = [];
 
     items.forEach(item => {
       // Stock level anomalies

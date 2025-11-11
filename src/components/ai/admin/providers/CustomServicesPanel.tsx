@@ -23,7 +23,7 @@ interface AIServiceRow {
 interface ServiceConfigRecord {
   id: string;
   enabled: boolean;
-  config: any;
+  config: unknown;
 }
 
 interface ProviderInstance {
@@ -83,10 +83,10 @@ export default function CustomServicesPanel() {
         }
       }
     })();
-  }, [services]);
+  }, [configs, services]);
 
   const updateConfig = useMutation({
-    mutationFn: async ({ serviceId, payload }: { serviceId: string; payload: any }) => {
+    mutationFn: async ({ serviceId, payload }: { serviceId: string; payload: unknown }) => {
       const res = await fetch(`/api/v1/ai/services/${serviceId}/config`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -104,7 +104,7 @@ export default function CustomServicesPanel() {
         }).catch(() => {});
       }, 100);
     },
-    onError: (e: any) => toast.error(e?.message || 'Failed to save provider'),
+    onError: (e: unknown) => toast.error(e?.message || 'Failed to save provider'),
   });
 
   const getForm = (serviceId: string) => {
@@ -259,7 +259,7 @@ export default function CustomServicesPanel() {
 
       if (!res.ok) throw new Error(await res.text());
       toast.success('Connection successful');
-    } catch (e: any) {
+    } catch (e: unknown) {
       const record = configs[serviceId];
       const cfg = record?.config || {};
       const instances: ProviderInstance[] = cfg.providerInstances || [];
@@ -415,7 +415,7 @@ export default function CustomServicesPanel() {
                         });
                         if (!res.ok) throw new Error(await res.text());
                         toast.success('Connection test successful');
-                      } catch (e: any) {
+                      } catch (e: unknown) {
                         toast.error(e?.message || 'Connection test failed');
                       }
                     }}

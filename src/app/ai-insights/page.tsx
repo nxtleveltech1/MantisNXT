@@ -12,8 +12,7 @@
  * - Market trends analysis
  */
 
-import React, { useState, useEffect } from 'react'
-import { useChat } from 'ai/react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -30,15 +29,11 @@ import {
   Building2,
   Package,
   DollarSign,
-  ShieldCheck,
-  Target,
   Zap,
   RefreshCw,
   Download,
-  Filter,
   Activity,
   MessageCircle,
-  Eye,
   Info,
 } from 'lucide-react'
 import AIChatInterfaceV5 from '@/components/ai/ChatInterfaceV5'
@@ -63,13 +58,23 @@ export default function AIInsightsPage() {
     confidenceAverage: 0,
   })
 
-  // Load AI insights on mount
-  useEffect(() => {
-    loadInsights()
+  const calculateStats = useCallback((insightsList: AIInsight[]) => {
+    const opportunities = insightsList.filter(i => i.type === 'opportunity').length
+    const risks = insightsList.filter(i => i.type === 'risk').length
+    const savings = insightsList.reduce((sum, i) => sum + (i.impact.financial || 0), 0)
+    const avgConfidence = insightsList.reduce((sum, i) => sum + i.confidence, 0) / (insightsList.length || 1)
+
+    setStats({
+      totalInsights: insightsList.length,
+      opportunities,
+      risks,
+      potentialSavings: savings,
+      confidenceAverage: Math.round(avgConfidence),
+    })
   }, [])
 
   // Load insights from API
-  const loadInsights = async () => {
+  const loadInsights = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -106,26 +111,15 @@ export default function AIInsightsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [calculateStats])
 
-  // Calculate statistics
-  const calculateStats = (insightsList: AIInsight[]) => {
-    const opportunities = insightsList.filter(i => i.type === 'opportunity').length
-    const risks = insightsList.filter(i => i.type === 'risk').length
-    const savings = insightsList.reduce((sum, i) => sum + (i.impact.financial || 0), 0)
-    const avgConfidence = insightsList.reduce((sum, i) => sum + i.confidence, 0) / (insightsList.length || 1)
-
-    setStats({
-      totalInsights: insightsList.length,
-      opportunities,
-      risks,
-      potentialSavings: savings,
-      confidenceAverage: Math.round(avgConfidence),
-    })
-  }
+  // Load AI insights on mount
+  useEffect(() => {
+    loadInsights()
+  }, [loadInsights])
 
   // Handle insight action
-  const handleInsightAction = (insightId: string, action: any) => {
+  const handleInsightAction = (insightId: string, action: unknown) => {
     console.log('Insight action triggered:', insightId, action)
     // Implement action handling logic
   }

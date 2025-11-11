@@ -30,7 +30,7 @@ export interface AIServiceConfig {
   provider: AIProvider;
   modelName: string;
   apiEndpoint?: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   rateLimitPerHour: number;
   createdAt: Date;
   updatedAt: Date;
@@ -43,7 +43,7 @@ export interface CreateConfigData {
   provider?: AIProvider;
   modelName: string;
   apiEndpoint?: string;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   rateLimitPerHour?: number;
   createdBy?: string;
 }
@@ -52,7 +52,7 @@ export interface UpdateConfigData {
   provider?: AIProvider;
   modelName?: string;
   apiEndpoint?: string;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   rateLimitPerHour?: number;
   updatedBy?: string;
 }
@@ -133,7 +133,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
       'config.update',
       async () => {
         const setClauses: string[] = [];
-        const values: any[] = [];
+        const values: unknown[] = [];
         let paramIndex = 1;
 
         if (updates.provider !== undefined) {
@@ -398,7 +398,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
         try {
           // Test with a simple prompt
           const response = await service.generateText('Test connection', {
-            provider: config.provider as any,
+            provider: config.provider as unknown,
             model: config.modelName,
             maxTokens: 10,
             temperature: 0,
@@ -529,7 +529,7 @@ export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOption
   /**
    * Map database row to AIServiceConfig
    */
-  private mapConfigRow(row: any): AIServiceConfig {
+  private mapConfigRow(row: unknown): AIServiceConfig {
     return {
       id: row.id,
       orgId: row.org_id,

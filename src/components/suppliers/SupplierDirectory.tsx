@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -26,23 +26,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { cn, formatCurrency, formatPercentage, getStatusColor, getTierColor, formatDate } from "@/lib/utils"
-import { Supplier, SupplierSearchFilters, SupplierSortOptions } from "@/types/supplier"
+
+
+import { cn, formatPercentage, getStatusColor, getTierColor, formatDate } from "@/lib/utils"
+import type { Supplier, SupplierSearchFilters, SupplierSortOptions } from "@/types/supplier"
 import {
   Search,
   Filter,
@@ -55,29 +45,17 @@ import {
   Edit,
   Trash2,
   MapPin,
-  Phone,
-  Mail,
-  Globe,
   Building2,
   Star,
   TrendingUp,
-  TrendingDown,
-  Calendar,
-  Users,
-  DollarSign,
-  Package,
   FileText,
   ShoppingCart,
   CreditCard,
-  AlertTriangle,
   CheckCircle,
-  Clock,
   SortAsc,
   SortDesc,
   ArrowUpDown,
-  X,
-  Settings,
-  Columns
+  X
 } from "lucide-react"
 
 // Purged and seeded supplier list (minimal defaults)
@@ -722,7 +700,7 @@ const SupplierDirectory: React.FC<SupplierDirectoryProps> = () => {
 
     // Sort filtered results
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any
+      let aValue: unknown, bValue: unknown
 
       switch (sortConfig.field) {
         case "name":
@@ -946,11 +924,11 @@ const SupplierDirectory: React.FC<SupplierDirectoryProps> = () => {
               <div className="mt-4 p-4 border rounded-lg bg-muted/50">
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Status</label>
+                    <p className="text-sm font-medium mb-2 block">Status</p>
                     <Select
                       value={filters.status?.[0] || ""}
                       onValueChange={(value) =>
-                        setFilters(prev => ({ ...prev, status: value ? [value as any] : undefined }))
+                        setFilters(prev => ({ ...prev, status: value ? [value as unknown] : undefined }))
                       }
                     >
                       <SelectTrigger>
@@ -968,11 +946,11 @@ const SupplierDirectory: React.FC<SupplierDirectoryProps> = () => {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Tier</label>
+                    <p className="text-sm font-medium mb-2 block">Tier</p>
                     <Select
                       value={filters.tier?.[0] || ""}
                       onValueChange={(value) =>
-                        setFilters(prev => ({ ...prev, tier: value ? [value as any] : undefined }))
+                        setFilters(prev => ({ ...prev, tier: value ? [value as unknown] : undefined }))
                       }
                     >
                       <SelectTrigger>
@@ -990,7 +968,7 @@ const SupplierDirectory: React.FC<SupplierDirectoryProps> = () => {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Category</label>
+                    <p className="text-sm font-medium mb-2 block">Category</p>
                     <Select
                       value={filters.category?.[0] || ""}
                       onValueChange={(value) =>
@@ -1012,7 +990,7 @@ const SupplierDirectory: React.FC<SupplierDirectoryProps> = () => {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Location</label>
+                    <p className="text-sm font-medium mb-2 block">Location</p>
                     <Select
                       value={filters.location?.[0] || ""}
                       onValueChange={(value) =>
@@ -1034,8 +1012,8 @@ const SupplierDirectory: React.FC<SupplierDirectoryProps> = () => {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">View</label>
-                    <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
+                    <p className="text-sm font-medium mb-2 block">View</p>
+                    <Select value={viewMode} onValueChange={(value: unknown) => setViewMode(value)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>

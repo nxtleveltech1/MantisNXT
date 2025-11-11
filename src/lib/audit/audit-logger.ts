@@ -11,7 +11,7 @@ export interface AuditLogEntry {
   action: string;
   resource: string;
   resourceId?: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   status: 'success' | 'failure' | 'error';
@@ -110,7 +110,7 @@ class AuditLogger {
       ipAddress?: string;
       userAgent?: string;
       success: boolean;
-      changes?: Record<string, any>;
+      changes?: Record<string, unknown>;
     }
   ): Promise<void> {
     await this.log({
@@ -138,7 +138,7 @@ class AuditLogger {
     details: {
       severity: 'low' | 'medium' | 'high' | 'critical';
       message: string;
-      data?: Record<string, any>;
+      data?: Record<string, unknown>;
     }
   ): Promise<void> {
     await this.log({
@@ -165,7 +165,7 @@ class AuditLogger {
       userAgent?: string;
       severity: 'medium' | 'high' | 'critical';
       message: string;
-      data?: Record<string, any>;
+      data?: Record<string, unknown>;
     }
   ): Promise<void> {
     await this.log({

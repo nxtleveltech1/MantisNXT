@@ -3,9 +3,9 @@ import { pool } from "@/lib/database";
 
 export async function GET() {
   try {
-    const total = (pool as any).totalCount ?? 0;
-    const idle = (pool as any).idleCount ?? 0;
-    const waiting = (pool as any).waitingCount ?? 0;
+    const total = (pool as unknown).totalCount ?? 0;
+    const idle = (pool as unknown).idleCount ?? 0;
+    const waiting = (pool as unknown).waitingCount ?? 0;
     const active = total - idle;
     const utilization = total > 0 ? ((active / total) * 100).toFixed(1) : "0.0";
 

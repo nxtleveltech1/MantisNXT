@@ -5,9 +5,10 @@
 
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { jobManager } from '@/lib/cmm/ai-categorization';
-import { JobStatusResponse } from '@/lib/cmm/ai-categorization/types';
+import type { JobStatusResponse } from '@/lib/cmm/ai-categorization/types';
 
 export async function GET(
   request: NextRequest,

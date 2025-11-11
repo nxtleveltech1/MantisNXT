@@ -3,9 +3,10 @@
  * Live database integration with full CRUD operations
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
   // TODO(SSOT): Replace all legacy reads/writes with core.* access
-import { query, withTransaction } from '@/lib/database/unified-connection'
+import { query } from '@/lib/database/unified-connection'
 import { setStock, upsertSupplierProduct } from '@/services/ssot/inventoryService'
 import { TransactionHelper } from '@/lib/database/transaction-helper'
 import { z } from 'zod'
@@ -135,7 +136,7 @@ export async function getCompleteInventory(request: NextRequest) {
       WHERE 1=1
     `
 
-    const queryParams: any[] = []
+    const queryParams: unknown[] = []
     let paramIndex = 1
 
     // Apply search filter
@@ -262,7 +263,7 @@ export async function getCompleteInventory(request: NextRequest) {
 
     // Rebuild the WHERE conditions for count query (same as baseQuery filters)
     let countParamIndex = 1
-    const countParams: any[] = []
+    const countParams: unknown[] = []
 
     if (search) {
       countQuery += ` AND (
@@ -576,7 +577,7 @@ export async function deleteInventoryItems(request: NextRequest) {
 }
 
 // Helper functions
-async function handleBulkCreate(items: any[]) {
+async function handleBulkCreate(items: unknown[]) {
   try {
     const validatedItems = items.map(item => inventoryItemSchema.parse(item))
 
@@ -684,7 +685,7 @@ async function handleBulkCreate(items: any[]) {
   }
 }
 
-async function handleBulkUpdate(body: any) {
+async function handleBulkUpdate(body: unknown) {
   try {
     const validatedData = bulkUpdateSchema.parse(body)
 
@@ -732,7 +733,7 @@ async function handleBulkUpdate(body: any) {
   }
 }
 
-async function handleStockMovement(body: any) {
+async function handleStockMovement(body: unknown) {
   try {
     const validatedData = stockMovementSchema.parse(body)
 

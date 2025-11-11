@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
 export default function TestAuthPage() {
-  const [authStatus, setAuthStatus] = useState<any>(null)
+  const [authStatus, setAuthStatus] = useState<unknown>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

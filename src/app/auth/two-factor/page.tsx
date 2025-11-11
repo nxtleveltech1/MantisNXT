@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { QrCode, Shield, Download, Copy, CheckCircle2, AlertCircle, Building2 } from 'lucide-react'
+import { Shield, Download, Copy, CheckCircle2, AlertCircle, Building2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -147,8 +147,8 @@ Keep these codes secure and don&apos;t share them with anyone.`
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Important:</strong> Make sure you've saved your backup codes in a secure location.
-                  You'll need them if you lose access to your authenticator app.
+                  <strong>Important:</strong> Make sure you&apos;ve saved your backup codes in a secure location.
+                  You&apos;ll need them if you lose access to your authenticator app.
                 </AlertDescription>
               </Alert>
 
@@ -230,11 +230,11 @@ Keep these codes secure and don&apos;t share them with anyone.`
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-blue-800 mb-2">What you'll need:</h4>
+                <h4 className="font-semibold text-blue-800 mb-2">What you&apos;ll need:</h4>
                 <ul className="text-sm text-blue-700 space-y-1">
-                  <li>" An authenticator app (Google Authenticator, Authy, etc.)</li>
-                  <li>" Your smartphone or tablet</li>
-                  <li>" A secure place to store backup codes</li>
+                  <li>An authenticator app (Google Authenticator, Authy, etc.)</li>
+                  <li>Your smartphone or tablet</li>
+                  <li>A secure place to store backup codes</li>
                 </ul>
               </div>
 
@@ -242,12 +242,12 @@ Keep these codes secure and don&apos;t share them with anyone.`
                 <h4 className="font-semibold text-yellow-800 mb-2">Recommended Authenticator Apps:</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="text-yellow-700">
-                    <p>" Google Authenticator</p>
-                    <p>" Microsoft Authenticator</p>
+                    <p>Google Authenticator</p>
+                    <p>Microsoft Authenticator</p>
                   </div>
                   <div className="text-yellow-700">
-                    <p>" Authy</p>
-                    <p>" 1Password</p>
+                    <p>Authy</p>
+                    <p>1Password</p>
                   </div>
                 </div>
               </div>

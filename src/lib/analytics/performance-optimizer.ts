@@ -1,5 +1,5 @@
 // Performance Optimization with Machine Learning
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 
 // Performance Metrics Types
 export interface QueryPerformanceMetric {
@@ -37,7 +37,7 @@ export interface OptimizationSuggestion {
 // Advanced Query Optimizer using ML
 export class MLQueryOptimizer {
   private db: Pool;
-  private queryCache = new Map<string, any>();
+  private queryCache = new Map<string, unknown>();
   private performanceHistory = new Map<string, QueryPerformanceMetric[]>();
   private optimizationRules = new Map<string, string>();
 
@@ -331,7 +331,7 @@ export class MLQueryOptimizer {
 
 // Intelligent Caching System
 export class IntelligentCache {
-  private cache = new Map<string, { data: any; timestamp: Date; hits: number; ttl: number }>();
+  private cache = new Map<string, { data: unknown; timestamp: Date; hits: number; ttl: number }>();
   private maxSize = 1000;
   private defaultTTL = 300000; // 5 minutes
 
@@ -344,7 +344,7 @@ export class IntelligentCache {
     return this.defaultTTL * frequencyMultiplier * volatilityMultiplier;
   }
 
-  set(key: string, data: any, customTTL?: number): void {
+  set(key: string, data: unknown, customTTL?: number): void {
     // Implement LRU eviction if cache is full
     if (this.cache.size >= this.maxSize) {
       this.evictLRU();
@@ -359,7 +359,7 @@ export class IntelligentCache {
     });
   }
 
-  get(key: string): any | null {
+  get(key: string): unknown | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
 
@@ -441,7 +441,7 @@ export class ConnectionPoolOptimizer {
   private async collectMetrics(): Promise<void> {
     try {
       // Get pool statistics
-      const poolInfo = this.db as any;
+      const poolInfo = this.db as unknown;
       this.metrics.activeConnections = poolInfo.totalCount || 0;
       this.metrics.idleConnections = poolInfo.idleCount || 0;
       this.metrics.waitingRequests = poolInfo.waitingCount || 0;
@@ -486,7 +486,7 @@ export class ConnectionPoolOptimizer {
     suggestion: string;
     impact: 'low' | 'medium' | 'high';
   }> {
-    const recommendations: Array<any> = [];
+    const recommendations: Array<unknown> = [];
     const { activeConnections, idleConnections, waitingRequests, avgQueryTime } = this.metrics;
 
     if (waitingRequests > 0) {
@@ -523,8 +523,8 @@ export class APIResponseOptimizer {
   private compressionEnabled = true;
 
   // Optimize API response based on request patterns
-  optimizeResponse(data: any, request: any): {
-    data: any;
+  optimizeResponse(data: unknown, request: unknown): {
+    data: unknown;
     compression: boolean;
     cacheSettings: {
       ttl: number;
@@ -565,7 +565,7 @@ export class APIResponseOptimizer {
     };
   }
 
-  private generateCacheKey(url: string, method: string, query: any): string {
+  private generateCacheKey(url: string, method: string, query: unknown): string {
     const keyParts = [method, url];
 
     if (query) {
@@ -579,13 +579,13 @@ export class APIResponseOptimizer {
     return keyParts.join('|');
   }
 
-  private optimizeDataStructure(data: any): any {
+  private optimizeDataStructure(data: unknown): unknown {
     // Remove null/undefined values
     if (typeof data === 'object' && data !== null) {
       if (Array.isArray(data)) {
         return data.map(item => this.optimizeDataStructure(item)).filter(item => item !== null);
       } else {
-        const optimized: any = {};
+        const optimized: unknown = {};
         for (const [key, value] of Object.entries(data)) {
           if (value !== null && value !== undefined) {
             optimized[key] = this.optimizeDataStructure(value);
@@ -599,12 +599,12 @@ export class APIResponseOptimizer {
   }
 
   // Get cached response
-  getCachedResponse(key: string): any | null {
+  getCachedResponse(key: string): unknown | null {
     return this.responseCache.get(key);
   }
 
   // Cache response
-  setCachedResponse(key: string, data: any, ttl?: number): void {
+  setCachedResponse(key: string, data: unknown, ttl?: number): void {
     this.responseCache.set(key, data, ttl);
   }
 

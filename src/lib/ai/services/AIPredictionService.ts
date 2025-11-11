@@ -17,24 +17,24 @@ export interface AIPrediction {
   serviceType: AIServiceType;
   entityType: string;
   entityId: string;
-  predictionData: Record<string, any>;
+  predictionData: Record<string, unknown>;
   confidenceScore: number;
   accuracyScore?: number;
   createdAt: Date;
   expiresAt: Date;
   feedbackReceived: boolean;
-  actualOutcome?: Record<string, any>;
-  metadata: Record<string, any>;
+  actualOutcome?: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 }
 
 export interface CreatePredictionData {
   serviceType: AIServiceType;
   entityType: string;
   entityId: string;
-  predictionData: Record<string, any>;
+  predictionData: Record<string, unknown>;
   confidenceScore: number;
   expiresAt: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PaginatedResult<T> {
@@ -119,7 +119,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
    */
   async updatePredictionAccuracy(
     predictionId: string,
-    actualOutcome: Record<string, any>,
+    actualOutcome: Record<string, unknown>,
     options?: AIServiceRequestOptions,
   ): Promise<AIServiceResponse<void>> {
     return this.executeOperation(
@@ -402,8 +402,8 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
    * Calculate accuracy score by comparing prediction to actual outcome
    */
   private calculateAccuracy(
-    predictionData: Record<string, any>,
-    actualOutcome: Record<string, any>,
+    predictionData: Record<string, unknown>,
+    actualOutcome: Record<string, unknown>,
   ): number {
     // This is a simplified accuracy calculation
     // In production, you'd want domain-specific accuracy metrics
@@ -462,7 +462,7 @@ export class AIPredictionService extends AIServiceBase<AIServiceRequestOptions> 
   /**
    * Map database row to AIPrediction
    */
-  private mapPredictionRow(row: any): AIPrediction {
+  private mapPredictionRow(row: unknown): AIPrediction {
     return {
       id: row.id,
       orgId: row.org_id,

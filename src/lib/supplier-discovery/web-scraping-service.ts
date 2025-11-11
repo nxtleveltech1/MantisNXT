@@ -3,16 +3,18 @@
  * Handles extracting structured data from various websites
  */
 
-import puppeteer, { Browser, Page } from 'puppeteer';
+import type { Browser} from 'puppeteer';
+import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
-import axios, { AxiosInstance } from 'axios';
+import type { AxiosInstance } from 'axios';
+import axios from 'axios';
 import crypto from 'crypto';
-import {
+import type {
   ScrapingTarget,
   WebsiteContent,
-  ExtractedDataField,
-  StructuredData
-} from './enhanced-types';
+  ExtractedDataField} from './enhanced-types';
+
+
 import { DISCOVERY_CONFIG } from './config';
 
 export class WebScrapingService {

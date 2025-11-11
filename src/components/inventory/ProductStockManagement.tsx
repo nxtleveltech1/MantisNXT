@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import {
   Select,
@@ -31,43 +30,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
+
+
+
+
+
+
+
+
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import {
-  ArrowRight,
   Package,
-  ShoppingCart,
   Plus,
-  Minus,
   Search,
-  Filter,
   Download,
   Upload,
   RefreshCw,
@@ -76,24 +51,14 @@ import {
   AlertTriangle,
   Clock,
   Building2,
-  Truck,
   BarChart3,
-  Target,
-  Settings,
-  FileText,
   Eye,
-  Edit,
-  Trash2,
-  Copy,
-  Check,
-  Star,
-  ChevronsUpDown
+  Star
 } from 'lucide-react'
 import { useInventoryStore } from '@/lib/stores/inventory-store'
 import { useNotificationStore } from '@/lib/stores/notification-store'
-import type { Product, InventoryItem, Supplier } from '@/lib/types/inventory'
+import type { Product } from '@/lib/types/inventory'
 import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
 
 interface StockMovement {
   id: string
@@ -183,7 +148,7 @@ export default function ProductStockManagement() {
       }
     }
     loadData()
-  }, [])
+  }, [addNotification, fetchItems, fetchProducts, fetchSuppliers])
 
   // Get products that are not yet in inventory or need stock management
   const availableProducts = useMemo(() => {
@@ -229,7 +194,7 @@ export default function ProductStockManagement() {
     }).format(amount)
   }
 
-  const getStatusBadge = (product: any) => {
+  const getStatusBadge = (product: unknown) => {
     if (!product.isInInventory) {
       return <Badge variant="outline" className="border-gray-500 text-gray-700">Not in Inventory</Badge>
     }
@@ -918,7 +883,7 @@ export default function ProductStockManagement() {
                 <Label>Operation Type</Label>
                 <Select
                   value={bulkOperation.operation}
-                  onValueChange={(value: any) => setBulkOperation(prev => ({ ...prev, operation: value }))}
+                  onValueChange={(value: unknown) => setBulkOperation(prev => ({ ...prev, operation: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />

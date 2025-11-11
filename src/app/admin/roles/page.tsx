@@ -7,16 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Shield,
   Users,
   Crown,
   UserCheck,
-  Settings,
   Search,
   Plus,
   Eye,
@@ -24,9 +21,6 @@ import {
   Trash2,
   Copy,
   Key,
-  Lock,
-  Unlock,
-  AlertTriangle,
   CheckCircle,
   Clock
 } from "lucide-react"

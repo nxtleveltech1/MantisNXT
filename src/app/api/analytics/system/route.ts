@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { query } from '@/lib/database'
 
@@ -37,13 +38,13 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const queryParams = {
-      timeframe: searchParams.get('timeframe') as any || 'day',
-      metrics: searchParams.get('metrics')?.split(',') as any || ['inventory', 'suppliers'],
+      timeframe: searchParams.get('timeframe') as unknown || 'day',
+      metrics: searchParams.get('metrics')?.split(',') as unknown || ['inventory', 'suppliers'],
       startDate: searchParams.get('startDate') || undefined,
       endDate: searchParams.get('endDate') || undefined,
       includeComparisons: searchParams.get('includeComparisons') !== 'false',
       includeForecasts: searchParams.get('includeForecasts') === 'true',
-      groupBy: searchParams.get('groupBy') as any || undefined,
+      groupBy: searchParams.get('groupBy') as unknown || undefined,
     }
 
     const validatedParams = AnalyticsQuerySchema.parse(queryParams)
@@ -58,9 +59,9 @@ export async function GET(request: NextRequest) {
     const analytics: {
       timeframe: string
       period: { start: string; end: string; duration: string }
-      metrics: Record<string, any>
-      comparisons?: Record<string, any>
-      forecasts?: Record<string, any>
+      metrics: Record<string, unknown>
+      comparisons?: Record<string, unknown>
+      forecasts?: Record<string, unknown>
       generatedAt: string
     } = {
       timeframe: validatedParams.timeframe,
@@ -201,7 +202,7 @@ export async function POST(request: NextRequest) {
 /**
  * Get inventory analytics
  */
-async function getInventoryAnalytics(timeBounds: any, groupBy?: string): Promise<Record<string, any>> {
+async function getInventoryAnalytics(timeBounds: unknown, groupBy?: string): Promise<Record<string, unknown>> {
   const baseQuery = `
     SELECT
       COUNT(*) as total_items,
@@ -222,7 +223,7 @@ async function getInventoryAnalytics(timeBounds: any, groupBy?: string): Promise
 
   const result = await query(baseQuery, [timeBounds.start, timeBounds.end])
 
-  const analytics: Record<string, any> = {
+  const analytics: Record<string, unknown> = {
     overview: result.rows[0] ? {
       totalItems: parseInt(result.rows[0].total_items),
       activeItems: parseInt(result.rows[0].active_items),
@@ -298,7 +299,7 @@ async function getInventoryAnalytics(timeBounds: any, groupBy?: string): Promise
 /**
  * Get supplier analytics
  */
-async function getSupplierAnalytics(timeBounds: any, groupBy?: string): Promise<Record<string, any>> {
+async function getSupplierAnalytics(timeBounds: unknown, groupBy?: string): Promise<Record<string, unknown>> {
   const baseQuery = `
     SELECT
       COUNT(*) as total_suppliers,
@@ -315,7 +316,7 @@ async function getSupplierAnalytics(timeBounds: any, groupBy?: string): Promise<
 
   const result = await query(baseQuery, [timeBounds.start, timeBounds.end])
 
-  const analytics: Record<string, any> = {
+  const analytics: Record<string, unknown> = {
     overview: result.rows[0] ? {
       totalSuppliers: parseInt(result.rows[0].total_suppliers),
       activeSuppliers: parseInt(result.rows[0].active_suppliers),
@@ -390,7 +391,7 @@ async function getSupplierAnalytics(timeBounds: any, groupBy?: string): Promise<
 /**
  * Get stock movement analytics
  */
-async function getMovementAnalytics(timeBounds: any, groupBy?: string): Promise<Record<string, any>> {
+async function getMovementAnalytics(timeBounds: unknown, groupBy?: string): Promise<Record<string, unknown>> {
   const baseQuery = `
     SELECT
       COUNT(*) as total_movements,
@@ -409,7 +410,7 @@ async function getMovementAnalytics(timeBounds: any, groupBy?: string): Promise<
 
   const result = await query(baseQuery, [timeBounds.start, timeBounds.end])
 
-  const analytics: Record<string, any> = {
+  const analytics: Record<string, unknown> = {
     overview: result.rows[0] ? {
       totalMovements: parseInt(result.rows[0].total_movements),
       inboundMovements: parseInt(result.rows[0].inbound_movements),
@@ -456,7 +457,7 @@ async function getMovementAnalytics(timeBounds: any, groupBy?: string): Promise<
 /**
  * Get processing analytics
  */
-async function getProcessingAnalytics(timeBounds: any) {
+async function getProcessingAnalytics(timeBounds: unknown) {
   const sessionsQuery = `
     SELECT
       COUNT(*) as total_sessions,
@@ -494,7 +495,7 @@ async function getProcessingAnalytics(timeBounds: any) {
 /**
  * Get performance analytics
  */
-async function getPerformanceAnalytics(timeBounds: any) {
+async function getPerformanceAnalytics(timeBounds: unknown) {
   // This would integrate with actual performance monitoring
   // For now, return simulated performance data
   return {
@@ -540,7 +541,7 @@ async function getPerformanceAnalytics(timeBounds: any) {
 /**
  * Get alert analytics
  */
-async function getAlertAnalytics(timeBounds: any) {
+async function getAlertAnalytics(timeBounds: unknown) {
   const alertsQuery = `
     SELECT
       COUNT(*) as total_alerts,
@@ -574,7 +575,7 @@ async function getAlertAnalytics(timeBounds: any) {
 /**
  * Get inventory comparisons (current vs previous period)
  */
-async function getInventoryComparisons(timeBounds: any) {
+async function getInventoryComparisons(timeBounds: unknown) {
   const previousBounds = calculatePreviousPeriod(timeBounds)
 
   const currentQuery = `
@@ -617,7 +618,7 @@ async function getInventoryComparisons(timeBounds: any) {
 /**
  * Get supplier comparisons
  */
-async function getSupplierComparisons(timeBounds: any) {
+async function getSupplierComparisons(timeBounds: unknown) {
   const previousBounds = calculatePreviousPeriod(timeBounds)
 
   const currentQuery = `SELECT COUNT(*) as count FROM public.suppliers WHERE created_at BETWEEN $1 AND $2`
@@ -693,7 +694,7 @@ function calculateTimeBounds(timeframe: string, startDate?: string, endDate?: st
   }
 }
 
-function calculatePreviousPeriod(timeBounds: any) {
+function calculatePreviousPeriod(timeBounds: unknown) {
   const start = new Date(timeBounds.start)
   const end = new Date(timeBounds.end)
   const duration = end.getTime() - start.getTime()
@@ -709,7 +710,7 @@ function calculatePercentageChange(previous: number, current: number): number {
   return Math.round(((current - previous) / previous) * 100 * 100) / 100
 }
 
-async function generateCustomReport(config: any) {
+async function generateCustomReport(config: unknown) {
   // Implementation for custom report generation
   // This would use the same analytics functions but with custom configuration
   return {
@@ -721,7 +722,7 @@ async function generateCustomReport(config: any) {
   }
 }
 
-async function saveReportConfiguration(config: any) {
+async function saveReportConfiguration(config: unknown) {
   // Save report configuration for scheduled generation
   // This would integrate with a job scheduler
   console.log('Report configuration saved for scheduling:', config.name)

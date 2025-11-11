@@ -13,7 +13,7 @@
 
 import { query, withTransaction } from '@/lib/database';
 import { AIDatabaseService } from '@/lib/ai/database-integration';
-import { PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { PredictionError } from '@/lib/ai/errors';
 
 // ============================================================================
@@ -44,14 +44,14 @@ export interface Prediction {
   entity_type: EntityType;
   entity_id: string;
   prediction_type: string;
-  prediction_data: Record<string, any>;
+  prediction_data: Record<string, unknown>;
   confidence_score: number;
   accuracy_score?: number;
   created_at: string;
   expires_at: string;
   feedback_received: boolean;
-  actual_outcome?: Record<string, any>;
-  metadata?: Record<string, any>;
+  actual_outcome?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   status?: PredictionStatus;
 }
 
@@ -60,14 +60,14 @@ export interface CreatePredictionInput {
   entityType: EntityType;
   entityId: string;
   predictionType: string;
-  predictionData: Record<string, any>;
+  predictionData: Record<string, unknown>;
   confidence?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   expiresInDays?: number;
 }
 
 export interface UpdatePredictionAccuracyInput {
-  actualOutcome: Record<string, any>;
+  actualOutcome: Record<string, unknown>;
   accuracy?: number;
   notes?: string;
 }
@@ -132,7 +132,7 @@ export class PredictionService {
 
       // Build WHERE clause dynamically
       const conditions: string[] = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
       let paramIndex = 2;
 
       if (serviceType) {
@@ -492,7 +492,7 @@ export class PredictionService {
         cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
         let deleteQuery: string;
-        let params: any[];
+        let params: unknown[];
 
         if (orgId) {
           deleteQuery = `
@@ -646,7 +646,7 @@ export class PredictionService {
     data: {
       prediction_type: string;
       target_id?: string;
-      predictions: any;
+      predictions: unknown;
       confidence: number;
       expires_at: Date;
     }
@@ -680,8 +680,8 @@ export class PredictionService {
    * Calculate accuracy score by comparing prediction with actual outcome
    */
   private calculateAccuracy(
-    predictionData: Record<string, any>,
-    actualOutcome: Record<string, any>
+    predictionData: Record<string, unknown>,
+    actualOutcome: Record<string, unknown>
   ): number {
     try {
       // Handle different prediction data structures

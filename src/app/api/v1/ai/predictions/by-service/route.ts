@@ -3,7 +3,7 @@
  * GET /api/v1/ai/predictions/by-service
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Validate required parameters
     requireQueryParams(searchParams, ['serviceType']);
 
-    const serviceType = searchParams.get('serviceType')! as any;
+    const serviceType = searchParams.get('serviceType')! as unknown;
     const status = searchParams.get('status') || undefined;
     const minConfidence = searchParams.get('minConfidence')
       ? parseFloat(searchParams.get('minConfidence')!)

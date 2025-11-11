@@ -9,7 +9,7 @@ export interface ProgressStage {
   startTime?: Date
   endTime?: Date
   error?: string
-  data?: any
+  data?: unknown
 }
 
 export interface ProgressTracker {
@@ -34,7 +34,7 @@ export interface ProgressUpdate {
   progress?: number // 0-100 for current stage
   message?: string
   error?: string
-  data?: any
+  data?: unknown
 }
 
 export interface UseProgressTrackerOptions {
@@ -272,7 +272,7 @@ export function useProgressTracker(
   }, [calculateOverallProgress, estimateThroughput, onStageComplete, onComplete, onError])
 
   // Complete current stage and move to next
-  const completeCurrentStage = useCallback((data?: any) => {
+  const completeCurrentStage = useCallback((data?: unknown) => {
     updateProgress({
       status: 'completed',
       progress: 100,
@@ -281,7 +281,7 @@ export function useProgressTracker(
   }, [updateProgress])
 
   // Mark current stage as error
-  const errorCurrentStage = useCallback((error: string, data?: any) => {
+  const errorCurrentStage = useCallback((error: string, data?: unknown) => {
     updateProgress({
       status: 'error',
       error,

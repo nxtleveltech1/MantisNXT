@@ -119,8 +119,8 @@ class SupplierPortfolioAPIClient {
     )
   }
 
-  async getPriceHistory(supplier_product_id: string): Promise<APIResponse<any[]>> {
-    return this.fetchJSON<any[]>(
+  async getPriceHistory(supplier_product_id: string): Promise<APIResponse<unknown[]>> {
+    return this.fetchJSON<unknown[]>(
       `${API_BASE}/supplier-products/${supplier_product_id}/price-history`
     )
   }
@@ -399,7 +399,7 @@ class SupplierPortfolioAPIClient {
     supplier_id: string,
     supplier_category_raw: string,
     category_id: string
-  ): Promise<APIResponse<any>> {
+  ): Promise<APIResponse<unknown>> {
     return this.fetchJSON(`${API_BASE}/categories/map`, {
       method: 'POST',
       body: JSON.stringify({

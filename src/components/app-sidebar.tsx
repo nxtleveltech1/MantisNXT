@@ -4,23 +4,17 @@ import * as React from "react"
 import Link from "next/link"
 import {
   Activity,
-  BarChart,
   Bot,
   Building2,
   DollarSign,
-  FileText,
   Gift,
   Layout,
   LayoutDashboard,
-  Map,
   MessageSquare,
   Package,
   Plug,
-  Settings,
-  ShoppingCart,
   TrendingUp,
   Users,
-  UserCheck,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"

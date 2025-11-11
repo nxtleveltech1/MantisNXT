@@ -5,9 +5,10 @@
 
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { jobManager } from '@/lib/cmm/ai-categorization';
-import { StartJobRequest, StartJobResponse } from '@/lib/cmm/ai-categorization/types';
+import type { StartJobRequest, StartJobResponse } from '@/lib/cmm/ai-categorization/types';
 
 export async function POST(request: NextRequest) {
   try {

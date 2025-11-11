@@ -11,7 +11,6 @@ import { Eye, EyeOff, UserPlus, AlertCircle, Building2, CheckCircle2 } from 'luc
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
@@ -39,8 +38,8 @@ export default function RegisterPage() {
 
   const router = useRouter()
 
-  const form = useForm<RegisterFormData, any, RegisterFormData>({
-    resolver: zodResolver(registerFormSchema) as Resolver<RegisterFormData, any, RegisterFormData>,
+  const form = useForm<RegisterFormData, unknown, RegisterFormData>({
+    resolver: zodResolver(registerFormSchema) as Resolver<RegisterFormData, unknown, RegisterFormData>,
     defaultValues: {
       organization_name: '',
       organization_legal_name: '',
@@ -636,7 +635,7 @@ export default function RegisterPage() {
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-blue-800 mb-2">What happens next?</h4>
                       <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• We'll send you an email verification link</li>
+                        <li>• We&apos;ll send you an email verification link</li>
                         <li>• Your account will be activated after email verification</li>
                         <li>• You can start inviting team members and setting up your procurement process</li>
                       </ul>

@@ -3,7 +3,7 @@
  * GET /api/v1/ai/health/services
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -89,10 +89,10 @@ export async function GET(request: NextRequest) {
       {
         serviceType: 'demand_forecasting',
         status: parseInt(fc.requests_24h) > 0 ? 'healthy' : 'idle',
-        enabled: configs.rows.find((c: any) => c.service_type === 'demand_forecasting')?.enabled ?? true,
+        enabled: configs.rows.find((c: unknown) => c.service_type === 'demand_forecasting')?.enabled ?? true,
         config: {
-          provider: configs.rows.find((c: any) => c.service_type === 'demand_forecasting')?.provider || 'openai',
-          model: configs.rows.find((c: any) => c.service_type === 'demand_forecasting')?.model_name || 'gpt-4.1-mini',
+          provider: configs.rows.find((c: unknown) => c.service_type === 'demand_forecasting')?.provider || 'openai',
+          model: configs.rows.find((c: unknown) => c.service_type === 'demand_forecasting')?.model_name || 'gpt-4.1-mini',
         },
         metrics: {
           requests24h: parseInt(fc.requests_24h) || 0,
@@ -111,10 +111,10 @@ export async function GET(request: NextRequest) {
       {
         serviceType: 'anomaly_detection',
         status: parseInt(an.requests_24h) > 0 ? 'healthy' : 'idle',
-        enabled: configs.rows.find((c: any) => c.service_type === 'anomaly_detection')?.enabled ?? true,
+        enabled: configs.rows.find((c: unknown) => c.service_type === 'anomaly_detection')?.enabled ?? true,
         config: {
-          provider: configs.rows.find((c: any) => c.service_type === 'anomaly_detection')?.provider || 'openai',
-          model: configs.rows.find((c: any) => c.service_type === 'anomaly_detection')?.model_name || 'gpt-4.1-mini',
+          provider: configs.rows.find((c: unknown) => c.service_type === 'anomaly_detection')?.provider || 'openai',
+          model: configs.rows.find((c: unknown) => c.service_type === 'anomaly_detection')?.model_name || 'gpt-4.1-mini',
         },
         metrics: {
           requests24h: parseInt(an.requests_24h) || 0,
@@ -133,10 +133,10 @@ export async function GET(request: NextRequest) {
       {
         serviceType: 'supplier_scoring',
         status: parseInt(pr.requests_24h) > 0 ? 'healthy' : 'idle',
-        enabled: configs.rows.find((c: any) => c.service_type === 'supplier_scoring')?.enabled ?? true,
+        enabled: configs.rows.find((c: unknown) => c.service_type === 'supplier_scoring')?.enabled ?? true,
         config: {
-          provider: configs.rows.find((c: any) => c.service_type === 'supplier_scoring')?.provider || 'openai',
-          model: configs.rows.find((c: any) => c.service_type === 'supplier_scoring')?.model_name || 'gpt-4.1-mini',
+          provider: configs.rows.find((c: unknown) => c.service_type === 'supplier_scoring')?.provider || 'openai',
+          model: configs.rows.find((c: unknown) => c.service_type === 'supplier_scoring')?.model_name || 'gpt-4.1-mini',
         },
         metrics: {
           requests24h: parseInt(pr.requests_24h) || 0,
@@ -155,10 +155,10 @@ export async function GET(request: NextRequest) {
       {
         serviceType: 'assistant',
         status: parseInt(cv.conversations_24h) > 0 ? 'healthy' : 'idle',
-        enabled: configs.rows.find((c: any) => c.service_type === 'assistant')?.enabled ?? true,
+        enabled: configs.rows.find((c: unknown) => c.service_type === 'assistant')?.enabled ?? true,
         config: {
-          provider: configs.rows.find((c: any) => c.service_type === 'assistant')?.provider || 'openai',
-          model: configs.rows.find((c: any) => c.service_type === 'assistant')?.model_name || 'gpt-4.1-mini',
+          provider: configs.rows.find((c: unknown) => c.service_type === 'assistant')?.provider || 'openai',
+          model: configs.rows.find((c: unknown) => c.service_type === 'assistant')?.model_name || 'gpt-4.1-mini',
         },
         metrics: {
           requests24h: parseInt(cv.conversations_24h) || 0,

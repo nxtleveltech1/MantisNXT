@@ -15,10 +15,10 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Target, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target } from 'lucide-react';
 
 export default function PricingAnalyticsPage() {
-  const [dashboardMetrics, setDashboardMetrics] = useState<any>(null);
+  const [dashboardMetrics, setDashboardMetrics] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

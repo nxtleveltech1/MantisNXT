@@ -10,14 +10,13 @@
  * Coverage target: 90%+ for API routes
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import {
   createMockSSEStream,
   createAuthenticatedRequest,
   waitForCondition,
   waitForMs,
 } from '../helpers/sync-test-helpers';
-import { generateProgressSnapshot, mockSSEEvent } from '../fixtures/sync-test-data';
 
 /**
  * Mock implementation of sync progress SSE endpoint

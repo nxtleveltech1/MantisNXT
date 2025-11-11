@@ -1,4 +1,4 @@
-import { z, type ZodSchema, type ZodError } from 'zod';
+import { type ZodSchema, type ZodError } from 'zod';
 import type { ApiResponse } from '@/lib/api/base';
 import type {
   AITextResult,
@@ -10,16 +10,16 @@ import type {
 export interface StructuredParseOptions<TSchema extends ZodSchema | undefined = undefined> {
   schema?: TSchema;
   mode?: 'json' | 'auto';
-  fallback?: any;
+  fallback?: unknown;
 }
 
-export interface StructuredParseResult<TData = any> {
+export interface StructuredParseResult<TData = unknown> {
   data?: TData;
   issues: string[];
   raw: string;
 }
 
-export interface ResponseValidationResult<TData = any> {
+export interface ResponseValidationResult<TData = unknown> {
   valid: boolean;
   data?: TData;
   issues?: string[];
@@ -27,7 +27,7 @@ export interface ResponseValidationResult<TData = any> {
 
 export interface ResponseFormatOptions {
   requestId: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ResponseQualityScore {
@@ -38,7 +38,7 @@ export interface ResponseQualityScore {
 }
 
 export class ResponseProcessor {
-  parseStructuredResponse<TData = any, TSchema extends ZodSchema | undefined = undefined>(
+  parseStructuredResponse<TData = unknown, TSchema extends ZodSchema | undefined = undefined>(
     response: string | AITextResult | AIChatResult,
     options: StructuredParseOptions<TSchema> = {},
   ): StructuredParseResult<TData> {
@@ -77,7 +77,7 @@ export class ResponseProcessor {
 
   extractData(
     result: string | AITextResult | AIChatResult | AIEmbeddingResult,
-  ): Record<string, any> {
+  ): Record<string, unknown> {
     if (typeof result === 'string') {
       return { text: result };
     }
@@ -121,7 +121,7 @@ export class ResponseProcessor {
     };
   }
 
-  formatForAPI<TData = any>(data: TData, options: ResponseFormatOptions): ApiResponse<TData> {
+  formatForAPI<TData = unknown>(data: TData, options: ResponseFormatOptions): ApiResponse<TData> {
     const response: ApiResponse<TData> = {
       success: true,
       data,
@@ -129,7 +129,7 @@ export class ResponseProcessor {
       requestId: options.requestId,
     };
     if (options.metadata) {
-      (response as Record<string, any>).metadata = options.metadata;
+      (response as Record<string, unknown>).metadata = options.metadata;
     }
     return response;
   }
@@ -157,7 +157,7 @@ export class ResponseProcessor {
     };
   }
 
-  formatStreamingChunk(chunk: AIStreamChunk): Record<string, any> {
+  formatStreamingChunk(chunk: AIStreamChunk): Record<string, unknown> {
     return {
       token: chunk.token,
       index: chunk.index,
@@ -183,7 +183,7 @@ export class ResponseProcessor {
     return undefined;
   }
 
-  private tryParseJson(value: string): { success: boolean; data?: any; error?: string } {
+  private tryParseJson(value: string): { success: boolean; data?: unknown; error?: string } {
     try {
       return { success: true, data: JSON.parse(value) };
     } catch (error) {

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { query, withTransaction } from '@/lib/database'
 import { z } from 'zod'
 
@@ -40,7 +41,7 @@ const SearchPricelistsSchema = z.object({
 })
 
 // Database query helpers
-async function getPricelistsFromDB(params: any) {
+async function getPricelistsFromDB(params: unknown) {
   let sql = `
     SELECT
       p.id,
@@ -68,7 +69,7 @@ async function getPricelistsFromDB(params: any) {
     WHERE 1=1
   `
 
-  const queryParams: any[] = []
+  const queryParams: unknown[] = []
   let paramIndex = 1
 
   if (params.supplierId) {
@@ -133,7 +134,7 @@ async function getPricelistItemsFromDB(pricelistId: string) {
   return result.rows
 }
 
-async function createPricelistInDB(data: any) {
+async function createPricelistInDB(data: unknown) {
   return await withTransaction(async (client) => {
 
     // Insert pricelist
@@ -160,7 +161,7 @@ async function createPricelistInDB(data: any) {
     const pricelist = pricelistResult.rows[0]
 
     // Insert pricelist items
-    const itemQueries = data.items.map((item: any, index: number) => {
+    const itemQueries = data.items.map((item: unknown, index: number) => {
       const itemQuery = `
         INSERT INTO pricelist_items (
           pricelist_id, sku, supplier_sku, unit_price, minimum_quantity,
@@ -216,7 +217,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `
 
-    const countParams: any[] = []
+    const countParams: unknown[] = []
     let paramIndex = 1
 
     if (validatedParams.supplierId) {
@@ -482,7 +483,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 409 })
     }
 
-    let updatedPricelist: any
+    let updatedPricelist: unknown
     await withTransaction(async (client) => {
 
       // Update pricelist
@@ -554,7 +555,7 @@ export async function PUT(request: NextRequest) {
         await client.query('DELETE FROM pricelist_items WHERE pricelist_id = $1', [validatedData.id])
 
         // Insert new items
-        const itemQueries = validatedData.items.map((item: any) => {
+        const itemQueries = validatedData.items.map((item: unknown) => {
           const itemQuery = `
             INSERT INTO pricelist_items (
               pricelist_id, sku, supplier_sku, unit_price, minimum_quantity,

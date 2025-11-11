@@ -5,8 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -32,7 +30,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   DropdownMenu,
@@ -57,17 +54,13 @@ import {
   Users,
   DollarSign,
   TrendingUp,
-  TrendingDown,
   MoreHorizontal,
-  ArrowRight,
   RefreshCw,
   Download,
   Upload,
   ShoppingCart,
-  Truck,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Star,
   Building2,
   FileText,
@@ -75,20 +68,14 @@ import {
   Settings,
   Info,
   ExternalLink,
-  Zap,
   Activity,
-  Globe,
   Mail,
   Phone,
-  MapPin,
-  Calendar,
-  Percent,
   Target
 } from 'lucide-react'
 import { allocateToSupplier, deallocateFromSupplier, useInventoryStore } from '@/lib/stores/inventory-store'
 import { useNotificationStore } from '@/lib/stores/notification-store'
 import type { Supplier, Product, InventoryItem } from '@/lib/types/inventory'
-import { format } from 'date-fns'
 
 interface EnrichedProduct extends Product {
   inventoryItem?: InventoryItem
@@ -161,7 +148,7 @@ export default function SupplierInventoryView() {
       }
     }
     loadData()
-  }, [])
+  }, [addNotification, fetchItems, fetchProducts, fetchSuppliers])
 
   // Create enriched supplier inventory data
   const supplierInventoryData = useMemo(() => {
@@ -279,7 +266,7 @@ export default function SupplierInventoryView() {
     try {
       await allocateToSupplier(inventoryItemId, supplierId, 1)
       addNotification({ type: 'success', title: 'Allocated', message: '1 unit allocated to supplier' })
-    } catch (e:any) {
+    } catch (e:unknown) {
       addNotification({ type: 'error', title: 'Allocation failed', message: e?.message || 'Unknown error' })
     }
   }
@@ -287,7 +274,7 @@ export default function SupplierInventoryView() {
     try {
       await deallocateFromSupplier(inventoryItemId, supplierId, 1)
       addNotification({ type: 'success', title: 'Deallocated', message: '1 unit deallocated' })
-    } catch (e:any) {
+    } catch (e:unknown) {
       addNotification({ type: 'error', title: 'Deallocation failed', message: e?.message || 'Unknown error' })
     }
   }

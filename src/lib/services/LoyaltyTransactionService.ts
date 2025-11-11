@@ -9,12 +9,12 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
-import {
+import type {
   LoyaltyTransaction,
-  LoyaltyTransactionInsert,
   TransactionType,
   ReferenceType,
-  CalculatePointsResult,
+  CalculatePointsResult} from '@/types/loyalty';
+import {
   LoyaltyError,
 } from '@/types/loyalty';
 
@@ -30,7 +30,7 @@ export interface CreateTransactionParams {
   description: string;
   referenceType?: ReferenceType;
   referenceId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   expiresAt?: Date;
   createdBy?: string;
 }
@@ -196,7 +196,7 @@ export class LoyaltyTransactionService {
     orderAmount: number,
     orderId: string,
     orgId: string,
-    orderMetadata?: Record<string, any>
+    orderMetadata?: Record<string, unknown>
   ): Promise<PointsCalculation> {
     try {
       // Verify customer belongs to org
@@ -415,7 +415,7 @@ export class LoyaltyTransactionService {
   ): Promise<TransactionStats> {
     try {
       const conditions: string[] = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
       let paramIndex = 2;
 
       if (filters.customerId) {
@@ -574,7 +574,7 @@ export class LoyaltyTransactionService {
    * Update customer loyalty balance after transaction
    */
   private static async updateCustomerBalance(
-    client: any,
+    client: unknown,
     customerId: string,
     programId: string,
     pointsAmount: number

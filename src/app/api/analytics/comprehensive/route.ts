@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { createAnalyticsService } from '@/lib/analytics/analytics-integration';
 
 /**
@@ -7,7 +8,7 @@ import { createAnalyticsService } from '@/lib/analytics/analytics-integration';
  */
 
 // Cache for analytics services (in production, use Redis or similar)
-const analyticsServices = new Map<string, any>();
+const analyticsServices = new Map<string, unknown>();
 
 /**
  * GET /api/analytics/comprehensive

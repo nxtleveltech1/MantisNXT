@@ -6,10 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Separator } from '@/components/ui/separator'
 import {
   Globe,
   MapPin,
@@ -19,9 +17,7 @@ import {
   FileText,
   Save,
   RotateCcw,
-  AlertTriangle,
-  CheckCircle,
-  Settings
+  AlertTriangle
 } from 'lucide-react'
 import AppLayout from '@/components/layout/AppLayout'
 
@@ -229,7 +225,7 @@ export default function RegionalSettingsPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 <p className="text-sm text-yellow-800">
-                  You have unsaved changes. Click "Save Changes" to apply your configuration.
+                  You have unsaved changes. Click &ldquo;Save Changes&rdquo; to apply your configuration.
                 </p>
               </div>
             </CardContent>

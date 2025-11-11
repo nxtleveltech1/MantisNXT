@@ -10,9 +10,9 @@
  * Date: 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { PricingRuleService } from '@/lib/services/PricingRuleService';
-import { z } from 'zod';
 
 export async function GET(
   request: NextRequest,
@@ -31,7 +31,7 @@ export async function GET(
     }
 
     return NextResponse.json({ success: true, data: rule });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -61,7 +61,7 @@ export async function PUT(
       data: rule,
       message: 'Rule updated successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -89,7 +89,7 @@ export async function DELETE(
       success: true,
       message: 'Rule deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

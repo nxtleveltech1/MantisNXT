@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server";
 import { inventorySelectionService } from "@/lib/services/InventorySelectionService";
 
 /**
@@ -30,7 +31,7 @@ export async function GET(
     const search = searchParams.get("search");
 
     // Build filters object
-    const filters: any = {};
+    const filters: unknown = {};
     if (status) filters.status = status;
     if (supplierId) filters.supplier_id = supplierId;
     if (search) filters.search = search;

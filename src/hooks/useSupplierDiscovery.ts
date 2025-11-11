@@ -4,8 +4,9 @@
  */
 
 import { useState, useCallback } from 'react';
-import { DiscoveredSupplierData } from '@/lib/supplier-discovery/types';
-import { supplierIntelligenceService, WebDiscoveryResult } from '@/services/ai/SupplierIntelligenceService';
+import type { DiscoveredSupplierData } from '@/lib/supplier-discovery/types';
+import type { WebDiscoveryResult } from '@/services/ai/SupplierIntelligenceService';
+import { supplierIntelligenceService } from '@/services/ai/SupplierIntelligenceService';
 
 interface UseSupplierDiscoveryState {
   isLoading: boolean;

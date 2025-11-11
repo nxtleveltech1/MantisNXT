@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 // Validation schemas
@@ -80,7 +81,7 @@ const SearchWarehousesSchema = z.object({
 })
 
 // Mock database
-const mockWarehouseData: Array<Record<string, any>> = [
+const mockWarehouseData: Array<Record<string, unknown>> = [
   {
     id: 'wh_001',
     name: 'Main Warehouse',
@@ -231,7 +232,7 @@ export async function GET(request: NextRequest) {
     // Apply sorting
     if (validatedParams.sortBy) {
       filteredWarehouses.sort((a, b) => {
-        let aValue: any, bValue: any
+        let aValue: unknown, bValue: unknown
 
         switch (validatedParams.sortBy) {
           case 'name':
@@ -397,8 +398,8 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const updatedWarehouses: Array<Record<string, any>> = []
-    const errors: Array<Record<string, any>> = []
+    const updatedWarehouses: Array<Record<string, unknown>> = []
+    const errors: Array<Record<string, unknown>> = []
 
     for (const updateData of warehouses) {
       try {

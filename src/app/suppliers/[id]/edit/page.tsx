@@ -55,7 +55,7 @@ async function getSupplier(id: string) {
         currency: supplier.financial?.currency || 'ZAR',
       },
       contacts: supplier.contacts && supplier.contacts.length > 0 
-        ? supplier.contacts.map((c: any) => ({
+        ? supplier.contacts.map((c: unknown) => ({
             id: c.id || '',
             type: c.type || 'primary',
             name: c.name || '',
@@ -80,7 +80,7 @@ async function getSupplier(id: string) {
             isActive: true,
           }],
       addresses: supplier.addresses && supplier.addresses.length > 0
-        ? supplier.addresses.map((a: any) => ({
+        ? supplier.addresses.map((a: unknown) => ({
             id: a.id || '',
             type: a.type || 'headquarters',
             name: a.name || '',
@@ -130,7 +130,7 @@ export default async function EditSupplierPage({ params }: EditSupplierPageProps
     notFound()
   }
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: unknown) => {
     'use server'
     
     try {
@@ -152,7 +152,7 @@ export default async function EditSupplierPage({ params }: EditSupplierPageProps
           annualRevenue: data.businessInfo.annualRevenue,
           currency: data.businessInfo.currency,
         } : undefined,
-        contacts: data.contacts?.map((c: any) => ({
+        contacts: data.contacts?.map((c: unknown) => ({
           type: c.type,
           name: c.name,
           title: c.title,
@@ -163,7 +163,7 @@ export default async function EditSupplierPage({ params }: EditSupplierPageProps
           isPrimary: c.isPrimary || false,
           isActive: c.isActive !== false,
         })),
-        addresses: data.addresses?.map((a: any) => ({
+        addresses: data.addresses?.map((a: unknown) => ({
           type: a.type,
           name: a.name,
           addressLine1: a.addressLine1,

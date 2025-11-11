@@ -7,8 +7,6 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  TrendingUp,
-  TrendingDown,
   Package,
   Users,
   Sparkles,
@@ -17,7 +15,7 @@ import {
   ArrowDownRight,
   Minus,
 } from 'lucide-react';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import type { DashboardMetrics } from '@/types/nxt-spp';
 import { SkeletonMetrics } from './LoadingStates';
 

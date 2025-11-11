@@ -53,7 +53,7 @@ export interface Invoice {
   // OCR and Processing
   ocrProcessed: boolean
   ocrConfidence?: number
-  extractedData?: any
+  extractedData?: unknown
   manualReview: boolean
 
   // Dispute Management
@@ -90,8 +90,8 @@ export interface InvoiceLineItem {
 
 export interface LineItemVariance {
   type: 'quantity' | 'price' | 'description'
-  expectedValue: any
-  actualValue: any
+  expectedValue: unknown
+  actualValue: unknown
   variance: number
   explanation?: string
 }
@@ -111,7 +111,7 @@ export interface AuditEntry {
   timestamp: string
   userId: string
   userName: string
-  details: any
+  details: unknown
   ipAddress?: string
 }
 
@@ -158,9 +158,9 @@ export interface ThreeWayMatch {
 
 export interface MatchingResult {
   field: string
-  invoiceValue: any
-  poValue?: any
-  receiptValue?: any
+  invoiceValue: unknown
+  poValue?: unknown
+  receiptValue?: unknown
   matched: boolean
   variance?: number
   tolerance?: number
@@ -211,7 +211,7 @@ export interface PaymentInstallment {
 export interface BulkInvoiceOperation {
   operationType: 'approve' | 'reject' | 'export' | 'update_status'
   invoiceIds: string[]
-  parameters?: any
+  parameters?: unknown
   status: 'pending' | 'processing' | 'completed' | 'failed'
   createdAt: string
   completedAt?: string
@@ -222,7 +222,7 @@ export interface BulkOperationResult {
   invoiceId: string
   success: boolean
   error?: string
-  changes?: any
+  changes?: unknown
 }
 
 export type InvoiceStatus =

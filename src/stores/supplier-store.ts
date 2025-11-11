@@ -302,8 +302,8 @@ export const useSupplierStore = create<SupplierState>()(
         // Apply sorting
         filtered.sort((a, b) => {
           const { field, direction } = sortOptions;
-          let aValue: any = a[field as keyof Supplier];
-          let bValue: any = b[field as keyof Supplier];
+          let aValue: unknown = a[field as keyof Supplier];
+          let bValue: unknown = b[field as keyof Supplier];
 
           // Handle nested fields
           if (field === 'performanceRating') {

@@ -8,7 +8,7 @@ import {
 import type { ProviderConfig } from './resolver';
 import { runProviderBatch } from './engine';
 import type { z } from 'zod';
-import { BatchCategorySuggestionSchema } from './parser';
+import type { BatchCategorySuggestionSchema } from './parser';
 import type { CategorySuggestion } from './index';
 import { mark } from './metrics';
 
@@ -267,7 +267,7 @@ export async function processBatchesAcrossProviders(
               results.set(productId, next);
             }
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           const msg = String(e?.message || '');
           const timedOut = msg.startsWith('AI request timeout:');
           console.error(`[batcher] Provider ${provider.provider} batch failed:`, e);

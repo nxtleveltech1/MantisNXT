@@ -240,7 +240,7 @@ export function validateFlagDependencies(): Array<{
  *
  * Tracks when flags are checked for monitoring and rollout analysis
  */
-export function logFlagCheck(flag: FeatureFlag, context?: Record<string, any>): void {
+export function logFlagCheck(flag: FeatureFlag, context?: Record<string, unknown>): void {
   // Only log in non-production or when explicitly enabled
   if (process.env.NODE_ENV === 'production' && !process.env.LOG_FEATURE_FLAGS) {
     return;

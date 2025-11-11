@@ -3,7 +3,7 @@
  * GET /api/v1/ai/metrics/[metricType]
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -31,7 +31,7 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const { startDate, endDate } = extractDateRange(searchParams);
     const fresh = searchParams.get('fresh') === 'true';
-    const period = (searchParams.get('period') as any) || 'daily';
+    const period = (searchParams.get('period') as unknown) || 'daily';
 
     const data = await AIMetricsService.getMetrics(
       user.org_id,

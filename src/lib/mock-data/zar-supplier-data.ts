@@ -3,7 +3,6 @@
  * All amounts in South African Rand (ZAR)
  */
 
-import { BEECategory, SAProvince } from "../currency/zar-formatter";
 
 export const ZAR_SUPPLIER_DATA = [
   // Purged legacy suppliers; seeded with requested supplier names only

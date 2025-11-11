@@ -13,7 +13,7 @@ export type TimePeriod = 'hourly' | 'daily' | 'weekly' | 'monthly' | 'quarterly'
 export interface MetricResult {
   metricType: MetricType;
   metricKey: string;
-  value: any;
+  value: unknown;
   timePeriod: TimePeriod;
   periodStart: Date;
   periodEnd: Date;
@@ -327,7 +327,7 @@ export class MetricsCalculator {
     orgId: string,
     metricType: MetricType,
     metricKey: string,
-    value: any,
+    value: unknown,
     timePeriod: TimePeriod,
     periodStart: Date,
     periodEnd: Date,
@@ -364,7 +364,7 @@ export class MetricsCalculator {
     metricType: MetricType,
     metricKey: string,
     periodStart: Date,
-  ): Promise<any | null> {
+  ): Promise<unknown | null> {
     const result = await db.query(
       `
       SELECT metric_value, calculated_at

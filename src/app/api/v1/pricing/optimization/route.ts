@@ -8,7 +8,8 @@
  * Date: 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { PricingOptimizationService } from '@/lib/services/PricingOptimizationService';
 import { PricingStrategy } from '@/lib/db/pricing-schema';
 import { z } from 'zod';
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: 'Validation failed', details: error.errors },
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
       data: runs,
       count: runs.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

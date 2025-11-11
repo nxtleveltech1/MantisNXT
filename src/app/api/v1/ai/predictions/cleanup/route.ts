@@ -3,7 +3,7 @@
  * POST /api/v1/ai/predictions/cleanup
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const daysOld = Math.floor((now.getTime() - olderThanDate.getTime()) / (1000 * 60 * 60 * 24));
 
     // For dry run, get predictions that would be deleted
-    let affectedPredictions: any[] = [];
+    let affectedPredictions: unknown[] = [];
     if (validated.dryRun) {
       const filters = {
         serviceType: validated.serviceType,

@@ -2,9 +2,9 @@
  * /api/core/suppliers/products - Supplier product management
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { supplierProductService } from '@/lib/services/SupplierProductService';
-import { z } from 'zod';
 
 /**
  * GET /api/core/suppliers/products - List supplier products

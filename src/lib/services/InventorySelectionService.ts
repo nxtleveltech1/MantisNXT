@@ -13,14 +13,14 @@
 
 import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
 import { isFeatureEnabled, FeatureFlag } from '@/lib/feature-flags';
-import {
+import type {
   InventorySelection,
   InventorySelectedItem,
   SelectedCatalog,
-  SelectionWorkflowRequest,
+  SelectionWorkflowRequest} from '../../types/nxt-spp';
+import {
   SelectionWorkflowRequestSchema,
-  InventorySelectionSchema,
-  InventorySelectedItemSchema
+  InventorySelectionSchema
 } from '../../types/nxt-spp';
 
 export class InventorySelectionService {
@@ -75,7 +75,7 @@ export class InventorySelectionService {
     offset?: number;
   }): Promise<{ selections: InventorySelection[]; total: number }> {
     const conditions: string[] = ['1=1'];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (filters?.status && Array.isArray(filters.status) && filters.status.length > 0) {
@@ -327,7 +327,7 @@ export class InventorySelectionService {
     }
   ): Promise<InventorySelectedItem[]> {
     const conditions: string[] = ['isi.selection_id = $1'];
-    const params: any[] = [selectionId];
+    const params: unknown[] = [selectionId];
     let paramIndex = 2;
 
     if (filters?.status) {
@@ -374,7 +374,7 @@ export class InventorySelectionService {
       'sel.status = $1',
       'isi.status = $2'
     ];
-    const params: any[] = ['active', 'selected'];
+    const params: unknown[] = ['active', 'selected'];
     let paramIndex = 3;
 
     if (filters?.supplier_id) {

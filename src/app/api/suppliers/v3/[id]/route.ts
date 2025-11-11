@@ -3,9 +3,9 @@
  * Handle single supplier CRUD operations
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { pool } from '@/lib/database'
 import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepository'
 import { SupplierService } from '@/lib/suppliers/services/SupplierService'
 import type {
@@ -64,7 +64,7 @@ const UpdateSupplierSchema = z.object({
   notes: z.string().optional()
 })
 
-function createErrorResponse(message: string, status: number = 400, details?: any): NextResponse {
+function createErrorResponse(message: string, status: number = 400, details?: unknown): NextResponse {
   const response: APIResponse<null> = {
     success: false,
     data: null,

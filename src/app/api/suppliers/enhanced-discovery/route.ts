@@ -9,16 +9,13 @@
  * - AI-powered data enhancement
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  WebSearchRequest,
-  DiscoveryConfiguration,
-  BulkDiscoveryRequest,
-  BulkDiscoveryResponse,
-  WebAddressInput
-} from '@/lib/supplier-discovery/enhanced-types';
-import { useEnhancedSupplierDiscovery } from '@/lib/supplier-discovery/enhanced-use-supplier-discovery';
+import type {
+  WebSearchRequest} from '@/lib/supplier-discovery/enhanced-types';
+
+
 import { webSearchService } from '@/lib/supplier-discovery/web-search-service';
 import { webScrapingService } from '@/lib/supplier-discovery/web-scraping-service';
 import { enhancedDataProcessor } from '@/lib/supplier-discovery/enhanced-data-processor';
@@ -442,7 +439,7 @@ export async function GET(request: NextRequest) {
 async function discoverFromWebsite(
   websiteUrl: string, 
   companyName?: string, 
-  options?: any
+  options?: unknown
 ) {
   try {
     console.log(`🌐 Extracting from website: ${websiteUrl}`);
@@ -488,8 +485,8 @@ async function discoverFromWebsite(
  */
 async function discoverWithWebSearch(
   supplierName: string, 
-  context?: any, 
-  options?: any
+  context?: unknown, 
+  options?: unknown
 ) {
   try {
     console.log(`🔍 Web search for: ${supplierName}`);
@@ -559,7 +556,7 @@ async function discoverWithWebSearch(
 /**
  * Process single discovery request
  */
-async function processSingleDiscovery(request: any) {
+async function processSingleDiscovery(request: unknown) {
   const startTime = Date.now();
   
   try {
@@ -593,7 +590,7 @@ async function processSingleDiscovery(request: any) {
 /**
  * Generate optimized search query
  */
-function generateSearchQuery(supplierName: string, context?: any): string {
+function generateSearchQuery(supplierName: string, context?: unknown): string {
   let query = `"${supplierName}"`;
   
   if (context?.industry) {
@@ -650,7 +647,7 @@ function extractDomainFromEmail(email: string): string {
 /**
  * Convert structured data to legacy format for compatibility
  */
-function convertToLegacyFormat(structuredData: any) {
+function convertToLegacyFormat(structuredData: unknown) {
   if (!structuredData) return null;
   
   return {
@@ -677,7 +674,7 @@ function convertToLegacyFormat(structuredData: any) {
     compliance: {
       vatNumber: structuredData.supplier?.vatNumber || '',
       beeRating: structuredData.compliance?.beeLevel || '',
-      certifications: structuredData.compliance?.certifications?.map((c: any) => c.name) || []
+      certifications: structuredData.compliance?.certifications?.map((c: unknown) => c.name) || []
     },
     confidence: {
       overall: 0.8, // Would calculate from actual confidence scores

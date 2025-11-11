@@ -11,7 +11,7 @@
  */
 
 import { query } from '@/lib/database';
-import { WooCommerceService, WooCommerceCustomer } from '@/lib/services/WooCommerceService';
+import type { WooCommerceService, WooCommerceCustomer } from '@/lib/services/WooCommerceService';
 import { WooCommerceSyncQueue } from '@/lib/services/WooCommerceSyncQueue';
 
 interface SyncConfig {
@@ -41,8 +41,8 @@ interface SyncProgress {
  */
 async function mapWooCustomerToMantis(
   wooCustomer: WooCommerceCustomer,
-  wooOrders: any[]
-): Promise<any> {
+  wooOrders: unknown[]
+): Promise<unknown> {
   const lifetimeValue = wooOrders.reduce((sum, order) => sum + parseFloat(order.total || '0'), 0);
   const completedOrders = wooOrders.filter(order => order.status === 'completed');
 
@@ -73,7 +73,7 @@ async function mapWooCustomerToMantis(
       }
     : null;
 
-  const metadata: Record<string, any> = {
+  const metadata: Record<string, unknown> = {
     woocommerce_id: wooCustomer.id,
     username: wooCustomer.username,
     total_orders: wooOrders.length,
@@ -133,7 +133,7 @@ async function syncSingleCustomer(
     const mantisCustomer = await mapWooCustomerToMantis(wooCustomer, wooOrders);
 
     // Check if customer already exists by email
-    const existingCustomer = await query<any>(
+    const existingCustomer = await query<unknown>(
       `SELECT id FROM customer WHERE email = $1 AND org_id = $2`,
       [mantisCustomer.email, orgId]
     );
@@ -177,7 +177,7 @@ async function syncSingleCustomer(
       return { success: true, customerId, wasUpdate: true };
     } else {
       // Create new customer
-      const result = await query<any>(
+      const result = await query<unknown>(
         `INSERT INTO customer (
            org_id,
            name,
@@ -215,7 +215,7 @@ async function syncSingleCustomer(
 
       return { success: true, customerId: result.rows[0].id, wasUpdate: false };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error syncing customer ${wooCustomer.email}:`, error);
     return {
       success: false,
@@ -404,7 +404,7 @@ export class CustomerSyncService {
                   totalFailed++;
                 }
               }
-            } catch (error: any) {
+            } catch (error: unknown) {
               lastError = error.message || 'Unknown error';
               retryCount++;
 
@@ -522,7 +522,7 @@ export class CustomerSyncService {
   /**
    * Get activity log
    */
-  static async getActivityLog(queueId: string, limit: number = 100): Promise<any[]> {
+  static async getActivityLog(queueId: string, limit: number = 100): Promise<unknown[]> {
     return WooCommerceSyncQueue.getActivityLog(queueId, limit);
   }
 }

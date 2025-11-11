@@ -2,7 +2,7 @@
 // Intelligent Recommendation Engine with Multi-Criteria Optimization
 // Implements advanced recommendation algorithms for procurement, inventory, and supplier decisions
 
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 
 // Types for Intelligent Recommendations
 export interface MultiCriteriaWeights {
@@ -180,7 +180,7 @@ export class MultiCriteriaDecisionEngine {
     }
   }
 
-  private async getSupplierData(supplierIds: string[]): Promise<any[]> {
+  private async getSupplierData(supplierIds: string[]): Promise<unknown[]> {
     const query = `
       SELECT
         s.*,
@@ -204,7 +204,7 @@ export class MultiCriteriaDecisionEngine {
     return result.rows;
   }
 
-  private async evaluateSupplier(supplier: any, criteria: RecommendationCriteria): Promise<any> {
+  private async evaluateSupplier(supplier: unknown, criteria: RecommendationCriteria): Promise<unknown> {
     // Normalize scores to 0-1 scale
     const scores = {
       cost: this.normalizeCostScore(supplier.cost_competitiveness || 50),
@@ -224,7 +224,7 @@ export class MultiCriteriaDecisionEngine {
   }
 
   // TOPSIS (Technique for Order Preference by Similarity to Ideal Solution) Analysis
-  private performTOPSISAnalysis(suppliers: any[], weights: MultiCriteriaWeights): any {
+  private performTOPSISAnalysis(suppliers: unknown[], weights: MultiCriteriaWeights): unknown {
     const criteria = Object.keys(weights);
 
     // Step 1: Create decision matrix
@@ -314,7 +314,7 @@ export class MultiCriteriaDecisionEngine {
     return Math.max(0, Math.min(1, innovation / 100));
   }
 
-  private checkConstraints(bestOption: any, constraints: any): boolean {
+  private checkConstraints(bestOption: unknown, constraints: unknown): boolean {
     if (!bestOption) return false;
 
     // Check various constraints
@@ -329,7 +329,7 @@ export class MultiCriteriaDecisionEngine {
     return true;
   }
 
-  private calculateTradeoffs(option: any, weights: MultiCriteriaWeights): Record<string, number> {
+  private calculateTradeoffs(option: unknown, weights: MultiCriteriaWeights): Record<string, number> {
     const tradeoffs: Record<string, number> = {};
 
     Object.keys(weights).forEach(criterion => {
@@ -341,7 +341,7 @@ export class MultiCriteriaDecisionEngine {
     return tradeoffs;
   }
 
-  private identifyKeyDifferences(best: any, alternative: any): string[] {
+  private identifyKeyDifferences(best: unknown, alternative: unknown): string[] {
     const differences: string[] = [];
 
     Object.keys(best.scores).forEach(criterion => {
@@ -355,14 +355,14 @@ export class MultiCriteriaDecisionEngine {
     return differences;
   }
 
-  private identifyCriticalFactors(optimization: any, weights: MultiCriteriaWeights): string[] {
+  private identifyCriticalFactors(optimization: unknown, weights: MultiCriteriaWeights): string[] {
     // Identify factors with high weights or high variance in scores
     return Object.entries(weights)
       .filter(([_, weight]) => weight > 0.15)
       .map(([criterion, _]) => criterion);
   }
 
-  private calculateRobustness(optimization: any): number {
+  private calculateRobustness(optimization: unknown): number {
     if (optimization.ranking.length < 2) return 1;
 
     const topScore = optimization.ranking[0].score;
@@ -372,7 +372,7 @@ export class MultiCriteriaDecisionEngine {
     return Math.min(1, (topScore - secondScore) / topScore);
   }
 
-  private generateSensitivityRecommendations(optimization: any): string[] {
+  private generateSensitivityRecommendations(optimization: unknown): string[] {
     const recommendations: string[] = [];
 
     if (optimization.ranking.length > 1) {
@@ -444,7 +444,7 @@ export class IntelligentRecommendationEngine {
 
   private async generateSupplierRecommendations(
     organizationId: string,
-    context: any
+    context: unknown
   ): Promise<IntelligentRecommendation[]> {
     const recommendations: IntelligentRecommendation[] = [];
 
@@ -567,7 +567,7 @@ export class IntelligentRecommendationEngine {
 
   private async generateInventoryRecommendations(
     organizationId: string,
-    context: any
+    context: unknown
   ): Promise<IntelligentRecommendation[]> {
     const recommendations: IntelligentRecommendation[] = [];
 
@@ -680,7 +680,7 @@ export class IntelligentRecommendationEngine {
 
   private async generateProcurementRecommendations(
     organizationId: string,
-    context: any
+    context: unknown
   ): Promise<IntelligentRecommendation[]> {
     const recommendations: IntelligentRecommendation[] = [];
 
@@ -813,20 +813,20 @@ export class IntelligentRecommendationEngine {
   }
 
   // Utility methods
-  private estimateCostSavings(supplier: any): number {
+  private estimateCostSavings(supplier: unknown): number {
     const baseline = 100000; // Baseline annual spend
     const improvementPotential = (85 - (supplier.overall_rating || 50)) / 100;
     return baseline * improvementPotential * 0.1; // 10% of potential improvement
   }
 
-  private calculateInventoryScore(item: any): number {
+  private calculateInventoryScore(item: unknown): number {
     if (item.current_stock === 0) return 0;
     if (item.current_stock <= item.reorder_point) return 30;
     if (item.current_stock > item.max_stock * 1.5) return 40;
     return 70; // Acceptable range
   }
 
-  private generateInventoryAlternatives(item: any): any[] {
+  private generateInventoryAlternatives(item: unknown): unknown[] {
     const alternatives = [];
 
     if (item.current_stock <= item.reorder_point) {
@@ -856,7 +856,7 @@ export class IntelligentRecommendationEngine {
     return alternatives;
   }
 
-  private calculateInventoryImpact(item: any): any {
+  private calculateInventoryImpact(item: unknown): unknown {
     const stockValue = item.current_stock * item.unit_cost;
     const dailyDemandValue = (item.avg_daily_demand || 1) * item.unit_cost;
 
@@ -879,7 +879,7 @@ export class IntelligentRecommendationEngine {
     };
   }
 
-  private generateInventorySteps(item: any): any[] {
+  private generateInventorySteps(item: unknown): unknown[] {
     const baseSteps = [
       {
         step: 1,

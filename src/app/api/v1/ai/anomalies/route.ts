@@ -4,7 +4,7 @@
  * POST /api/v1/ai/anomalies/detect - Run anomaly detection
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,
@@ -31,12 +31,12 @@ export async function GET(request: NextRequest) {
     const { entityType, entityId } = extractEntityFilters(searchParams);
 
     const severity = extractSeverity(searchParams);
-    const status = searchParams.get('status') as any;
+    const status = searchParams.get('status') as unknown;
 
     const result = await anomalyService.listAnomalies(user.organizationId, {
-      entityType: entityType as any,
+      entityType: entityType as unknown,
       entityId,
-      severity: severity as any,
+      severity: severity as unknown,
       status,
       startDate,
       endDate,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     const result = await anomalyService.detectAnomalies({
       organizationId: user.organizationId,
-      entityType: validated.entityType as any,
+      entityType: validated.entityType as unknown,
       entityId: validated.entityId,
       sensitivity: validated.sensitivity,
     });

@@ -1,18 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Building2, MapPin, Phone, Mail, Globe, Shield, CreditCard, Calendar } from 'lucide-react';
+import { Save, Building2, MapPin, Phone, Shield, CreditCard, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth, ProtectedComponent } from '@/lib/auth/auth-context';
-import { Organization } from '@/types/auth';
+import type { Organization } from '@/types/auth';
 import { formatZAR, SA_VAT_RATE } from '@/lib/utils/currency';
 import { mockAuthProvider } from '@/lib/auth/mock-provider';
 
@@ -180,7 +179,7 @@ export default function OrganizationSettingsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Organization Settings</h1>
-          <p className="text-muted-foreground mt-1">Manage your organization's information and configuration</p>
+          <p className="text-muted-foreground mt-1">Manage your organization&apos;s information and configuration</p>
         </div>
 
         <ProtectedComponent permission="organization.update">
@@ -535,7 +534,7 @@ export default function OrganizationSettingsPage() {
                   ...prev!,
                   address: {
                     ...prev!.address,
-                    province: value as any,
+                    province: value as unknown,
                   },
                   updatedAt: new Date(),
                 }));

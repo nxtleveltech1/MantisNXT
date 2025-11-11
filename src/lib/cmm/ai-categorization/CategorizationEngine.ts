@@ -9,15 +9,14 @@ import {
   type CategorySuggestion as ProviderCategorySuggestion,
 } from '../category-ai';
 import { recordProposedCategoryForProduct } from '../proposed-categories';
-import { EnrichedProduct } from '../sip-product-enrichment';
-import {
+import type { EnrichedProduct } from '../sip-product-enrichment';
+import type {
   BatchResult,
   CategorizationResult,
   CategorizationStatus,
-  CategorySuggestion,
-  EnrichedProductWithStatus,
-  JobConfig,
-} from './types';
+  JobConfig} from './types';
+
+
 
 export class CategorizationEngine {
   private confidenceThreshold: number;
@@ -251,7 +250,7 @@ export class CategorizationEngine {
         error_message: null,
         provider,
         reasoning,
-        skipped_reason: shouldApply.reason as any,
+        skipped_reason: shouldApply.reason as unknown,
       };
     }
 
@@ -503,7 +502,7 @@ export class CategorizationEngine {
     exclude_categorized?: boolean;
   }): Promise<EnrichedProduct[]> {
     const whereClauses: string[] = [];
-    const queryParams: any[] = [];
+    const queryParams: unknown[] = [];
     let paramCounter = 1;
 
     if (params.supplier_id) {

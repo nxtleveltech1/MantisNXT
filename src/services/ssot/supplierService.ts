@@ -23,7 +23,7 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
   const offset = (page - 1) * limit
 
   const where: string[] = ['1=1']
-  const params: any[] = []
+  const params: unknown[] = []
   let i = 1
 
   if (search && search.trim().length > 0) {
@@ -51,7 +51,7 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
   const res = await query(sql, params)
   const total = res.rows.length > 0 ? Number(res.rows[0].__total) : 0
 
-  const data: Supplier[] = res.rows.map((r: any) => ({
+  const data: Supplier[] = res.rows.map((r: unknown) => ({
     id: String(r.id),
     name: r.name,
     status: (r.status ?? (r.active ? 'active' : 'inactive')) as Supplier['status'],

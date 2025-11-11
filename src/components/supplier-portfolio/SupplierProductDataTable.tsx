@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   Table,
   TableBody,
@@ -30,7 +29,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -43,30 +42,17 @@ import {
 } from '@/components/ui/dialog'
 import {
   Search,
-  Filter,
   ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   MoreHorizontal,
   Eye,
-  Edit,
   TrendingUp,
   TrendingDown,
   Minus,
-  Tag,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
-  Clock,
   Package,
-  DollarSign,
-  BarChart3,
   Columns,
-  Download,
   RefreshCw,
-  AlertTriangle,
   Brain,
   Check,
   X,
@@ -211,7 +197,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
       }
 
       const rows = data.data || []
-      const mapped = rows.map((p: any) => ({
+      const mapped = rows.map((p: unknown) => ({
         supplier_product_id: p.supplier_product_id,
         supplier_id: p.supplier_id,
         supplier_name: p.supplier_name || 'Unknown Supplier',
@@ -332,8 +318,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
       const result = await res.json()
       
       if (result.success) {
-        const suggestionsMap = new Map<string, any>()
-        result.suggestions.forEach((s: any) => {
+        const suggestionsMap = new Map<string, unknown>()
+        result.suggestions.forEach((s: unknown) => {
           if (s.suggestion) {
             suggestionsMap.set(s.supplier_product_id, s.suggestion)
           }
@@ -378,8 +364,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
 
     // Sort
     filtered.sort((a, b) => {
-      const aVal: any = a[sortColumn as keyof SelectionProduct]
-      const bVal: any = b[sortColumn as keyof SelectionProduct]
+      const aVal: unknown = a[sortColumn as keyof SelectionProduct]
+      const bVal: unknown = b[sortColumn as keyof SelectionProduct]
 
       if (aVal === undefined || aVal === null) return 1
       if (bVal === undefined || bVal === null) return -1
@@ -543,7 +529,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL_SUPPLIERS_VALUE}>All Suppliers</SelectItem>
-                    {suppliers.map((s: any) => (
+                    {suppliers.map((s: unknown) => (
                       <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -563,7 +549,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
-                    {categories.map((c: any) => (
+                    {categories.map((c: unknown) => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -985,39 +971,39 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
               {/* Product Info Grid */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Supplier SKU</label>
+                  <p className="text-sm font-medium text-muted-foreground">Supplier SKU</p>
                   <div className="mt-1 font-mono">{detailsProduct.supplier_sku}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Product Name</label>
+                  <p className="text-sm font-medium text-muted-foreground">Product Name</p>
                   <div className="mt-1">{detailsProduct.name_from_supplier}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Supplier</label>
+                  <p className="text-sm font-medium text-muted-foreground">Supplier</p>
                   <div className="mt-1">{detailsProduct.supplier_name}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Brand</label>
+                  <p className="text-sm font-medium text-muted-foreground">Brand</p>
                   <div className="mt-1">{detailsProduct.brand || '-'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Category</label>
+                  <p className="text-sm font-medium text-muted-foreground">Category</p>
                   <div className="mt-1">{detailsProduct.category_name || '-'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Cost Price</label>
+                  <p className="text-sm font-medium text-muted-foreground">Cost Price</p>
                   <div className="mt-1 font-medium">{formatCostAmount(detailsProduct.current_price || 0)}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Stock Quantity</label>
+                  <p className="text-sm font-medium text-muted-foreground">Stock Quantity</p>
                   <div className="mt-1">{detailsProduct.qty_on_hand || 0}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Barcode</label>
+                  <p className="text-sm font-medium text-muted-foreground">Barcode</p>
                   <div className="mt-1 font-mono">{detailsProduct.barcode || '-'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Selected At</label>
+                  <p className="text-sm font-medium text-muted-foreground">Selected At</p>
                   <div className="mt-1">{formatDate(detailsProduct.selected_at)}</div>
                 </div>
               </div>

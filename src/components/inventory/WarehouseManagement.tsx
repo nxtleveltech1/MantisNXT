@@ -1,15 +1,12 @@
 "use client"
 
-import React, { useState, useMemo, useCallback } from "react"
+import React, { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Table,
   TableBody,
@@ -25,72 +22,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
+
+
+
+
 import { cn, formatCurrency, formatDate } from "@/lib/utils"
-import {
+import type {
   Warehouse,
-  WarehouseZone,
   StockMovement,
-  InventoryLocation,
-  CycleCount,
-  InventoryAdjustment
-} from "@/types/inventory"
+  InventoryLocation} from "@/types/inventory";
+
+
 import {
   Building2,
-  MapPin,
   Package,
   TrendingUp,
   TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
   BarChart3,
   Activity,
   Settings,
   Eye,
   Edit,
   Plus,
-  Trash2,
   Download,
   Upload,
   RefreshCw,
   Search,
-  Filter,
   Grid3X3,
-  Layers,
   Move,
-  Thermometer,
-  Droplets,
   Shield,
   Target,
-  Zap,
   QrCode,
-  FileText,
-  Calendar,
-  Users,
   ArrowLeftRight,
   ArrowUpDown,
-  ArrowRight,
-  Archive,
-  Boxes
+  Archive
 } from "lucide-react"
 
 // Enhanced Warehouse Types
@@ -485,7 +450,7 @@ const WarehouseManagement: React.FC<WarehouseManagementProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Today's Movements</p>
+                    <p className="text-sm text-muted-foreground">Today&apos;s Movements</p>
                     <p className="text-2xl font-bold">{warehouseMetrics.todayMovements}</p>
                     <p className="text-xs text-muted-foreground">stock transactions</p>
                   </div>

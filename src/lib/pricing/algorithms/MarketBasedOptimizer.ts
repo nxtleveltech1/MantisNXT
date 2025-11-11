@@ -7,8 +7,9 @@
  * Date: 2025-11-02
  */
 
-import { BaseOptimizer, ProductData } from './BaseOptimizer';
-import { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
+import type { ProductData } from './BaseOptimizer';
+import { BaseOptimizer } from './BaseOptimizer';
+import type { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
 import { query } from '@/lib/database';
 import { PRICING_TABLES } from '@/lib/db/pricing-schema';
 
@@ -108,7 +109,7 @@ export class MarketBasedOptimizer extends BaseOptimizer {
     );
   }
 
-  private async getCompetitorPrices(productId: string): Promise<any[]> {
+  private async getCompetitorPrices(productId: string): Promise<unknown[]> {
     const sql = `
       SELECT competitor_name, price, last_checked
       FROM ${PRICING_TABLES.COMPETITOR_PRICES}
@@ -117,7 +118,7 @@ export class MarketBasedOptimizer extends BaseOptimizer {
       LIMIT 10
     `;
 
-    const result = await query<any>(sql, [productId]);
+    const result = await query<unknown>(sql, [productId]);
     return result.rows;
   }
 }

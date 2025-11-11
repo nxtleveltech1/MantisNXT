@@ -3,7 +3,6 @@
  * Uses Claude/OpenAI to intelligently extract structured supplier information from web content
  */
 
-import { getAIConfig } from '@/lib/ai/config';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject, generateText } from 'ai';
@@ -291,7 +290,7 @@ Return ONLY the information that can be clearly identified in the content.`;
       // Try generateObject first (Claude models generally support JSON schema)
       try {
         // Reasoning models don't support temperature
-        const generateOptions: any = {
+        const generateOptions: unknown = {
           model,
           schema: SupplierDataSchema,
           prompt,
@@ -306,7 +305,7 @@ Return ONLY the information that can be clearly identified in the content.`;
 
         // Post-process and normalize the extracted data
         return this.postProcessExtractedData(result.object, url);
-      } catch (schemaError: any) {
+      } catch (schemaError: unknown) {
         // Fallback to generateText with JSON mode if JSON schema fails
         // (defensive programming - Claude models should support JSON schema, but handle edge cases)
         if (
@@ -356,7 +355,7 @@ IMPORTANT: You must respond with ONLY valid JSON matching this exact schema:
 
 Return ONLY the JSON object, no other text.`;
 
-            const textOptions: any = {
+            const textOptions: unknown = {
               model,
               prompt: jsonPrompt,
             }
@@ -534,7 +533,7 @@ Return ONLY the information that can be clearly identified in the content.`;
       // Try generateObject first (requires JSON schema support)
       try {
         // Reasoning models don't support temperature
-        const generateOptions: any = {
+        const generateOptions: unknown = {
           model,
           schema: SupplierDataSchema,
           prompt,
@@ -549,7 +548,7 @@ Return ONLY the information that can be clearly identified in the content.`;
 
         // Post-process and normalize the extracted data
         return this.postProcessExtractedData(result.object, url);
-      } catch (schemaError: any) {
+      } catch (schemaError: unknown) {
         // Check if it's a rate limit error - don't retry, return null so other provider can try
         // Handle both direct rate limit errors and retry errors that contain rate limit errors
         const isRateLimitError = 
@@ -584,7 +583,7 @@ Return ONLY the information that can be clearly identified in the content.`;
           // Try with fallback model
           const fallbackModel = openai('gpt-4o-mini');
           try {
-            const fallbackOptions: any = {
+            const fallbackOptions: unknown = {
               model: fallbackModel,
               schema: SupplierDataSchema,
               prompt,
@@ -657,7 +656,7 @@ Return ONLY the JSON object, no other text.`;
             ? openai('gpt-4o-mini') 
             : model;
           
-          const textOptions: any = {
+          const textOptions: unknown = {
             model: textModel,
             prompt: jsonPrompt,
           }
@@ -696,7 +695,7 @@ Return ONLY the JSON object, no other text.`;
   /**
    * Post-process extracted data to fix common issues and ensure completeness
    */
-  private postProcessExtractedData(data: any, sourceUrl: string): ExtractedSupplierData {
+  private postProcessExtractedData(data: unknown, sourceUrl: string): ExtractedSupplierData {
     const processed: ExtractedSupplierData = { ...data };
 
     // Normalize website URL
@@ -710,7 +709,7 @@ Return ONLY the JSON object, no other text.`;
     // Ensure addresses have required fields and validate they're actual addresses
     if (processed.addresses && processed.addresses.length > 0) {
       processed.addresses = processed.addresses
-        .map((addr: any, index: number) => ({
+        .map((addr: unknown, index: number) => ({
           type: addr.type || (index === 0 ? 'headquarters' : 'shipping'),
           street: addr.street || addr.addressLine1 || '',
           city: addr.city || '',
@@ -721,7 +720,7 @@ Return ONLY the JSON object, no other text.`;
           postalCode: addr.postalCode || addr.postal_code || '',
           state: addr.state || addr.province || '',
         }))
-        .filter((addr: any) => {
+        .filter((addr: unknown) => {
           // Remove empty addresses
           if (!addr.street && !addr.city) return false;
           
@@ -781,7 +780,7 @@ Return ONLY the JSON object, no other text.`;
         if (url && url !== '') {
           processed.socialMedia![key as keyof typeof processed.socialMedia] = this.normalizeUrl(
             url
-          ) as any;
+          ) as unknown;
         }
       });
     }

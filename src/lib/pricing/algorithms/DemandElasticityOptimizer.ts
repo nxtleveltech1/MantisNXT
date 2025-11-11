@@ -7,8 +7,9 @@
  * Date: 2025-11-02
  */
 
-import { BaseOptimizer, ProductData } from './BaseOptimizer';
-import { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
+import type { ProductData } from './BaseOptimizer';
+import { BaseOptimizer } from './BaseOptimizer';
+import type { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
 import { query } from '@/lib/database';
 import { PRICING_TABLES } from '@/lib/db/pricing-schema';
 
@@ -129,7 +130,7 @@ export class DemandElasticityOptimizer extends BaseOptimizer {
     );
   }
 
-  private async getElasticityData(productId: string): Promise<any | null> {
+  private async getElasticityData(productId: string): Promise<unknown | null> {
     const sql = `
       SELECT *
       FROM ${PRICING_TABLES.PRICE_ELASTICITY}
@@ -138,7 +139,7 @@ export class DemandElasticityOptimizer extends BaseOptimizer {
       LIMIT 1
     `;
 
-    const result = await query<any>(sql, [productId]);
+    const result = await query<unknown>(sql, [productId]);
 
     if (result.rows.length === 0) {
       return null;

@@ -184,7 +184,7 @@ export function getAuthConfigStatus(): {
   valid: boolean;
   errors: string[];
   warnings: string[];
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 } {
   const errors: string[] = [];
   const warnings: string[] = [];

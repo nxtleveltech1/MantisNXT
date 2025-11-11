@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { parse as parseCSV } from 'csv-parse/sync';
-import { FileFormatDetection, DetectedColumn } from '@/types/pricelist-upload';
+import type { FileFormatDetection, DetectedColumn } from '@/types/pricelist-upload';
 
 export class FileParserService {
 
@@ -49,7 +49,7 @@ export class FileParserService {
       sheetName?: string;
       skipRows?: number;
     } = {}
-  ): Promise<Record<string, any>[]> {
+  ): Promise<Record<string, unknown>[]> {
     const { maxRows = 10000, sheetName, skipRows = 0 } = options;
 
     try {
@@ -116,7 +116,7 @@ export class FileParserService {
 
       // Convert to objects
       const sampleData = dataRows.slice(0, 10).map(row => {
-        const obj: Record<string, any> = {};
+        const obj: Record<string, unknown> = {};
         headerRow.forEach((header, index) => {
           obj[header] = row[index] || '';
         });
@@ -170,7 +170,7 @@ export class FileParserService {
         range: `A1:${XLSX.utils.encode_col(range.e.c)}${Math.min(21, totalRows)}`,
         raw: false,
         dateNF: 'yyyy-mm-dd'
-      }) as any[][];
+      }) as unknown[][];
 
       if (jsonData.length === 0) {
         throw new Error('No data found in Excel sheet');
@@ -183,7 +183,7 @@ export class FileParserService {
 
       // Convert to objects
       const sampleData = dataRows.slice(0, 10).map(row => {
-        const obj: Record<string, any> = {};
+        const obj: Record<string, unknown> = {};
         headerRow.forEach((header, index) => {
           obj[header] = row[index] || '';
         });
@@ -217,7 +217,7 @@ export class FileParserService {
       const content = file.toString('utf-8');
       const jsonData = JSON.parse(content);
 
-      let dataArray: any[];
+      let dataArray: unknown[];
       if (Array.isArray(jsonData)) {
         dataArray = jsonData;
       } else if (jsonData.data && Array.isArray(jsonData.data)) {
@@ -267,7 +267,7 @@ export class FileParserService {
     file: Buffer,
     detection: FileFormatDetection,
     options: { maxRows: number; skipRows: number }
-  ): Record<string, any>[] {
+  ): Record<string, unknown>[] {
     const content = file.toString('utf-8');
 
     const records = parseCSV(content, {
@@ -290,7 +290,7 @@ export class FileParserService {
     file: Buffer,
     detection: FileFormatDetection,
     options: { maxRows: number; sheetName?: string; skipRows: number }
-  ): Record<string, any>[] {
+  ): Record<string, unknown>[] {
     const workbook = XLSX.read(file, { type: 'buffer', cellDates: true });
     const sheetName = options.sheetName || workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
@@ -315,11 +315,11 @@ export class FileParserService {
   /**
    * Parse JSON file
    */
-  private static parseJSON(file: Buffer, options: { maxRows: number }): Record<string, any>[] {
+  private static parseJSON(file: Buffer, options: { maxRows: number }): Record<string, unknown>[] {
     const content = file.toString('utf-8');
     const jsonData = JSON.parse(content);
 
-    let dataArray: any[];
+    let dataArray: unknown[];
     if (Array.isArray(jsonData)) {
       dataArray = jsonData;
     } else if (jsonData.data && Array.isArray(jsonData.data)) {
@@ -334,7 +334,7 @@ export class FileParserService {
   /**
    * Detect if first row contains headers
    */
-  private static detectHeaders(data: any[][]): boolean {
+  private static detectHeaders(data: unknown[][]): boolean {
     if (data.length < 2) return false;
 
     const firstRow = data[0];
@@ -370,7 +370,7 @@ export class FileParserService {
   /**
    * Analyze columns and suggest mappings
    */
-  private static analyzeColumns(headers: string[], dataRows: any[][]): DetectedColumn[] {
+  private static analyzeColumns(headers: string[], dataRows: unknown[][]): DetectedColumn[] {
     return headers.map((header, index) => {
       const values = dataRows.map(row => row[index]).filter(val => val != null && val !== '');
 
@@ -396,7 +396,7 @@ export class FileParserService {
   /**
    * Detect data type of column values
    */
-  private static detectDataType(values: any[]): DetectedColumn['dataType'] {
+  private static detectDataType(values: unknown[]): DetectedColumn['dataType'] {
     if (values.length === 0) return 'string';
 
     const types = values.map(val => {
@@ -440,7 +440,7 @@ export class FileParserService {
   /**
    * Suggest column mapping based on header name and content
    */
-  private static suggestColumnMapping(header: string, values: any[]): {
+  private static suggestColumnMapping(header: string, values: unknown[]): {
     field?: string;
     confidence: number;
   } {

@@ -34,7 +34,7 @@ interface CacheConfig {
 /**
  * LRU Cache implementation for query results
  */
-export class QueryCache<T = any> {
+export class QueryCache<T = unknown> {
   private cache: Map<string, CacheEntry<T>>;
   private accessOrder: string[]; // LRU tracking
   private config: CacheConfig;
@@ -60,7 +60,7 @@ export class QueryCache<T = any> {
   /**
    * Generate cache key from query and parameters
    */
-  private generateKey(query: string, params?: any[]): string {
+  private generateKey(query: string, params?: unknown[]): string {
     const paramStr = params ? JSON.stringify(params) : '';
     return `${query}:${paramStr}`;
   }
@@ -68,7 +68,7 @@ export class QueryCache<T = any> {
   /**
    * Get cached result
    */
-  get(query: string, params?: any[]): T | null {
+  get(query: string, params?: unknown[]): T | null {
     const key = this.generateKey(query, params);
     const entry = this.cache.get(key);
 
@@ -100,7 +100,7 @@ export class QueryCache<T = any> {
   /**
    * Set cache entry with optional TTL
    */
-  set(query: string, data: T, params?: any[], ttl?: number): void {
+  set(query: string, data: T, params?: unknown[], ttl?: number): void {
     const key = this.generateKey(query, params);
     const expiresAt = Date.now() + (ttl || this.config.defaultTTL);
 
@@ -210,7 +210,7 @@ export class QueryCache<T = any> {
   /**
    * Get cache entry metadata
    */
-  getEntryInfo(query: string, params?: any[]): Omit<CacheEntry<T>, 'data'> | null {
+  getEntryInfo(query: string, params?: unknown[]): Omit<CacheEntry<T>, 'data'> | null {
     const key = this.generateKey(query, params);
     const entry = this.cache.get(key);
 
@@ -308,12 +308,12 @@ export class CacheManager {
  */
 export const CacheKeys = {
   // Inventory queries
-  inventoryList: (filters: any) => `inventory:list:${JSON.stringify(filters)}`,
+  inventoryList: (filters: unknown) => `inventory:list:${JSON.stringify(filters)}`,
   inventoryItem: (id: string) => `inventory:item:${id}`,
   inventoryBySupplier: (supplierId: string) => `inventory:supplier:${supplierId}`,
 
   // Supplier queries
-  supplierList: (filters: any) => `suppliers:list:${JSON.stringify(filters)}`,
+  supplierList: (filters: unknown) => `suppliers:list:${JSON.stringify(filters)}`,
   supplier: (id: string) => `suppliers:item:${id}`,
   supplierMetrics: (id: string) => `suppliers:metrics:${id}`,
 

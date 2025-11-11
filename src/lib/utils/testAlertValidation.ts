@@ -122,5 +122,5 @@ export function testAlertValidation() {
 
 // Export for testing in browser console
 if (typeof window !== 'undefined') {
-  (window as any).testAlertValidation = testAlertValidation;
+  (window as unknown).testAlertValidation = testAlertValidation;
 }

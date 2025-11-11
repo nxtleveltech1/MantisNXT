@@ -6,7 +6,7 @@
 import { db } from '../database';
 import { EventEmitter } from 'events';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -22,7 +22,7 @@ export interface PaginationParams {
 }
 
 export interface FilterParams {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export class BaseApiService extends EventEmitter {
@@ -106,7 +106,7 @@ export class BaseApiService extends EventEmitter {
 
       // Build WHERE clause
       const whereConditions: string[] = [];
-      const queryParams: any[] = [];
+      const queryParams: unknown[] = [];
       let paramIndex = 1;
 
       Object.entries(filters).forEach(([key, value]) => {
@@ -329,7 +329,7 @@ export class BaseApiService extends EventEmitter {
   /**
    * Execute custom query with real-time capabilities
    */
-  async customQuery<T>(query: string, params: any[] = []): Promise<ApiResponse<T[]>> {
+  async customQuery<T>(query: string, params: unknown[] = []): Promise<ApiResponse<T[]>> {
     const requestId = this.generateRequestId();
 
     try {
@@ -356,7 +356,7 @@ export class BaseApiService extends EventEmitter {
   /**
    * Validate required fields
    */
-  private validateRequiredFields(data: any): void {
+  private validateRequiredFields(data: unknown): void {
     for (const field of this.requiredFields) {
       if (!data[field] && data[field] !== 0) {
         throw new Error(`Required field '${field}' is missing`);
@@ -367,12 +367,12 @@ export class BaseApiService extends EventEmitter {
   /**
    * Filter only allowed fields
    */
-  private filterAllowedFields(data: any): any {
+  private filterAllowedFields(data: unknown): unknown {
     if (this.allowedFields.length === 0) {
       return { ...data };
     }
 
-    const filtered: any = {};
+    const filtered: unknown = {};
     for (const field of this.allowedFields) {
       if (data[field] !== undefined) {
         filtered[field] = data[field];
@@ -384,7 +384,7 @@ export class BaseApiService extends EventEmitter {
   /**
    * Notify PostgreSQL listeners about changes
    */
-  private async notifyChange(operation: string, record: any): Promise<void> {
+  private async notifyChange(operation: string, record: unknown): Promise<void> {
     try {
       const payload = JSON.stringify({
         operation,

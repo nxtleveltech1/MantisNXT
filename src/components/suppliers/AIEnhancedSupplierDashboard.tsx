@@ -1,19 +1,13 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog'
+
+
 import {
   Tooltip,
   TooltipContent,
@@ -31,16 +25,10 @@ import {
   BarChart3,
   MessageSquare,
   Lightbulb,
-  Settings,
   RefreshCw,
-  Download,
-  Plus,
   Eye,
   Activity,
-  DollarSign,
-  Clock,
-  Zap,
-  Loader2
+  Zap
 } from 'lucide-react'
 
 // Import existing supplier dashboard
@@ -62,7 +50,7 @@ import type {
 } from '@/types/ai-supplier'
 
 interface AIEnhancedSupplierDashboardProps {
-  onSupplierSelect?: (supplier: any) => void
+  onSupplierSelect?: (supplier: unknown) => void
   className?: string
 }
 
@@ -174,7 +162,7 @@ export default function AIEnhancedSupplierDashboard({
             {/* AI Mode Selector */}
             <select
               value={aiMode}
-              onChange={(e) => setAiMode(e.target.value as any)}
+              onChange={(e) => setAiMode(e.target.value as unknown)}
               className="px-3 py-1 text-sm border rounded-md bg-white"
             >
               <option value="standard">Standard AI</option>

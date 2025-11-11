@@ -2,8 +2,8 @@
  * IntegrationSyncService - Orchestrates sync operations between MantisNXT and external systems
  */
 
-import { WooCommerceService, WooCommerceProduct, WooCommerceOrder, WooCommerceCustomer } from './WooCommerceService';
-import { OdooService, OdooProduct, OdooPartner, OdooPurchaseOrder } from './OdooService';
+import type { WooCommerceService, WooCommerceProduct} from './WooCommerceService';
+import type { OdooService, OdooPartner, OdooPurchaseOrder } from './OdooService';
 import { IntegrationMappingService } from './IntegrationMappingService';
 
 export interface SyncResult {
@@ -50,7 +50,7 @@ export class IntegrationSyncService {
    */
   async syncProductsToWooCommerce(
     wooService: WooCommerceService,
-    products: any[],
+    products: unknown[],
     options: SyncOptions = {}
   ): Promise<SyncResult> {
     const startTime = Date.now();
@@ -97,7 +97,7 @@ export class IntegrationSyncService {
               manage_stock: true,
               stock_quantity: product.stock_quantity || 0,
               status: product.is_active ? 'publish' : 'draft',
-              categories: product.categories?.map((cat: any) => ({ id: cat.woo_id })),
+              categories: product.categories?.map((cat: unknown) => ({ id: cat.woo_id })),
             };
 
             if (mapping) {
@@ -274,7 +274,7 @@ export class IntegrationSyncService {
   async syncCustomersWithWooCommerce(
     wooService: WooCommerceService,
     direction: 'inbound' | 'outbound' | 'bidirectional',
-    customers?: any[],
+    customers?: unknown[],
     options: SyncOptions = {}
   ): Promise<SyncResult> {
     const startTime = Date.now();
@@ -325,7 +325,7 @@ export class IntegrationSyncService {
    */
   async syncInventoryToOdoo(
     odooService: OdooService,
-    inventory: any[],
+    inventory: unknown[],
     locationId: number,
     options: SyncOptions = {}
   ): Promise<SyncResult> {
@@ -406,7 +406,7 @@ export class IntegrationSyncService {
    */
   async syncSuppliersToOdoo(
     odooService: OdooService,
-    suppliers: any[],
+    suppliers: unknown[],
     options: SyncOptions = {}
   ): Promise<SyncResult> {
     const startTime = Date.now();
@@ -500,7 +500,7 @@ export class IntegrationSyncService {
    */
   async syncPurchaseOrdersToOdoo(
     odooService: OdooService,
-    purchaseOrders: any[],
+    purchaseOrders: unknown[],
     options: SyncOptions = {}
   ): Promise<SyncResult> {
     const startTime = Date.now();
@@ -542,7 +542,7 @@ export class IntegrationSyncService {
             date_order: po.order_date,
             notes: po.notes,
             order_line: await Promise.all(
-              po.line_items.map(async (line: any) => {
+              po.line_items.map(async (line: unknown) => {
                 const productMapping = await this.mappingService.getMapping(
                   'product',
                   line.product_id
@@ -614,7 +614,7 @@ export class IntegrationSyncService {
   /**
    * Get sync statistics
    */
-  async getSyncStatistics(hours = 24): Promise<any> {
+  async getSyncStatistics(hours = 24): Promise<unknown> {
     // Implementation would query sync_log table
     return {
       totalSyncs: 0,

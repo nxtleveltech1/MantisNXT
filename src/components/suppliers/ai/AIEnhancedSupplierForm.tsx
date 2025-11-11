@@ -7,13 +7,11 @@ import * as z from 'zod'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Select,
@@ -23,56 +21,32 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from '@/components/ui/tooltip'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog'
+
+
 import {
   Brain,
   Sparkles,
   CheckCircle,
   AlertTriangle,
-  Info,
-  Lightbulb,
-  TrendingUp,
   Target,
-  Search,
   Globe,
   Phone,
   Mail,
   MapPin,
   FileText,
-  Upload,
-  Download,
-  RefreshCw,
   Eye,
   EyeOff,
-  Zap,
   Bot,
   User,
-  Clock,
-  Star,
   Shield,
   DollarSign,
   Activity,
   Loader2,
-  ChevronDown,
-  ChevronUp,
-  Plus,
-  Minus,
   Save,
   X
 } from 'lucide-react'
-import { format } from 'date-fns'
 
 // Form Schema
 const supplierFormSchema = z.object({
@@ -198,8 +172,8 @@ export default function AIEnhancedSupplierForm({
     watch,
     setValue,
     getValues,
-    formState: { errors, isDirty, isValid },
-    trigger
+    formState: { errors, isDirty: _isDirty, isValid },
+    trigger: _trigger
   } = useForm<SupplierFormData>({
     resolver: zodResolver(supplierFormSchema),
     defaultValues: initialData || {
@@ -304,7 +278,7 @@ export default function AIEnhancedSupplierForm({
   }, [formData.basicInfo.name, formData.basicInfo.website, generateAISuggestions])
 
   const applySuggestion = (suggestion: AIFormSuggestion) => {
-    setValue(suggestion.field as any, suggestion.value, { shouldValidate: true })
+    setValue(suggestion.field as unknown, suggestion.value, { shouldValidate: true })
     setAiSuggestions(prev => prev.filter(s => s.field !== suggestion.field))
   }
 

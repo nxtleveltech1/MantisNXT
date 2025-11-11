@@ -36,7 +36,7 @@ export interface Permission {
 export interface PermissionCondition {
   field: string;
   operator: 'equals' | 'in' | 'contains' | 'starts_with';
-  value: any;
+  value: unknown;
 }
 
 export interface Organization {

@@ -2,7 +2,7 @@
  * Utility functions for Supplier Discovery System
  */
 
-import { DiscoveredSupplierData, SupplierAddress, SupplierContactInfo } from './types';
+import type { DiscoveredSupplierData, SupplierAddress, SupplierContactInfo } from './types';
 import { DISCOVERY_CONFIG } from './config';
 
 /**
@@ -327,7 +327,7 @@ function selectBestValue(dataSources: DiscoveredSupplierData[], path: string): s
   return values.length > 0 ? values[0].value : '';
 }
 
-function getNestedValue(obj: any, path: string): string {
+function getNestedValue(obj: unknown, path: string): string {
   return path.split('.').reduce((current, key) => current?.[key], obj) || '';
 }
 

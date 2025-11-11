@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import NodeCache from 'node-cache'
-import { NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 type TaskStatus = 'pending' | 'completed' | 'failed'
 

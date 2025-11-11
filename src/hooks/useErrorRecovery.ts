@@ -3,7 +3,7 @@
  * Provides bulletproof error handling with exponential backoff and advanced retry mechanisms
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 
 // ============================================================================
@@ -113,7 +113,10 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
     showToast = true
   } = options
 
-  const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...userRetryConfig }
+  const retryConfig = useMemo(() => ({
+    ...DEFAULT_RETRY_CONFIG,
+    ...userRetryConfig
+  }), [userRetryConfig])
   const abortControllerRef = useRef<AbortController | null>(null)
 
   const [state, setState] = useState<ErrorRecoveryState>({

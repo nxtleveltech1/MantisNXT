@@ -23,7 +23,7 @@ export interface ChatRequestOptions extends AIServiceRequestOptions {
 export interface ConversationOptions extends RenderPromptOptions {
   id?: string;
   systemPrompt?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   initialMessages?: AIChatMessage[];
   maxHistory?: number;
 }
@@ -31,7 +31,7 @@ export interface ConversationOptions extends RenderPromptOptions {
 interface ConversationState {
   id: string;
   messages: AIChatMessage[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   maxHistory: number;

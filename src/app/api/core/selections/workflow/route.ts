@@ -2,7 +2,8 @@
  * POST /api/core/selections/workflow - Execute selection workflow (select/deselect/approve)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { inventorySelectionService } from '@/lib/services/InventorySelectionService';
 import { SelectionWorkflowRequestSchema } from '@/types/nxt-spp';
 import { z } from 'zod';

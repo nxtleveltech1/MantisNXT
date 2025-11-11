@@ -237,7 +237,7 @@ export function classifyDataSensitivity(dataType: string): {
   retentionPeriod: number;
   encryptionRequired: boolean;
 } {
-  const classifications: Record<string, any> = {
+  const classifications: Record<string, unknown> = {
     identity: {
       level: 'RESTRICTED',
       description: 'Personal identity information including SA ID numbers',

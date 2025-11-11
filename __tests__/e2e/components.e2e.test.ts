@@ -10,7 +10,8 @@
  * Coverage target: 10% of test pyramid (component interactions)
  */
 
-import { test, expect, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 test.describe('Sync Components E2E', () => {
   let page: Page;

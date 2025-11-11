@@ -128,7 +128,7 @@ export interface AISupplierInsight {
   costImplications?: number
 
   // Metadata
-  dataPoints: Record<string, any>
+  dataPoints: Record<string, unknown>
   sourceData: string[]
   timestamp: Date
   expiresAt?: Date
@@ -166,7 +166,7 @@ export interface AIPredictiveModel {
 
   // Model Configuration
   algorithm: string
-  hyperparameters: Record<string, any>
+  hyperparameters: Record<string, unknown>
   version: string
 
   // Predictions
@@ -483,13 +483,13 @@ export interface AISupplierState {
     role: 'user' | 'assistant' | 'system'
     content: string
     timestamp: Date
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   }>
   isTyping: boolean
   chatContext: {
     supplierId?: string
     conversationId?: string
-    preferences: Record<string, any>
+    preferences: Record<string, unknown>
   }
 
   // Configuration
@@ -518,7 +518,7 @@ export type AISupplierAction =
   | { type: 'FETCH_INSIGHTS_START' }
   | { type: 'FETCH_INSIGHTS_SUCCESS'; payload: AISupplierInsight[] }
   | { type: 'FETCH_INSIGHTS_ERROR'; payload: string }
-  | { type: 'ADD_CHAT_MESSAGE'; payload: { role: 'user' | 'assistant'; content: string; metadata?: any } }
+  | { type: 'ADD_CHAT_MESSAGE'; payload: { role: 'user' | 'assistant'; content: string; metadata?: unknown } }
   | { type: 'SET_TYPING'; payload: boolean }
   | { type: 'UPDATE_AI_CONFIG'; payload: Partial<AISupplierState['aiConfig']> }
   | { type: 'BOOKMARK_INSIGHT'; payload: { insightId: string; bookmarked: boolean } }
@@ -540,7 +540,7 @@ export interface UseAISupplierReturn {
   state: AISupplierState
 
   // Actions
-  fetchRecommendations: (query?: string, filters?: Record<string, any>) => Promise<void>
+  fetchRecommendations: (query?: string, filters?: Record<string, unknown>) => Promise<void>
   fetchInsights: (supplierId?: string, categories?: string[]) => Promise<void>
   sendChatMessage: (message: string) => Promise<void>
   bookmarkInsight: (insightId: string) => Promise<void>

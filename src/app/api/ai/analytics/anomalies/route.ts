@@ -3,7 +3,8 @@
  * Real-time anomaly detection for supplier and procurement metrics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { PredictiveAnalyticsService } from '@/services/ai/PredictiveAnalyticsService';
 import { getOrSet, makeKey } from '@/lib/cache/responseCache';
 import { executeWithOptionalAsync } from '@/lib/queue/taskQueue';
@@ -183,7 +184,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Validation function
-function validateAnomalyRequest(body: any): string | null {
+function validateAnomalyRequest(body: unknown): string | null {
   // Validate entityType
   const validEntityTypes = ['supplier', 'order', 'payment', 'performance'];
   if (!body.entityType || !validEntityTypes.includes(body.entityType)) {
@@ -231,7 +232,7 @@ function validateAnomalyRequest(body: any): string | null {
 }
 
 // Helper functions for anomaly management
-async function acknowledgeAnomaly(anomalyId: string, userId: string): Promise<any> {
+async function acknowledgeAnomaly(anomalyId: string, userId: string): Promise<unknown> {
   // In production, this would update the anomaly status in the database
   console.log(`Anomaly ${anomalyId} acknowledged by user ${userId}`);
 
@@ -242,7 +243,7 @@ async function acknowledgeAnomaly(anomalyId: string, userId: string): Promise<an
   };
 }
 
-async function resolveAnomaly(anomalyId: string, userId: string, resolution?: string): Promise<any> {
+async function resolveAnomaly(anomalyId: string, userId: string, resolution?: string): Promise<unknown> {
   // In production, this would update the anomaly status and record the resolution
   console.log(`Anomaly ${anomalyId} resolved by user ${userId}: ${resolution}`);
 
@@ -254,7 +255,7 @@ async function resolveAnomaly(anomalyId: string, userId: string, resolution?: st
   };
 }
 
-async function dismissAnomaly(anomalyId: string, userId: string, reason?: string): Promise<any> {
+async function dismissAnomaly(anomalyId: string, userId: string, reason?: string): Promise<unknown> {
   // In production, this would mark the anomaly as dismissed
   console.log(`Anomaly ${anomalyId} dismissed by user ${userId}: ${reason}`);
 

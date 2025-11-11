@@ -4,7 +4,8 @@ import { getOrSet, makeKey } from '@/lib/cache/responseCache'
  * EMERGENCY RECOVERY: Using stable pool connection
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { pool } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
@@ -209,7 +210,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function getInventoryDescription(row: any): string {
+function getInventoryDescription(row: unknown): string {
   const { product_name, current_stock, reorder_level, recommendation_type } = row;
 
   switch (recommendation_type) {
@@ -224,7 +225,7 @@ function getInventoryDescription(row: any): string {
   }
 }
 
-function getInventoryAction(row: any): string {
+function getInventoryAction(row: unknown): string {
   const { product_name, current_stock, reorder_level, recommendation_type } = row;
 
   switch (recommendation_type) {

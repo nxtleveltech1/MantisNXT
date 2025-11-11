@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -32,7 +32,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
 import {
@@ -45,7 +44,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -67,9 +65,6 @@ import {
   Truck,
   ArrowUpCircle,
   Percent,
-  AlertCircle,
-  Filter,
-  Download,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -94,7 +89,7 @@ const rewardSchema = z.object({
 
 type RewardFormData = z.infer<typeof rewardSchema>
 
-const REWARD_TYPE_ICONS: Record<RewardType, any> = {
+const REWARD_TYPE_ICONS: Record<RewardType, unknown> = {
   points: Gift,
   discount: Percent,
   cashback: DollarSign,
@@ -369,7 +364,7 @@ export default function RewardCatalogManager() {
                 />
               </div>
             </div>
-            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
+            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as unknown)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -383,7 +378,7 @@ export default function RewardCatalogManager() {
                 <SelectItem value="gift">Gift</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as unknown)}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -812,7 +807,7 @@ export default function RewardCatalogManager() {
           <DialogHeader>
             <DialogTitle>Delete Reward</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedReward?.name}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{selectedReward?.name}&rdquo;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -836,7 +831,7 @@ export default function RewardCatalogManager() {
           <DialogHeader>
             <DialogTitle>Manage Stock</DialogTitle>
             <DialogDescription>
-              Update stock quantity for "{selectedReward?.name}"
+              Update stock quantity for &ldquo;{selectedReward?.name}&rdquo;
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

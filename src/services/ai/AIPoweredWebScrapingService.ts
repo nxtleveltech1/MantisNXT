@@ -196,7 +196,7 @@ export class AIPoweredWebScrapingService {
   /**
    * AI-powered business intelligence analysis
    */
-  private performAIBusinessAnalysis(content: string, url: string): any {
+  private performAIBusinessAnalysis(content: string, url: string): unknown {
     console.log('🧠 Starting AI business intelligence analysis...')
     
     const hostname = new URL(url).hostname
@@ -485,10 +485,10 @@ export class AIPoweredWebScrapingService {
   /**
    * AI-powered contact information extraction
    */
-  private extractContactInfoAI(content: string): any {
+  private extractContactInfoAI(content: string): unknown {
     console.log('📞 Extracting contact info with AI...')
     
-    const contactInfo: any = {}
+    const contactInfo: unknown = {}
     
     // AI-powered email extraction
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
@@ -538,10 +538,10 @@ export class AIPoweredWebScrapingService {
   /**
    * AI-powered business metrics extraction
    */
-  private extractBusinessMetricsAI(content: string): any {
+  private extractBusinessMetricsAI(content: string): unknown {
     console.log('📊 Extracting business metrics with AI...')
     
-    const metrics: any = {}
+    const metrics: unknown = {}
     
     // AI-powered employee count extraction
     const employeePatterns = [
@@ -583,7 +583,7 @@ export class AIPoweredWebScrapingService {
   /**
    * Generate AI-powered supplier profile
    */
-  private generateSupplierProfile(aiAnalysis: any, url: string, html: string): ScrapedWebsite {
+  private generateSupplierProfile(aiAnalysis: unknown, url: string, html: string): ScrapedWebsite {
     console.log('🎯 Generating comprehensive supplier profile...')
     
     return {

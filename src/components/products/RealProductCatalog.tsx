@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
@@ -37,14 +36,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   Search,
-  Filter,
   SortAsc,
   SortDesc,
   Eye,
-  Package,
   Building2,
   TrendingUp,
-  Clock,
   CheckCircle,
   AlertCircle,
   RefreshCw,
@@ -194,7 +190,7 @@ export default function RealProductCatalog() {
       const response = await fetch('/api/suppliers/real-data?limit=100')
       if (response.ok) {
         const data = await response.json()
-        setSuppliers(data.suppliers.map((s: any) => ({ id: s.id, name: s.name })))
+        setSuppliers(data.suppliers.map((s: unknown) => ({ id: s.id, name: s.name })))
       }
     } catch (err) {
       console.error('Failed to fetch suppliers:', err)
@@ -203,11 +199,11 @@ export default function RealProductCatalog() {
 
   useEffect(() => {
     fetchProducts(true)
-  }, [filters])
+  }, [fetchProducts, filters])
 
   useEffect(() => {
     fetchSuppliers()
-  }, [])
+  }, [fetchSuppliers])
 
   const handleFilterChange = useCallback((key: keyof CatalogFilters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))

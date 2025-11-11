@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Package, Upload, Search, Filter, Eye, Settings } from 'lucide-react';
 
 // Import all our perfected components
 import ProductCatalogGrid from '../products/ProductCatalogGrid';
 import SupplierPricelistUpload from '../suppliers/SupplierPricelistUpload';
-import EnhancedDataTable, { ColumnDef } from '../ui/data-table/EnhancedDataTable';
+import type { ColumnDef } from '../ui/data-table/EnhancedDataTable';
+import EnhancedDataTable from '../ui/data-table/EnhancedDataTable';
 import { DataTableLoader } from '../ui/loading/LoadingStates';
 import { AccessibilityProvider } from '../ui/accessibility/AccessibilityProvider';
 import { UnifiedSearch, createProductSearchConfig, createSupplierSearchConfig } from '../ui/search/UnifiedSearchSystem';
-import { DataFreshnessDashboard, DataFreshnessInfo } from '../ui/indicators/DataFreshnessIndicators';
+import { DataFreshnessDashboard } from '../ui/indicators/DataFreshnessIndicators';
 import { designTokens } from '../ui/design-system';
 
 // Mock data interfaces matching your existing types
@@ -109,7 +109,7 @@ const generateMockSuppliers = (count: number): Supplier[] => {
 export const ComprehensiveSupplierUI: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'products' | 'suppliers' | 'upload' | 'analytics'>('products');
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<unknown[]>([]);
 
   // Mock data
   const mockProducts = useMemo(() => generateMockProducts(150), []);
@@ -356,7 +356,7 @@ export const ComprehensiveSupplierUI: React.FC = () => {
     setSearchResults(results);
   }, []);
 
-  const handleUploadComplete = useCallback((result: any) => {
+  const handleUploadComplete = useCallback((result: unknown) => {
     console.log('Upload completed:', result);
     // Refresh data or show success message
   }, []);

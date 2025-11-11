@@ -1,4 +1,4 @@
-import { CategorizationStatus } from '@/lib/cmm/ai-categorization/types';
+import type { CategorizationStatus } from '@/lib/cmm/ai-categorization/types';
 
 export type ProposedCategoryStatus = 'pending' | 'approved' | 'rejected';
 export type ProposedCategoryProductStatus = 'pending' | 'applied' | 'rejected';

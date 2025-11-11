@@ -28,7 +28,7 @@ export interface Organization {
   domain: string;
   status: 'active' | 'suspended' | 'trial';
   plan: 'free' | 'pro' | 'enterprise';
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -274,7 +274,7 @@ export class MultiTenantAuth extends EventEmitter {
   async verifyToken(token: string): Promise<AuthResult> {
     try {
       // Verify JWT
-      const decoded = verify(token, this.jwtSecret) as any;
+      const decoded = verify(token, this.jwtSecret) as unknown;
 
       // Check session exists and is valid
       const sessionQuery = `
@@ -354,7 +354,7 @@ export class MultiTenantAuth extends EventEmitter {
   async refreshToken(refreshToken: string): Promise<AuthResult> {
     try {
       // Verify refresh token
-      const decoded = verify(refreshToken, this.jwtSecret) as any;
+      const decoded = verify(refreshToken, this.jwtSecret) as unknown;
 
       if (decoded.type !== 'refresh') {
         return {
@@ -502,7 +502,7 @@ export class MultiTenantAuth extends EventEmitter {
     event: string,
     userId: string,
     organizationId: string,
-    metadata: any = {}
+    metadata: unknown = {}
   ): Promise<void> {
     try {
       await db.query(

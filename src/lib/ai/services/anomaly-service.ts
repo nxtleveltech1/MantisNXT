@@ -15,7 +15,6 @@
 
 import { query } from '@/lib/database/connection';
 import { aiDatabase } from '@/lib/ai/database-integration';
-import { z } from 'zod';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -141,7 +140,7 @@ export class AnomalyService {
       // Run AI-powered anomaly detection
       const aiResult = await aiDatabase.detectAnomalies({
         query: dataQuery,
-        checks: checkTypes as any[],
+        checks: checkTypes as unknown[],
       });
 
       // Store anomalies in both tables for compatibility
@@ -188,7 +187,7 @@ export class AnomalyService {
 
       // Build WHERE conditions
       const conditions: string[] = ['organization_id = $1'];
-      const params: any[] = [organizationId];
+      const params: unknown[] = [organizationId];
       let paramIndex = 2;
 
       if (entityType) {
@@ -282,7 +281,7 @@ export class AnomalyService {
   async getAnomalyById(anomalyId: string, organizationId?: number): Promise<Anomaly | null> {
     try {
       const conditions = ['id = $1'];
-      const params: any[] = [anomalyId];
+      const params: unknown[] = [anomalyId];
 
       if (organizationId) {
         conditions.push('organization_id = $2');
@@ -336,7 +335,7 @@ export class AnomalyService {
   ): Promise<Anomaly> {
     try {
       const conditions = ['id = $1'];
-      const params: any[] = [anomalyId];
+      const params: unknown[] = [anomalyId];
 
       if (organizationId) {
         conditions.push('organization_id = $5');
@@ -400,7 +399,7 @@ export class AnomalyService {
   ): Promise<Anomaly> {
     try {
       const conditions = ['id = $1'];
-      const params: any[] = [anomalyId];
+      const params: unknown[] = [anomalyId];
 
       if (organizationId) {
         conditions.push('organization_id = $3');
@@ -465,7 +464,7 @@ export class AnomalyService {
   ): Promise<Anomaly> {
     try {
       const conditions = ['id = $1'];
-      const params: any[] = [anomalyId];
+      const params: unknown[] = [anomalyId];
 
       if (organizationId) {
         conditions.push('organization_id = $4');
@@ -531,7 +530,7 @@ export class AnomalyService {
 
       // Build WHERE conditions
       const conditions: string[] = ['organization_id = $1'];
-      const params: any[] = [organizationId];
+      const params: unknown[] = [organizationId];
       let paramIndex = 2;
 
       if (startDate) {
@@ -724,14 +723,14 @@ export class AnomalyService {
       };
 
       if (row.by_severity) {
-        row.by_severity.forEach((item: any) => {
+        row.by_severity.forEach((item: unknown) => {
           bySeverity[item.severity as AnomalySeverity] = parseInt(item.count);
         });
       }
 
       const byType: Record<string, number> = {};
       if (row.by_type) {
-        row.by_type.forEach((item: any) => {
+        row.by_type.forEach((item: unknown) => {
           byType[item.type] = parseInt(item.count);
         });
       }
@@ -744,7 +743,7 @@ export class AnomalyService {
       };
 
       if (row.by_status) {
-        row.by_status.forEach((item: any) => {
+        row.by_status.forEach((item: unknown) => {
           byStatus[item.status as AnomalyStatus] = parseInt(item.count);
         });
       }
@@ -846,7 +845,7 @@ export class AnomalyService {
    */
   private async storeDetectedAnomalies(
     organizationId: number,
-    aiAnomalies: any[],
+    aiAnomalies: unknown[],
     entityType?: EntityType,
     entityId?: number
   ): Promise<Anomaly[]> {

@@ -47,8 +47,8 @@ interface AIAlert {
   is_resolved: boolean;
   resolved_at?: string;
   created_at: string;
-  metadata?: any;
-  recommendations?: any[];
+  metadata?: unknown;
+  recommendations?: unknown[];
 }
 
 interface AIAlertWithStatus extends AIAlert {
@@ -549,7 +549,7 @@ export default function AIAlertManagement() {
                 <div>
                   <Label className="text-sm text-muted-foreground">Recommendations</Label>
                   <ul className="mt-1 space-y-1 text-sm">
-                    {selectedAlert.recommendations.map((rec: any, idx: number) => (
+                    {selectedAlert.recommendations.map((rec: unknown, idx: number) => (
                       <li key={idx} className="flex items-start gap-2">
                         <span className="text-primary">•</span>
                         <span>{typeof rec === 'string' ? rec : JSON.stringify(rec)}</span>

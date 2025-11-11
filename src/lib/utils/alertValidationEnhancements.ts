@@ -3,12 +3,13 @@
  * This module provides additional utilities to handle edge cases in alert validation
  */
 
-import { ValidatedAlertItem, validateAlertItems, transformAlertItem } from './dataValidation';
+import type { ValidatedAlertItem} from './dataValidation';
+import { validateAlertItems, transformAlertItem } from './dataValidation';
 
 /**
  * Pre-process alerts data to handle common API inconsistencies
  */
-export function preprocessAlertsData(rawData: any): any[] {
+export function preprocessAlertsData(rawData: unknown): unknown[] {
   // Handle various response formats
   if (!rawData) {
     console.warn('📥 Preprocessing: No raw data provided');
@@ -47,7 +48,7 @@ export function preprocessAlertsData(rawData: any): any[] {
 /**
  * Validate alerts with comprehensive error recovery
  */
-export function validateAlertsWithRecovery(rawData: any): {
+export function validateAlertsWithRecovery(rawData: unknown): {
   alerts: ValidatedAlertItem[];
   stats: {
     input: number;
@@ -107,7 +108,7 @@ export function validateAlertsWithRecovery(rawData: any): {
 /**
  * Create a mock alert for testing validation
  */
-export function createMockAlert(overrides: Partial<any> = {}): any {
+export function createMockAlert(overrides: Partial<unknown> = {}): unknown {
   return {
     id: `mock_alert_${Date.now()}`,
     type: 'quality_issue',
@@ -126,13 +127,13 @@ export function createMockAlert(overrides: Partial<any> = {}): any {
 /**
  * Validate alert API response structure with enhanced error recovery
  */
-export function validateAlertApiResponse(response: any): {
+export function validateAlertApiResponse(response: unknown): {
   isValid: boolean;
   issues: string[];
-  data: any[];
+  data: unknown[];
 } {
   const issues: string[] = [];
-  let data: any[] = [];
+  let data: unknown[] = [];
 
   console.log('🔍 Validating alert API response:', {
     hasResponse: !!response,
@@ -213,7 +214,7 @@ export function validateAlertApiResponse(response: any): {
 /**
  * Enhanced alert processing with full error recovery
  */
-export function processAlertsData(apiResponse: any): ValidatedAlertItem[] {
+export function processAlertsData(apiResponse: unknown): ValidatedAlertItem[] {
   console.log('🚀 Starting enhanced alert processing', {
     hasResponse: !!apiResponse,
     responseType: typeof apiResponse,

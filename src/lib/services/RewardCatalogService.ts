@@ -9,14 +9,14 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
-import {
+import type {
   RewardCatalog,
   RewardCatalogInsert,
   RewardCatalogUpdate,
   RewardAnalytics,
-  RewardType,
+  RewardType} from '@/types/loyalty';
+import {
   LoyaltyError,
-  RewardNotAvailableError,
 } from '@/types/loyalty';
 
 // ============================================================================
@@ -183,7 +183,7 @@ export class RewardCatalogService {
       }
 
       const setClauses: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let paramIndex = 1;
 
       if (data.name !== undefined) {
@@ -425,7 +425,7 @@ export class RewardCatalogService {
     try {
       const { limit = 50, offset = 0 } = options;
       const conditions: string[] = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
       let paramIndex = 2;
 
       if (filters.rewardType) {

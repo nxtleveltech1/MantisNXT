@@ -28,7 +28,6 @@ import {
   Package,
   Users,
   BarChart3,
-  FileText,
   XCircle,
   InfoIcon,
   Home,
@@ -430,7 +429,7 @@ export function GlobalErrorBoundaryFallback({
                 Application Error
               </CardTitle>
               <CardDescription className="text-base text-red-700">
-                We encountered a critical error and couldn't complete your request
+                We encountered a critical error and could not complete your request
               </CardDescription>
             </div>
           </div>
@@ -587,7 +586,7 @@ export function PageErrorBoundaryFallback({
               Page Load Error
             </CardTitle>
             <CardDescription className="text-base mt-2">
-              We couldn't load this page
+              We could not load this page
             </CardDescription>
           </div>
         </CardHeader>

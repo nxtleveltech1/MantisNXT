@@ -6,7 +6,7 @@
  * Resolution: Migrated to connection pool with schema contract compliance
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/unified-connection';
 import { PUBLIC_VIEWS } from '@/lib/db/schema-contract';
 
@@ -162,7 +162,7 @@ export async function GET() {
     const recentActivities = data.recent_activities || [];
 
     // Transform activities into proper format
-    const activities = recentActivities.map((activity: any, index: number) => ({
+    const activities = recentActivities.map((activity: unknown, index: number) => ({
       id: `activity-${activity.pricelist_id}`,
       title: 'Price List Updated',
       description: `${activity.supplier_name} updated ${activity.pricelist_name} with ${activity.item_count} products`,
@@ -200,7 +200,7 @@ export async function GET() {
           min: parseFloat(productStats.min_price) || 0,
           max: parseFloat(productStats.max_price) || 0,
         },
-        topCategories: topSuppliers.map((supplier: any) => ({
+        topCategories: topSuppliers.map((supplier: unknown) => ({
           name: supplier.name,
           count: parseInt(supplier.product_count),
           value: parseFloat(supplier.total_value),

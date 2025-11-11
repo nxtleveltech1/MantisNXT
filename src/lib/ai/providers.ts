@@ -3,7 +3,7 @@ import { generateText, streamText, embed, embedMany, type ModelMessage } from 'a
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGateway } from '@ai-sdk/gateway';
-import {
+import type {
   AIClient,
   AIProviderId,
   AIProviderConfig,
@@ -72,7 +72,7 @@ const getProviderEnablementHint = (config: AIProviderConfig): string => {
   }
 };
 
-const coerceAnnotations = (metadata?: Record<string, any>): Record<string, string | number | boolean> | undefined => {
+const coerceAnnotations = (metadata?: Record<string, unknown>): Record<string, string | number | boolean> | undefined => {
   if (!metadata) return undefined;
   const annotations: Record<string, string | number | boolean> = {};
   for (const [key, value] of Object.entries(metadata)) {
@@ -83,7 +83,7 @@ const coerceAnnotations = (metadata?: Record<string, any>): Record<string, strin
   return Object.keys(annotations).length > 0 ? annotations : undefined;
 };
 
-const normalizeMessageContent = (content: any): string => {
+const normalizeMessageContent = (content: unknown): string => {
   if (content == null) return '';
   if (typeof content === 'string') return content;
   if (Array.isArray(content)) {
@@ -97,7 +97,7 @@ const normalizeMessageContent = (content: any): string => {
   return String(content);
 };
 
-const mapResponseMessages = (messages: any[] | undefined): AIChatMessage[] | undefined => {
+const mapResponseMessages = (messages: unknown[] | undefined): AIChatMessage[] | undefined => {
   if (!messages || messages.length === 0) return undefined;
   return messages.map((message) => ({
     role: (message.role ?? 'assistant') as AIChatMessage['role'],
@@ -128,7 +128,7 @@ const createAbortSignal = (
 
   const abortFromExternal = () => {
     if (!controller.signal.aborted) {
-      const reason = (externalSignal as any)?.reason;
+      const reason = (externalSignal as unknown)?.reason;
       controller.abort(reason ?? new Error('AI request aborted by caller'));
     }
   };
@@ -416,7 +416,7 @@ class ProviderClient implements AIClient {
     usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number },
     success: boolean = true,
     error?: Error,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): AIUsageMetrics {
     const metrics: AIUsageMetrics = {
       provider: this.id,
@@ -434,7 +434,7 @@ class ProviderClient implements AIClient {
     };
 
     if (!success && error) {
-      const anyError = error as any;
+      const anyError = error as unknown;
       metrics.errorMessage = error.message;
       if (typeof anyError.code === 'string' || typeof anyError.code === 'number') {
         metrics.errorCode = String(anyError.code);

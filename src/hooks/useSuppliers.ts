@@ -94,7 +94,7 @@ export function useSuppliers(options: UseSupplierOptions = {}) {
     }
   }, [filters])
 
-  const createSupplier = useCallback(async (supplierData: any) => {
+  const createSupplier = useCallback(async (supplierData: unknown) => {
     setLoading(true)
     setError(null)
 
@@ -129,7 +129,7 @@ export function useSuppliers(options: UseSupplierOptions = {}) {
     }
   }, [])
 
-  const updateSupplier = useCallback(async (id: string, supplierData: Partial<any>) => {
+  const updateSupplier = useCallback(async (id: string, supplierData: Partial<unknown>) => {
     setLoading(true)
     setError(null)
 

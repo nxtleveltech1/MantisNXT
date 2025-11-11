@@ -9,7 +9,8 @@
  * Date: 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { PricingOptimizationService } from '@/lib/services/PricingOptimizationService';
 
 export async function GET(
@@ -49,7 +50,7 @@ export async function GET(
     }
 
     return NextResponse.json({ success: true, data: run });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -83,7 +84,7 @@ export async function POST(
       data: result,
       message: `Applied ${result.succeeded} recommendations successfully`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

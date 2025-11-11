@@ -26,24 +26,15 @@ import {
 import {
   CheckCircle2,
   Info,
-  TrendingUp,
   AlertCircle,
   Loader2,
   Package,
-  DollarSign,
   AlertTriangle,
   CheckCircle,
 } from 'lucide-react'
-import { cn, formatCurrency } from '@/lib/utils'
-import { useToast } from '@/hooks/use-toast'
-import {
-  useActiveSelection,
-  useSelections,
-  useCreateSelection,
-  useAddProductsToSelection,
-  useActivateSelection,
-  useSelectionProducts,
-} from '@/hooks/useNeonSpp'
+import { formatCurrency } from '@/lib/utils'
+
+
 import SupplierProductDataTable from './SupplierProductDataTable'
 import type { InventorySelection } from '@/types/nxt-spp'
 
@@ -277,8 +268,8 @@ export function ISIWizard({
       const catalog = catalogData.catalog || []
 
       // Match items with catalog to get enriched data
-      const enrichedItems = items.map((item: any) => {
-        const catalogProduct = catalog.find((p: any) => p.supplier_product_id === item.supplier_product_id)
+      const enrichedItems = items.map((item: unknown) => {
+        const catalogProduct = catalog.find((p: unknown) => p.supplier_product_id === item.supplier_product_id)
         return {
           ...item,
           current_price: catalogProduct?.current_price || 0,
@@ -288,9 +279,9 @@ export function ISIWizard({
       })
 
       // Calculate metrics
-      const totalValue = enrichedItems.reduce((sum: number, item: any) => sum + (item.current_price || 0), 0)
-      const supplierIds = new Set(enrichedItems.map((item: any) => item.supplier_id).filter(Boolean))
-      const categoryIds = new Set(enrichedItems.map((item: any) => item.category_id).filter(Boolean))
+      const totalValue = enrichedItems.reduce((sum: number, item: unknown) => sum + (item.current_price || 0), 0)
+      const supplierIds = new Set(enrichedItems.map((item: unknown) => item.supplier_id).filter(Boolean))
+      const categoryIds = new Set(enrichedItems.map((item: unknown) => item.category_id).filter(Boolean))
 
       setSelectionSummary({
         count: enrichedItems.length,
@@ -548,7 +539,7 @@ export function ISIWizard({
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Warning:</strong> Another selection "{activeSelection.selection_name}" is currently active.
+                  <strong>Warning:</strong> Another selection &ldquo;{activeSelection.selection_name}&rdquo; is currently active.
                   Activating this selection will automatically archive the current one.
                 </AlertDescription>
               </Alert>
@@ -581,13 +572,13 @@ export function ISIWizard({
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Conflict:</strong> "{conflictInfo?.active_selection_name}" is currently the active selection.
+                <strong>Conflict:</strong> &ldquo;{conflictInfo?.active_selection_name}&rdquo; is currently the active selection.
                 Only one selection can be active at a time.
               </AlertDescription>
             </Alert>
 
             <p className="text-sm text-muted-foreground">
-              Would you like to deactivate "{conflictInfo?.active_selection_name}" and activate this selection instead?
+              Would you like to deactivate &ldquo;{conflictInfo?.active_selection_name}&rdquo; and activate this selection instead?
             </p>
 
             <Alert>

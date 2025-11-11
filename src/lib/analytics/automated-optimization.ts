@@ -2,7 +2,7 @@
 // Automated Optimization Workflows and Decision Support System
 // Implements intelligent automation for procurement, inventory, and supplier management
 
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import EventEmitter from 'events';
 
 // Types for Automated Optimization
@@ -14,7 +14,7 @@ export interface OptimizationWorkflow {
 
   trigger: {
     type: 'schedule' | 'threshold' | 'event' | 'manual';
-    conditions: Record<string, any>;
+    conditions: Record<string, unknown>;
     frequency?: string; // cron expression for scheduled workflows
   };
 
@@ -22,7 +22,7 @@ export interface OptimizationWorkflow {
     id: string;
     condition: string;
     action: string;
-    parameters: Record<string, any>;
+    parameters: Record<string, unknown>;
     priority: number;
   }>;
 
@@ -69,10 +69,10 @@ export interface DecisionSupportCase {
   };
 
   data: {
-    currentState: Record<string, any>;
-    historicalData: Record<string, any>;
-    marketData?: Record<string, any>;
-    benchmarks?: Record<string, any>;
+    currentState: Record<string, unknown>;
+    historicalData: Record<string, unknown>;
+    marketData?: Record<string, unknown>;
+    benchmarks?: Record<string, unknown>;
   };
 
   analysis: {
@@ -140,7 +140,7 @@ export interface OptimizationResult {
     target: string;
     action: string;
     result: 'success' | 'failed' | 'pending';
-    details: Record<string, any>;
+    details: Record<string, unknown>;
     cost?: number;
     benefit?: number;
   }>;
@@ -213,7 +213,7 @@ export class AutomatedInventoryOptimizer {
       const result = await this.db.query(itemsQuery, [organizationId]);
       const items = result.rows;
 
-      const actions: any[] = [];
+      const actions: unknown[] = [];
       let totalCostSavings = 0;
       let successCount = 0;
 
@@ -254,7 +254,7 @@ export class AutomatedInventoryOptimizer {
     }
   }
 
-  private calculateOptimalLevels(item: any): any {
+  private calculateOptimalLevels(item: unknown): unknown {
     const leadTime = item.lead_time_days || 7;
     const dailyDemand = item.avg_daily_demand || 1;
     const demandVolatility = item.demand_volatility || 0.3;
@@ -296,7 +296,7 @@ export class AutomatedInventoryOptimizer {
     };
   }
 
-  private calculateImprovement(item: any, optimal: any): number {
+  private calculateImprovement(item: unknown, optimal: unknown): number {
     // Calculate current carrying cost
     const currentAvgStock = (item.reorder_point + item.max_stock) / 2;
     const currentCarryingCost = currentAvgStock * item.unit_cost * 0.2;
@@ -308,11 +308,11 @@ export class AutomatedInventoryOptimizer {
     return Math.max(0, currentCarryingCost - optimalCarryingCost);
   }
 
-  private async executeInventoryAction(item: any, optimization: any): Promise<any> {
+  private async executeInventoryAction(item: unknown, optimization: unknown): Promise<unknown> {
     try {
       let actionType = '';
       const actionResult = 'success';
-      let details: any = {};
+      let details: unknown = {};
 
       if (item.current_stock === 0) {
         // Emergency reorder
@@ -367,7 +367,7 @@ export class AutomatedInventoryOptimizer {
     }
   }
 
-  private async createPurchaseOrder(item: any, quantity: number): Promise<void> {
+  private async createPurchaseOrder(item: unknown, quantity: number): Promise<void> {
     // Simulate PO creation
     await this.db.query(`
       INSERT INTO purchase_orders (
@@ -376,7 +376,7 @@ export class AutomatedInventoryOptimizer {
     `, [item.id, quantity, item.unit_cost, quantity * item.unit_cost]);
   }
 
-  private async createPromotionRecommendation(item: any): Promise<void> {
+  private async createPromotionRecommendation(item: unknown): Promise<void> {
     // Create promotion recommendation
     await this.db.query(`
       INSERT INTO promotion_recommendations (
@@ -385,12 +385,12 @@ export class AutomatedInventoryOptimizer {
     `, [item.id]);
   }
 
-  private async updateInventoryParameters(_itemId: string, _optimization: any): Promise<void> {
+  private async updateInventoryParameters(_itemId: string, _optimization: unknown): Promise<void> {
     // SSOT: parameter updates for inventory should go through a policy table; no direct inventory_items writes.
     return;
   }
 
-  private generateInventoryRecommendations(actions: any[]): any[] {
+  private generateInventoryRecommendations(actions: unknown[]): unknown[] {
     const recommendations = [];
 
     const failedActions = actions.filter(a => a.result === 'failed');
@@ -454,7 +454,7 @@ export class AutomatedSupplierSelector {
       const result = await this.db.query(itemsQuery, [organizationId]);
       const items = result.rows;
 
-      const actions: any[] = [];
+      const actions: unknown[] = [];
       let totalCostSavings = 0;
       let successCount = 0;
 
@@ -494,7 +494,7 @@ export class AutomatedSupplierSelector {
     }
   }
 
-  private async findAlternativeSuppliers(item: any): Promise<any[]> {
+  private async findAlternativeSuppliers(item: unknown): Promise<unknown[]> {
     const query = `
       SELECT
         s.*,
@@ -514,7 +514,7 @@ export class AutomatedSupplierSelector {
     return result.rows;
   }
 
-  private evaluateSupplierOptions(item: any, alternatives: any[]): any {
+  private evaluateSupplierOptions(item: unknown, alternatives: unknown[]): unknown {
     if (alternatives.length === 0) {
       return { recommendation: null, reason: 'No alternatives available' };
     }
@@ -563,7 +563,7 @@ export class AutomatedSupplierSelector {
     };
   }
 
-  private calculatePriceScore(price: number, alternatives: any[]): number {
+  private calculatePriceScore(price: number, alternatives: unknown[]): number {
     const prices = alternatives.map(a => a.unit_price).filter(p => p > 0);
     if (prices.length === 0) return 0.5;
 
@@ -576,7 +576,7 @@ export class AutomatedSupplierSelector {
     return 1 - ((price - minPrice) / (maxPrice - minPrice));
   }
 
-  private async executeSupplierChange(item: any, optimization: any): Promise<any> {
+  private async executeSupplierChange(item: unknown, optimization: unknown): Promise<unknown> {
     try {
       if (!optimization.recommendation) {
         return {
@@ -620,7 +620,7 @@ export class AutomatedSupplierSelector {
     }
   }
 
-  private generateSupplierRecommendations(actions: any[]): any[] {
+  private generateSupplierRecommendations(actions: unknown[]): unknown[] {
     const recommendations = [];
 
     const supplierChanges = actions.filter(a => a.type === 'supplier_change');
@@ -687,7 +687,7 @@ export class DecisionSupportSystem {
     type: DecisionSupportCase['type'],
     context: DecisionSupportCase['context'],
     data: DecisionSupportCase['data']
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     switch (type) {
       case 'supplier_evaluation':
         return this.generateSupplierOptions(context, data);
@@ -704,7 +704,7 @@ export class DecisionSupportSystem {
     }
   }
 
-  private async generateSupplierOptions(context: any, data: any): Promise<any[]> {
+  private async generateSupplierOptions(context: unknown, data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'maintain_current',
@@ -742,7 +742,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private async generateInventoryOptions(context: any, data: any): Promise<any[]> {
+  private async generateInventoryOptions(context: unknown, data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'increase_stock',
@@ -780,7 +780,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private async generateContractOptions(context: any, data: any): Promise<any[]> {
+  private async generateContractOptions(context: unknown, data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'renew_as_is',
@@ -818,7 +818,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private async generateBudgetOptions(context: any, data: any): Promise<any[]> {
+  private async generateBudgetOptions(context: unknown, data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'maintain_budget',
@@ -856,7 +856,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private async generateRiskMitigationOptions(context: any, data: any): Promise<any[]> {
+  private async generateRiskMitigationOptions(context: unknown, data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'accept_risk',
@@ -896,9 +896,9 @@ export class DecisionSupportSystem {
 
   private async performAnalysis(
     type: DecisionSupportCase['type'],
-    options: any[],
+    options: unknown[],
     data: DecisionSupportCase['data']
-  ): Promise<any> {
+  ): Promise<unknown> {
     // Select best option based on scores
     const bestOption = options.reduce((best, current) =>
       current.score > best.score ? current : best
@@ -926,7 +926,7 @@ export class DecisionSupportSystem {
     };
   }
 
-  private generateRationale(bestOption: any, allOptions: any[]): string[] {
+  private generateRationale(bestOption: unknown, allOptions: unknown[]): string[] {
     const rationale = [];
 
     if (bestOption.score > 0.8) {
@@ -949,7 +949,7 @@ export class DecisionSupportSystem {
     return rationale.length > 0 ? rationale : ['Selected based on overall evaluation criteria'];
   }
 
-  private generateImplementation(bestOption: any, type: string): string[] {
+  private generateImplementation(bestOption: unknown, type: string): string[] {
     const implementation = [
       'Conduct detailed impact assessment',
       'Prepare implementation plan with timeline',
@@ -977,7 +977,7 @@ export class DecisionSupportSystem {
     return implementation;
   }
 
-  private generateRiskAssessment(bestOption: any, allOptions: any[]): string[] {
+  private generateRiskAssessment(bestOption: unknown, allOptions: unknown[]): string[] {
     const risks = [];
 
     if (bestOption.risk > 0.5) {
@@ -995,7 +995,7 @@ export class DecisionSupportSystem {
     return risks.length > 0 ? risks : ['Low risk option with standard implementation considerations'];
   }
 
-  private identifyCriticalFactors(options: any[]): string[] {
+  private identifyCriticalFactors(options: unknown[]): string[] {
     const factors = [];
 
     const costRange = Math.max(...options.map(o => o.cost)) - Math.min(...options.map(o => o.cost));
@@ -1016,7 +1016,7 @@ export class DecisionSupportSystem {
     return factors.length > 0 ? factors : ['Option characteristics', 'Implementation complexity'];
   }
 
-  private generateScenarios(options: any[]): any[] {
+  private generateScenarios(options: unknown[]): unknown[] {
     return [
       {
         name: 'Best Case',
@@ -1039,7 +1039,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private generateCaseTitle(type: string, context: any): string {
+  private generateCaseTitle(type: string, context: unknown): string {
     const titles = {
       'supplier_evaluation': `Supplier Evaluation: ${context.entityType}`,
       'inventory_decision': `Inventory Decision: ${context.entityType}`,
@@ -1051,7 +1051,7 @@ export class DecisionSupportSystem {
     return titles[type] || `Decision Support: ${type}`;
   }
 
-  private generateCaseDescription(type: string, context: any, data: any): string {
+  private generateCaseDescription(type: string, context: unknown, data: unknown): string {
     return `Decision support case for ${type.replace('_', ' ')} involving ${context.entityType} ` +
            `with ${context.urgency} urgency level. Analysis of current state and recommendations for optimal decision.`;
   }
@@ -1205,7 +1205,7 @@ export class AutomatedWorkflowEngine extends EventEmitter {
     }
   }
 
-  async createWorkflow(config: any): Promise<string> {
+  async createWorkflow(config: unknown): Promise<string> {
     const workflowId = `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const workflow: OptimizationWorkflow = {

@@ -4,7 +4,7 @@
  * POST /api/v1/ai/dashboards - Create dashboard
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

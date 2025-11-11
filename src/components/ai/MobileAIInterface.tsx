@@ -1,12 +1,9 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import {
   Brain,
   MessageSquare,
@@ -14,19 +11,11 @@ import {
   Building2,
   Sparkles,
   TrendingUp,
-  DollarSign,
-  AlertTriangle,
-  Menu,
   X,
   Maximize2,
   Minimize2,
-  ChevronUp,
-  ChevronDown,
   Activity,
-  Zap,
-  Target,
-  Search,
-  Filter
+  Zap
 } from "lucide-react"
 import AIChatInterface from "./ChatInterface"
 import AIInsightCards from "./InsightCards"

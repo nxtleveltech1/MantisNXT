@@ -15,11 +15,14 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { CustomerTable } from '@/components/customers/CustomerTable';
-import { ColumnSelector, ColumnDefinition } from '@/components/customers/ColumnSelector';
-import { FilterPanel, FilterValue } from '@/components/customers/FilterPanel';
+import type { ColumnDefinition } from '@/components/customers/ColumnSelector';
+import { ColumnSelector } from '@/components/customers/ColumnSelector';
+import type { FilterValue } from '@/components/customers/FilterPanel';
+import { FilterPanel } from '@/components/customers/FilterPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExportUtils, ExportColumn } from '@/lib/utils/export';
+import type { ExportColumn } from '@/lib/utils/export';
+import { ExportUtils } from '@/lib/utils/export';
 import { toast } from 'sonner';
 
 interface Customer {

@@ -8,12 +8,13 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
-import {
+import type {
   LoyaltyProgram,
   LoyaltyProgramInsert,
   LoyaltyProgramUpdate,
   TierThresholds,
-  TierBenefits,
+  TierBenefits} from '@/types/loyalty';
+import {
   LoyaltyError,
 } from '@/types/loyalty';
 
@@ -39,7 +40,7 @@ export class LoyaltyProgramService {
       } = options;
 
       const conditions: string[] = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
       const paramIndex = 2;
 
       if (activeOnly) {
@@ -298,7 +299,7 @@ export class LoyaltyProgramService {
         }
 
         const setClauses: string[] = [];
-        const values: any[] = [];
+        const values: unknown[] = [];
         let paramIndex = 1;
 
         if (updates.name !== undefined) {
@@ -526,7 +527,7 @@ export class LoyaltyProgramService {
   ): Promise<{ thresholds: TierThresholds; benefits: TierBenefits }> {
     try {
       const setClauses: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let paramIndex = 1;
 
       if (config.thresholds) {

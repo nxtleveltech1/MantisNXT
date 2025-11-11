@@ -7,7 +7,8 @@
  * Date: 2025-10-09
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { SchemaContractValidator } from '@/lib/db/schema-contract';
 
 /**
@@ -29,7 +30,7 @@ export class SchemaViolationError extends Error {
  *
  * Wraps database query functions to validate schema qualification
  */
-export function createSchemaValidator<T extends (...args: any[]) => any>(
+export function createSchemaValidator<T extends (...args: unknown[]) => unknown>(
   queryFn: T,
   options: {
     strict?: boolean; // Throw error on violation (default: false in dev, true in prod)

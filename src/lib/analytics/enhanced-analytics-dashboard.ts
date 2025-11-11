@@ -1,7 +1,7 @@
 // Enhanced Analytics Dashboard with AI Insights
 // Provides intelligent, context-aware dashboard components with advanced visualizations
 
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 
 // Types for Enhanced Dashboard
 export interface AIInsight {
@@ -18,13 +18,13 @@ export interface AIInsight {
     previousValue?: number;
     trend: 'increasing' | 'decreasing' | 'stable';
     changePercent: number;
-    context: Record<string, any>;
+    context: Record<string, unknown>;
   };
 
   visualization: {
     type: 'chart' | 'gauge' | 'heatmap' | 'sparkline' | 'metric';
-    config: Record<string, any>;
-    data: any[];
+    config: Record<string, unknown>;
+    data: unknown[];
   };
 
   actionable: {
@@ -51,9 +51,9 @@ export interface DashboardWidget {
 
   configuration: {
     dataSource: string;
-    filters: Record<string, any>;
+    filters: Record<string, unknown>;
     refreshInterval: number;
-    displayOptions: Record<string, any>;
+    displayOptions: Record<string, unknown>;
   };
 
   permissions: {
@@ -66,7 +66,7 @@ export interface DashboardWidget {
     model?: string;
     aiEnabled: boolean;
     insights: AIInsight[];
-    predictions?: any[];
+    predictions?: unknown[];
   };
 
   performance: {
@@ -193,7 +193,7 @@ export class AIInsightsGenerator {
     }
   }
 
-  private async generateTrendInsights(organizationId: string, context: any): Promise<AIInsight[]> {
+  private async generateTrendInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Supplier performance trends
@@ -231,7 +231,7 @@ export class AIInsightsGenerator {
           data: {
             currentValue: recent[1].avg_rating,
             previousValue: recent[0].avg_rating,
-            trend: trend as any,
+            trend: trend as unknown,
             changePercent,
             context: { evaluationCount: recent[1].evaluation_count }
           },
@@ -299,7 +299,7 @@ export class AIInsightsGenerator {
 
           data: {
             currentValue: row.avg_turnover,
-            trend: 'increasing' as any,
+            trend: 'increasing' as unknown,
             changePercent: 0,
             context: { itemCount: row.item_count, category: row.category }
           },
@@ -330,7 +330,7 @@ export class AIInsightsGenerator {
     return insights;
   }
 
-  private async generateAnomalyInsights(organizationId: string, context: any): Promise<AIInsight[]> {
+  private async generateAnomalyInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Detect price anomalies
@@ -388,7 +388,7 @@ export class AIInsightsGenerator {
         data: {
           currentValue: row.current_price,
           previousValue: row.avg_price,
-          trend: isIncrease ? 'increasing' : 'decreasing' as any,
+          trend: isIncrease ? 'increasing' : 'decreasing' as unknown,
           changePercent: isIncrease ? deviation : -deviation,
           context: {
             sku: row.sku,
@@ -430,7 +430,7 @@ export class AIInsightsGenerator {
     return insights;
   }
 
-  private async generateOpportunityInsights(organizationId: string, context: any): Promise<AIInsight[]> {
+  private async generateOpportunityInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Volume discount opportunities
@@ -466,7 +466,7 @@ export class AIInsightsGenerator {
 
         data: {
           currentValue: row.total_spend,
-          trend: 'stable' as any,
+          trend: 'stable' as unknown,
           changePercent: 0,
           context: {
             orderCount: row.order_count,
@@ -505,7 +505,7 @@ export class AIInsightsGenerator {
     return insights;
   }
 
-  private async generateRiskInsights(organizationId: string, context: any): Promise<AIInsight[]> {
+  private async generateRiskInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Single source dependency risk
@@ -537,7 +537,7 @@ export class AIInsightsGenerator {
 
         data: {
           currentValue: 1, // Single supplier
-          trend: 'stable' as any,
+          trend: 'stable' as unknown,
           changePercent: 0,
           context: {
             category: row.category,
@@ -576,7 +576,7 @@ export class AIInsightsGenerator {
     return insights;
   }
 
-  private async generatePredictionInsights(organizationId: string, context: any): Promise<AIInsight[]> {
+  private async generatePredictionInsights(organizationId: string, context: unknown): Promise<AIInsight[]> {
     const insights: AIInsight[] = [];
 
     // Stockout prediction
@@ -632,7 +632,7 @@ export class AIInsightsGenerator {
 
           data: {
             currentValue: row.current_stock,
-            trend: 'decreasing' as any,
+            trend: 'decreasing' as unknown,
             changePercent: -((leadTime - daysToStockout) / leadTime * 100),
             context: {
               sku: row.sku,
@@ -960,7 +960,7 @@ export class SmartDashboardManager {
     dashboardId: string,
     widgetId: string,
     organizationId: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const dashboard = await this.getDashboard(dashboardId);
     if (!dashboard) throw new Error('Dashboard not found');
 
@@ -1018,7 +1018,7 @@ export class SmartDashboardManager {
     }
   }
 
-  private async getPurchaseOrderData(organizationId: string, filters: any): Promise<any> {
+  private async getPurchaseOrderData(organizationId: string, filters: unknown): Promise<unknown> {
     const timeRange = this.parseTimeRange(filters.timeRange || '30d');
 
     const query = `
@@ -1036,7 +1036,7 @@ export class SmartDashboardManager {
     return result.rows[0];
   }
 
-  private async getSupplierPerformanceData(organizationId: string, filters: any): Promise<any> {
+  private async getSupplierPerformanceData(organizationId: string, filters: unknown): Promise<unknown> {
     const timeRange = this.parseTimeRange(filters.timeRange || '6m');
 
     const query = `
@@ -1057,7 +1057,7 @@ export class SmartDashboardManager {
     return result.rows;
   }
 
-  private async getSupplierSpendRanking(organizationId: string, filters: any): Promise<any> {
+  private async getSupplierSpendRanking(organizationId: string, filters: unknown): Promise<unknown> {
     const timeRange = this.parseTimeRange(filters.timeRange || '30d');
     const limit = filters.limit || 10;
 
@@ -1085,7 +1085,7 @@ export class SmartDashboardManager {
     return result.rows;
   }
 
-  private async getAnomalyAlerts(organizationId: string, filters: any): Promise<any> {
+  private async getAnomalyAlerts(organizationId: string, filters: unknown): Promise<unknown> {
     const severityFilter = filters.severity ? `AND severity = ANY($2)` : '';
     const statusFilter = filters.status ? `AND status = $3` : '';
 
@@ -1128,7 +1128,7 @@ export class SmartDashboardManager {
     return new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
   }
 
-  private calculateDataQuality(data: any): number {
+  private calculateDataQuality(data: unknown): number {
     if (!data) return 0;
 
     if (Array.isArray(data)) {
@@ -1149,7 +1149,7 @@ export class SmartDashboardManager {
     return nonNullFields.length / fields.length;
   }
 
-  private async generateWidgetInsights(widget: DashboardWidget, data: any): Promise<AIInsight[]> {
+  private async generateWidgetInsights(widget: DashboardWidget, data: unknown): Promise<AIInsight[]> {
     // Generate insights specific to widget type and data
     const insights: AIInsight[] = [];
 

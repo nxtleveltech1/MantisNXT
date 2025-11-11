@@ -9,7 +9,8 @@
  * - Session management
  */
 
-import { createClient, RedisClientType } from 'redis';
+import type { RedisClientType } from 'redis';
+import { createClient } from 'redis';
 
 class RedisClientManager {
   private static instance: RedisClientManager;

@@ -2,7 +2,7 @@
  * Configuration for AI Supplier Discovery System
  */
 
-import { DataSource } from './types';
+import type { DataSource } from './types';
 
 export const DISCOVERY_CONFIG = {
   // Response time requirements
@@ -128,7 +128,7 @@ export const USER_AGENTS = [
 export const RETRY_CONFIG = {
   retries: 3,
   retryDelay: 1000, // ms
-  retryCondition: (error: any) => {
+  retryCondition: (error: unknown) => {
     return error.code === 'ECONNRESET' ||
            error.code === 'ETIMEDOUT' ||
            (error.response && error.response.status >= 500);

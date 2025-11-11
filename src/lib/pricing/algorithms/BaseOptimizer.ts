@@ -7,7 +7,7 @@
  * Date: 2025-11-02
  */
 
-import { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
+import type { OptimizationRun, OptimizationRecommendation } from '@/lib/db/pricing-schema';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ProductData {
@@ -123,7 +123,7 @@ export abstract class BaseOptimizer {
       projectedDemandChange?: number;
       projectedRevenueImpact?: number;
       projectedProfitImpact?: number;
-      competitorPrices?: any[];
+      competitorPrices?: unknown[];
       elasticityEstimate?: number;
     }
   ): OptimizationRecommendation {

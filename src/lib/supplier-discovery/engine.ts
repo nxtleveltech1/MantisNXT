@@ -3,19 +3,20 @@
  * Orchestrates the entire discovery process with AI-powered analytics
  */
 
-import { SupplierDiscoveryRequest, SupplierDiscoveryResponse } from './types';
+import type { SupplierDiscoveryRequest, SupplierDiscoveryResponse } from './types';
 import { dataExtractor } from './extractors';
 import { dataProcessor } from './processor';
 import { supplierCache } from './cache';
 import { DISCOVERY_CONFIG } from './config';
-import { supplierAIAnalytics, SupplierScore, SupplierRiskAssessment, SupplierPerformancePrediction, SupplierComparison } from './ai-analytics';
+import type { SupplierScore, SupplierRiskAssessment, SupplierPerformancePrediction, SupplierComparison } from './ai-analytics';
+import { supplierAIAnalytics } from './ai-analytics';
 
 export class SupplierDiscoveryEngine {
   private isInitialized = false;
   private requestQueue: Array<{
     request: SupplierDiscoveryRequest;
-    resolve: (value: any) => void;
-    reject: (reason?: any) => void;
+    resolve: (value: unknown) => void;
+    reject: (reason?: unknown) => void;
   }> = [];
   private activeRequests = 0;
 
@@ -199,7 +200,7 @@ export class SupplierDiscoveryEngine {
    */
   async refreshSupplierData(
     supplierName: string,
-    additionalContext?: any
+    additionalContext?: unknown
   ): Promise<SupplierDiscoveryResponse> {
     // Remove from cache
     supplierCache.delete(supplierName, additionalContext);
@@ -274,7 +275,7 @@ export class SupplierDiscoveryEngine {
   /**
    * Health check
    */
-  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+  async healthCheck(): Promise<{ healthy: boolean; details: unknown }> {
     try {
       const stats = this.getStatistics();
 

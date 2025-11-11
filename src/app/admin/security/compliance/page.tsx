@@ -5,7 +5,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { FileText, Users, Shield, AlertTriangle, CheckCircle, Clock, Download, Eye, Trash2 } from 'lucide-react';
+import { FileText, Users, Shield, AlertTriangle, Clock, Download, Eye, Trash2 } from 'lucide-react';
 
 interface ConsentRecord {
   id: string;
@@ -241,7 +241,7 @@ export default function POPIACompliancePage() {
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setActiveTab(key as any)}
+                onClick={() => setActiveTab(key as unknown)}
                 className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === key
                     ? 'border-blue-500 text-blue-600'

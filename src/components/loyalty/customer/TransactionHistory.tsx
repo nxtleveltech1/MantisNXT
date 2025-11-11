@@ -17,17 +17,14 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import {
   Calendar,
   Download,
-  Filter,
   Search,
-  TrendingDown,
   TrendingUp,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,7 +57,7 @@ interface Transaction {
   reference_id?: string;
   running_balance: number;
   created_at: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export function TransactionHistory({ customerId }: TransactionHistoryProps) {
@@ -123,7 +120,7 @@ export function TransactionHistory({ customerId }: TransactionHistoryProps) {
   };
 
   // Map transaction types to activity types
-  const mapTransactionType = (type: string): any => {
+  const mapTransactionType = (type: string): unknown => {
     const typeMap: Record<string, string> = {
       earn: 'earn',
       purchase: 'purchase',

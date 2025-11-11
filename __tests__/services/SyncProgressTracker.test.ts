@@ -7,9 +7,8 @@
  * Coverage target: 80%+
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { createMockSyncProgressTracker, waitForMs } from '../helpers/sync-test-helpers';
-import { generateProgressSnapshot } from '../fixtures/sync-test-data';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { waitForMs } from '../helpers/sync-test-helpers';
 
 /**
  * Simulated SyncProgressTracker implementation

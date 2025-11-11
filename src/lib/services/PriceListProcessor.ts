@@ -1,8 +1,7 @@
-import { Pool } from 'pg'
+import type { Pool } from 'pg'
 import * as XLSX from 'xlsx'
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { createHash } from 'crypto'
 import { z } from 'zod'
 import { pool } from '@/lib/database'
 import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
@@ -64,7 +63,7 @@ interface ProcessingError {
   field?: string
   message: string
   severity: 'warning' | 'error'
-  data?: any
+  data?: unknown
 }
 
 interface ProcessingSummary {
@@ -92,7 +91,7 @@ interface ProcessingSummary {
 
 interface ParsedData {
   headers: string[]
-  rows: any[][]
+  rows: unknown[][]
   metadata: {
     sheetName?: string
     totalRows: number
@@ -102,7 +101,7 @@ interface ParsedData {
 
 export class PriceListProcessor {
   private pool: Pool
-  private processingSession: Map<string, any> = new Map()
+  private processingSession: Map<string, unknown> = new Map()
 
   constructor(databasePool?: Pool) {
     this.pool = databasePool || pool
@@ -111,7 +110,7 @@ export class PriceListProcessor {
   /**
    * Main entry point for processing price list files
    */
-  async processFile(config: any): Promise<ProcessingResult> {
+  async processFile(config: unknown): Promise<ProcessingResult> {
     const startTime = Date.now()
     const validatedConfig = ProcessingConfigSchema.parse(config)
     const sessionId = this.generateSessionId()
@@ -248,7 +247,7 @@ export class PriceListProcessor {
     }
 
     const headers = jsonData[0] as string[]
-    const rows = jsonData.slice(1) as any[][]
+    const rows = jsonData.slice(1) as unknown[][]
 
     // Clean headers
     const cleanHeaders = headers.map(h =>
@@ -370,15 +369,15 @@ export class PriceListProcessor {
   private async validateAndTransformData(
     parsedData: ParsedData,
     fieldMappings: Record<string, string>,
-    config: any
+    config: unknown
   ): Promise<{
-    validEntries: any[]
-    invalidEntries: any[]
+    validEntries: unknown[]
+    invalidEntries: unknown[]
     errors: ProcessingError[]
-    stats: any
+    stats: unknown
   }> {
-    const validEntries: any[] = []
-    const invalidEntries: any[] = []
+    const validEntries: unknown[] = []
+    const invalidEntries: unknown[] = []
     const errors: ProcessingError[] = []
     const stats = {
       totalRows: parsedData.rows.length,
@@ -394,11 +393,11 @@ export class PriceListProcessor {
       const rowNumber = rowIndex + 2 // Account for header row and 1-based indexing
 
       // Skip empty rows if configured
-      if (config.options.skipEmptyRows && row.every((cell: any) => !cell || cell.toString().trim() === '')) {
+      if (config.options.skipEmptyRows && row.every((cell: unknown) => !cell || cell.toString().trim() === '')) {
         continue
       }
 
-      const transformedEntry: any = {}
+      const transformedEntry: unknown = {}
       let hasErrors = false
       const rowErrors: ProcessingError[] = []
 
@@ -480,13 +479,13 @@ export class PriceListProcessor {
    * Handle duplicate entries with configurable strategies
    */
   private async handleDuplicates(
-    validatedData: any,
+    validatedData: unknown,
     duplicateHandling: 'skip' | 'update' | 'create_variant'
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { validEntries } = validatedData
-    const processedEntries: any[] = []
-    const skippedEntries: any[] = []
-    const duplicateMap = new Map<string, any[]>()
+    const processedEntries: unknown[] = []
+    const skippedEntries: unknown[] = []
+    const duplicateMap = new Map<string, unknown[]>()
 
     // Group entries by SKU
     for (const entry of validEntries) {
@@ -550,7 +549,7 @@ export class PriceListProcessor {
    * Bulk import data to database with optimized batch processing
    */
   private async bulkImport(
-    entries: any[],
+    entries: unknown[],
     supplierId: string,
     batchSize: number
   ): Promise<{
@@ -604,7 +603,7 @@ export class PriceListProcessor {
     return `pricelist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
-  private updateSession(sessionId: string, updates: any): void {
+  private updateSession(sessionId: string, updates: unknown): void {
     const current = this.processingSession.get(sessionId) || {}
     this.processingSession.set(sessionId, { ...current, ...updates, updatedAt: new Date() })
   }
@@ -675,7 +674,7 @@ export class PriceListProcessor {
     return matrix[str2.length][str1.length]
   }
 
-  private transformFieldValue(fieldName: string, value: any, rowNumber: number): any {
+  private transformFieldValue(fieldName: string, value: unknown, rowNumber: number): unknown {
     if (value === null || value === undefined || value === '') {
       return null
     }
@@ -735,7 +734,7 @@ export class PriceListProcessor {
     }
   }
 
-  private mergeEntries(entries: any[]): any {
+  private mergeEntries(entries: unknown[]): unknown {
     if (entries.length === 1) return entries[0]
 
     const merged = { ...entries[0] }
@@ -779,7 +778,7 @@ export class PriceListProcessor {
     return batches
   }
 
-  private async processBatch(batch: any[], supplierId: string): Promise<{
+  private async processBatch(batch: unknown[], supplierId: string): Promise<{
     created: number
     updated: number
     skipped: number
@@ -810,7 +809,7 @@ export class PriceListProcessor {
     return result
   }
 
-  private async createInventoryItem(entry: any, supplierId: string): Promise<void> {
+  private async createInventoryItem(entry: unknown, supplierId: string): Promise<void> {
     const spSku = entry.supplier_sku || entry.sku
     await upsertSupplierProduct({ supplierId, sku: spSku, name: entry.name })
     await setStock({
@@ -822,7 +821,7 @@ export class PriceListProcessor {
     })
   }
 
-  private async updateInventoryItem(entry: any): Promise<void> {
+  private async updateInventoryItem(entry: unknown): Promise<void> {
     const spSku = entry.supplier_sku || entry.sku
     if (entry.stock_qty !== undefined) {
       await setStock({
@@ -835,7 +834,7 @@ export class PriceListProcessor {
     }
   }
 
-  private async createBackup(supplierId: string, entries: any[]): Promise<string> {
+  private async createBackup(supplierId: string, entries: unknown[]): Promise<string> {
     const backupId = `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     const query = `
@@ -856,8 +855,8 @@ export class PriceListProcessor {
 
   private async generateSummary(
     parsedData: ParsedData,
-    validatedData: any,
-    importResult: any
+    validatedData: unknown,
+    importResult: unknown
   ): Promise<ProcessingSummary> {
     const categories = new Set<string>()
     const brands = new Set<string>()
@@ -897,7 +896,7 @@ export class PriceListProcessor {
 
   // Public methods for session management
 
-  getSession(sessionId: string): any {
+  getSession(sessionId: string): unknown {
     return this.processingSession.get(sessionId)
   }
 

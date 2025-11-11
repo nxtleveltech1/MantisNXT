@@ -3,7 +3,7 @@
  * GET /api/v1/ai/alerts/stats - Get alert statistics for organization
  */
 
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   handleAIError,
   authenticateRequest,

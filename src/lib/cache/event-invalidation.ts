@@ -5,13 +5,15 @@
  * Integrates with React Query for client-side cache management.
  */
 
-import { QueryClient } from '@tanstack/react-query';
-import {
+import type { QueryClient } from '@tanstack/react-query';
+import type {
   CacheInvalidationEvent,
-  CacheInvalidationEventType,
+  CacheInvalidationEventType} from './events';
+import {
   createInvalidationEvent,
 } from './events';
-import { cacheEventBus, EventSubscription } from './event-bus';
+import type { EventSubscription } from './event-bus';
+import { cacheEventBus } from './event-bus';
 import {
   getSpecificPatterns,
   matchesCacheKey,

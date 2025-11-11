@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
@@ -31,38 +30,30 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { cn, formatCurrency, formatDate } from "@/lib/utils"
-import { InventoryAlert, InventoryItem } from "@/types/inventory"
+import { cn, formatDate } from "@/lib/utils"
+import type { InventoryAlert, InventoryItem } from "@/types/inventory"
 import {
   AlertTriangle,
   CheckCircle,
   Clock,
   XCircle,
   Bell,
-  BellOff,
   Package,
   TrendingDown,
   Calendar,
   Mail,
   Phone,
-  MessageSquare,
   Settings,
   Eye,
-  Archive,
   RefreshCw,
-  Filter,
   Search,
   Download,
   Plus,
   Target,
-  BarChart3,
-  Activity,
   Zap,
   ShoppingCart,
-  Truck,
   AlertCircle,
   Info,
   Warning,
@@ -125,7 +116,7 @@ export interface NotificationChannel {
   type: 'email' | 'sms' | 'webhook' | 'slack'
   name: string
   isActive: boolean
-  configuration: Record<string, any>
+  configuration: Record<string, unknown>
   testLastSent?: Date
   testStatus?: 'success' | 'failed'
 }

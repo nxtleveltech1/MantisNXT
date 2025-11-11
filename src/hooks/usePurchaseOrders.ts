@@ -74,7 +74,7 @@ export function usePurchaseOrders(options: UsePurchaseOrdersOptions = {}) {
   const [orders, setOrders] = useState<DatabasePurchaseOrder[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState<any>(null)
+  const [pagination, setPagination] = useState<unknown>(null)
 
   const fetchPurchaseOrders = useCallback(async (searchFilters?: PurchaseOrderSearchFilters) => {
     setLoading(true)
@@ -126,7 +126,7 @@ export function usePurchaseOrders(options: UsePurchaseOrdersOptions = {}) {
     }
   }, [filters])
 
-  const createPurchaseOrder = useCallback(async (orderData: any) => {
+  const createPurchaseOrder = useCallback(async (orderData: unknown) => {
     setLoading(true)
     setError(null)
 
@@ -161,7 +161,7 @@ export function usePurchaseOrders(options: UsePurchaseOrdersOptions = {}) {
     }
   }, [])
 
-  const updatePurchaseOrder = useCallback(async (id: string, orderData: Partial<any>) => {
+  const updatePurchaseOrder = useCallback(async (id: string, orderData: Partial<unknown>) => {
     setLoading(true)
     setError(null)
 

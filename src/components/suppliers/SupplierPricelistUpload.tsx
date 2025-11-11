@@ -10,27 +10,16 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+
+
 import {
   Upload,
   FileText,
   CheckCircle,
   AlertTriangle,
   X,
-  Download,
-  Eye,
   Trash2,
-  Plus,
-  Calendar,
-  DollarSign,
-  Package,
-  Building2
+  Plus
 } from 'lucide-react'
 
 interface PricelistItem {
@@ -50,7 +39,7 @@ interface PricelistItem {
 
 interface PricelistUploadProps {
   supplierId?: string
-  onUploadComplete?: (pricelist: any) => void
+  onUploadComplete?: (pricelist: unknown) => void
   onCancel?: () => void
 }
 
@@ -63,7 +52,7 @@ const SupplierPricelistUpload: React.FC<PricelistUploadProps> = ({
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [validationResults, setValidationResults] = useState<any>(null)
+  const [validationResults, setValidationResults] = useState<unknown>(null)
   const [errors, setErrors] = useState<string[]>([])
   const [warnings, setWarnings] = useState<string[]>([])
   

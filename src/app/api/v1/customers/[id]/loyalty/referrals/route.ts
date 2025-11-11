@@ -8,14 +8,14 @@
  * @date 2025-11-02
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   authenticateRequest,
   authorizeCustomerAccess,
   handleError,
   getPaginationParams,
-  formatPaginatedResponse,
 } from '@/lib/auth/middleware';
 
 // Validation schema for creating referral

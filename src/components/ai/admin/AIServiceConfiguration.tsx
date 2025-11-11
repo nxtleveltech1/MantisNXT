@@ -63,7 +63,7 @@ interface AIServiceConfig {
         enabled?: boolean;
       }>;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   };
   enabled: boolean;
   created_at: string;
@@ -137,7 +137,7 @@ const OPENROUTER_FREE_MODEL_SET = new Set(OPENROUTER_FREE_MODELS.map((item) => i
 
 const getOpenRouterFilterKey = (serviceType: string, providerId: string) => `${serviceType}:${providerId}:openrouterFreeOnly`
 
-const isOpenRouterProvider = (providerId: string, section: any, rootConfig?: AIServiceConfig): boolean => {
+const isOpenRouterProvider = (providerId: string, section: unknown, rootConfig?: AIServiceConfig): boolean => {
   const normalized = (providerId || '').toLowerCase()
   if (normalized === 'openrouter') return true
   if (normalized !== 'openai_compatible' && !normalized.includes('openrouter')) return false
@@ -212,7 +212,7 @@ export default function AIServiceConfiguration() {
 
       // 2) Attach initial provider config
       const prov = createForm.provider;
-      const config: any = {
+      const config: unknown = {
         provider: prov,
         activeProvider: prov,
         ...(createForm.baseUrl ? { baseUrl: createForm.baseUrl } : {}),
@@ -248,7 +248,7 @@ export default function AIServiceConfiguration() {
       queryClient.invalidateQueries({ queryKey: ['ai-configs'] });
       queryClient.invalidateQueries({ queryKey: ['ai-services'] });
     },
-    onError: (e: any) => {
+    onError: (e: unknown) => {
       console.error('[Create Service] Error:', e);
       toast.error(e?.message || 'Failed to create service');
     },
@@ -260,7 +260,7 @@ export default function AIServiceConfiguration() {
   const [pendingAdvanced, setPendingAdvanced] = useState<Record<string, string>>({});
   const [openRouterFilters, setOpenRouterFilters] = useState<Record<string, boolean>>({});
   // Local state for custom providers to enable immediate UI updates
-  const [customProvidersLocal, setCustomProvidersLocal] = useState<Record<string, Record<string, any>>>({});
+  const [customProvidersLocal, setCustomProvidersLocal] = useState<Record<string, Record<string, unknown>>>({});
   // Local state for web search API keys to enable immediate UI updates
   const [webSearchKeysLocal, setWebSearchKeysLocal] = useState<Record<string, {
     serperApiKey?: string;
@@ -272,7 +272,7 @@ export default function AIServiceConfiguration() {
   const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
 
   // Helper: fetch models for a service/provider combination and cache locally
-  async function fetchModelsFor(service: string, cfg: any) {
+  async function fetchModelsFor(service: string, cfg: unknown) {
     try {
       const res = await fetch(`/api/v1/ai/config/${service}/models`, {
         method: 'POST',
@@ -336,7 +336,7 @@ export default function AIServiceConfiguration() {
     // Only initialize if we don't have local state yet
     if (Object.keys(customProvidersLocal).length > 0) return;
     
-    const newLocalState: Record<string, Record<string, any>> = {};
+    const newLocalState: Record<string, Record<string, unknown>> = {};
     configs.forEach((c) => {
       if (c.config?.webSearch?.customProviders) {
         newLocalState[c.service_type] = c.config.webSearch.customProviders;
@@ -356,7 +356,7 @@ export default function AIServiceConfiguration() {
       const provider = (c.config?.activeProvider || c.config?.provider || 'openai') as string
       const dynKey = `${service}:${provider}`
       if (dynamicModels[dynKey]?.length) return
-      const section = (c.config?.providers?.[provider] || {}) as any
+      const section = (c.config?.providers?.[provider] || {}) as unknown
       const baseUrl = section.baseUrl || c.config?.baseUrl
       const apiKey = section.apiKey || c.config?.apiKey
       if (baseUrl && apiKey) {
@@ -394,7 +394,7 @@ export default function AIServiceConfiguration() {
 
   // Test connection
   const testConnectionMutation = useMutation({
-    mutationFn: async ({ service, config }: { service: string; config: any }) => {
+    mutationFn: async ({ service, config }: { service: string; config: unknown }) => {
       const response = await fetch(`/api/v1/ai/config/${service}/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -403,11 +403,11 @@ export default function AIServiceConfiguration() {
       if (!response.ok) throw new Error(await response.text());
       return response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: unknown) => {
       setTestResult({ success: true, message: data?.data?.message || 'Connection successful!' });
       setIsTestDialogOpen(true);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       setTestResult({ success: false, message: error?.message || 'Connection test failed' });
       setIsTestDialogOpen(true);
     },
@@ -464,7 +464,7 @@ export default function AIServiceConfiguration() {
               </div>
               <div className="space-y-2">
                 <Label>Provider</Label>
-                <Select value={createForm.provider} onValueChange={(v) => setCreateForm((p) => ({ ...p, provider: v as any }))}>
+                <Select value={createForm.provider} onValueChange={(v) => setCreateForm((p) => ({ ...p, provider: v as unknown }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -478,7 +478,7 @@ export default function AIServiceConfiguration() {
               <div className="space-y-2 md:col-span-2">
                 <Label>Import from Preset</Label>
                 <Select onValueChange={(presetId) => {
-                  const preset: any = providerPresets.find((x:any) => x.id === presetId);
+                  const preset: unknown = providerPresets.find((x:unknown) => x.id === presetId);
                   if (!preset) return;
                   const prov = preset.provider_type === 'openai' || preset.provider_type === 'anthropic' ? preset.provider_type : 'openai_compatible';
                   setCreateForm((p) => ({
@@ -493,7 +493,7 @@ export default function AIServiceConfiguration() {
                     <SelectValue placeholder={providerPresets.length ? 'Choose preset…' : 'No presets available'} />
                   </SelectTrigger>
                   <SelectContent>
-                    {providerPresets.map((p:any) => (
+                    {providerPresets.map((p:unknown) => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -524,7 +524,7 @@ export default function AIServiceConfiguration() {
                       <SelectValue placeholder="Select model" />
                     </SelectTrigger>
                     <SelectContent className="max-h-64 overflow-auto">
-                      {(dynamicModels[`assistant:${createForm.provider}`] || MODEL_OPTIONS[createForm.provider] || []).map((m: any) => (
+                      {(dynamicModels[`assistant:${createForm.provider}`] || MODEL_OPTIONS[createForm.provider] || []).map((m: unknown) => (
                         <SelectItem key={m} value={m}>{m}</SelectItem>
                       ))}
                     </SelectContent>
@@ -533,7 +533,7 @@ export default function AIServiceConfiguration() {
                     variant="outline"
                     size="sm"
                     onClick={async () => {
-                      const cfg = { provider: createForm.provider, activeProvider: createForm.provider, baseUrl: createForm.baseUrl, apiKey: createForm.apiKey } as any;
+                      const cfg = { provider: createForm.provider, activeProvider: createForm.provider, baseUrl: createForm.baseUrl, apiKey: createForm.apiKey } as unknown;
                       await fetchModelsFor('assistant', cfg);
                       toast.success('Loaded models');
                     }}
@@ -577,7 +577,7 @@ export default function AIServiceConfiguration() {
           const activeProv = config?.config?.activeProvider || config?.config?.provider || 'openai'
           const dynKey = `${serviceType}:${activeProv}`
           const supportedModels = getSupportedModels(activeProv)
-          const providerSection = (config?.config?.providers?.[activeProv] || {}) as any
+          const providerSection = (config?.config?.providers?.[activeProv] || {}) as unknown
           const openRouterFilterKey = getOpenRouterFilterKey(serviceType, activeProv)
           const isActiveOpenRouter = isOpenRouterProvider(activeProv, providerSection, config)
           const showOpenRouterFreeOnly = isActiveOpenRouter ? !!openRouterFilters[openRouterFilterKey] : false
@@ -626,7 +626,7 @@ export default function AIServiceConfiguration() {
                           config: {
                             ...config?.config,
                             provider: value,
-                            activeProvider: value as any,
+                            activeProvider: value as unknown,
                           },
                         },
                       });
@@ -659,7 +659,7 @@ export default function AIServiceConfiguration() {
                           updates: {
                             config: {
                               ...config?.config,
-                              activeProvider: value as any,
+                              activeProvider: value as unknown,
                               provider: value,
                             },
                           },
@@ -682,10 +682,10 @@ export default function AIServiceConfiguration() {
                   <div className="space-y-2">
                     <Label>Import from Preset</Label>
                     <Select onValueChange={async (presetId) => {
-                      const preset = providerPresets.find((p:any) => p.id === presetId);
+                      const preset = providerPresets.find((p:unknown) => p.id === presetId);
                       if (!preset) return;
                       const prov = preset.provider_type === 'openai' || preset.provider_type === 'anthropic' ? preset.provider_type : 'openai_compatible';
-                      const nextCfg: any = {
+                      const nextCfg: unknown = {
                         ...config?.config,
                         provider: prov,
                         activeProvider: prov,
@@ -700,7 +700,7 @@ export default function AIServiceConfiguration() {
                         <SelectValue placeholder={providerPresets.length ? 'Choose preset…' : 'No presets available'} />
                       </SelectTrigger>
                       <SelectContent>
-                        {providerPresets.map((p:any) => (
+                        {providerPresets.map((p:unknown) => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -771,7 +771,7 @@ export default function AIServiceConfiguration() {
                         } else {
                           toast.error('No models returned from provider')
                         }
-                      } catch (e:any) {
+                      } catch (e:unknown) {
                         toast.error(e?.message || 'Failed to load models')
                       }
                     }}
@@ -783,7 +783,7 @@ export default function AIServiceConfiguration() {
 
                 {/* Provider-specific configuration cards */}
                 {(['openai', 'anthropic', 'openai_compatible'] as const).map((p) => {
-                  const section = (config?.config?.providers?.[p] || {}) as any
+                  const section = (config?.config?.providers?.[p] || {}) as unknown
                   const providerModels = dedupeModels(dynamicModels[`${serviceType}:${p}`] || MODEL_OPTIONS[p] || [])
                   const openRouterKey = getOpenRouterFilterKey(serviceType, p)
                   const isSectionOpenRouter = isOpenRouterProvider(p, section, config)
@@ -1250,7 +1250,7 @@ export default function AIServiceConfiguration() {
                         </div>
 
                         {/* List of custom providers */}
-                        {Object.entries(customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {}).map(([providerName, provider]: [string, any]) => {
+                        {Object.entries(customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {}).map(([providerName, provider]: [string, unknown]) => {
                           // Use local state if available, otherwise fall back to server data
                           const localProvider = customProvidersLocal[serviceType]?.[providerName];
                           const displayProvider = localProvider || provider;
@@ -1595,7 +1595,7 @@ export default function AIServiceConfiguration() {
 
                         {Object.keys(customProvidersLocal[serviceType] || config?.config?.webSearch?.customProviders || {}).length === 0 && (
                           <div className="text-center py-8 text-sm text-muted-foreground border border-dashed rounded-lg">
-                            No custom providers added yet. Click "Add Provider" to add one.
+                            No custom providers added yet. Click &ldquo;Add Provider&rdquo; to add one.
                           </div>
                         )}
                       </div>
@@ -1671,7 +1671,7 @@ export default function AIServiceConfiguration() {
                                 updates: { config: parsed },
                               })
                               toast.success('Advanced configuration saved')
-                            } catch (e: any) {
+                            } catch (e: unknown) {
                               toast.error(`Invalid JSON: ${e?.message || ''}`)
                             }
                           }}

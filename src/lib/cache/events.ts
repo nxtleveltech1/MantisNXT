@@ -28,7 +28,7 @@ export interface CacheInvalidationEvent {
     entityIds?: string[];
     supplierId?: string;
     category?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     timestamp: number;
   };
   source: string; // Source of the event (e.g., 'api', 'webhook', 'manual')

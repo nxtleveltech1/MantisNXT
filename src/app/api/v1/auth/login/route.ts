@@ -8,7 +8,8 @@
  * @author AS Team (Auth & Security)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { neonAuthService } from '@/lib/auth/neon-auth-service'
 import { z } from 'zod'
 

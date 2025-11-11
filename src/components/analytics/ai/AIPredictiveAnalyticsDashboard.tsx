@@ -23,41 +23,23 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
   Line,
-  BarChart,
-  Bar,
-  ComposedChart,
-  ScatterChart,
-  Scatter,
-  Cell,
-  PieChart,
-  Pie,
-  ReferenceLine
+  ComposedChart
 } from 'recharts'
 import {
   Brain,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Target,
   Zap,
   Activity,
   Gauge,
   BarChart3,
-  PieChart as PieChartIcon,
-  Clock,
-  Eye,
-  Settings,
   RefreshCw,
   Download,
-  Calendar,
-  Filter,
   ChevronRight,
   Lightbulb,
-  AlertCircle,
   CheckCircle,
-  Info,
   Loader2
 } from 'lucide-react'
 import { format } from 'date-fns'

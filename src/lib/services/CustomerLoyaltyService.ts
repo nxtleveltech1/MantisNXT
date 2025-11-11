@@ -8,12 +8,12 @@
  */
 
 import { query, withTransaction } from '@/lib/database';
-import {
+import type {
   CustomerLoyalty,
-  CustomerLoyaltyInsert,
   CustomerLoyaltyUpdate,
   CustomerRewardsSummary,
-  UpdateTierResult,
+  UpdateTierResult} from '@/types/loyalty';
+import {
   LoyaltyError,
 } from '@/types/loyalty';
 
@@ -215,7 +215,7 @@ export class CustomerLoyaltyService {
   ): Promise<CustomerLoyalty> {
     try {
       const setClauses: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let paramIndex = 1;
 
       if (updates.program_id !== undefined) {
@@ -447,7 +447,7 @@ export class CustomerLoyaltyService {
       const { limit = 10, programId } = options;
 
       const conditions: string[] = ['org_id = $1'];
-      const params: any[] = [orgId];
+      const params: unknown[] = [orgId];
 
       if (programId) {
         conditions.push('program_id = $2');

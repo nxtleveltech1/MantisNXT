@@ -3,12 +3,13 @@
  * Handles searching across multiple search engines and processing results
  */
 
-import axios, { AxiosInstance } from 'axios';
-import {
+import type { AxiosInstance } from 'axios';
+import axios from 'axios';
+import type {
   WebSearchRequest,
-  WebSearchResult,
-  WebsiteContent
-} from './enhanced-types';
+  WebSearchResult} from './enhanced-types';
+
+
 import { DISCOVERY_CONFIG } from './config';
 
 interface SearchEngineProvider {
@@ -157,7 +158,7 @@ export class WebSearchService {
       { params }
     );
 
-    return response.data.items?.map((item: any) => ({
+    return response.data.items?.map((item: unknown) => ({
       title: item.title,
       url: item.link,
       description: item.snippet,
@@ -248,7 +249,7 @@ export class WebSearchService {
       { headers, params }
     );
 
-    return response.data.webPages?.value?.map((item: any) => ({
+    return response.data.webPages?.value?.map((item: unknown) => ({
       title: item.name,
       url: item.url,
       description: item.snippet,
@@ -310,7 +311,7 @@ export class WebSearchService {
 
       // Process Related topics
       if (response.data.RelatedTopics) {
-        response.data.RelatedTopics.slice(0, 5).forEach((topic: any) => {
+        response.data.RelatedTopics.slice(0, 5).forEach((topic: unknown) => {
           if (topic.FirstURL && topic.Text) {
             results.push({
               title: topic.Text.split(' - ')[0] || query,
@@ -494,7 +495,7 @@ export class WebSearchService {
    * Get search statistics
    */
   getStatistics() {
-    const providerStats: Record<string, any> = {};
+    const providerStats: Record<string, unknown> = {};
     
     for (const [name, provider] of this.providers) {
       providerStats[name] = {
