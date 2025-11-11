@@ -117,8 +117,9 @@ export function normalizeTimestamps<T extends Record<string, unknown>>(
   const normalized = { ...data };
 
   timestampKeys.forEach(key => {
-    if (normalized[key]) {
-      const parsed = safeParseDate(normalized[key]);
+    const value = normalized[key];
+    if (value !== undefined && value !== null) {
+      const parsed = safeParseDate(value as string | Date | null | undefined);
       if (parsed) {
         normalized[key] = parsed as T[typeof key];
       }

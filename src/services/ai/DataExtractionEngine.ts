@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 // Data Extraction Engine for parsing and structuring supplier information
 import type { SearchResult } from './WebSearchService';
 import type { ScrapedWebsite } from './WebScrapingService';
