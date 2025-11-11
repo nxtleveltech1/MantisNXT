@@ -2,7 +2,7 @@
 -- MantisNXT Logical Replication Setup - Publication (Neon Primary)
 -- ============================================================================
 -- ADR: ADR-1 (Logical Replication Configuration)
--- Purpose: Configure publication on Neon for replication to Postgres OLD
+-- Purpose: Configure publication on Neon for replication to the Neon replica
 -- Database: Neon Primary (ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech)
 -- Target: Disaster recovery and data redundancy
 -- Author: Data Oracle

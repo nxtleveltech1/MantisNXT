@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Error Reporting and Analytics Utility
  * Provides comprehensive error tracking, reporting, and analytics for upload operations

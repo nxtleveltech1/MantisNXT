@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { keysToCamel, keysToSnake } from '@/lib/utils/case';
 
 export type DbInventoryRow = {

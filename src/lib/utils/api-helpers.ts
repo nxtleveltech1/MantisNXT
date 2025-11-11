@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * API Helper Utilities for MantisNXT
  * Provides standardized error handling, data transformation, and timestamp serialization

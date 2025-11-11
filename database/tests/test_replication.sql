@@ -2,14 +2,14 @@
 -- MantisNXT Replication Test Suite
 -- ============================================================================
 -- ADR: ADR-1 (Logical Replication Configuration)
--- Purpose: Test logical replication between Neon and Postgres OLD
+-- Purpose: Test logical replication between Neon and the Neon replica
 -- Author: Data Oracle
 -- Date: 2025-10-09
 -- ============================================================================
 
 -- NOTE: This test suite has two parts:
 -- Part A: Run on PUBLISHER (Neon)
--- Part B: Run on SUBSCRIBER (Postgres OLD)
+-- Part B: Run on SUBSCRIBER (Neon replica)
 
 -- ============================================================================
 -- PART A: PUBLISHER (NEON) TESTS

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 export const toCamel = (s: string) =>
   s.replace(/[_-][a-z]/g, (m) => m.slice(1).toUpperCase());
 

@@ -3,7 +3,7 @@
 -- ============================================================================
 -- Description: Critical schema fixes for missing tables and columns
 -- ADRs: ADR-020 through ADR-025
--- Target: Enterprise PostgreSQL @ 62.169.20.53:6600
+-- Target: Neon Replica Environment
 -- Schema: Uses actual table names (singular: product, supplier, stock_location)
 -- Author: Data Oracle (corrected by development phase)
 -- Date: 2025-10-08

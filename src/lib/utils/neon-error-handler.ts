@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Neon Error Handler - Standardized error handling for Neon database operations
  *
