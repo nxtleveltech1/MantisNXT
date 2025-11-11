@@ -1,6 +1,6 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
 
 function getJwtSecret(): string {
   const s = process.env.JWT_SECRET;
@@ -24,6 +24,46 @@ export interface AuthContext {
   isAuthenticated: boolean;
 }
 
+function toAuthenticatedUser(payload: string | JwtPayload): AuthenticatedUser {
+  if (!payload || typeof payload === 'string') {
+    throw new Error('Invalid token payload');
+  }
+
+  const {
+    userId,
+    email,
+    name,
+    role,
+    permissions,
+    organizationId,
+  } = payload as Record<string, unknown>;
+
+  if (
+    typeof userId !== 'string' ||
+    typeof email !== 'string' ||
+    typeof role !== 'string' ||
+    typeof organizationId !== 'string'
+  ) {
+    throw new Error('Invalid token payload');
+  }
+
+  const resolvedName =
+    typeof name === 'string' && name.trim().length > 0 ? name : email;
+
+  const normalizedPermissions = Array.isArray(permissions)
+    ? permissions.filter((permission): permission is string => typeof permission === 'string')
+    : [];
+
+  return {
+    userId,
+    email,
+    name: resolvedName,
+    role,
+    permissions: normalizedPermissions,
+    organizationId,
+  };
+}
+
 export function withAuth(
   handler: (request: NextRequest, context: AuthContext) => Promise<NextResponse>
 ) {
@@ -45,18 +85,12 @@ export function withAuth(
       const token = authHeader.substring(7);
 
       // Verify JWT token
-      const decoded = jwt.verify(token, getJwtSecret()) as unknown;
+      const decoded = jwt.verify(token, getJwtSecret());
+      const user = toAuthenticatedUser(decoded);
 
       // Create auth context
       const authContext: AuthContext = {
-        user: {
-          userId: decoded.userId,
-          email: decoded.email,
-          name: decoded.name,
-          role: decoded.role,
-          permissions: decoded.permissions,
-          organizationId: decoded.organizationId,
-        },
+        user,
         isAuthenticated: true,
       };
 
@@ -185,16 +219,9 @@ export function getUserFromRequest(request: NextRequest): AuthenticatedUser | nu
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, getJwtSecret()) as unknown;
+    const decoded = jwt.verify(token, getJwtSecret());
 
-    return {
-      userId: decoded.userId,
-      email: decoded.email,
-      name: decoded.name,
-      role: decoded.role,
-      permissions: decoded.permissions,
-      organizationId: decoded.organizationId,
-    };
+    return toAuthenticatedUser(decoded);
   } catch (error) {
     return null;
   }
