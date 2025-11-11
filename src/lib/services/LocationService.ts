@@ -10,7 +10,7 @@
  * - Multi-tenant data isolation
  */
 
-import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
+import { query as dbQuery } from '../../../lib/database/unified-connection';
 import type { StockLocation } from '../../types/nxt-spp';
 import { StockLocationSchema } from '../../types/nxt-spp';
 
@@ -55,6 +55,79 @@ export interface LocationSearchResult {
 
 export class LocationService {
   private defaultOrgId = '00000000-0000-0000-0000-000000000000';
+  private orgColumnName: 'org_id' | 'organization_id' | null = null;
+  private orgColumnPromise: Promise<'org_id' | 'organization_id'> | null = null;
+  private detectedTableName: string | null = null;
+  private stockLocationTableName: string | null = null;
+  private stockLocationTableNamePromise: Promise<string> | null = null;
+
+  private async getStockLocationTableName(): Promise<string> {
+    if (this.stockLocationTableName) {
+      return this.stockLocationTableName;
+    }
+
+    if (!this.stockLocationTableNamePromise) {
+      this.stockLocationTableNamePromise = (async () => {
+        const candidates = [
+          'core.stock_location',
+          'public.stock_location',
+          'core.stock_locations',
+          'public.stock_locations',
+        ];
+
+        for (const candidate of candidates) {
+          const result = await dbQuery<{ regclass: string | null }>(
+            `SELECT to_regclass($1) as regclass`,
+            [candidate]
+          );
+
+          if (result.rows[0]?.regclass) {
+            this.stockLocationTableName = candidate;
+            return candidate;
+          }
+        }
+
+        throw new Error('Unable to locate stock_location table in expected schemas (core/public).');
+      })();
+    }
+
+    return this.stockLocationTableNamePromise;
+  }
+
+  private async getOrgColumn(): Promise<'org_id' | 'organization_id'> {
+    if (this.orgColumnName) {
+      return this.orgColumnName;
+    }
+
+    if (!this.orgColumnPromise) {
+      this.orgColumnPromise = (async () => {
+        const tableName = await this.getStockLocationTableName();
+        const result = await dbQuery<{ attname: string }>(
+          `
+            SELECT attname
+            FROM pg_attribute
+            WHERE attrelid = $1::regclass
+              AND attname = ANY(ARRAY['org_id', 'organization_id'])
+              AND attnum > 0
+              AND NOT attisdropped
+            LIMIT 1
+          `,
+          [tableName]
+        );
+
+        const column = result.rows[0]?.attname?.toLowerCase();
+        if (!column) {
+          throw new Error('stock_location table is missing org identifier column');
+        }
+
+        this.orgColumnName = column as 'org_id' | 'organization_id';
+        this.detectedTableName = tableName;
+        return this.orgColumnName;
+      })();
+    }
+
+    return this.orgColumnPromise;
+  }
 
   /**
    * Create a new location
@@ -74,13 +147,16 @@ export class LocationService {
       throw new Error('supplier_id is required for location type "supplier"');
     }
 
+    const tableName = await this.getStockLocationTableName();
+    const orgColumn = await this.getOrgColumn();
+
     const query = `
-      INSERT INTO core.stock_location (
-        org_id, name, type, supplier_id, address, metadata, is_active
+      INSERT INTO ${tableName} (
+        ${orgColumn}, name, type, supplier_id, address, metadata, is_active
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING
-        location_id, org_id, name, type, supplier_id,
+        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
     `;
 
@@ -107,11 +183,13 @@ export class LocationService {
    * Get location by ID
    */
   async getLocationById(locationId: string): Promise<StockLocation | null> {
+    const tableName = await this.getStockLocationTableName();
+    const orgColumn = await this.getOrgColumn();
     const query = `
       SELECT
-        location_id, org_id, name, type, supplier_id,
+        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
-      FROM core.stock_location
+      FROM ${tableName}
       WHERE location_id = $1
     `;
 
@@ -123,10 +201,10 @@ export class LocationService {
   /**
    * Update location
    */
-  async updateLocation(
-    locationId: string,
-    request: UpdateLocationRequest
-  ): Promise<StockLocation> {
+  async updateLocation(locationId: string, request: UpdateLocationRequest): Promise<StockLocation> {
+    const tableName = await this.getStockLocationTableName();
+    const orgColumn = await this.getOrgColumn();
+
     // Get existing location
     const existing = await this.getLocationById(locationId);
     if (!existing) {
@@ -183,11 +261,11 @@ export class LocationService {
     values.push(locationId);
 
     const query = `
-      UPDATE core.stock_location
+      UPDATE ${tableName}
       SET ${updates.join(', ')}
       WHERE location_id = $${paramIndex}
       RETURNING
-        location_id, org_id, name, type, supplier_id,
+        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
     `;
 
@@ -221,7 +299,8 @@ export class LocationService {
       }
 
       // Hard delete
-      const deleteQuery = 'DELETE FROM core.stock_location WHERE location_id = $1';
+      const tableName = await this.getStockLocationTableName();
+      const deleteQuery = `DELETE FROM ${tableName} WHERE location_id = $1`;
       await dbQuery(deleteQuery, [locationId]);
     } else {
       // Soft delete
@@ -233,6 +312,9 @@ export class LocationService {
    * Search and filter locations with pagination
    */
   async searchLocations(params: LocationSearchParams): Promise<LocationSearchResult> {
+    const tableName = await this.getStockLocationTableName();
+    const orgColumn = await this.getOrgColumn();
+
     const {
       org_id = this.defaultOrgId,
       type,
@@ -246,7 +328,7 @@ export class LocationService {
     } = params;
 
     // Build WHERE clauses
-    const whereClauses: string[] = ['org_id = $1'];
+    const whereClauses: string[] = [`${orgColumn} = $1`];
     const values: unknown[] = [org_id];
     let paramIndex = 2;
 
@@ -276,7 +358,7 @@ export class LocationService {
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as count
-      FROM core.stock_location
+      FROM ${tableName}
       WHERE ${whereClause}
     `;
 
@@ -289,9 +371,9 @@ export class LocationService {
 
     const dataQuery = `
       SELECT
-        location_id, org_id, name, type, supplier_id,
+        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
-      FROM core.stock_location
+      FROM ${tableName}
       WHERE ${whereClause}
       ORDER BY ${orderClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -327,11 +409,14 @@ export class LocationService {
    * Get locations by supplier
    */
   async getLocationsBySupplierId(supplierId: string): Promise<StockLocation[]> {
+    const tableName = await this.getStockLocationTableName();
+    const orgColumn = await this.getOrgColumn();
+
     const query = `
       SELECT
-        location_id, org_id, name, type, supplier_id,
+        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
-      FROM core.stock_location
+      FROM ${tableName}
       WHERE supplier_id = $1
       ORDER BY name ASC
     `;
@@ -349,7 +434,10 @@ export class LocationService {
     orgId?: string,
     excludeLocationId?: string
   ): Promise<boolean> {
-    const whereClauses = ['org_id = $1', 'name = $2'];
+    const tableName = await this.getStockLocationTableName();
+    const orgColumn = await this.getOrgColumn();
+
+    const whereClauses = [`${orgColumn} = $1`, 'name = $2'];
     const values: unknown[] = [orgId || this.defaultOrgId, name];
     let paramIndex = 3;
 
@@ -360,7 +448,7 @@ export class LocationService {
 
     const query = `
       SELECT COUNT(*) as count
-      FROM core.stock_location
+      FROM ${tableName}
       WHERE ${whereClauses.join(' AND ')}
     `;
 
