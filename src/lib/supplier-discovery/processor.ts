@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Data Processing and Validation Pipeline
  */

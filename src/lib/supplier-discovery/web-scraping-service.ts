@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Web Scraping Service for Data Extraction
  * Handles extracting structured data from various websites

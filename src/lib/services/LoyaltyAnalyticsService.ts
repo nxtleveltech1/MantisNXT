@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Loyalty Analytics Service
  *

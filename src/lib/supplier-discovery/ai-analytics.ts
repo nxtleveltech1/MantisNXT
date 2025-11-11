@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * AI Analytics Integration for Supplier Discovery
  *

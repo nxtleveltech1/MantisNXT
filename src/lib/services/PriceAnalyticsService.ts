@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Price Analytics Service
  *

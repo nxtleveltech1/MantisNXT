@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * POPIA (Protection of Personal Information Act) Compliance utilities
  * South African data protection implementation

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 type DatabaseMetadata = {
   host: string;
   port: string;

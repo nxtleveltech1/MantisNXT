@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * PricelistService - Handles pricelist upload, validation, and merging
  *

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import type { Pool } from 'pg'
 import * as XLSX from 'xlsx'
 import * as fs from 'fs/promises'

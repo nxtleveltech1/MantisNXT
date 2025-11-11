@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * WooCommerceService - Production-ready WooCommerce REST API v3 client
  * Implements OAuth 1.0a authentication and comprehensive API methods

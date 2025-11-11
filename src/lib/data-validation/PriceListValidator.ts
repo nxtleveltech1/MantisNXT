@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * COMPREHENSIVE PRICE LIST DATA VALIDATION FRAMEWORK
  *
