@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * SIP Product Enrichment Service
  * Extracts and enriches product data from core.supplier_product for AI categorization

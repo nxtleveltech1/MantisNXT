@@ -104,7 +104,8 @@ export function hasValidTimestamp<T extends Record<string, unknown>>(
   obj: T,
   timestampKey: keyof T = 'timestamp'
 ): obj is T & { [K in keyof T]: K extends typeof timestampKey ? Date : T[K] } {
-  return obj && obj[timestampKey] && safeParseDate(obj[timestampKey]) !== null;
+  const value = obj ? obj[timestampKey] : null;
+  return !!value && safeParseDate(value as string | Date | null | undefined) !== null;
 }
 
 /**

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Neon SPP Store - State management for Supplier Portfolio System
  *

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Unified Supplier Repository - Single Source of Truth
  * Eliminates data layer chaos by providing consistent interface

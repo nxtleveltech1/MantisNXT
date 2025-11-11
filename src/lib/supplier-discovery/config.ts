@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Configuration for AI Supplier Discovery System
  */

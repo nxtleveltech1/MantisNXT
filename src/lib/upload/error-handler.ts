@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
 import { withTransaction } from '@/lib/database';

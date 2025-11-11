@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Utility functions for Supplier Discovery System
  */

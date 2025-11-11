@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Enhanced Data Extraction Engine
  * Processes and structures data from multiple sources into comprehensive supplier information

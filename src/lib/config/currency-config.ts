@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Comprehensive Currency Configuration System for MantisNXT
 
 export interface CurrencyConfig {

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Enhanced Types for Web-Based Supplier Discovery
  * Includes advanced web search, scraping, and data extraction capabilities

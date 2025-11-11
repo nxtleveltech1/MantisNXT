@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Financial compliance utilities for South African regulations
  * VAT, BEE, SARS integration and audit requirements

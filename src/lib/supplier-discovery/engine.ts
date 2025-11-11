@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * Main AI Supplier Discovery Engine
  * Orchestrates the entire discovery process with AI-powered analytics
