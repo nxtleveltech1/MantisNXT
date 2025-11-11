@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Select,
   SelectContent,
@@ -95,25 +94,6 @@ interface SupplierInventoryData {
   lastUpdated: string
 }
 
-// Add missing UI components
-const Skeleton = ({ className }: { className?: string }) => (
-  <div className={`animate-pulse bg-muted rounded ${className}`} />
-)
-
-const Alert = ({ children, variant = 'default', className }: {
-  children: React.ReactNode
-  variant?: 'default' | 'destructive'
-  className?: string
-}) => (
-  <div className={`p-4 rounded-lg border ${variant === 'destructive' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-blue-50 border-blue-200 text-blue-800'} ${className}`}>
-    {children}
-  </div>
-)
-
-const AlertDescription = ({ children }: { children: React.ReactNode }) => (
-  <div className="text-sm">{children}</div>
-)
-
 export default function SupplierInventoryView() {
   const {
     items,
@@ -133,7 +113,6 @@ export default function SupplierInventoryView() {
   const [statusFilter, setStatusFilter] = useState<string>('all_statuses')
   const [showAddToInventory, setShowAddToInventory] = useState(false)
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table')
 
   useEffect(() => {
     const loadData = async () => {
@@ -263,19 +242,38 @@ export default function SupplierInventoryView() {
   }
 
   const handleAllocate = async (inventoryItemId: string, supplierId: string) => {
+    if (!supplierId) {
+      addNotification({ type: 'error', title: 'Allocation failed', message: 'Select a supplier first' })
+      return
+    }
+
     try {
       await allocateToSupplier(inventoryItemId, supplierId, 1)
       addNotification({ type: 'success', title: 'Allocated', message: '1 unit allocated to supplier' })
-    } catch (e:unknown) {
-      addNotification({ type: 'error', title: 'Allocation failed', message: e?.message || 'Unknown error' })
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Allocation failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      })
     }
   }
+
   const handleDeallocate = async (inventoryItemId: string, supplierId: string) => {
+    if (!supplierId) {
+      addNotification({ type: 'error', title: 'Deallocation failed', message: 'Select a supplier first' })
+      return
+    }
+
     try {
       await deallocateFromSupplier(inventoryItemId, supplierId, 1)
       addNotification({ type: 'success', title: 'Deallocated', message: '1 unit deallocated' })
-    } catch (e:unknown) {
-      addNotification({ type: 'error', title: 'Deallocation failed', message: e?.message || 'Unknown error' })
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Deallocation failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      })
     }
   }
 
@@ -442,8 +440,6 @@ export default function SupplierInventoryView() {
                               setSelectedSupplier(data.supplier.id)
                             }
                           }}
-                          tabIndex={0}
-                          role="button"
                           aria-pressed={selectedSupplier === data.supplier.id}
                           aria-label={`Select supplier ${data.supplier.name} with ${data.products.length} products and ${formatCurrency(data.totalValue)} total value`}
                         >
@@ -1034,6 +1030,28 @@ export default function SupplierInventoryView() {
                                     <Plus className="h-4 w-4 mr-2" />
                                     Add to Inventory
                                   </DropdownMenuItem>
+                                )}
+                                {product.inventoryItem && (
+                                  <>
+                                    <DropdownMenuItem
+                                      onSelect={(event) => {
+                                        event.preventDefault()
+                                        handleAllocate(product.inventoryItem.id, selectedSupplierData.supplier.id)
+                                      }}
+                                    >
+                                      <Upload className="h-4 w-4 mr-2" />
+                                      Allocate 1 Unit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onSelect={(event) => {
+                                        event.preventDefault()
+                                        handleDeallocate(product.inventoryItem.id, selectedSupplierData.supplier.id)
+                                      }}
+                                    >
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Deallocate 1 Unit
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                                 <DropdownMenuItem>
                                   <ShoppingCart className="h-4 w-4 mr-2" />

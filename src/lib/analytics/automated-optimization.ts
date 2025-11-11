@@ -258,7 +258,6 @@ export class AutomatedInventoryOptimizer {
     const leadTime = item.lead_time_days || 7;
     const dailyDemand = item.avg_daily_demand || 1;
     const demandVolatility = item.demand_volatility || 0.3;
-    const serviceLevel = 0.95; // 95% service level
 
     // Calculate safety stock
     const zScore = 1.65; // For 95% service level
@@ -704,7 +703,7 @@ export class DecisionSupportSystem {
     }
   }
 
-  private async generateSupplierOptions(context: unknown, data: unknown): Promise<unknown[]> {
+  private async generateSupplierOptions(_context: unknown, _data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'maintain_current',
@@ -742,7 +741,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private async generateInventoryOptions(context: unknown, data: unknown): Promise<unknown[]> {
+  private async generateInventoryOptions(_context: unknown, _data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'increase_stock',
@@ -780,7 +779,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private async generateContractOptions(context: unknown, data: unknown): Promise<unknown[]> {
+  private async generateContractOptions(_context: unknown, _data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'renew_as_is',
@@ -818,7 +817,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private async generateBudgetOptions(context: unknown, data: unknown): Promise<unknown[]> {
+  private async generateBudgetOptions(_context: unknown, _data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'maintain_budget',
@@ -856,7 +855,7 @@ export class DecisionSupportSystem {
     ];
   }
 
-  private async generateRiskMitigationOptions(context: unknown, data: unknown): Promise<unknown[]> {
+  private async generateRiskMitigationOptions(_context: unknown, _data: unknown): Promise<unknown[]> {
     return [
       {
         id: 'accept_risk',
@@ -897,7 +896,7 @@ export class DecisionSupportSystem {
   private async performAnalysis(
     type: DecisionSupportCase['type'],
     options: unknown[],
-    data: DecisionSupportCase['data']
+    _data: DecisionSupportCase['data']
   ): Promise<unknown> {
     // Select best option based on scores
     const bestOption = options.reduce((best, current) =>
@@ -992,6 +991,11 @@ export class DecisionSupportSystem {
       risks.push('Marginal ROI - monitor benefits realization closely');
     }
 
+    const averageRisk = allOptions.reduce((sum, option) => sum + option.risk, 0) / allOptions.length;
+    if (bestOption.risk > averageRisk * 1.2) {
+      risks.push('Risk profile notably higher than alternatives');
+    }
+
     return risks.length > 0 ? risks : ['Low risk option with standard implementation considerations'];
   }
 
@@ -1016,7 +1020,7 @@ export class DecisionSupportSystem {
     return factors.length > 0 ? factors : ['Option characteristics', 'Implementation complexity'];
   }
 
-  private generateScenarios(options: unknown[]): unknown[] {
+  private generateScenarios(_options: unknown[]): unknown[] {
     return [
       {
         name: 'Best Case',
@@ -1051,7 +1055,7 @@ export class DecisionSupportSystem {
     return titles[type] || `Decision Support: ${type}`;
   }
 
-  private generateCaseDescription(type: string, context: unknown, data: unknown): string {
+  private generateCaseDescription(type: string, context: unknown, _data: unknown): string {
     return `Decision support case for ${type.replace('_', ' ')} involving ${context.entityType} ` +
            `with ${context.urgency} urgency level. Analysis of current state and recommendations for optimal decision.`;
   }
@@ -1274,7 +1278,7 @@ export class AutomatedWorkflowEngine extends EventEmitter {
         case 'supplier_selection':
           result = await this.supplierSelector.optimizeSupplierSelection(organizationId);
           break;
-        case 'cost_optimization':
+        case 'cost_optimization': {
           // Combine multiple optimization types
           const [invResult, supResult] = await Promise.all([
             this.inventoryOptimizer.optimizeInventoryLevels(organizationId),
@@ -1282,6 +1286,7 @@ export class AutomatedWorkflowEngine extends EventEmitter {
           ]);
           result = this.combineOptimizationResults([invResult, supResult]);
           break;
+        }
         default:
           throw new Error(`Unsupported workflow type: ${workflow.type}`);
       }
