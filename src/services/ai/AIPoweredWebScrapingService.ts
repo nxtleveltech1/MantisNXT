@@ -501,9 +501,9 @@ export class AIPoweredWebScrapingService {
     // AI-powered phone extraction with pattern recognition
     const phonePatterns = [
       // International format
-      /\+?\d{1,4}[\s\-\.]?\(?\d{2,4}\)?[\s\-\.]?\d{3,4}[\s\-\.]?\d{4}/g,
+      /\+?\d{1,4}[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}/g,
       // Local format
-      /\(?\d{3}\)?[\s\-\.]?\d{3}[\s\-\.]?\d{4}/g,
+      /\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g,
       // Labeled phone
       /(?:phone|tel|call|mobile|cell|contact)\s*:?\s*([^\n\r]+)/gi
     ]

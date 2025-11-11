@@ -402,16 +402,17 @@ export async function GET(request: NextRequest) {
           aValue = a.createdAt;
           bValue = b.createdAt;
           break;
-        case "severity":
+        case "severity": {
           const severityOrder: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
           aValue = severityOrder[a.severity] || 0;
           bValue = severityOrder[b.severity] || 0;
           break;
+        }
         case "type":
           aValue = a.type;
           bValue = b.type;
           break;
-        case "status":
+        case "status": {
           const statusOrder: Record<string, number> = {
             active: 1,
             acknowledged: 2,
@@ -421,6 +422,7 @@ export async function GET(request: NextRequest) {
           aValue = statusOrder[a.status] || 0;
           bValue = statusOrder[b.status] || 0;
           break;
+        }
         case "priority":
           aValue = a.priority;
           bValue = b.priority;

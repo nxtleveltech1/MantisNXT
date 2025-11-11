@@ -139,7 +139,7 @@ export default function UserProfilePage() {
     if (!user) return
 
     if (
-      !confirm(
+      !window.confirm(
         `Are you sure you want to delete ${user.name}? This action cannot be undone.`
       )
     ) {

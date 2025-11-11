@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
     const qpUploadId = url.searchParams.get('upload_id');
     const qpSkip = url.searchParams.get('skip_invalid_rows');
     let body: any = {};
-    try { body = await request.json(); } catch {}
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.warn('SPP merge: falling back to query params because body could not be parsed.', error);
+    }
     const parsed = MergeRequestSchema.safeParse({
       upload_id: body?.upload_id || qpUploadId,
       skip_invalid_rows: typeof body?.skip_invalid_rows === 'boolean'

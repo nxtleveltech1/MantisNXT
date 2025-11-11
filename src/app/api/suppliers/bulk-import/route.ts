@@ -152,7 +152,7 @@ export async function PUT(request: NextRequest) {
           message: 'Bulk import job cancelled successfully'
         });
 
-      case 'retry':
+      case 'retry': {
         if (job.status !== 'failed') {
           return NextResponse.json(
             { error: 'Can only retry failed jobs' },
@@ -171,6 +171,7 @@ export async function PUT(request: NextRequest) {
           data: retryJob,
           message: 'Retry job created successfully'
         });
+      }
 
       default:
         return NextResponse.json(

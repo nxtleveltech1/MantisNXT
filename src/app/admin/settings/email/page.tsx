@@ -422,9 +422,10 @@ export default function EmailSettingsPage() {
               <CardContent>
                 <div className="space-y-3">
                   {emailTemplates.map((template) => (
-                    <div
+                    <button
+                      type="button"
                       key={template.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      className={`w-full text-left p-3 border rounded-lg transition-colors ${
                         selectedTemplate?.id === template.id
                           ? 'border-blue-200 bg-blue-50'
                           : 'hover:bg-gray-50'
@@ -452,7 +453,7 @@ export default function EmailSettingsPage() {
                           </Button>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </CardContent>

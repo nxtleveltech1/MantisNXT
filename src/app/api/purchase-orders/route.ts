@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         s.supplier_code,
         s.status as supplier_status
       FROM purchase_orders po
-      LEFT JOIN suppliers s ON po.supplier_id = s.id
+      LEFT JOIN public.suppliers s ON po.supplier_id = s.id
       WHERE 1=1
     `
 
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     let countQuery = `
       SELECT COUNT(*) as total
       FROM purchase_orders po
-      LEFT JOIN suppliers s ON po.supplier_id = s.id
+      LEFT JOIN public.suppliers s ON po.supplier_id = s.id
       WHERE 1=1
     `
 

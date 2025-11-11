@@ -8,6 +8,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
+type RouteHandler<TContext extends Record<string, unknown> | undefined = Record<string, unknown>> = (
+  request: NextRequest,
+  context?: TContext
+) => Promise<NextResponse>;
+
 // Public endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
   '/api/health',
@@ -99,10 +104,10 @@ function isPublicEndpoint(pathname: string): boolean {
  * });
  * ```
  */
-export function withAuth(
-  handler: (request: NextRequest, context?: any) => Promise<NextResponse>
+export function withAuth<TContext extends Record<string, unknown> | undefined = Record<string, unknown>>(
+  handler: RouteHandler<TContext>
 ) {
-  return async (request: NextRequest, context?: any): Promise<NextResponse> => {
+  return async (request: NextRequest, context?: TContext): Promise<NextResponse> => {
     const pathname = request.nextUrl.pathname;
 
     // Skip auth for public endpoints
@@ -225,10 +230,10 @@ export function validateApiKey(request: NextRequest): boolean {
  * });
  * ```
  */
-export function withApiKey(
-  handler: (request: NextRequest, context?: any) => Promise<NextResponse>
-) {
-  return async (request: NextRequest, context?: any): Promise<NextResponse> => {
+export function withApiKey<
+  TContext extends Record<string, unknown> | undefined = Record<string, unknown>
+>(handler: RouteHandler<TContext>) {
+  return async (request: NextRequest, context?: TContext): Promise<NextResponse> => {
     const pathname = request.nextUrl.pathname;
 
     // Skip auth for public endpoints

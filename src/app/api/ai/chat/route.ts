@@ -1,3 +1,4 @@
+import { ReadableStream } from 'node:stream/web'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { ApiMiddleware, RequestContext } from '@/lib/api/middleware'

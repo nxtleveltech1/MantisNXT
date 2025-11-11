@@ -106,7 +106,7 @@ export const POST = withAuth(async (request: NextRequest, context: AuthContext) 
       case 'optimizeConnections':
         result = await optimizer.optimizeConnections();
         break;
-      case 'getRecommendations':
+      case 'getRecommendations': {
         const recommendations = await optimizer.getRecommendations();
         result = {
           success: true,
@@ -114,6 +114,7 @@ export const POST = withAuth(async (request: NextRequest, context: AuthContext) 
           recommendations,
         };
         break;
+      }
       default:
         return NextResponse.json(
           {
@@ -145,5 +146,4 @@ export const POST = withAuth(async (request: NextRequest, context: AuthContext) 
     );
   }
 });
-
 

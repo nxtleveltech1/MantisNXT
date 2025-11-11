@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     // Update supplier last import date
     await query(
-      'UPDATE suppliers SET last_import_date = NOW(), updated_at = NOW() WHERE id = $1',
+      'UPDATE public.suppliers SET last_import_date = NOW(), updated_at = NOW() WHERE id = $1',
       [validatedData.supplierId]
     )
 

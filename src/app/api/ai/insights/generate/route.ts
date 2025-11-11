@@ -140,15 +140,17 @@ export async function POST(request: NextRequest) {
         }
         break;
 
-      case 'category':
+      case 'category': {
         const categoryInsights = await generateCategoryInsights(context.id, focusAreas, timeFrame);
         insights.push(...categoryInsights);
         break;
+      }
 
-      case 'portfolio':
+      case 'portfolio': {
         const portfolioInsights = await generatePortfolioInsights(focusAreas, timeFrame);
         insights.push(...portfolioInsights);
         break;
+      }
 
       case 'contract':
         if (context.id) {

@@ -29,6 +29,7 @@
  * @date 2025-11-06
  */
 
+import { ReadableStream, ReadableStreamDefaultController } from 'node:stream/web';
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, handleError } from '@/lib/auth/middleware';
 import { syncProgressTracker } from '@/lib/services/SyncProgressTracker';
