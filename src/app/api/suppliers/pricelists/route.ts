@@ -63,7 +63,7 @@ async function getPricelistsFromDB(params: any) {
       COALESCE(SUM(pi.unit_price), 0) as "totalValue",
       COALESCE(AVG(pi.unit_price), 0) as "averagePrice"
     FROM supplier_pricelists p
-    LEFT JOIN suppliers s ON p.supplier_id = s.id
+    LEFT JOIN public.suppliers s ON p.supplier_id = s.id
     LEFT JOIN pricelist_items pi ON p.id = pi.pricelist_id
     WHERE 1=1
   `
@@ -212,7 +212,7 @@ export async function GET(request: NextRequest) {
     let countQuery = `
       SELECT COUNT(DISTINCT p.id) as total
       FROM supplier_pricelists p
-      LEFT JOIN suppliers s ON p.supplier_id = s.id
+      LEFT JOIN public.suppliers s ON p.supplier_id = s.id
       WHERE 1=1
     `
 

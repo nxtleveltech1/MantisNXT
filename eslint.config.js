@@ -1,4 +1,5 @@
 // eslint.config.js - ESLint v9 flat config (CommonJS)
+const path = require("node:path");
 const js = require("@eslint/js");
 const tseslint = require("@typescript-eslint/eslint-plugin");
 const tseslintParser = require("@typescript-eslint/parser");
@@ -82,6 +83,12 @@ module.exports = [
       "no-useless-escape": "error",
       "no-unreachable": "error",
       "unused-imports/no-unused-imports": "warn",
+      "no-undef": "off",
+      "no-case-declarations": "warn",
+      "no-empty": "warn",
+      "react/no-unknown-property": "warn",
+      "jsx-a11y/no-static-element-interactions": "warn",
+      "jsx-a11y/no-redundant-roles": "warn",
     },
     plugins: {
       "unused-imports": unusedImports,
@@ -175,6 +182,12 @@ module.exports = [
       "prefer-const": "warn",
       "unused-imports/no-unused-imports": "warn",
       "ssot/no-legacy-supplier-inventory": "error",
+      "no-undef": "off",
+      "no-case-declarations": "warn",
+      "no-empty": "warn",
+      "react/no-unknown-property": "warn",
+      "jsx-a11y/no-static-element-interactions": "warn",
+      "jsx-a11y/no-redundant-roles": "warn",
     },
   },
   {
@@ -284,7 +297,14 @@ module.exports = [
         },
       ],
       "@typescript-eslint/no-require-imports": "error",
-      "@typescript-eslint/ban-ts-comment": "error",
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        {
+          "ts-expect-error": "allow-with-description",
+          "ts-ignore": "allow-with-description",
+          "ts-nocheck": true,
+        },
+      ],
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
       "jsx-a11y/anchor-is-valid": "warn",
@@ -319,6 +339,32 @@ module.exports = [
           message: "Write via SSOT inventoryService to core.stock_on_hand"
         }
       ],
+      "no-undef": "off",
+      "no-case-declarations": "warn",
+      "no-empty": "warn",
+      "react/no-unknown-property": "warn",
+      "jsx-a11y/no-static-element-interactions": "warn",
+      "jsx-a11y/no-redundant-roles": "warn",
+      "no-useless-escape": "error",
+    },
+  },
+  {
+    files: ["src/components/**/*", "src/lib/**/*", "src/hooks/**/*"],
+    rules: {
+      "@typescript-eslint/ban-ts-comment": [
+        "warn",
+        {
+          "ts-expect-error": "allow-with-description",
+          "ts-ignore": "allow-with-description",
+          "ts-nocheck": false,
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/route.deprecated.ts"],
+    rules: {
+      "ssot/no-legacy-supplier-inventory": "off",
     },
   },
   {

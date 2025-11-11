@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     let response;
 
     switch (action) {
-      case 'optimize':
+      case 'optimize': {
         const { type: optType, ...optParams } = params;
         if (!optType) {
           return NextResponse.json(
@@ -151,8 +151,9 @@ export async function POST(request: NextRequest) {
         }
         response = await analyticsService.executeOptimization(optType, optParams);
         break;
+      }
 
-      case 'updateConfig':
+      case 'updateConfig': {
         const { config } = params;
         if (!config) {
           return NextResponse.json(
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
         await analyticsService.updateConfig(config);
         response = { success: true, message: 'Configuration updated' };
         break;
+      }
 
       case 'initialize':
         await analyticsService.initialize();

@@ -18,12 +18,13 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type');
 
     switch (type) {
-      case 'dashboard':
+      case 'dashboard': {
         const days = parseInt(searchParams.get('days') || '30');
         const dashboardMetrics = await PriceAnalyticsService.getDashboardMetrics(days);
         return NextResponse.json({ success: true, data: dashboardMetrics });
+      }
 
-      case 'trends':
+      case 'trends': {
         const trendDays = parseInt(searchParams.get('days') || '90');
         const categoryId = searchParams.get('category_id') || undefined;
         const brandId = searchParams.get('brand_id') || undefined;
@@ -33,8 +34,9 @@ export async function GET(request: NextRequest) {
           trendDays
         );
         return NextResponse.json({ success: true, data: trends });
+      }
 
-      case 'competitor':
+      case 'competitor': {
         const productId = searchParams.get('product_id');
         if (!productId) {
           return NextResponse.json(
@@ -44,8 +46,9 @@ export async function GET(request: NextRequest) {
         }
         const comparison = await PriceAnalyticsService.getCompetitorComparison(productId);
         return NextResponse.json({ success: true, data: comparison });
+      }
 
-      case 'elasticity':
+      case 'elasticity': {
         const elasticityProductId = searchParams.get('product_id');
         if (!elasticityProductId) {
           return NextResponse.json(
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
         }
         const elasticity = await PriceAnalyticsService.calculateElasticity(elasticityProductId);
         return NextResponse.json({ success: true, data: elasticity });
+      }
 
       default:
         return NextResponse.json(
