@@ -7,7 +7,7 @@ import { createAIDataExtractionService } from './AIDataExtractionService';
 import type { ExtractedSupplierData as AIExtractedSupplierData } from './AIDataExtractionService';
 import type { ExtractedSupplierData, SupplierBrandLink } from './ExtractedSupplierData';
 export type { ExtractedSupplierData } from './ExtractedSupplierData';
-import type { SupplierFormAddress, SupplierFormData } from '@/types/supplier';
+import type { SupplierFormAddress, SupplierFormContact, SupplierFormData } from '@/types/supplier';
 import type { SupplierDiscoveryConfig } from '@/lib/ai/supplier-discovery-config';
 
 export interface WebDiscoveryResult {
@@ -856,6 +856,30 @@ export class SupplierIntelligenceService {
     if (webData.taxId) businessInfo.taxId = webData.taxId;
     if (webData.registrationNumber) businessInfo.registrationNumber = webData.registrationNumber;
 
+    const capabilities: NonNullable<SupplierFormData['capabilities']> = {
+      products: webData.products ?? [],
+      services: webData.services ?? [],
+      certifications: webData.certifications ?? [],
+    };
+
+    const parsedLeadTime = webData.leadTime ? this.parseLeadTime(webData.leadTime) : undefined;
+    if (parsedLeadTime !== undefined) {
+      capabilities.leadTime = parsedLeadTime;
+    }
+
+    if (webData.paymentTerms) {
+      capabilities.paymentTerms = webData.paymentTerms;
+    }
+
+    const minOrderValue = this.parseNumericValue(webData.minimumOrderValue);
+    if (minOrderValue !== undefined) {
+      capabilities.minimumOrderValue = minOrderValue;
+    }
+
+    if (webData.capacity) {
+      capabilities.capacityPerMonth = this.parseNumericValue(webData.capacity);
+    }
+
     const transformedData: Partial<SupplierFormData> = {
       name: webData.companyName || originalQuery || '',
       code: this.generateSupplierCode(webData.companyName || originalQuery || ''),
@@ -865,76 +889,95 @@ export class SupplierIntelligenceService {
       tags: this.combineAllTags(webData),
       brands: this.extractBrands(webData),
       businessInfo,
-      capabilities: {
-        products: webData.products || [],
-        services: webData.services || [],
-        paymentTerms: webData.paymentTerms,
-        leadTime: webData.leadTime ? this.parseLeadTime(webData.leadTime) : undefined,
-        certifications: webData.certifications || [],
-        minimumOrderValue: this.parseNumericValue(webData.minimumOrderValue),
-      },
+      capabilities,
     };
 
     // Add financial information
     if (webData.currency || webData.paymentTerms || webData.minimumOrderValue) {
-      transformedData.financial = {
-        currency: webData.currency || businessInfo.currency || 'ZAR',
-        paymentTerms: webData.paymentTerms,
-      };
+      const financial: NonNullable<SupplierFormData['financial']> = {};
+
+      const currency = webData.currency || businessInfo.currency || 'ZAR';
+      if (currency) {
+        financial.currency = currency;
+      }
+
+      if (webData.paymentTerms) {
+        financial.paymentTerms = webData.paymentTerms;
+      }
+
+      transformedData.financial = financial;
     }
 
     // Add contact information
-    if (webData.contactEmail || webData.contactPhone) {
-      transformedData.contacts = [
-        {
-          type: 'primary',
-          name: webData.contactPerson || 'General Contact',
-          email: webData.contactEmail,
-          phone: webData.contactPhone,
-          title: 'Contact Person',
-          isPrimary: true,
-          isActive: true,
-        },
-      ];
+    if (webData.contactEmail || webData.contactPhone || webData.contactPerson) {
+      const primaryContact: SupplierFormContact = {
+        type: 'primary',
+        name: webData.contactPerson || 'General Contact',
+        title: 'Contact Person',
+        isPrimary: true,
+        isActive: true,
+      };
+
+      if (webData.contactEmail) {
+        primaryContact.email = webData.contactEmail;
+      }
+
+      if (webData.contactPhone) {
+        primaryContact.phone = webData.contactPhone;
+      }
+
+      transformedData.contacts = [primaryContact];
     }
 
     // Add addresses with enhanced processing
+    const addresses: SupplierFormAddress[] = [];
     if (primaryAddress) {
-      transformedData.addresses = [
-        {
-          type: this.normalizeAddressType(primaryAddress.type),
-          name: 'Head Office',
-          addressLine1: primaryAddress.street || '',
-          addressLine2: '',
-          city: primaryAddress.city || '',
-          state:
-            primaryAddress.state ||
-            this.extractStateFromLocation(primaryAddress.country, primaryAddress.city),
-          postalCode: primaryAddress.postalCode || '',
-          country: primaryAddress.country || 'South Africa',
-          isPrimary: true,
-          isActive: true,
-        },
-      ];
+      addresses.push({
+        type: this.normalizeAddressType(primaryAddress.type),
+        name: 'Head Office',
+        addressLine1: primaryAddress.street || '',
+        addressLine2: '',
+        city: primaryAddress.city || '',
+        state:
+          primaryAddress.state ||
+          this.extractStateFromLocation(primaryAddress.country, primaryAddress.city),
+        postalCode: primaryAddress.postalCode || '',
+        country: primaryAddress.country || 'South Africa',
+        isPrimary: true,
+        isActive: true,
+      });
 
       // Add additional addresses if available
       if (webData.addresses && webData.addresses.length > 1) {
-        const additionalAddresses = webData.addresses.slice(1).map((addr, index) => ({
-          type: this.normalizeAddressType(addr.type),
-          name: `${addr.type || 'Address'} ${index + 2}`,
-          addressLine1: addr.street || '',
-          addressLine2: '',
-          city: addr.city || '',
-          state: addr.state || this.extractStateFromLocation(addr.country, addr.city),
-          postalCode: addr.postalCode || '',
-          country: addr.country || 'South Africa',
-          isPrimary: false,
-          isActive: true,
-        }));
-        transformedData.addresses.push(...additionalAddresses);
+        const additionalAddresses = webData.addresses.slice(1).map((addr, index) => {
+          const normalizedType = this.normalizeAddressType(addr.type);
+          const address: SupplierFormAddress = {
+            name: `${addr.type || 'Address'} ${index + 2}`,
+            addressLine1: addr.street || '',
+            addressLine2: '',
+            city: addr.city || '',
+            state: addr.state || this.extractStateFromLocation(addr.country, addr.city),
+            postalCode: addr.postalCode || '',
+            country: addr.country || 'South Africa',
+            isPrimary: false,
+            isActive: true,
+          };
+
+          if (normalizedType) {
+            address.type = normalizedType;
+          }
+
+          return address;
+        });
+
+        addresses.push(...additionalAddresses);
       }
     } else if (webData.location) {
-      transformedData.addresses = this.generateDefaultAddress(webData.location);
+      addresses.push(...this.generateDefaultAddress(webData.location));
+    }
+
+    if (addresses.length > 0) {
+      transformedData.addresses = addresses;
     }
 
     // Ensure tags are set (already set above, but ensure it's there)

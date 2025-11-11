@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers the complete setup and monitoring of logical replication between **Neon (Primary)** and **Postgres OLD (Replica)** for disaster recovery and data redundancy.
+This guide covers the complete setup and monitoring of logical replication between **Neon (Primary)** and a **Neon Replica** (subscriber environment) for disaster recovery and data redundancy.
 
 **ADR Reference**: ADR-1 (Logical Replication Configuration)
 **Date**: 2025-10-09
@@ -40,8 +40,8 @@ This guide covers the complete setup and monitoring of logical replication betwe
                     │ (Real-time streaming)
                     ↓
 ┌─────────────────────────────────────────────┐
-│      POSTGRES OLD (Subscriber/Replica)      │
-│         62.169.20.53:6600                   │
+│        NEON REPLICA (Subscriber/Replica)    │
+│      ep-your-replica-pooler.aws.neon.tech   │
 │                                              │
 │  ┌──────────────────────────────────────┐  │
 │  │  Subscription:                       │  │
@@ -66,10 +66,10 @@ This guide covers the complete setup and monitoring of logical replication betwe
 - Sufficient `max_wal_senders` and `max_replication_slots`
 - User with replication privileges (neondb_owner)
 
-**Postgres OLD:**
+**Neon Replica:**
 - PostgreSQL version ≥ 10
 - Matching schema structure (all tables must exist)
-- Network access to Neon endpoint (port 5432)
+- Network access to Neon publication endpoint (port 5432)
 - User with superuser or replication privileges
 
 ### 2. Network Requirements
@@ -83,19 +83,16 @@ This guide covers the complete setup and monitoring of logical replication betwe
 
 **CRITICAL**: Before setting up replication, ensure both databases have identical schema:
 
+Run the relevant migration scripts on both the Neon primary and the Neon replica environments before enabling replication. Example:
+
 ```bash
-# Run all migrations on BOTH databases
-psql -h ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech -U neondb_owner -d neondb \
+# Primary (Neon)
+psql "postgresql://neondb_owner:***@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/neondb?sslmode=require" \
   -f database/migrations/003_critical_schema_fixes_CORRECTED.sql
 
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 \
+# Replica (Neon disaster-recovery project or branch)
+psql "postgresql://replica_app:***@ep-your-replica-pooler.aws.neon.tech/mantisnxt_replica?sslmode=require" \
   -f database/migrations/003_critical_schema_fixes_CORRECTED.sql
-
-psql -h ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech -U neondb_owner -d neondb \
-  -f database/migrations/004_create_purchase_orders.sql
-
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 \
-  -f database/migrations/004_create_purchase_orders.sql
 ```
 
 ---
@@ -159,14 +156,14 @@ ORDER BY tablename;
 
 Expected: 11 tables listed.
 
-### Step 3: Create Subscription on Postgres OLD (Replica)
+### Step 3: Create Subscription on Neon Replica
 
-**Important**: Update connection string in `setup-subscription.sql` with correct Neon credentials if different from defaults.
+**Important**: Supply the replica connection string via `NEON_CONN_INFO` when executing `setup-subscription.sql`.
 
 Run the subscription setup script:
 
 ```bash
-psql -h 62.169.20.53 -p 6600 -U nxtdb_admin -d nxtprod-db_001 \
+psql -v NEON_CONN_INFO="host=ep-your-replica-pooler.aws.neon.tech port=5432 dbname=mantisnxt_replica user=replica_app password=supersecure sslmode=require" \
   -f database/replication/setup-subscription.sql
 ```
 
@@ -178,12 +175,12 @@ This will:
 
 ### Step 4: Monitor Initial Sync Progress
 
-The initial sync copies all existing data from Neon to Postgres OLD. This may take time depending on data volume.
+The initial sync copies all existing data from Neon primary to the Neon replica. This may take time depending on data volume.
 
 Check sync status:
 
 ```sql
--- On Postgres OLD
+-- On Neon replica
 SELECT
   s.subname,
   srw.relid::regclass AS table_name,
@@ -203,18 +200,18 @@ Wait until all tables show state `'r'` (ready).
 
 ### Step 5: Verify Replication is Working
 
-Insert test data on Neon and verify it appears on Postgres OLD:
+Insert test data on Neon and verify it appears on the replica:
 
 ```sql
 -- On Neon (Primary)
 INSERT INTO core.brand (name, code, description)
 VALUES ('Test Brand', 'TEST', 'Replication test entry');
 
--- Wait a few seconds, then on Postgres OLD (Replica)
+-- Wait a few seconds, then on the Neon replica
 SELECT * FROM core.brand WHERE code = 'TEST';
 ```
 
-If the record appears on Postgres OLD, replication is working correctly.
+If the record appears on the replica, replication is working correctly.
 
 Delete the test record:
 

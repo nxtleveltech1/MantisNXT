@@ -254,16 +254,21 @@ export async function processBatchesAcrossProviders(
                     })
                     .filter((x): x is NonNullable<typeof x> => !!x)
                 : undefined;
+            const nextConfidence = suggestion.confidence ?? 0.5;
             const next: CategorySuggestion = {
+              supplier_product_id: productId,
+              category_id: category?.category_id ?? null,
+              category_name: category?.name ?? null,
               categoryId: category?.category_id ?? null,
               categoryName: category?.name ?? null,
-              confidence: suggestion.confidence || 0.5,
+              confidence: nextConfidence,
               reasoning: suggestion.reasoning ?? null,
               alternatives,
               provider: provider.provider ?? null,
+              proposed_category_name: category ? null : proposedName ?? null,
               proposedCategoryName: category ? null : proposedName ?? null,
             };
-            if (!existing || next.confidence > existing.confidence) {
+            if (!existing || (existing.confidence ?? 0) < nextConfidence) {
               results.set(productId, next);
             }
           }
