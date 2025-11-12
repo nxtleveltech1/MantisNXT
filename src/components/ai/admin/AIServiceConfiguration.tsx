@@ -34,7 +34,7 @@ import UnifiedServicePanel from '@/components/ai/admin/UnifiedServicePanel';
 
 interface AIServiceConfig {
   id: string;
-  service_type: 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'assistant' | 'supplier_discovery';
+  service_type: 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'assistant' | 'supplier_discovery' | 'pricing_recommendation';
   config: {
     provider?: string;
     model?: string;
@@ -104,6 +104,13 @@ const SERVICE_INFO = {
     description: 'AI-powered web search and data extraction for supplier information',
     icon: '🌐',
     providers: ['openai', 'anthropic', 'openai_compatible'],
+    defaultModel: 'claude-3-5-sonnet',
+  },
+  pricing_recommendation: {
+    name: 'Pricing Recommendation',
+    description: 'AI-powered pricing optimization with impact analysis and risk assessment',
+    icon: '💰',
+    providers: ['openai', 'anthropic'],
     defaultModel: 'claude-3-5-sonnet',
   },
 };
