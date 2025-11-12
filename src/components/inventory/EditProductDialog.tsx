@@ -43,10 +43,11 @@ const productSchema = z.object({
     .pipe(z.string().min(1, 'Category is required')),
   location_id: z
     .string()
-    .min(1, 'Location is required')
-    .transform(value => value.trim())
-    .pipe(z.string().min(1, 'Location is required'))
-    .optional(),
+    .optional()
+    .transform(value => {
+      const trimmed = (value ?? '').trim()
+      return trimmed.length > 0 ? trimmed : undefined
+    }),
   sku: z.string().optional(),
   unit_of_measure: z.string().min(1, 'Unit of measure is required'),
   unit_cost_zar: z.coerce.number().positive('Unit cost must be positive'),
@@ -62,12 +63,17 @@ const productSchema = z.object({
   model_number: z.string().optional()
 })
 
+type LocationOption = {
+  id: string
+  name: string
+}
+
 interface EditProductDialogProps {
   product: Product
   inventoryItemId: string
   open: boolean
   holdLocation?: string
-  locations: string[]
+  locations: (LocationOption | string)[]
   onOpenChange: (open: boolean) => void
 }
 
@@ -89,7 +95,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
       name: product.name,
       description: product.description || '',
       category: product.category,
-      location_id: holdLocation || product.location || '',
+      location_id: (holdLocation || product.location_id || product.location || '').toString(),
       sku: product.sku || '',
       unit_of_measure: product.unit_of_measure,
       unit_cost_zar: product.unit_cost_zar,
@@ -177,7 +183,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
         name: product.name,
         description: product.description || '',
         category: product.category,
-        location_id: holdLocation || product.location || '',
+        location_id: (holdLocation || product.location_id || product.location || '').toString(),
         sku: product.sku || '',
         unit_of_measure: product.unit_of_measure,
         unit_cost_zar: product.unit_cost_zar,
@@ -196,38 +202,40 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
   }, [product, form])
 
   const locationOptions = useMemo(() => {
-    const trimmedLocations = locations
-      .map(location => {
-        if (typeof location === 'string') {
-          return { id: location.trim(), name: location.trim() }
-        }
+    const normalize = (item: LocationOption | string | undefined | null): LocationOption | null => {
+      if (!item) return null
+      if (typeof item === 'string') {
+        const value = item.trim()
+        return value ? { id: value, name: value } : null
+      }
+      const id = typeof item.id === 'string' ? item.id.trim() : ''
+      const name = typeof item.name === 'string' ? item.name.trim() : ''
+      if (!id && !name) return null
+      const resolvedId = id || name
+      return resolvedId ? { id: resolvedId, name: name || resolvedId } : null
+    }
 
-        if (location && typeof location === 'object') {
-          const id = typeof location.id === 'string' ? location.id.trim() : ''
-          const name = typeof location.name === 'string' ? location.name.trim() : ''
-          if (id && name) {
-            return { id, name }
-          }
-        }
+    const unique = new Map<string, LocationOption>()
 
-        return null
-      })
-      .filter((location): location is { id: string; name: string } => Boolean(location?.id && location?.name))
-
-    const unique = new Map<string, { id: string; name: string }>()
-    for (const location of trimmedLocations) {
-      if (!unique.has(location.id)) {
-        unique.set(location.id, location)
+    for (const location of locations) {
+      const normalized = normalize(location)
+      if (normalized && !unique.has(normalized.id)) {
+        unique.set(normalized.id, normalized)
       }
     }
 
-    const currentId = (holdLocation || product.location || '').trim()
+    const currentId = (holdLocation || product.location_id || product.location || '').toString().trim()
     if (currentId && !unique.has(currentId)) {
-      unique.set(currentId, { id: currentId, name: currentId })
+      const currentName = typeof product.location === 'string' && product.location.trim()
+        ? product.location.trim()
+        : currentId
+      unique.set(currentId, { id: currentId, name: currentName })
     }
 
-    return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-  }, [locations, holdLocation, product.location])
+    return Array.from(unique.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    )
+  }, [locations, holdLocation, product.location, product.location_id])
 
   const onSubmit = async (data: Partial<ProductFormData>) => {
     if (!inventoryItemId) {
@@ -351,7 +359,7 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
 
                 <FormField
                   control={form.control}
-                  name="location"
+                  name="location_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Location</FormLabel>
@@ -368,8 +376,8 @@ export default function EditProductDialog({ product, inventoryItemId, open, hold
                             </SelectItem>
                           ) : (
                             locationOptions.map(location => (
-                              <SelectItem key={location} value={location}>
-                                {location}
+                              <SelectItem key={location.id} value={location.id}>
+                                {location.name}
                               </SelectItem>
                             ))
                           )}
