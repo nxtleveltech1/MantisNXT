@@ -73,11 +73,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('Error fetching pricing rules:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to fetch pricing rules',
-        details: error.message,
+        details: message,
       },
       { status: 500 }
     );
@@ -120,11 +121,12 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Error creating pricing rule:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to create pricing rule',
-        details: error.message,
+        details: message,
       },
       { status: 500 }
     );
