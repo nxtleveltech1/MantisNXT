@@ -1,0 +1,72 @@
+/**
+ * Time Range Selector Component
+ * Allows users to filter dashboard data by time period
+ */
+
+"use client";
+
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export type TimeRange = 'today' | 'week' | 'month' | 'custom';
+
+export interface TimeRangeSelectorProps {
+  value: TimeRange;
+  onChange: (range: TimeRange) => void;
+  className?: string;
+}
+
+export function TimeRangeSelector({ value, onChange, className }: TimeRangeSelectorProps) {
+  const ranges: { value: TimeRange; label: string }[] = [
+    { value: 'today', label: 'Today' },
+    { value: 'week', label: 'This Week' },
+    { value: 'month', label: 'This Month' },
+    { value: 'custom', label: 'Custom' },
+  ];
+
+  return (
+    <div className={cn('flex items-center gap-2', className)}>
+      <Calendar className="h-4 w-4 text-muted-foreground" />
+      <div className="flex gap-1 rounded-lg border border-border p-1 bg-muted/50">
+        {ranges.map((range) => (
+          <Button
+            key={range.value}
+            variant={value === range.value ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onChange(range.value)}
+            className={cn(
+              'text-xs',
+              value === range.value
+                ? 'bg-primary text-primary-foreground'
+                : 'hover:bg-muted-foreground/10'
+            )}
+          >
+            {range.label}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Hook to manage time range state with localStorage persistence
+export function useTimeRange(defaultRange: TimeRange = 'month') {
+  const [timeRange, setTimeRange] = useState<TimeRange>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('dashboard-time-range');
+      return (stored as TimeRange) || defaultRange;
+    }
+    return defaultRange;
+  });
+
+  const handleChange = (range: TimeRange) => {
+    setTimeRange(range);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboard-time-range', range);
+    }
+  };
+
+  return [timeRange, handleChange] as const;
+}
