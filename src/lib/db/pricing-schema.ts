@@ -18,7 +18,7 @@ import { SCHEMA } from './schema-contract';
  * All pricing tables live in the `core` schema
  */
 export const PRICING_TABLES = {
-  PRICING_RULES: `${SCHEMA.CORE}.pricing_rules`,
+  PRICING_RULES: 'pricing_rule',
   PRICING_RULE_CONDITIONS: `${SCHEMA.CORE}.pricing_rule_conditions`,
   OPTIMIZATION_RUNS: `${SCHEMA.CORE}.optimization_runs`,
   OPTIMIZATION_RECOMMENDATIONS: `${SCHEMA.CORE}.optimization_recommendations`,

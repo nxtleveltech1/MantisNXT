@@ -56,7 +56,7 @@ export interface LocationSearchResult {
 export class LocationService {
   private defaultOrgId = '00000000-0000-0000-0000-000000000000';
   private orgColumnName: 'org_id' | 'organization_id' | null = null;
-  private orgColumnPromise: Promise<'org_id' | 'organization_id'> | null = null;
+  private orgColumnPromise: Promise<'org_id' | 'organization_id' | null> | null = null;
   private detectedTableName: string | null = null;
   private stockLocationTableName: string | null = null;
   private stockLocationTableNamePromise: Promise<string> | null = null;
@@ -94,7 +94,7 @@ export class LocationService {
     return this.stockLocationTableNamePromise;
   }
 
-  private async getOrgColumn(): Promise<'org_id' | 'organization_id'> {
+  private async getOrgColumn(): Promise<'org_id' | 'organization_id' | null> {
     if (this.orgColumnName) {
       return this.orgColumnName;
     }
@@ -117,7 +117,12 @@ export class LocationService {
 
         const column = result.rows[0]?.attname?.toLowerCase();
         if (!column) {
-          throw new Error('stock_location table is missing org identifier column');
+          console.warn(
+            '[LocationService] stock_location table missing org identifier column; falling back to single-tenant mode'
+          );
+          this.orgColumnName = null;
+          this.detectedTableName = tableName;
+          return null;
         }
 
         this.orgColumnName = column as 'org_id' | 'organization_id';
@@ -150,18 +155,8 @@ export class LocationService {
     const tableName = await this.getStockLocationTableName();
     const orgColumn = await this.getOrgColumn();
 
-    const query = `
-      INSERT INTO ${tableName} (
-        ${orgColumn}, name, type, supplier_id, address, metadata, is_active
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING
-        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
-        address, metadata, is_active, created_at, updated_at
-    `;
-
+    const columns = ['name', 'type', 'supplier_id', 'address', 'metadata', 'is_active'];
     const values = [
-      request.org_id || this.defaultOrgId,
       validated.name,
       validated.type,
       validated.supplier_id,
@@ -169,6 +164,23 @@ export class LocationService {
       JSON.stringify(request.metadata || {}),
       validated.is_active,
     ];
+
+    if (orgColumn) {
+      columns.unshift(orgColumn);
+      values.unshift(request.org_id || this.defaultOrgId);
+    }
+
+    const placeholders = columns.map((_, idx) => `$${idx + 1}`).join(', ');
+
+    const query = `
+      INSERT INTO ${tableName} (
+        ${columns.join(', ')}
+      )
+      VALUES (${placeholders})
+      RETURNING
+        location_id, ${orgColumn ? `${orgColumn} AS org_id` : 'NULL::uuid AS org_id'}, name, type, supplier_id,
+        address, metadata, is_active, created_at, updated_at
+    `;
 
     const result = await dbQuery<StockLocation>(query, values);
 
@@ -187,7 +199,7 @@ export class LocationService {
     const orgColumn = await this.getOrgColumn();
     const query = `
       SELECT
-        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
+        location_id, ${orgColumn ? `${orgColumn} AS org_id` : 'NULL::uuid AS org_id'}, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
       FROM ${tableName}
       WHERE location_id = $1
@@ -265,7 +277,7 @@ export class LocationService {
       SET ${updates.join(', ')}
       WHERE location_id = $${paramIndex}
       RETURNING
-        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
+        location_id, ${orgColumn ? `${orgColumn} AS org_id` : 'NULL::uuid AS org_id'}, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
     `;
 
@@ -328,9 +340,14 @@ export class LocationService {
     } = params;
 
     // Build WHERE clauses
-    const whereClauses: string[] = [`${orgColumn} = $1`];
-    const values: unknown[] = [org_id];
-    let paramIndex = 2;
+    const whereClauses: string[] = [];
+    const values: unknown[] = [];
+    let paramIndex = 1;
+
+    if (orgColumn) {
+      whereClauses.push(`${orgColumn} = $${paramIndex++}`);
+      values.push(org_id);
+    }
 
     if (type) {
       whereClauses.push(`type = $${paramIndex++}`);
@@ -353,7 +370,7 @@ export class LocationService {
       values.push(supplier_id);
     }
 
-    const whereClause = whereClauses.join(' AND ');
+    const whereClause = whereClauses.length ? whereClauses.join(' AND ') : '1=1';
 
     // Get total count
     const countQuery = `
@@ -371,7 +388,7 @@ export class LocationService {
 
     const dataQuery = `
       SELECT
-        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
+        location_id, ${orgColumn ? `${orgColumn} AS org_id` : 'NULL::uuid AS org_id'}, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
       FROM ${tableName}
       WHERE ${whereClause}
@@ -414,7 +431,7 @@ export class LocationService {
 
     const query = `
       SELECT
-        location_id, ${orgColumn} AS org_id, name, type, supplier_id,
+        location_id, ${orgColumn ? `${orgColumn} AS org_id` : 'NULL::uuid AS org_id'}, name, type, supplier_id,
         address, metadata, is_active, created_at, updated_at
       FROM ${tableName}
       WHERE supplier_id = $1
@@ -437,9 +454,17 @@ export class LocationService {
     const tableName = await this.getStockLocationTableName();
     const orgColumn = await this.getOrgColumn();
 
-    const whereClauses = [`${orgColumn} = $1`, 'name = $2'];
-    const values: unknown[] = [orgId || this.defaultOrgId, name];
-    let paramIndex = 3;
+    const whereClauses: string[] = [];
+    const values: unknown[] = [];
+    let paramIndex = 1;
+
+    if (orgColumn) {
+      whereClauses.push(`${orgColumn} = $${paramIndex++}`);
+      values.push(orgId || this.defaultOrgId);
+    }
+
+    whereClauses.push(`name = $${paramIndex++}`);
+    values.push(name);
 
     if (excludeLocationId) {
       whereClauses.push(`location_id != $${paramIndex++}`);
