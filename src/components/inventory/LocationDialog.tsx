@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,10 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
   const [supplierId, setSupplierId] = useState('');
   const [address, setAddress] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string }>>([]);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
+  const [supplierFetchError, setSupplierFetchError] = useState<string | null>(null);
+  const [hasLoadedSuppliers, setHasLoadedSuppliers] = useState(false);
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +62,106 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
     setError(null);
   }, [location, open]);
 
+  // Load suppliers when dialog opens (once per session)
+  useEffect(() => {
+    if (!open || hasLoadedSuppliers) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchSuppliers = async () => {
+      setIsLoadingSuppliers(true);
+      setSupplierFetchError(null);
+      try {
+        const params = new URLSearchParams({
+          status: 'active',
+          limit: '1000',
+          sortBy: 'name',
+          sortOrder: 'asc',
+        });
+        const response = await fetch(`/api/suppliers?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error('Failed to load suppliers');
+        }
+        const result = await response.json();
+        const options =
+          Array.isArray(result?.data)
+            ? result.data
+                .map((item: Record<string, unknown>) => {
+                  const id = String(
+                    item.id ??
+                      item.supplier_id ??
+                      item.supplierId ??
+                      item.uuid ??
+                      '',
+                  ).trim();
+                  if (!id) return null;
+                  const displayName =
+                    (item.name as string) ||
+                    (item.company_name as string) ||
+                    (item.displayName as string) ||
+                    `Supplier ${id.substring(0, 8)}…`;
+                  return { id, name: displayName };
+                })
+                .filter((item: { id: string; name: string } | null): item is {
+                  id: string;
+                  name: string;
+                } => Boolean(item))
+            : [];
+
+        if (isMounted) {
+          setSuppliers(options);
+          setHasLoadedSuppliers(true);
+        }
+      } catch (error) {
+        console.error('Failed to load suppliers for location dialog:', error);
+        if (isMounted) {
+          setSupplierFetchError(
+            error instanceof Error ? error.message : 'Failed to load suppliers',
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingSuppliers(false);
+        }
+      }
+    };
+
+    void fetchSuppliers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open, hasLoadedSuppliers]);
+
+  // Ensure the currently selected supplier exists in dropdown
+  useEffect(() => {
+    if (!supplierId) {
+      return;
+    }
+
+    setSuppliers((prev) => {
+      if (prev.some((supplier) => supplier.id === supplierId)) {
+        return prev;
+      }
+      const fallbackLabel = `Supplier ${supplierId.substring(0, 8)}…`;
+      return [...prev, { id: supplierId, name: fallbackLabel }];
+    });
+  }, [supplierId]);
+
+  // Clear supplier selection if type changes away from supplier
+  useEffect(() => {
+    if (type !== 'supplier') {
+      setSupplierId('');
+    }
+  }, [type]);
+
+  const sortedSuppliers = useMemo(
+    () => [...suppliers].sort((a, b) => a.name.localeCompare(b.name)),
+    [suppliers],
+  );
+
   // Validate form
   const validateForm = (): string | null => {
     if (!name.trim()) {
@@ -73,7 +177,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
     }
 
     if (type === 'supplier' && !supplierId.trim()) {
-      return 'Supplier ID is required for supplier locations';
+      return 'Supplier is required for supplier locations';
     }
 
     if (address.length > 500) {
@@ -101,7 +205,7 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
       const payload = {
         name: name.trim(),
         type,
-        supplier_id: type === 'supplier' ? supplierId.trim() || null : null,
+        supplier_id: type === 'supplier' ? supplierId || null : null,
         address: address.trim() || null,
         is_active: isActive,
       };
@@ -224,19 +328,44 @@ export function LocationDialog({ open, location, onClose }: LocationDialogProps)
             {type === 'supplier' && (
               <div className="space-y-2">
                 <Label htmlFor="supplier_id">
-                  Supplier ID <span className="text-destructive">*</span>
+                  Supplier <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="supplier_id"
-                  placeholder="UUID of the supplier"
+                <Select
                   value={supplierId}
-                  onChange={(e) => setSupplierId(e.target.value)}
-                  disabled={isSubmitting}
-                  required
-                />
+                  onValueChange={setSupplierId}
+                  disabled={isSubmitting || isLoadingSuppliers}
+                >
+                  <SelectTrigger id="supplier_id">
+                    <SelectValue
+                      placeholder={
+                        isLoadingSuppliers ? 'Loading suppliers…' : 'Select supplier'
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingSuppliers ? (
+                      <SelectItem value="__loading" disabled>
+                        Loading suppliers…
+                      </SelectItem>
+                    ) : sortedSuppliers.length > 0 ? (
+                      sortedSuppliers.map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="__empty" disabled>
+                        {supplierFetchError ? 'Failed to load suppliers' : 'No suppliers found'}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-muted-foreground">
-                  Required for supplier locations. Must be a valid supplier UUID.
+                  Supplier-managed locations require a linked supplier.
                 </p>
+                {supplierFetchError && (
+                  <p className="text-xs text-destructive">{supplierFetchError}</p>
+                )}
               </div>
             )}
 

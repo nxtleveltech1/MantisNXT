@@ -48,7 +48,10 @@ const inventoryItemSchema = z.object({
 
 const bulkUpdateSchema = z.object({
   items: z.array(z.object({
-    id: z.string().uuid(),
+    id: z.union([
+      z.string().uuid(),
+      z.string().min(1, 'Inventory item ID is required')
+    ]),
     updates: inventoryItemSchema.partial()
   })),
   reason: z.string().optional()
@@ -710,11 +713,35 @@ async function handleBulkUpdate(body: unknown) {
 
         updateFields.push(`updated_at = NOW()`)
 
+        const resultPayload: Record<string, unknown> = { id: item.id }
+
         // SSOT: only support stock set via SSOT when stock_qty provided
         if (item.updates.stock_qty !== undefined && item.updates.supplier_id && item.updates.supplier_sku) {
           await setStock({ supplierId: String(item.updates.supplier_id), sku: String(item.updates.supplier_sku), quantity: Number(item.updates.stock_qty), unitCost: item.updates.cost_price, reason: 'bulk_update' })
-          results.push({ id: item.id, stock_qty: item.updates.stock_qty })
+          resultPayload.stock_qty = item.updates.stock_qty
         }
+
+        updateValues.push(item.id)
+        const updateQuery = `
+          UPDATE core.stock_on_hand
+          SET ${updateFields.join(', ')}
+          WHERE soh_id = $${paramIndex}
+          RETURNING soh_id AS id, location_id, qty AS stock_qty, NOW() AS updated_at
+        `
+        const updateResult = await client.query(updateQuery, updateValues)
+
+        if (updateResult.rows.length > 0) {
+          const updatedRow = updateResult.rows[0]
+          resultPayload.id = updatedRow.id
+          resultPayload.stock_qty = updatedRow.stock_qty
+          resultPayload.updated_at = updatedRow.updated_at
+
+        if (item.updates.location_id) {
+          resultPayload.location_id = item.updates.location_id
+        }
+        }
+
+        results.push(resultPayload)
       }
 
       return NextResponse.json({

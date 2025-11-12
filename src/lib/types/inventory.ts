@@ -110,7 +110,8 @@ export interface Product {
   supplier_id: string
   name: string
   description: string | null
-  category: 'raw_materials' | 'components' | 'finished_goods' | 'consumables' | 'services' | 'packaging' | 'tools' | 'safety_equipment'
+  category: string
+  location?: string | null
   sku: string | null
   unit_of_measure: string
   unit_cost_zar: number
@@ -1684,6 +1685,7 @@ export interface ProductFormData {
   name: string
   description?: string
   category: Product['category']
+  location?: string
   sku?: string
   unit_of_measure: string
   unit_cost_zar: number
