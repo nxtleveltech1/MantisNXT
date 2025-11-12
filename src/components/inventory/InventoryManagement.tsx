@@ -247,9 +247,27 @@ export default function InventoryManagement() {
       const normalizedStock = Number(item.current_stock ?? item.currentStock ?? item.stock_qty ?? 0)
       const normalizedValue = Number(item.total_value_zar ?? item.totalValueZar ?? item.totalValue ?? (normalizedStock * normalizedCost))
 
+      const rawLocationId =
+        item.location_id ??
+        baseProduct.location_id ??
+        item.location ??
+        baseProduct.location ??
+        null
+      const resolvedLocationId = rawLocationId != null ? String(rawLocationId).trim() : ''
+      const resolvedLocationName =
+        (typeof item.location === 'string' && item.location.trim()) ||
+        (typeof baseProduct.location === 'string' && baseProduct.location.trim()) ||
+        (resolvedLocationId || undefined)
+
       return {
         ...item,
-        product: baseProduct,
+        location_id: resolvedLocationId || undefined,
+        location: resolvedLocationName ?? undefined,
+        product: {
+          ...baseProduct,
+          location: baseProduct.location ?? resolvedLocationName,
+          location_id: baseProduct.location_id ?? (resolvedLocationId || undefined),
+        },
         supplier: baseSupplier,
         cost_per_unit_zar: normalizedCost,
         total_value_zar: normalizedValue,
@@ -856,10 +874,20 @@ export default function InventoryManagement() {
                   <div>
                     <Label className="mb-2 block">Location</Label>
                     <Select
-                      value={filters.location?.[0] || 'all_locations'}
-                      onValueChange={(value) =>
-                        setFilters({ location: value && value !== 'all_locations' ? [value] : undefined })
-                      }
+                      value={filters.location_ids?.[0] || 'all_locations'}
+                      onValueChange={(value) => {
+                        if (value === 'all_locations') {
+                          setFilters({ location_ids: undefined, location: undefined })
+                          return
+                        }
+
+                        const selectedOption = locationOptions.find(option => option.id === value)
+                        setFilters({
+                          location_ids: [value],
+                          // maintain legacy location filter with display name if available
+                          ...(selectedOption ? { location: [selectedOption.name] } : { location: undefined }),
+                        })
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All locations" />
@@ -867,8 +895,8 @@ export default function InventoryManagement() {
                       <SelectContent>
                         <SelectItem value="all_locations">All locations</SelectItem>
                         {locationOptions.map(location => (
-                          <SelectItem key={location} value={location}>
-                            {location}
+                          <SelectItem key={location.id} value={location.id}>
+                            {location.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1152,7 +1180,10 @@ export default function InventoryManagement() {
                                       setEditingInventoryItemId(
                                         typeof item.id === 'string' ? item.id : item.id?.toString?.() ?? null
                                       )
-                                      setEditingProductHoldLocation(item.location ?? null)
+                                      setEditingProductHoldLocation(
+                                        (typeof item.location_id === 'string' && item.location_id) ||
+                                        (typeof item.location === 'string' ? item.location : null)
+                                      )
                                     }}
                                   >
                                     <Edit className="h-4 w-4 mr-2" />

@@ -112,6 +112,7 @@ export interface Product {
   description: string | null
   category: string
   location?: string | null
+  location_id?: string | null
   sku: string | null
   unit_of_measure: string
   unit_cost_zar: number
@@ -272,6 +273,7 @@ export interface Product {
 export interface InventoryItem {
   id: string
   product_id: string
+  location_id?: string | null
   location: string
   current_stock: number
   reserved_stock: number
@@ -1686,6 +1688,7 @@ export interface ProductFormData {
   description?: string
   category: Product['category']
   location?: string
+  location_id?: string
   sku?: string
   unit_of_measure: string
   unit_cost_zar: number
@@ -1734,6 +1737,7 @@ export interface InventoryFilters {
   stock_status?: InventoryItem['stock_status'][]
   abc_classification?: InventoryItem['abc_classification'][]
   location?: string[]
+  location_ids?: string[]
   search?: string
   min_value?: number
   max_value?: number

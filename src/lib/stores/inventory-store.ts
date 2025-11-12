@@ -84,11 +84,44 @@ import { create } from 'zustand';
 
 type Filters = { search?: string } & Record<string, unknown>;
 
+type LocationOption = {
+  id: string;
+  name: string;
+};
+
+function normalizeLocation(input: unknown): LocationOption | null {
+  if (!input) return null;
+
+  if (typeof input === 'string' || typeof input === 'number') {
+    const value = String(input).trim();
+    if (!value) return null;
+    return { id: value, name: value };
+  }
+
+  if (typeof input === 'object') {
+    const maybeId =
+      // @ts-expect-error indexing unknown
+      input.id ?? input.location_id ?? input.locationId ?? input.code ?? input.value;
+    const maybeName =
+      // @ts-expect-error indexing unknown
+      input.name ?? input.location_name ?? input.locationName ?? input.label ?? maybeId;
+
+    const id = typeof maybeId === 'string' || typeof maybeId === 'number' ? String(maybeId).trim() : '';
+    const name = typeof maybeName === 'string' || typeof maybeName === 'number' ? String(maybeName).trim() : '';
+
+    if (id) {
+      return { id, name: name || id };
+    }
+  }
+
+  return null;
+}
+
 type InventoryZustandState = {
   items: unknown[];
   products: unknown[];
   suppliers: unknown[];
-  locations: string[];
+  locations: LocationOption[];
   filters: Filters;
   loading: boolean;
   error: string | null;
@@ -162,7 +195,26 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
             : currentStock <= 10
               ? 'low_stock'
               : 'in_stock');
-        const location = r.location ?? r.location_name ?? 'Main Warehouse';
+        const locationIdRaw =
+          r.location_id ?? r.locationId ?? r.location?.id ?? r.location_code ?? r.locationCode;
+        const locationNameRaw =
+          r.location_name ??
+          r.locationName ??
+          r.location?.name ??
+          r.location_label ??
+          r.locationLabel ??
+          r.location ??
+          'Main Warehouse';
+        const locationId =
+          typeof locationIdRaw === 'string' || typeof locationIdRaw === 'number'
+            ? String(locationIdRaw).trim()
+            : '';
+        const locationName =
+          typeof locationNameRaw === 'string' || typeof locationNameRaw === 'number'
+            ? String(locationNameRaw).trim()
+            : 'Main Warehouse';
+        const locationOption = normalizeLocation({ id: locationId || locationName, name: locationName });
+        const location = locationOption?.name ?? locationName;
         const currency = r.currency ?? r.currency_code ?? 'ZAR';
         const reorderPoint = Number(r.reorder_point ?? r.reorderPoint ?? 10);
         const maxStockLevel = Number(r.max_stock_level ?? r.maxStockLevel ?? 100);
@@ -184,6 +236,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           reorder_point: reorderPoint,
           max_stock_level: maxStockLevel,
           location,
+          location_id: locationOption?.id ?? locationId ?? locationName,
           supplier_id: supplierId,
           supplier_name: supplierName,
           supplier_status: supplierStatus,
@@ -197,6 +250,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
             sku,
             category,
             location,
+            location_id: locationOption?.id ?? locationId ?? locationName,
             unit_of_measure: r.unit_of_measure ?? r.unit ?? r.uom ?? 'each',
             supplier_id: supplierId,
             unit_cost_zar: unitCost,
@@ -211,40 +265,24 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
         };
       });
 
-      const derivedLocations = Array.from(
-        new Set(
-          items
-            .map((entry: { location?: unknown; location_name?: unknown; locationName?: unknown; product?: { location?: unknown } }) => {
-              const loc =
-                entry?.location ??
-                entry?.location_name ??
-                entry?.locationName ??
-                entry?.product?.location ??
-                '';
-              return typeof loc === 'string' ? loc.trim() : '';
-            })
-            .filter((loc: string) => Boolean(loc))
-        )
-      );
+      const derivedLocations = items
+        .map((entry: { location?: unknown; location_id?: unknown; product?: { location?: unknown; location_id?: unknown } }) => {
+          const raw = entry?.location_id ?? entry?.product?.location_id ?? entry?.location;
+          const name = entry?.location ?? entry?.product?.location ?? raw;
+          return normalizeLocation({ id: raw ?? name, name });
+        })
+        .filter((loc): loc is LocationOption => Boolean(loc));
 
       set((state) => {
-        const combined = new Map<string, { id: string; name: string }>();
+        const combined = new Map<string, LocationOption>();
 
-        for (const location of state.locations as unknown[]) {
-          if (location && typeof location === 'object') {
-            const id = typeof location.id === 'string' ? location.id : String(location.id);
-            const name = typeof location.name === 'string' ? location.name : String(location.name ?? location.id);
-            if (id) combined.set(id, { id, name });
-          } else if (typeof location === 'string') {
-            const id = location.trim();
-            if (id) combined.set(id, { id, name: id });
-          }
+        for (const location of state.locations) {
+          const normalized = normalizeLocation(location);
+          if (normalized) combined.set(normalized.id, normalized);
         }
 
         for (const location of derivedLocations) {
-          const id = String(location.id ?? location).trim();
-          const name = String(location.name ?? location).trim();
-          if (id) combined.set(id, { id, name: name || id });
+          if (location) combined.set(location.id, location);
         }
 
         const sorted = Array.from(combined.values()).sort((a, b) =>
@@ -280,13 +318,23 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           p.unit_cost_zar ?? p.unit_cost ?? p.cost_price ?? p.price ?? p.salePrice ?? 0
         );
         const categoryRaw = p.category_name ?? p.category ?? 'uncategorized';
+        const locationIdRaw =
+          p.location_id ?? p.locationId ?? p.location?.id ?? p.location_code ?? p.locationCode;
+        const locationNameRaw =
+          p.location_name ?? p.locationName ?? p.location?.name ?? p.location ?? '';
+        const normalizedLocation = normalizeLocation({
+          id: locationIdRaw ?? locationNameRaw,
+          name: locationNameRaw ?? locationIdRaw,
+        });
+
         return {
           id: p.id || p.product_id || p.supplier_product_id,
           supplier_id: supplierId,
           name: p.name || p.product_name || 'Unknown Product',
           description: p.description || '',
           category: typeof categoryRaw === 'string' ? categoryRaw : 'uncategorized',
-          location: typeof p.location === 'string' ? p.location : undefined,
+          location: normalizedLocation?.name ?? undefined,
+          location_id: normalizedLocation?.id ?? undefined,
           sku: p.sku || p.supplier_sku || '',
           unit_of_measure: p.unit_of_measure || p.unit || p.uom || 'each',
           unit_cost_zar: unitCost,
@@ -340,27 +388,19 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       const payload = await res.json();
       const rows = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
       const apiLocations = rows
-        .map((row: { name?: unknown }) => (typeof row?.name === 'string' ? row.name.trim() : ''))
-        .filter((name: string) => name.length > 0);
+        .map((row: unknown) => normalizeLocation(row))
+        .filter((loc): loc is LocationOption => Boolean(loc));
 
       set((state) => {
-        const combined = new Map<string, { id: string; name: string }>();
+        const combined = new Map<string, LocationOption>();
 
-        for (const location of state.locations as unknown[]) {
-          if (location && typeof location === 'object') {
-            const id = typeof location.id === 'string' ? location.id : String(location.id);
-            const name = typeof location.name === 'string' ? location.name : String(location.name ?? location.id);
-            if (id) combined.set(id, { id, name });
-          } else if (typeof location === 'string') {
-            const id = location.trim();
-            if (id) combined.set(id, { id, name: id });
-          }
+        for (const location of state.locations) {
+          const normalized = normalizeLocation(location);
+          if (normalized) combined.set(normalized.id, normalized);
         }
 
         for (const location of apiLocations) {
-          const id = String(location.id ?? location).trim();
-          const name = String(location.name ?? location).trim();
-          if (id) combined.set(id, { id, name: name || id });
+          combined.set(location.id, location);
         }
 
         const sorted = Array.from(combined.values()).sort((a, b) =>
