@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -36,16 +36,17 @@ import type { Product, ProductFormData } from '@/lib/types/inventory'
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().optional(),
-  category: z.enum([
-    'raw_materials',
-    'components',
-    'finished_goods',
-    'consumables',
-    'services',
-    'packaging',
-    'tools',
-    'safety_equipment'
-  ], { required_error: 'Category is required' }),
+  category: z
+    .string()
+    .min(1, 'Category is required')
+    .transform(value => value.trim())
+    .pipe(z.string().min(1, 'Category is required')),
+  location_id: z
+    .string()
+    .min(1, 'Location is required')
+    .transform(value => value.trim())
+    .pipe(z.string().min(1, 'Location is required'))
+    .optional(),
   sku: z.string().optional(),
   unit_of_measure: z.string().min(1, 'Unit of measure is required'),
   unit_cost_zar: z.coerce.number().positive('Unit cost must be positive'),
@@ -63,13 +64,24 @@ const productSchema = z.object({
 
 interface EditProductDialogProps {
   product: Product
+  inventoryItemId: string
   open: boolean
+  holdLocation?: string
+  locations: string[]
   onOpenChange: (open: boolean) => void
 }
 
-export default function EditProductDialog({ product, open, onOpenChange }: EditProductDialogProps) {
+type CategoryOption = {
+  id: string
+  name: string
+}
+
+export default function EditProductDialog({ product, inventoryItemId, open, holdLocation, locations, onOpenChange }: EditProductDialogProps) {
   const { updateProduct, loading } = useInventoryStore()
   const { addNotification } = useNotificationStore()
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([])
+  const [categoryLoading, setCategoryLoading] = useState(false)
+  const [categoryError, setCategoryError] = useState<string | null>(null)
 
   const form = useForm<Partial<ProductFormData>>({
     resolver: zodResolver(productSchema.partial()),
@@ -77,6 +89,7 @@ export default function EditProductDialog({ product, open, onOpenChange }: EditP
       name: product.name,
       description: product.description || '',
       category: product.category,
+      location_id: holdLocation || product.location || '',
       sku: product.sku || '',
       unit_of_measure: product.unit_of_measure,
       unit_cost_zar: product.unit_cost_zar,
@@ -94,11 +107,77 @@ export default function EditProductDialog({ product, open, onOpenChange }: EditP
   })
 
   useEffect(() => {
+    let isCancelled = false
+
+    const loadCategories = async () => {
+      try {
+        setCategoryLoading(true)
+        setCategoryError(null)
+
+        const response = await fetch('/api/catalog/categories')
+        if (!response.ok) {
+          throw new Error(`Failed to fetch categories (${response.status})`)
+        }
+
+        const payload = await response.json()
+        const rawList = Array.isArray(payload?.data) ? payload.data : []
+
+        const mapped = rawList
+          .map((item: { id?: unknown; category_id?: unknown; name?: unknown }) => {
+            const name = typeof item?.name === 'string' ? item.name.trim() : ''
+            if (!name) return null
+            const idCandidate = item?.id ?? item?.category_id ?? name
+            return { id: String(idCandidate), name }
+          })
+          .filter((item): item is CategoryOption => Boolean(item?.name))
+
+        const productCategory = (product.category || '').trim()
+        const hasProductCategory = productCategory
+          ? mapped.some(option => option.name.toLowerCase() === productCategory.toLowerCase())
+          : false
+
+        const merged = hasProductCategory || !productCategory
+          ? mapped
+          : [{ id: `existing:${productCategory}`, name: productCategory }, ...mapped]
+
+        if (!isCancelled) {
+          setCategoryOptions(merged)
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          const message = error instanceof Error ? error.message : 'Failed to fetch categories'
+          setCategoryError(message)
+          const productCategory = (product.category || '').trim()
+          if (productCategory) {
+            setCategoryOptions(prev => {
+              if (prev.some(option => option.name === productCategory)) {
+                return prev
+              }
+              return [{ id: `existing:${productCategory}`, name: productCategory }, ...prev]
+            })
+          }
+        }
+      } finally {
+        if (!isCancelled) {
+          setCategoryLoading(false)
+        }
+      }
+    }
+
+    void loadCategories()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [product.id, product.category])
+
+  useEffect(() => {
     if (product) {
       form.reset({
         name: product.name,
         description: product.description || '',
         category: product.category,
+        location_id: holdLocation || product.location || '',
         sku: product.sku || '',
         unit_of_measure: product.unit_of_measure,
         unit_cost_zar: product.unit_cost_zar,
@@ -116,9 +195,52 @@ export default function EditProductDialog({ product, open, onOpenChange }: EditP
     }
   }, [product, form])
 
+  const locationOptions = useMemo(() => {
+    const trimmedLocations = locations
+      .map(location => {
+        if (typeof location === 'string') {
+          return { id: location.trim(), name: location.trim() }
+        }
+
+        if (location && typeof location === 'object') {
+          const id = typeof location.id === 'string' ? location.id.trim() : ''
+          const name = typeof location.name === 'string' ? location.name.trim() : ''
+          if (id && name) {
+            return { id, name }
+          }
+        }
+
+        return null
+      })
+      .filter((location): location is { id: string; name: string } => Boolean(location?.id && location?.name))
+
+    const unique = new Map<string, { id: string; name: string }>()
+    for (const location of trimmedLocations) {
+      if (!unique.has(location.id)) {
+        unique.set(location.id, location)
+      }
+    }
+
+    const currentId = (holdLocation || product.location || '').trim()
+    if (currentId && !unique.has(currentId)) {
+      unique.set(currentId, { id: currentId, name: currentId })
+    }
+
+    return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+  }, [locations, holdLocation, product.location])
+
   const onSubmit = async (data: Partial<ProductFormData>) => {
+    if (!inventoryItemId) {
+      addNotification({
+        type: 'error',
+        title: 'Unable to update product',
+        message: 'Missing inventory reference for this product'
+      })
+      return
+    }
+
     try {
-      await updateProduct(product.id, data)
+      await updateProduct(inventoryItemId, data)
       addNotification({
         type: 'success',
         title: 'Product updated',
@@ -133,17 +255,6 @@ export default function EditProductDialog({ product, open, onOpenChange }: EditP
       })
     }
   }
-
-  const categories = [
-    { value: 'raw_materials', label: 'Raw Materials' },
-    { value: 'components', label: 'Components' },
-    { value: 'finished_goods', label: 'Finished Goods' },
-    { value: 'consumables', label: 'Consumables' },
-    { value: 'services', label: 'Services' },
-    { value: 'packaging', label: 'Packaging' },
-    { value: 'tools', label: 'Tools' },
-    { value: 'safety_equipment', label: 'Safety Equipment' }
-  ]
 
   const commonUnits = [
     'Each', 'Piece', 'Set', 'Kit', 'Meter', 'Kilogram', 'Liter', 'Square Meter',
@@ -205,18 +316,63 @@ export default function EditProductDialog({ product, open, onOpenChange }: EditP
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
+                            <SelectValue placeholder={categoryLoading ? 'Loading categories...' : 'Select category'} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories.map(category => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
+                          {categoryLoading && (
+                            <SelectItem value={field.value ?? ''} disabled>
+                              Loading categories...
                             </SelectItem>
-                          ))}
+                          )}
+                          {!categoryLoading && categoryOptions.length === 0 && (
+                            <SelectItem value={field.value ?? ''} disabled>
+                              No categories available
+                            </SelectItem>
+                          )}
+                          {!categoryLoading &&
+                            categoryOptions.map(category => (
+                              <SelectItem key={category.id} value={category.name}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {categoryError && (
+                        <p className="text-sm text-destructive">{categoryError}</p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={locationOptions.length ? 'Select location' : 'No locations available'} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {locationOptions.length === 0 ? (
+                            <SelectItem value={field.value ?? ''} disabled>
+                              No locations available
+                            </SelectItem>
+                          ) : (
+                            locationOptions.map(location => (
+                              <SelectItem key={location} value={location}>
+                                {location}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />

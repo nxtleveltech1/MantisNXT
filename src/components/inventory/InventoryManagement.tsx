@@ -92,12 +92,14 @@ export default function InventoryManagement() {
     items,
     products,
     suppliers,
+    locations: locationOptions,
     filters,
     loading,
     error,
     fetchItems,
     fetchProducts,
     fetchSuppliers,
+    fetchLocations,
     setFilters,
     clearFilters,
     deleteProduct,
@@ -114,6 +116,8 @@ export default function InventoryManagement() {
   const [showAddMode, setShowAddMode] = useState(false)
   const [showMultiSelect, setShowMultiSelect] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [editingInventoryItemId, setEditingInventoryItemId] = useState<string | null>(null)
+  const [editingProductHoldLocation, setEditingProductHoldLocation] = useState<string | null>(null)
   const [adjustingStock, setAdjustingStock] = useState<InventoryItem | null>(null)
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
 
@@ -141,7 +145,8 @@ export default function InventoryManagement() {
       await Promise.all([
         fetchItems(),
         fetchProducts(),
-        fetchSuppliers()
+        fetchSuppliers(),
+        fetchLocations()
       ])
     } catch (error) {
       addNotification({
@@ -184,14 +189,6 @@ export default function InventoryManagement() {
   }, [searchTerm, products, items])
 
   // Debug logging for investigating item count
-  useEffect(() => {
-    console.log('[Inventory Debug] Raw items count:', items.length)
-    console.log('[Inventory Debug] Products count:', products.length)
-    console.log('[Inventory Debug] Suppliers count:', suppliers.length)
-    console.log('[Inventory Debug] Active filters:', filters)
-    console.log('[Inventory Debug] Sample item:', items[0])
-  }, [items, products, suppliers, filters])
-
   const formatCurrency = (amount: number | string | null | undefined) => {
     const value = Number(amount)
     return new Intl.NumberFormat('en-ZA', {
@@ -520,7 +517,6 @@ export default function InventoryManagement() {
   }
 
   const categories = [...new Set(products.map(p => p.category))].sort()
-  const locations = [...new Set(items.map(i => i.location).filter(Boolean))].sort()
   const stockStatuses = ['in_stock', 'low_stock', 'out_of_stock', 'overstocked']
 
   return (
@@ -870,7 +866,7 @@ export default function InventoryManagement() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all_locations">All locations</SelectItem>
-                        {locations.map(location => (
+                        {locationOptions.map(location => (
                           <SelectItem key={location} value={location}>
                             {location}
                           </SelectItem>
@@ -1151,7 +1147,13 @@ export default function InventoryManagement() {
                                     View Details
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onClick={() => setEditingProduct(item.product || null)}
+                                    onClick={() => {
+                                      setEditingProduct(item.product || null)
+                                      setEditingInventoryItemId(
+                                        typeof item.id === 'string' ? item.id : item.id?.toString?.() ?? null
+                                      )
+                                      setEditingProductHoldLocation(item.location ?? null)
+                                    }}
                                   >
                                     <Edit className="h-4 w-4 mr-2" />
                                     Edit Product
@@ -1260,11 +1262,20 @@ export default function InventoryManagement() {
           onOpenChange={setShowMultiSelect}
         />
 
-        {editingProduct && (
+        {editingProduct && editingInventoryItemId && (
           <EditProductDialog
             product={editingProduct}
+            inventoryItemId={editingInventoryItemId}
             open={!!editingProduct}
-            onOpenChange={(open) => !open && setEditingProduct(null)}
+            holdLocation={editingProductHoldLocation ?? undefined}
+            locations={locationOptions}
+            onOpenChange={(open) => {
+              if (!open) {
+                setEditingProduct(null)
+                setEditingInventoryItemId(null)
+                setEditingProductHoldLocation(null)
+              }
+            }}
           />
         )}
 

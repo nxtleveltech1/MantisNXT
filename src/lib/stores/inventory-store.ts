@@ -88,12 +88,14 @@ type InventoryZustandState = {
   items: unknown[];
   products: unknown[];
   suppliers: unknown[];
+  locations: string[];
   filters: Filters;
   loading: boolean;
   error: string | null;
   fetchItems: () => Promise<void>;
   fetchProducts: () => Promise<void>;
   fetchSuppliers: () => Promise<void>;
+  fetchLocations: () => Promise<void>;
   setFilters: (f: Partial<Filters>) => void;
   clearFilters: () => void;
   addProduct: (p: unknown) => Promise<void>;
@@ -107,6 +109,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   items: [],
   products: [],
   suppliers: [],
+  locations: [],
   filters: { search: '' },
   loading: false,
   error: null,
@@ -193,6 +196,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
             name: r.product?.name ?? r.name ?? (sku || 'Unknown'),
             sku,
             category,
+            location,
             unit_of_measure: r.unit_of_measure ?? r.unit ?? r.uom ?? 'each',
             supplier_id: supplierId,
             unit_cost_zar: unitCost,
@@ -207,7 +211,48 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
         };
       });
 
-      set({ items, loading: false });
+      const derivedLocations = Array.from(
+        new Set(
+          items
+            .map((entry: { location?: unknown; location_name?: unknown; locationName?: unknown; product?: { location?: unknown } }) => {
+              const loc =
+                entry?.location ??
+                entry?.location_name ??
+                entry?.locationName ??
+                entry?.product?.location ??
+                '';
+              return typeof loc === 'string' ? loc.trim() : '';
+            })
+            .filter((loc: string) => Boolean(loc))
+        )
+      );
+
+      set((state) => {
+        const combined = new Map<string, { id: string; name: string }>();
+
+        for (const location of state.locations as unknown[]) {
+          if (location && typeof location === 'object') {
+            const id = typeof location.id === 'string' ? location.id : String(location.id);
+            const name = typeof location.name === 'string' ? location.name : String(location.name ?? location.id);
+            if (id) combined.set(id, { id, name });
+          } else if (typeof location === 'string') {
+            const id = location.trim();
+            if (id) combined.set(id, { id, name: id });
+          }
+        }
+
+        for (const location of derivedLocations) {
+          const id = String(location.id ?? location).trim();
+          const name = String(location.name ?? location).trim();
+          if (id) combined.set(id, { id, name: name || id });
+        }
+
+        const sorted = Array.from(combined.values()).sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+        );
+
+        return { items, locations: sorted, loading: false };
+      });
     } catch (e: unknown) {
       set({ error: e?.message || 'Failed to fetch items', loading: false });
     }
@@ -241,6 +286,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           name: p.name || p.product_name || 'Unknown Product',
           description: p.description || '',
           category: typeof categoryRaw === 'string' ? categoryRaw : 'uncategorized',
+          location: typeof p.location === 'string' ? p.location : undefined,
           sku: p.sku || p.supplier_sku || '',
           unit_of_measure: p.unit_of_measure || p.unit || p.uom || 'each',
           unit_cost_zar: unitCost,
@@ -287,6 +333,47 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
     }
   },
 
+  fetchLocations: async () => {
+    try {
+      const res = await fetch('/api/inventory/locations?is_active=true&pageSize=500');
+      if (!res.ok) throw new Error(`LOCATIONS_FETCH_FAILED: ${res.status}`);
+      const payload = await res.json();
+      const rows = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+      const apiLocations = rows
+        .map((row: { name?: unknown }) => (typeof row?.name === 'string' ? row.name.trim() : ''))
+        .filter((name: string) => name.length > 0);
+
+      set((state) => {
+        const combined = new Map<string, { id: string; name: string }>();
+
+        for (const location of state.locations as unknown[]) {
+          if (location && typeof location === 'object') {
+            const id = typeof location.id === 'string' ? location.id : String(location.id);
+            const name = typeof location.name === 'string' ? location.name : String(location.name ?? location.id);
+            if (id) combined.set(id, { id, name });
+          } else if (typeof location === 'string') {
+            const id = location.trim();
+            if (id) combined.set(id, { id, name: id });
+          }
+        }
+
+        for (const location of apiLocations) {
+          const id = String(location.id ?? location).trim();
+          const name = String(location.name ?? location).trim();
+          if (id) combined.set(id, { id, name: name || id });
+        }
+
+        const sorted = Array.from(combined.values()).sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+        );
+
+        return { locations: sorted };
+      });
+    } catch (e: unknown) {
+      console.error('Failed to fetch locations list', e);
+    }
+  },
+
   setFilters: (f: Partial<Filters>) => {
     set((state) => ({ filters: { ...state.filters, ...f } }));
     // Optionally refetch items when filters change
@@ -310,13 +397,71 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   updateProduct: async (id: string, p: unknown) => {
     set({ loading: true, error: null });
     try {
-      // Use /api/inventory/[id] instead of deprecated /api/inventory/products/[id]
-      const res = await fetch(`/api/inventory/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
-      if (!res.ok) throw new Error(`UPDATE_PRODUCT_FAILED: ${res.status}`);
-      await get().fetchProducts();
+      const updates = Object.fromEntries(
+        Object.entries(p as Record<string, unknown>).filter(
+          ([key, value]) => key === 'location_id' && value !== undefined
+        )
+      );
+
+      if (typeof updates.location_id === 'string') {
+        updates.location_id = updates.location_id.trim();
+        if (!updates.location_id) {
+          delete updates.location_id;
+        }
+      }
+
+      const res = await fetch('/api/inventory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'bulk_update',
+          items: [
+            {
+              id,
+              updates,
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok) {
+        let errorDetails = '';
+        try {
+          const data = await res.json();
+          errorDetails = data?.error
+            ? `${data.error}${data?.details ? `: ${Array.isArray(data.details) ? data.details.join(', ') : data.details}` : ''}`
+            : JSON.stringify(data);
+        } catch {
+          // ignore parsing errors
+        }
+
+        const err = new Error(`UPDATE_PRODUCT_FAILED: ${res.status}${errorDetails ? ` — ${errorDetails}` : ''}`);
+        throw err;
+      }
+      await Promise.all([get().fetchProducts(), get().fetchItems()]);
       set({ loading: false });
     } catch (e: unknown) {
-      set({ error: e?.message || 'Failed to update product', loading: false });
+      let message = e?.message || 'Failed to update product';
+
+      if (e instanceof Error && 'cause' in e && typeof e.cause === 'string') {
+        message = `${message}: ${e.cause}`;
+      }
+
+      if (e instanceof Error && 'response' in e) {
+        try {
+          const data = await e.response.json();
+          if (data?.error) {
+            message = `${message} — ${data.error}`;
+          }
+          if (data?.details) {
+            message = `${message} (${Array.isArray(data.details) ? data.details.join(', ') : data.details})`;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      set({ error: message, loading: false });
     }
   },
 

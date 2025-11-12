@@ -142,8 +142,8 @@ export class LocationService {
     const validated = StockLocationSchema.parse({
       name: request.name,
       type: request.type,
-      supplier_id: request.supplier_id || null,
-      address: request.address || null,
+      supplier_id: request.supplier_id ?? undefined,
+      address: request.address ?? undefined,
       is_active: request.is_active ?? true,
     });
 
