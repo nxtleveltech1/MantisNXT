@@ -9,6 +9,7 @@
 
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/utils/neon-error-handler';
 
 export async function POST(request: NextRequest) {
   try {
@@ -87,8 +88,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Error testing WooCommerce connection:', error);
-
     if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       return NextResponse.json(
         {
@@ -98,13 +97,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to test connection',
-      },
-      { status: 500 }
-    );
+    
+    return createErrorResponse(error, 500);
   }
 }

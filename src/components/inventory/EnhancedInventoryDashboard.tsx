@@ -520,7 +520,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
         >
           {/* Total Value */}
           <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 to-emerald-100 hover:shadow-2xl transition-all duration-300">
@@ -545,6 +545,34 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
               </div>
             </CardContent>
           </Card>
+
+          {/* Stock Alerts */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-red-50 to-rose-100 hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-red-500 rounded-xl text-white">
+                  <Bell className="h-6 w-6" />
+                </div>
+                <div className="flex gap-1">
+                  <Badge variant="destructive" className="text-xs">Critical</Badge>
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">Warning</Badge>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">Info</Badge>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-3xl font-bold text-red-800">
+                  {criticalAlerts.length}
+                </div>
+                <div className="text-sm text-red-700">Stock Alerts</div>
+                <div className="flex items-center text-xs text-red-600">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  {alerts.length} Total Alerts
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+
 
           {/* Stock Health */}
           <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-2xl transition-all duration-300">
@@ -703,7 +731,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {/* Stock Status Chart */}
               <Card className="border-0 shadow-xl">
                 <CardHeader>
@@ -951,7 +979,7 @@ const EnhancedInventoryDashboard: React.FC<EnhancedInventoryDashboardProps> = ({
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <Card className="border-0 shadow-xl">
                 <CardHeader>
                   <CardTitle>ABC Analysis</CardTitle>

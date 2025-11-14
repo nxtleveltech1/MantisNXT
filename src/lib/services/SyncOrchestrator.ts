@@ -20,6 +20,8 @@
  */
 
 import { query } from '@/lib/database';
+import { OdooService } from '@/lib/services/OdooService';
+import { IntegrationMappingService } from '@/lib/services/IntegrationMappingService';
 import { getRateLimiter } from '@/lib/utils/rate-limiter';
 import { ConflictResolver } from './ConflictResolver';
 import { v4 as uuidv4 } from 'uuid';
@@ -96,6 +98,9 @@ export class SyncOrchestrator {
   private skippedCount: number = 0;
   private isRunning: boolean = false;
   private isPaused: boolean = false;
+  private odooService?: OdooService;
+  private odooConnectorId?: string;
+  private mappingService?: IntegrationMappingService;
 
   constructor(
     orgId: string,
@@ -145,6 +150,9 @@ export class SyncOrchestrator {
         if (!this.isRunning) break;
 
         console.log(`[SyncOrchestrator] Processing ${system} sync for org ${this.orgId}`);
+        if (system === 'odoo') {
+          await this.ensureOdoo();
+        }
         await this.processsystemSync(system);
 
         // Inter-system delay
@@ -371,22 +379,14 @@ export class SyncOrchestrator {
     system: System,
     finalData: Record<string, unknown>
   ): Promise<void> {
-    // This method delegates to CustomerSyncService, OdooService, etc.
-    // Implementation depends on entity type and target system
-    console.log(
-      `[SyncOrchestrator] Processing item ${item.id}: ${item.entity_type} from ${system}`
-    );
+    console.log(`[SyncOrchestrator] Processing item ${item.id}: ${item.entity_type} from ${system}`);
 
-    // Example: For customers syncing to external system
-    if (item.entity_type === 'customers') {
-      if (system === 'woocommerce') {
-        // await this.wooCommerceService.syncCustomer(item.external_id, finalData);
-      } else if (system === 'odoo') {
-        // await this.odooService.updatePartner(item.local_id, finalData);
-      }
+    if (system === 'odoo') {
+      await this.processOdooItem(item, finalData);
+      return;
     }
 
-    // Placeholder - actual implementation would call respective service
+    // TODO: Implement WooCommerce side processing when required
     await this.delay(10);
   }
 
@@ -420,6 +420,99 @@ export class SyncOrchestrator {
       created_at: row.created_at,
       updated_at: row.updated_at,
     }));
+  }
+
+  private async ensureOdoo(): Promise<void> {
+    if (this.odooService && this.mappingService) return;
+
+    const cfg = await query(
+      `SELECT id as connector_id, config
+       FROM integration_connector
+       WHERE provider = 'odoo' AND status::text = 'active'
+       ORDER BY updated_at DESC
+       LIMIT 1`
+    );
+
+    if (!cfg.rows.length) {
+      throw new Error('No active Odoo connector configured');
+    }
+
+    const row = cfg.rows[0];
+    this.odooConnectorId = row.connector_id;
+    const c = row.config;
+    this.odooService = new OdooService({
+      url: String(c.server_url).replace(/\/$/, ''),
+      database: String(c.database_name),
+      username: String(c.username),
+      password: String(c.api_key),
+    });
+    this.mappingService = new IntegrationMappingService(this.odooConnectorId, this.orgId);
+  }
+
+  private async processOdooItem(item: SyncItem, finalData: Record<string, unknown>): Promise<void> {
+    if (!this.odooService || !this.mappingService) {
+      await this.ensureOdoo();
+    }
+
+    const svc = this.odooService!;
+    const map = this.mappingService!;
+
+    switch (item.entity_type) {
+      case 'customers': {
+        const partnerPayload = finalData;
+        const existing = item.external_id
+          ? await map.getMappingByExternalId('customer', String(item.external_id))
+          : (item.local_id ? await map.getMapping('customer', item.local_id) : null);
+
+        if (existing) {
+          await svc.updatePartner(parseInt(existing.externalId, 10), partnerPayload);
+          await map.updateSyncStatus('customer', existing.externalId, 'completed', partnerPayload);
+        } else {
+          const createdId = await svc.createPartner(partnerPayload);
+          await map.createMapping({
+            entityType: 'customer',
+            internalId: item.local_id || uuidv4(),
+            externalId: String(createdId),
+            externalModel: 'res.partner',
+            syncData: partnerPayload,
+          });
+        }
+        break;
+      }
+      case 'products': {
+        const productPayload = finalData;
+        const existing = item.external_id
+          ? await map.getMappingByExternalId('product', String(item.external_id))
+          : (item.local_id ? await map.getMapping('product', item.local_id) : null);
+
+        if (existing) {
+          await svc.updateProduct(parseInt(existing.externalId, 10), productPayload);
+          await map.updateSyncStatus('product', existing.externalId, 'completed', productPayload);
+        } else {
+          const createdId = await svc.createProduct(productPayload);
+          await map.createMapping({
+            entityType: 'product',
+            internalId: item.local_id || uuidv4(),
+            externalId: String(createdId),
+            externalModel: 'product.template',
+            syncData: productPayload,
+          });
+        }
+        break;
+      }
+      case 'orders': {
+        // Minimal sale.order handling: ensure partner and lines exist
+        // Note: Normalization of sale.order not fully implemented here; defer to dedicated service
+        throw new Error('sale.order sync is not yet implemented');
+      }
+      case 'inventory': {
+        // Implement inventory adjustments via stock.quant or stock.inventory
+        throw new Error('inventory sync is not yet implemented');
+      }
+      default: {
+        throw new Error(`Unsupported Odoo entity type: ${item.entity_type}`);
+      }
+    }
   }
 
   /**

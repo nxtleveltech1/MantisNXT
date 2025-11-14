@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 import { withAuth } from '@/middleware/api-auth'
 import type { NextRequest } from 'next/server'
 import {
