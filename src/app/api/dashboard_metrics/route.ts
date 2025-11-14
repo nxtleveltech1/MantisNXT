@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const [
       suppliersResult,
       inventoryResult,
+      supplierProductsResult,
       lowStockResult,
       outOfStockResult,
       supplierMetricsResult,
@@ -27,6 +28,14 @@ export async function GET(request: NextRequest) {
         FROM core.stock_on_hand soh
         JOIN core.supplier_product sp ON sp.supplier_product_id = soh.supplier_product_id
         WHERE sp.is_active = $1
+      `,
+        [true]
+      ),
+      pool.query(
+        `
+        SELECT COUNT(*) as count
+        FROM core.supplier_product
+        WHERE is_active = $1
       `,
         [true]
       ),
@@ -74,6 +83,7 @@ export async function GET(request: NextRequest) {
         ),
         totalInventoryItems: parseInt(inventoryResult.rows[0]?.count || "0"),
         totalInventoryValue: totalInventoryValue,
+        totalSupplierProducts: parseInt(supplierProductsResult.rows[0]?.count || "0"),
         averageInventoryValue: avgInventoryValue,
         lowStockAlerts: parseInt(lowStockResult.rows[0]?.count || "0"),
         outOfStockItems: parseInt(outOfStockResult.rows[0]?.count || "0"),

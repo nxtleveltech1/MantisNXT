@@ -11,42 +11,58 @@
 -- ENUMS FOR PRICING SYSTEM
 -- =====================================================
 
--- Pricing strategy types
-CREATE TYPE pricing_strategy AS ENUM (
-    'cost_plus',        -- Base cost + fixed markup
-    'market_based',     -- Based on market conditions
-    'value_based',      -- Based on perceived customer value
-    'competitive',      -- Based on competitor pricing
-    'dynamic',          -- Real-time algorithmic adjustment
-    'tiered'            -- Volume/customer-based tiers
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pricing_strategy') THEN
+        CREATE TYPE pricing_strategy AS ENUM (
+            'cost_plus',        -- Base cost + fixed markup
+            'market_based',     -- Based on market conditions
+            'value_based',      -- Based on perceived customer value
+            'competitive',      -- Based on competitor pricing
+            'dynamic',          -- Real-time algorithmic adjustment
+            'tiered'            -- Volume/customer-based tiers
+        );
+    END IF;
+END $$;
 
--- Price tier levels
-CREATE TYPE price_tier AS ENUM (
-    'standard',         -- Default/retail pricing
-    'wholesale',        -- Bulk/wholesale pricing
-    'retail',           -- Standard retail markup
-    'vip',              -- Premium customer pricing
-    'promotional'       -- Limited-time promotional pricing
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'price_tier') THEN
+        CREATE TYPE price_tier AS ENUM (
+            'standard',         -- Default/retail pricing
+            'wholesale',        -- Bulk/wholesale pricing
+            'retail',           -- Standard retail markup
+            'vip',              -- Premium customer pricing
+            'promotional'       -- Limited-time promotional pricing
+        );
+    END IF;
+END $$;
 
--- Optimization analysis status
-CREATE TYPE optimization_status AS ENUM (
-    'pending',          -- Queued for analysis
-    'analyzing',        -- Analysis in progress
-    'completed',        -- Analysis complete
-    'applied',          -- Recommendations applied
-    'rejected'          -- Recommendations rejected
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'optimization_status') THEN
+        CREATE TYPE optimization_status AS ENUM (
+            'pending',          -- Queued for analysis
+            'analyzing',        -- Analysis in progress
+            'completed',        -- Analysis complete
+            'applied',          -- Recommendations applied
+            'rejected'          -- Recommendations rejected
+        );
+    END IF;
+END $$;
 
--- Recommendation types
-CREATE TYPE recommendation_type AS ENUM (
-    'price_increase',   -- Suggest price increase
-    'price_decrease',   -- Suggest price decrease
-    'bundle',           -- Product bundling opportunity
-    'promotion',        -- Promotional campaign
-    'clearance'         -- Clearance/liquidation pricing
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'recommendation_type') THEN
+        CREATE TYPE recommendation_type AS ENUM (
+            'price_increase',   -- Suggest price increase
+            'price_decrease',   -- Suggest price decrease
+            'bundle',           -- Product bundling opportunity
+            'promotion',        -- Promotional campaign
+            'clearance'         -- Clearance/liquidation pricing
+        );
+    END IF;
+END $$;
 
 -- =====================================================
 -- PRICING RULES ENGINE
@@ -88,7 +104,7 @@ CREATE TABLE pricing_rule (
     valid_until timestamptz,
 
     -- Metadata
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -134,7 +150,7 @@ CREATE TABLE price_history (
     optimization_id uuid,  -- Links to pricing_recommendation if auto-applied
 
     -- Metadata
-    changed_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    changed_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     effective_date timestamptz NOT NULL DEFAULT now(),
     created_at timestamptz DEFAULT now(),
 
@@ -180,7 +196,7 @@ CREATE TABLE pricing_optimization (
     optimization_config jsonb DEFAULT '{}'::jsonb,  -- Algorithm parameters
 
     -- Execution tracking
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     started_at timestamptz,
     completed_at timestamptz,
     error_message text,
@@ -235,7 +251,7 @@ CREATE TABLE pricing_recommendation (
 
     -- Workflow status
     status text DEFAULT 'pending',  -- pending, approved, rejected, applied
-    reviewed_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    reviewed_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     reviewed_at timestamptz,
     review_notes text,
     applied_at timestamptz,
@@ -285,7 +301,7 @@ CREATE TABLE competitor_pricing (
     -- Data freshness
     scraped_at timestamptz DEFAULT now(),
     verified_at timestamptz,
-    verified_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    verified_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     is_active boolean DEFAULT true,
 
     -- Availability and stock
@@ -392,7 +408,7 @@ CREATE TABLE customer_pricing_tier (
     valid_from timestamptz DEFAULT now(),
     valid_until timestamptz,
 
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -460,11 +476,11 @@ SELECT
     ii.category,
 
     -- Current pricing
-    ii.price AS current_price,
+    ii.unit_price AS current_price,
     ii.cost_price,
-    (ii.price - ii.cost_price) AS margin,
+    (ii.unit_price - ii.cost_price) AS margin,
     CASE
-        WHEN ii.cost_price > 0 THEN ((ii.price - ii.cost_price) / ii.cost_price * 100)
+        WHEN ii.cost_price > 0 THEN ((ii.unit_price - ii.cost_price) / ii.cost_price * 100)
         ELSE 0
     END AS margin_percentage,
 
@@ -625,7 +641,7 @@ DECLARE
     v_final_price numeric;
 BEGIN
     -- Get base price
-    SELECT price INTO v_base_price
+    SELECT unit_price INTO v_base_price
     FROM inventory_item
     WHERE id = p_inventory_item_id;
 
@@ -681,7 +697,7 @@ DECLARE
     v_current_price numeric;
 BEGIN
     -- Get current price
-    SELECT price INTO v_current_price
+    SELECT unit_price INTO v_current_price
     FROM inventory_item
     WHERE id = p_inventory_item_id;
 
@@ -759,14 +775,14 @@ DECLARE
 BEGIN
     -- Loop through products in scope
     FOR v_product IN
-        SELECT ii.id, ii.price, ii.cost_price, ii.name, ii.sku
+        SELECT ii.id, ii.unit_price, ii.cost_price, ii.name, ii.sku
         FROM inventory_item ii
         WHERE ii.org_id = p_org_id
         AND ii.is_active = true
-        AND ii.price > 0
+        AND ii.unit_price > 0
         AND ii.cost_price > 0
     LOOP
-        v_current_price := v_product.price;
+        v_current_price := v_product.unit_price;
 
         -- Calculate optimal price using cost_plus strategy
         v_optimal_price := calculate_optimal_price(v_product.id, 'dynamic');
@@ -907,7 +923,7 @@ CREATE TRIGGER update_volume_pricing_tier_updated_at
 CREATE OR REPLACE FUNCTION track_price_changes()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF OLD.price IS DISTINCT FROM NEW.price AND NEW.price IS NOT NULL THEN
+    IF OLD.unit_price IS DISTINCT FROM NEW.unit_price AND NEW.unit_price IS NOT NULL THEN
         INSERT INTO price_history (
             org_id,
             inventory_item_id,
@@ -919,8 +935,8 @@ BEGIN
         ) VALUES (
             NEW.org_id,
             NEW.id,
-            OLD.price,
-            NEW.price,
+            OLD.unit_price,
+            NEW.unit_price,
             'ZAR',
             'Manual price update',
             auth.uid()
@@ -933,7 +949,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER track_inventory_item_price_changes
     AFTER UPDATE ON inventory_item
     FOR EACH ROW
-    WHEN (OLD.price IS DISTINCT FROM NEW.price)
+    WHEN (OLD.unit_price IS DISTINCT FROM NEW.unit_price)
     EXECUTE FUNCTION track_price_changes();
 
 -- Audit triggers
@@ -967,6 +983,10 @@ COMMENT ON FUNCTION get_price_for_customer IS 'Returns the final price for a cus
 COMMENT ON FUNCTION analyze_price_performance IS 'Analyzes price performance over a period including volatility, competitor position, and trends';
 COMMENT ON FUNCTION generate_pricing_recommendations IS 'Batch generates AI-powered pricing recommendations for all products in an organization';
 
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0013_pricing_optimization')
+ON CONFLICT (migration_name) DO NOTHING;
+
 -- down
 
 -- Drop triggers
@@ -982,11 +1002,11 @@ DROP TRIGGER IF EXISTS update_pricing_optimization_updated_at ON pricing_optimiz
 DROP TRIGGER IF EXISTS update_pricing_rule_updated_at ON pricing_rule;
 
 -- Drop functions
-DROP FUNCTION IF EXISTS track_price_changes();
-DROP FUNCTION IF EXISTS generate_pricing_recommendations(uuid, uuid, jsonb);
-DROP FUNCTION IF EXISTS analyze_price_performance(uuid, integer);
-DROP FUNCTION IF EXISTS get_price_for_customer(uuid, uuid, integer);
-DROP FUNCTION IF EXISTS calculate_optimal_price(uuid, pricing_strategy, jsonb);
+DROP FUNCTION IF EXISTS track_price_changes() CASCADE;
+DROP FUNCTION IF EXISTS generate_pricing_recommendations(uuid, uuid, jsonb) CASCADE;
+DROP FUNCTION IF EXISTS analyze_price_performance(uuid, integer) CASCADE;
+DROP FUNCTION IF EXISTS get_price_for_customer(uuid, uuid, integer) CASCADE;
+DROP FUNCTION IF EXISTS calculate_optimal_price(uuid, pricing_strategy, jsonb) CASCADE;
 
 -- Drop views
 DROP VIEW IF EXISTS pricing_performance_summary;

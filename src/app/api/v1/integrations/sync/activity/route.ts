@@ -57,8 +57,10 @@ export async function GET(req: Request) {
       LIMIT 100
     `
 
-    const rows = await query(sql, [orgId])
-    return new Response(JSON.stringify({ data: rows }), { status: 200 })
+    const result = await query(sql, [orgId])
+    return new Response(JSON.stringify({ data: result.rows, rowCount: result.rowCount }), {
+      status: 200,
+    })
   } catch (err: unknown) {
     return new Response(JSON.stringify({ error: err?.message || 'Internal error' }), { status: 500 })
   }

@@ -153,13 +153,55 @@ export class WooCommerceService {
   private baseUrl: string;
 
   constructor(config: WooCommerceConfig) {
+    const legacyConfig = config as Record<string, unknown>;
+
+    const rawUrl =
+      (config.url as string | undefined)?.trim() ||
+      (legacyConfig.store_url as string | undefined)?.trim() ||
+      (legacyConfig.storeUrl as string | undefined)?.trim() ||
+      '';
+    if (!rawUrl) {
+      throw new Error('WooCommerce config missing store URL');
+    }
+
+    const consumerKey =
+      config.consumerKey ||
+      (legacyConfig.consumer_key as string | undefined) ||
+      (legacyConfig.consumerKey as string | undefined);
+    if (!consumerKey) {
+      throw new Error('WooCommerce config missing consumer key');
+    }
+
+    const consumerSecret =
+      config.consumerSecret ||
+      (legacyConfig.consumer_secret as string | undefined) ||
+      (legacyConfig.consumerSecret as string | undefined);
+    if (!consumerSecret) {
+      throw new Error('WooCommerce config missing consumer secret');
+    }
+
+    const version =
+      config.version ||
+      (legacyConfig.version as string | undefined) ||
+      'wc/v3';
+
+    const timeout =
+      config.timeout ||
+      (legacyConfig.timeout as number | undefined) ||
+      30000;
+
+    const verifySslFlag =
+      config.verifySsl ??
+      (legacyConfig.verifySsl as boolean | undefined) ??
+      (legacyConfig.verify_ssl as boolean | undefined);
+
     this.config = {
-      url: config.url.replace(/\/$/, ''),
-      consumerKey: config.consumerKey,
-      consumerSecret: config.consumerSecret,
-      version: config.version || 'wc/v3',
-      timeout: config.timeout || 30000,
-      verifySsl: config.verifySsl !== false,
+      url: rawUrl.replace(/\/$/, ''),
+      consumerKey,
+      consumerSecret,
+      version,
+      timeout,
+      verifySsl: verifySslFlag !== false,
     };
 
     this.baseUrl = `${this.config.url}/wp-json/${this.config.version}`;
@@ -512,18 +554,28 @@ export class WooCommerceService {
    */
   async fetchAllPages<T>(
     fetchFunction: (params: PaginationParams) => Promise<WooCommerceResponse<T[]>>,
-    params: PaginationParams = {}
+    params: PaginationParams = {},
+    options: { maxPages?: number } = {}
   ): Promise<T[]> {
     const results: T[] = [];
-    let page = 1;
-    let hasMore = true;
+    const perPage = Math.min(Math.max(params.per_page ?? 100, 1), 100);
+    const maxPages = options.maxPages ?? Number.POSITIVE_INFINITY;
 
-    while (hasMore) {
-      const response = await fetchFunction({ ...params, page, per_page: 100 });
+    let page = 1;
+
+    while (true) {
+      const response = await fetchFunction({ ...params, page, per_page: perPage });
       results.push(...response.data);
 
       const totalPages = this.getTotalPages(response);
-      hasMore = page < totalPages;
+      const reachedHeaderLimit =
+        totalPages > 0 ? page >= totalPages : response.data.length < perPage;
+      const reachedCustomLimit = page >= maxPages;
+
+      if (reachedHeaderLimit || reachedCustomLimit) {
+        break;
+      }
+
       page++;
     }
 

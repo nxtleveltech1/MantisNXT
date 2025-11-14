@@ -312,6 +312,7 @@ DetailsModal.displayName = 'DetailsModal';
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) => {
   const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -576,6 +577,11 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ orgId, entityType }) =
         </CardHeader>
 
         <CardContent>
+          {error && (
+            <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
           {loading && !entries.length ? (
             <div className="flex items-center justify-center h-40">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

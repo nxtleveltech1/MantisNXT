@@ -30,6 +30,7 @@ interface ActivityItem {
 interface SupplierQuickActionsProps {
   onRefreshData?: () => void
   onViewAnalytics?: () => void
+  onUploadPricelist?: () => void
   activities?: ActivityItem[]
   className?: string
 }
@@ -117,6 +118,7 @@ const formatRelativeTime = (timestamp: Date): string => {
 const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
   onRefreshData,
   onViewAnalytics,
+  onUploadPricelist,
   activities = defaultActivities,
   className
 }) => {
@@ -140,6 +142,17 @@ const SupplierQuickActions: React.FC<SupplierQuickActionsProps> = ({
               <RefreshCw className="h-4 w-4" />
             </div>
             <span className="text-sm font-medium text-gray-700">Refresh Data</span>
+          </button>
+
+          {/* Upload Pricelist */}
+          <button
+            onClick={onUploadPricelist}
+            className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-200 group"
+          >
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm group-hover:shadow-md transition-shadow">
+              <Upload className="h-4 w-4" />
+            </div>
+            <span className="text-sm font-medium text-gray-700">Upload Pricelist</span>
           </button>
 
           {/* View Analytics */}

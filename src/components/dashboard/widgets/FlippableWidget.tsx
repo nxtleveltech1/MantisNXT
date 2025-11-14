@@ -8,7 +8,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface WidgetView {
@@ -38,21 +37,6 @@ export function FlippableWidget({
   });
 
   const currentView = views[currentViewIndex];
-  const canGoBack = currentViewIndex > 0;
-  const canGoForward = currentViewIndex < views.length - 1;
-
-  const goToPrevious = () => {
-    if (canGoBack) {
-      setCurrentViewIndex((prev) => prev - 1);
-    }
-  };
-
-  const goToNext = () => {
-    if (canGoForward) {
-      setCurrentViewIndex((prev) => prev + 1);
-    }
-  };
-
   return (
     <Card className={cn('bg-card border border-border rounded-xl shadow-sm', className)}>
       <CardHeader className="pb-4">
@@ -65,45 +49,19 @@ export function FlippableWidget({
               {currentView.description}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2 shrink-0 ml-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goToPrevious}
-              disabled={!canGoBack}
-              className="h-8 w-8"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="text-sm text-muted-foreground whitespace-nowrap">
-              {currentViewIndex + 1} / {views.length}
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goToNext}
-              disabled={!canGoForward}
-              className="h-8 w-8"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-2 shrink-0 ml-4 flex-wrap justify-end">
+            {views.map((view, index) => (
+              <Button
+                key={view.id}
+                variant={index === currentViewIndex ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentViewIndex(index)}
+                className="h-8"
+              >
+                {view.title}
+              </Button>
+            ))}
           </div>
-        </div>
-        {/* View indicators */}
-        <div className="flex gap-1 mt-3">
-          {views.map((view, index) => (
-            <button
-              key={view.id}
-              onClick={() => setCurrentViewIndex(index)}
-              className={cn(
-                'h-1 flex-1 rounded-full transition-colors',
-                index === currentViewIndex
-                  ? 'bg-primary'
-                  : 'bg-muted hover:bg-muted-foreground/20'
-              )}
-              aria-label={`Go to ${view.title}`}
-            />
-          ))}
         </div>
       </CardHeader>
       <CardContent>

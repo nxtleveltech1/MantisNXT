@@ -1,8 +1,8 @@
--- Migration: 0001_init_core.sql - CORRECTED FOR SUPABASE
+-- Migration: 0001_init_core.sql - LEGACY CORRECTED VERSION
 -- Description: Initialize core schema with organizations, profiles, audit logging, and enums
--- PRODUCTION READY - 100% Supabase Compatible
+-- PRODUCTION READY - 100% Legacy-provider Compatible
 
--- Enable required extensions (Supabase has these built-in)
+-- Enable required extensions (Legacy provider had these built-in)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ===========================
@@ -59,7 +59,7 @@ CREATE TABLE organization (
     CONSTRAINT org_slug_format CHECK (slug ~ '^[a-z0-9-]+$' AND char_length(slug) >= 2 AND char_length(slug) <= 50)
 );
 
--- User profiles table (extends Supabase auth.users)
+-- User profiles table (extends legacy auth.users)
 CREATE TABLE profile (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,

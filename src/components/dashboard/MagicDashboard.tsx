@@ -93,8 +93,10 @@ const MagicDashboard = () => {
     const lowStockAlerts = dashboardData?.lowStockAlerts ?? (invMetrics.lowStockItems || 0);
     const outOfStockItems = dashboardData?.outOfStockItems ?? (invMetrics.outOfStockItems || 0);
 
-    // Get product counts from suppliers data
-    const totalProducts = suppliers.reduce((sum: number, s: any) => sum + (s.totalProducts || 0), 0);
+    // Supplier product counts (SIP portfolio)
+    const totalProducts =
+      dashboardData?.totalSupplierProducts ??
+      suppliers.reduce((sum: number, s: any) => sum + (s.totalProducts || 0), 0);
     const newProducts = 0; // Would come from API
 
     // Calculate trends (simplified)

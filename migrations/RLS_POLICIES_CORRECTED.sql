@@ -1,7 +1,7 @@
 -- =====================================================
 -- MANTIS NXT - ROW LEVEL SECURITY (RLS) POLICIES
 -- =====================================================
--- Production Ready - 100% Supabase Compatible
+-- Production Ready - 100% Legacy-provider Compatible
 -- Corrected RLS syntax and optimized for performance
 
 -- =====================================================

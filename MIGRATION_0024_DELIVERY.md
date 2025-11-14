@@ -9,7 +9,7 @@
 - [x] `0024_sync_preview_progress_logs.sql` - Full migration (715 lines)
   - File: `K:\00Project\MantisNXT\database\migrations\0024_sync_preview_progress_logs.sql`
   - Status: Production-ready, Postgres 15+ compatible
-  - Testing: Ready for Neon PostgreSQL execution via Supabase MCP
+  - Testing: Ready for Neon PostgreSQL execution via psql/automation
 
 ### Documentation
 - [x] `MIGRATION_0024_REFERENCE.md` - Complete schema reference
@@ -154,11 +154,11 @@ sync_activity_log:
 ### 1. Execute Migration
 
 ```bash
-# Via Supabase MCP or psql
+# Via Neon migration runner or psql
 psql $NEON_DATABASE_URL < database/migrations/0024_sync_preview_progress_logs.sql
 
-# Or via Supabase CLI
-supabase db push --file database/migrations/0024_sync_preview_progress_logs.sql
+# Or via automation script
+yarn db:migrate --file database/migrations/0024_sync_preview_progress_logs.sql --database $NEON_DATABASE_URL
 ```
 
 ### 2. Verify Installation
@@ -190,7 +190,7 @@ SELECT cron.schedule(
 
 -- Or external scheduler (Node.js/Lambda)
 setInterval(() => {
-  supabase.rpc('auto_cleanup_preview_cache');
+  pool.query('SELECT auto_cleanup_preview_cache()');
 }, 15 * 60 * 1000);
 ```
 
@@ -198,22 +198,30 @@ setInterval(() => {
 
 ```typescript
 // Test insert with RLS
-const { data, error } = await supabase
-  .from('sync_progress')
-  .insert({ org_id: orgId, ... });
+await pool.query(
+  `INSERT INTO sync_progress (id, org_id, sync_id, entity_type) VALUES (gen_random_uuid(), $1, $2, 'customer')`,
+  [orgId, syncId]
+);
 
 // Test auto-calculation
-const result = await supabase
-  .from('sync_progress')
-  .select('elapsed_seconds, speed_items_per_min, eta_seconds')
-  .eq('sync_id', syncId)
-  .single();
+const { rows: progressRows } = await pool.query(
+  `
+    SELECT elapsed_seconds, speed_items_per_min, eta_seconds
+      FROM sync_progress
+     WHERE sync_id = $1
+  `,
+  [syncId]
+);
 
 // Verify trigger auto-logged to activity_log
-const activityLog = await supabase
-  .from('sync_activity_log')
-  .select('*')
-  .eq('sync_id', syncId);
+const { rows: activityLog } = await pool.query(
+  `
+    SELECT *
+      FROM sync_activity_log
+     WHERE sync_id = $1
+  `,
+  [syncId]
+);
 ```
 
 ---
@@ -358,4 +366,4 @@ See: `/docs/SYNC_OPERATIONS_QUICKSTART.md` - "React Component: Live Sync Dashboa
 **Delivery Date:** 2025-11-06
 **Status:** Production Ready
 **Migration Version:** 1.0
-**Compatibility:** PostgreSQL 15+, Neon, Supabase
+**Compatibility:** PostgreSQL 15+, Neon

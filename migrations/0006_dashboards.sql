@@ -3,12 +3,29 @@
 -- up
 
 -- Dashboard enums
-CREATE TYPE widget_type AS ENUM ('kpi_card', 'chart_line', 'chart_bar', 'chart_pie', 'chart_area', 'table', 'list', 'gauge', 'heatmap', 'timeline', 'text', 'iframe', 'ai_insight');
-CREATE TYPE notification_type AS ENUM ('info', 'success', 'warning', 'error', 'system', 'alert', 'reminder');
-CREATE TYPE metric_type AS ENUM ('counter', 'gauge', 'histogram', 'summary');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'widget_type') THEN
+        CREATE TYPE widget_type AS ENUM ('kpi_card', 'chart_line', 'chart_bar', 'chart_pie', 'chart_area', 'table', 'list', 'gauge', 'heatmap', 'timeline', 'text', 'iframe', 'ai_insight');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_type') THEN
+        CREATE TYPE notification_type AS ENUM ('info', 'success', 'warning', 'error', 'system', 'alert', 'reminder');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'metric_type') THEN
+        CREATE TYPE metric_type AS ENUM ('counter', 'gauge', 'histogram', 'summary');
+    END IF;
+END$$;
 
 -- Dashboards table
-CREATE TABLE dashboard (
+CREATE TABLE IF NOT EXISTS dashboard (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     name text NOT NULL,
@@ -21,7 +38,7 @@ CREATE TABLE dashboard (
     view_count integer DEFAULT 0,
     last_viewed_at timestamptz,
     refresh_interval_seconds integer DEFAULT 300,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -31,7 +48,7 @@ CREATE TABLE dashboard (
 );
 
 -- Dashboard widgets table
-CREATE TABLE widget (
+CREATE TABLE IF NOT EXISTS widget (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     dashboard_id uuid NOT NULL REFERENCES dashboard(id) ON DELETE CASCADE,
@@ -53,7 +70,7 @@ CREATE TABLE widget (
 );
 
 -- Widget data cache table (for performance optimization)
-CREATE TABLE widget_data_cache (
+CREATE TABLE IF NOT EXISTS widget_data_cache (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     widget_id uuid NOT NULL REFERENCES widget(id) ON DELETE CASCADE,
     data_hash text NOT NULL,
@@ -65,10 +82,10 @@ CREATE TABLE widget_data_cache (
 );
 
 -- Notifications table
-CREATE TABLE notification (
+CREATE TABLE IF NOT EXISTS notification (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
-    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id uuid REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     type notification_type NOT NULL,
     title text NOT NULL,
     message text NOT NULL,
@@ -84,7 +101,7 @@ CREATE TABLE notification (
 );
 
 -- System metrics table (partitioned by timestamp for performance)
-CREATE TABLE system_metric (
+CREATE TABLE IF NOT EXISTS system_metric (
     id uuid DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     metric_name text NOT NULL,
@@ -101,19 +118,42 @@ CREATE TABLE system_metric (
 ) PARTITION BY RANGE (timestamp);
 
 -- Create partitions for system_metric (current month and next 6 months)
-CREATE TABLE system_metric_2024_q4 PARTITION OF system_metric
-    FOR VALUES FROM ('2024-10-01') TO ('2025-01-01');
-CREATE TABLE system_metric_2025_q1 PARTITION OF system_metric
-    FOR VALUES FROM ('2025-01-01') TO ('2025-04-01');
-CREATE TABLE system_metric_2025_q2 PARTITION OF system_metric
-    FOR VALUES FROM ('2025-04-01') TO ('2025-07-01');
-CREATE TABLE system_metric_2025_q3 PARTITION OF system_metric
-    FOR VALUES FROM ('2025-07-01') TO ('2025-10-01');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'system_metric_2024_q4') THEN
+        CREATE TABLE system_metric_2024_q4 PARTITION OF system_metric
+            FOR VALUES FROM ('2024-10-01') TO ('2025-01-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'system_metric_2025_q1') THEN
+        CREATE TABLE system_metric_2025_q1 PARTITION OF system_metric
+            FOR VALUES FROM ('2025-01-01') TO ('2025-04-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'system_metric_2025_q2') THEN
+        CREATE TABLE system_metric_2025_q2 PARTITION OF system_metric
+            FOR VALUES FROM ('2025-04-01') TO ('2025-07-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'system_metric_2025_q3') THEN
+        CREATE TABLE system_metric_2025_q3 PARTITION OF system_metric
+            FOR VALUES FROM ('2025-07-01') TO ('2025-10-01');
+    END IF;
+END$$;
 
 -- Dashboard favorites table
-CREATE TABLE dashboard_favorite (
+CREATE TABLE IF NOT EXISTS dashboard_favorite (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     dashboard_id uuid NOT NULL REFERENCES dashboard(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
 
@@ -121,11 +161,11 @@ CREATE TABLE dashboard_favorite (
 );
 
 -- Dashboard sharing table
-CREATE TABLE dashboard_share (
+CREATE TABLE IF NOT EXISTS dashboard_share (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     dashboard_id uuid NOT NULL REFERENCES dashboard(id) ON DELETE CASCADE,
-    shared_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    shared_with uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+    shared_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
+    shared_with uuid REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     share_token text UNIQUE,
     permissions jsonb DEFAULT '{"read": true, "write": false}',
     expires_at timestamptz,
@@ -136,7 +176,7 @@ CREATE TABLE dashboard_share (
 );
 
 -- Alert rules table for proactive monitoring
-CREATE TABLE alert_rule (
+CREATE TABLE IF NOT EXISTS alert_rule (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     name text NOT NULL,
@@ -148,7 +188,7 @@ CREATE TABLE alert_rule (
     notification_channels jsonb DEFAULT '{}',
     cooldown_minutes integer DEFAULT 60,
     last_triggered_at timestamptz,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -243,14 +283,28 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_dashboard_updated_at ON dashboard;
 CREATE TRIGGER update_dashboard_updated_at BEFORE UPDATE ON dashboard FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_widget_updated_at ON widget;
 CREATE TRIGGER update_widget_updated_at BEFORE UPDATE ON widget FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_alert_rule_updated_at ON alert_rule;
 CREATE TRIGGER update_alert_rule_updated_at BEFORE UPDATE ON alert_rule FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Audit triggers
+DROP TRIGGER IF EXISTS audit_dashboard ON dashboard;
 CREATE TRIGGER audit_dashboard AFTER INSERT OR UPDATE OR DELETE ON dashboard FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+DROP TRIGGER IF EXISTS audit_widget ON widget;
 CREATE TRIGGER audit_widget AFTER INSERT OR UPDATE OR DELETE ON widget FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+DROP TRIGGER IF EXISTS audit_alert_rule ON alert_rule;
 CREATE TRIGGER audit_alert_rule AFTER INSERT OR UPDATE OR DELETE ON alert_rule FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0006_dashboards')
+ON CONFLICT (migration_name) DO NOTHING;
 
 -- down
 

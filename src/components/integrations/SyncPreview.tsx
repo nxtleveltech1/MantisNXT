@@ -34,6 +34,9 @@ interface SyncPreviewProps {
   isOpen: boolean;
   syncType: 'woocommerce' | 'odoo';
   entityType: string;
+  orgId: string | null;
+  direction: 'inbound' | 'outbound';
+  onDirectionChange: (direction: 'inbound' | 'outbound') => void;
   onConfirm: (config: SyncConfig) => void;
   onCancel: () => void;
 }
@@ -42,6 +45,7 @@ interface SyncConfig {
   includeNew: boolean;
   includeUpdated: boolean;
   includeDeleted: boolean;
+  direction: 'inbound' | 'outbound';
   selectedIds?: (string | number)[];
 }
 
@@ -176,6 +180,9 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
   isOpen,
   syncType,
   entityType,
+  orgId,
+  direction,
+  onDirectionChange,
   onConfirm,
   onCancel,
 }) => {
@@ -194,20 +201,30 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
   // Fetch sync preview data
   useEffect(() => {
     if (!isOpen || !syncType || !entityType) return;
+    if (!orgId) {
+      setError('Missing organization context. Please configure an organization before syncing.');
+      setData(null);
+      setLoading(false);
+      return;
+    }
 
     const fetchPreview = async () => {
       setLoading(true);
       setError(null);
       try {
         const response = await fetch(
-          `/api/v1/integrations/sync/preview?action=fetch&sync_type=${syncType}&entity_type=${entityType}&orgId=org-default`,
+          `/api/v1/integrations/sync/preview?action=fetch&sync_type=${syncType}&entity_type=${entityType}&direction=${direction}`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(orgId ? { 'x-org-id': orgId } : {}),
+            },
             body: JSON.stringify({
               syncType,
               entityType,
-              orgId: 'org-default',
+              orgId,
+              direction,
             }),
           }
         );
@@ -233,7 +250,13 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
     };
 
     fetchPreview();
-  }, [isOpen, syncType, entityType]);
+  }, [isOpen, syncType, entityType, orgId, direction]);
+
+  useEffect(() => {
+    setSelectedNew(new Set());
+    setSelectedUpdated(new Set());
+    setSelectedDeleted(new Set());
+  }, [direction, entityType, syncType, isOpen]);
 
   const handleSelectItem = useCallback(
     (type: 'new' | 'updated' | 'deleted', id: string | number) => {
@@ -258,6 +281,7 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
       includeNew,
       includeUpdated,
       includeDeleted,
+      direction,
       selectedIds: [
         ...(includeNew ? Array.from(selectedNew) : []),
         ...(includeUpdated ? Array.from(selectedUpdated) : []),
@@ -292,6 +316,33 @@ export const SyncPreview: React.FC<SyncPreviewProps> = ({
             Review the items that will be synced before confirming the operation
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex items-center justify-between rounded-lg border p-3 mb-4 bg-muted/30">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-foreground">Sync Direction</span>
+            <span className="text-xs text-muted-foreground">
+              Choose whether to pull external changes (Sync Down) or push local updates (Sync Up)
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={direction === 'inbound' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onDirectionChange('inbound')}
+              aria-pressed={direction === 'inbound'}
+            >
+              Sync Down
+            </Button>
+            <Button
+              variant={direction === 'outbound' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onDirectionChange('outbound')}
+              aria-pressed={direction === 'outbound'}
+            >
+              Sync Up
+            </Button>
+          </div>
+        </div>
 
         {error && (
           <Card className="border-destructive bg-destructive/5">

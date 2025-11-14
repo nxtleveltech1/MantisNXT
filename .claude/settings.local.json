@@ -44,7 +44,18 @@
       "Bash(node verify-migration.js:*)",
       "Bash(git push:*)",
       "Bash(curl:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(powershell -Command:*)",
+      "mcp__neon__list_projects",
+      "mcp__neon__run_sql_transaction",
+      "mcp__neon__get_connection_string",
+      "mcp__neon__get_database_tables",
+      "mcp__neon__run_sql",
+      "mcp__neon__describe_table_schema",
+      "Bash(npx tsx scripts/apply-extraction-migrations.ts)",
+      "Bash(npx tsx:*)",
+      "Bash(src/components/supplier-portfolio/EnhancedPricelistUpload.tsx.restored)",
+      "Bash(src/app/nxt-spp/page.tsx.restored)"
     ],
     "deny": [],
     "ask": []

@@ -8,24 +8,50 @@ ALTER TYPE integration_provider ADD VALUE IF NOT EXISTS 'woocommerce';
 ALTER TYPE integration_provider ADD VALUE IF NOT EXISTS 'odoo';
 
 -- Sync direction enum
-CREATE TYPE sync_direction AS ENUM ('inbound', 'outbound', 'bidirectional');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sync_direction') THEN
+        CREATE TYPE sync_direction AS ENUM ('inbound', 'outbound', 'bidirectional');
+    END IF;
+END
+$$;
 
 -- Sync status enum
-CREATE TYPE sync_status AS ENUM ('pending', 'in_progress', 'completed', 'failed', 'partial', 'conflict');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sync_status') THEN
+        CREATE TYPE sync_status AS ENUM ('pending', 'in_progress', 'completed', 'failed', 'partial', 'conflict');
+    END IF;
+END
+$$;
 
 -- Entity type enum for mappings
-CREATE TYPE entity_type AS ENUM (
-    'product',
-    'customer',
-    'order',
-    'supplier',
-    'inventory',
-    'category',
-    'payment',
-    'shipment',
-    'invoice',
-    'purchase_order'
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'entity_type') THEN
+        CREATE TYPE entity_type AS ENUM (
+            'product',
+            'customer',
+            'order',
+            'supplier',
+            'inventory',
+            'category',
+            'payment',
+            'shipment',
+            'invoice',
+            'purchase_order'
+        );
+    END IF;
+END
+$$;
+
+-- Drop legacy tables to ensure clean re-creation
+DROP TABLE IF EXISTS sync_conflict CASCADE;
+DROP TABLE IF EXISTS integration_webhook CASCADE;
+DROP TABLE IF EXISTS sync_log CASCADE;
+DROP TABLE IF EXISTS integration_mapping CASCADE;
+DROP TABLE IF EXISTS odoo_sync CASCADE;
+DROP TABLE IF EXISTS woocommerce_sync CASCADE;
 
 -- WooCommerce sync state table
 CREATE TABLE woocommerce_sync (
@@ -168,7 +194,7 @@ CREATE TABLE sync_conflict (
     resolution_strategy text, -- 'manual', 'local_wins', 'remote_wins', 'merge'
     is_resolved boolean DEFAULT false,
     resolved_at timestamptz,
-    resolved_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    resolved_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     resolution_data jsonb,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
@@ -472,6 +498,10 @@ ALTER TABLE sync_conflict ENABLE ROW LEVEL SECURITY;
 CREATE POLICY sync_conflict_org_isolation ON sync_conflict
     FOR ALL
     USING (org_id = current_setting('app.current_org_id')::uuid);
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0206_ecommerce_integrations')
+ON CONFLICT (migration_name) DO NOTHING;
 
 -- down
 

@@ -25,11 +25,11 @@ PRODUCTION CODE
      - Rollback procedure (in comments at end)
 
 EXECUTION:
-  Via Supabase MCP:
+  Via Neon/psql:
     psql $NEON_DATABASE_URL < database/migrations/0024_sync_preview_progress_logs.sql
 
-  Via Supabase CLI:
-    supabase db push --file database/migrations/0024_sync_preview_progress_logs.sql
+  Via automated migration runner:
+    yarn db:migrate --file database/migrations/0024_sync_preview_progress_logs.sql --database $NEON_DATABASE_URL
 
 ================================================================================
 DOCUMENTATION
@@ -310,5 +310,5 @@ VERSION HISTORY
 
 ================================================================================
 STATUS: PRODUCTION READY
-Ready for immediate deployment to Neon PostgreSQL via Supabase MCP
+Ready for immediate deployment to Neon PostgreSQL via psql/Neon tooling
 ================================================================================

@@ -1,7 +1,7 @@
 -- =====================================================
--- MANTIS NXT - COMPLETE CORRECTED SUPABASE SCHEMA
+-- MANTIS NXT - LEGACY COMPLETE CORRECTED SCHEMA
 -- =====================================================
--- Production Ready - 100% Supabase Compatible
+-- Production Ready - 100% Legacy-provider Compatible
 -- All syntax issues fixed, comprehensive indexes added
 -- Complete enum definitions, proper constraints
 -- Optimized for performance and security

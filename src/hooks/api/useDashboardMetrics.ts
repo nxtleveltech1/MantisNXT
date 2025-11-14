@@ -21,6 +21,7 @@ export interface DashboardMetrics {
     preferredSuppliers: number;
     totalInventoryItems: number;
     totalInventoryValue: number;
+    totalSupplierProducts: number;
     averageInventoryValue: number;
     lowStockAlerts: number;
     outOfStockItems: number;

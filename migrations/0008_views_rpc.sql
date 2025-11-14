@@ -56,7 +56,7 @@ SELECT
 FROM supplier s
 LEFT JOIN inventory_item ii ON ii.supplier_id = s.id
 LEFT JOIN purchase_order po ON po.supplier_id = s.id
-WHERE s.org_id = auth.user_org_id()
+WHERE s.org_id = current_setting('app.current_org_id', true)::uuid
 GROUP BY s.org_id;
 
 -- Customer operations dashboard view
@@ -73,7 +73,7 @@ SELECT
     AVG(EXTRACT(EPOCH FROM (COALESCE(st.first_response_at, now()) - st.created_at))/3600) as avg_first_response_hours
 FROM customer c
 LEFT JOIN support_ticket st ON st.customer_id = c.id
-WHERE c.org_id = auth.user_org_id()
+WHERE c.org_id = current_setting('app.current_org_id', true)::uuid
 GROUP BY c.org_id;
 
 -- AI workspace statistics view
@@ -82,14 +82,14 @@ SELECT
     ac.org_id,
     COUNT(DISTINCT ac.id) as total_conversations,
     COUNT(DISTINCT CASE WHEN ac.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN ac.id END) as conversations_7d,
-    SUM(ac.total_tokens_used) as total_tokens,
+    COALESCE(SUM(ac.total_tokens_used), 0) as total_tokens,
     COUNT(DISTINCT ad.id) as datasets_count,
     COUNT(DISTINCT apt.id) as prompt_templates_count,
     COUNT(DISTINCT CASE WHEN apt.is_public = true THEN apt.id END) as public_templates
 FROM ai_conversation ac
 LEFT JOIN ai_dataset ad ON ad.org_id = ac.org_id
 LEFT JOIN ai_prompt_template apt ON apt.org_id = ac.org_id
-WHERE ac.org_id = auth.user_org_id()
+WHERE ac.org_id = current_setting('app.current_org_id', true)::uuid
 GROUP BY ac.org_id;
 
 -- Recent activity view for dashboard
@@ -103,8 +103,8 @@ SELECT
     p.display_name as user_name,
     st.org_id
 FROM support_ticket st
-LEFT JOIN profile p ON p.id = st.assigned_to
-WHERE st.org_id = auth.user_org_id()
+LEFT JOIN auth.users_extended p ON p.id = st.assigned_to
+WHERE st.org_id = current_setting('app.current_org_id', true)::uuid
 
 UNION ALL
 
@@ -117,22 +117,22 @@ SELECT
     p.display_name as user_name,
     po.org_id
 FROM purchase_order po
-LEFT JOIN profile p ON p.id = po.created_by
-WHERE po.org_id = auth.user_org_id()
+LEFT JOIN auth.users_extended p ON p.id = po.created_by
+WHERE po.org_id = current_setting('app.current_org_id', true)::uuid
 
 UNION ALL
 
 SELECT
     'ai_conversation' as activity_type,
     ac.id as record_id,
-    ac.title as title,
+    COALESCE(ac.conversation_id, ac.id::text) as title,
     'AI conversation started' as description,
     ac.created_at as timestamp,
     p.display_name as user_name,
     ac.org_id
 FROM ai_conversation ac
-JOIN profile p ON p.id = ac.user_id
-WHERE ac.org_id = auth.user_org_id()
+JOIN auth.users_extended p ON p.id = ac.user_id
+WHERE ac.org_id = current_setting('app.current_org_id', true)::uuid
 
 ORDER BY timestamp DESC
 LIMIT 50;
@@ -155,7 +155,7 @@ SELECT
     END as stock_status
 FROM inventory_item ii
 LEFT JOIN supplier s ON s.id = ii.supplier_id
-WHERE ii.org_id = auth.user_org_id()
+WHERE ii.org_id = current_setting('app.current_org_id', true)::uuid
 AND ii.is_active = true
 AND ii.quantity_on_hand <= ii.reorder_point
 ORDER BY ii.quantity_on_hand ASC, ii.reorder_point DESC;
@@ -180,7 +180,7 @@ BEGIN
     FROM widget w
     JOIN dashboard d ON d.id = w.dashboard_id
     WHERE w.id = widget_id_param
-    AND w.org_id = auth.user_org_id();
+    AND w.org_id = current_setting('app.current_org_id', true)::uuid;
 
     IF widget_config IS NULL THEN
         RAISE EXCEPTION 'Widget not found or access denied';
@@ -255,7 +255,7 @@ BEGIN
         '/customers/' || c.id::text,
         ts_rank(to_tsvector('english', c.name || ' ' || COALESCE(c.company, '') || ' ' || COALESCE(c.email, '')), plainto_tsquery('english', search_term))
     FROM customer c
-    WHERE c.org_id = auth.user_org_id()
+    WHERE c.org_id = current_setting('app.current_org_id', true)::uuid
     AND (
         c.name ILIKE '%' || search_term || '%' OR
         c.company ILIKE '%' || search_term || '%' OR
@@ -273,7 +273,7 @@ BEGIN
         '/tickets/' || st.id::text,
         ts_rank(to_tsvector('english', st.title || ' ' || st.description), plainto_tsquery('english', search_term))
     FROM support_ticket st
-    WHERE st.org_id = auth.user_org_id()
+    WHERE st.org_id = current_setting('app.current_org_id', true)::uuid
     AND (
         st.title ILIKE '%' || search_term || '%' OR
         st.description ILIKE '%' || search_term || '%' OR
@@ -291,7 +291,7 @@ BEGIN
         '/inventory/' || ii.id::text,
         ts_rank(to_tsvector('english', ii.name || ' ' || COALESCE(ii.description, '') || ' ' || ii.sku), plainto_tsquery('english', search_term))
     FROM inventory_item ii
-    WHERE ii.org_id = auth.user_org_id()
+    WHERE ii.org_id = current_setting('app.current_org_id', true)::uuid
     AND ii.is_active = true
     AND (
         ii.name ILIKE '%' || search_term || '%' OR
@@ -331,7 +331,7 @@ BEGIN
         FULL OUTER JOIN support_ticket st ON st.org_id = c.org_id
         FULL OUTER JOIN purchase_order po ON po.org_id = COALESCE(c.org_id, st.org_id)
         FULL OUTER JOIN inventory_item ii ON ii.org_id = COALESCE(c.org_id, st.org_id, po.org_id)
-        WHERE COALESCE(c.org_id, st.org_id, po.org_id, ii.org_id) = auth.user_org_id()
+        WHERE COALESCE(c.org_id, st.org_id, po.org_id, ii.org_id) = current_setting('app.current_org_id', true)::uuid
     )
     SELECT jsonb_build_object(
         'customers', jsonb_build_object(
@@ -373,8 +373,8 @@ BEGIN
         assigned_to = COALESCE(assigned_to_id, assigned_to),
         updated_at = now()
     WHERE id = ANY(ticket_ids)
-    AND org_id = auth.user_org_id()
-    AND (assigned_to = auth.uid() OR auth.has_role(ARRAY['admin', 'ops_manager']));
+    AND org_id = current_setting('app.current_org_id', true)::uuid
+    AND (assigned_to = current_setting('app.current_user_id', true)::uuid OR auth.has_role(ARRAY['admin', 'manager']));
 
     GET DIAGNOSTICS updated_count = ROW_COUNT;
     RETURN updated_count;
@@ -411,7 +411,7 @@ BEGIN
         ii.unit_price * GREATEST(ii.reorder_point * 2 - ii.quantity_on_hand, ii.reorder_point)
     FROM inventory_item ii
     LEFT JOIN supplier s ON s.id = ii.supplier_id
-    WHERE ii.org_id = auth.user_org_id()
+    WHERE ii.org_id = current_setting('app.current_org_id', true)::uuid
     AND ii.is_active = true
     AND ii.quantity_on_hand <= ii.reorder_point
     ORDER BY ii.quantity_on_hand ASC;
@@ -437,6 +437,10 @@ GRANT SELECT ON v_customer_ops_overview TO authenticated;
 GRANT SELECT ON v_ai_workspace_stats TO authenticated;
 GRANT SELECT ON v_recent_activity TO authenticated;
 GRANT SELECT ON v_inventory_alerts TO authenticated;
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0008_views_rpc')
+ON CONFLICT (migration_name) DO NOTHING;
 
 -- down
 

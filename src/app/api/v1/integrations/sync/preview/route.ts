@@ -21,10 +21,10 @@
  * Error Codes: 400 (invalid params), 401 (auth), 500 (service error)
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
-import type { SyncType, EntityType } from '@/lib/services/DeltaDetectionService';
+import type { SyncType, EntityType, SyncDirection } from '@/lib/services/DeltaDetectionService';
 import { DeltaDetectionService } from '@/lib/services/DeltaDetectionService';
 
 interface SelectiveSyncPayload {
@@ -32,6 +32,23 @@ interface SelectiveSyncPayload {
   includeUpdated: boolean;
   includeDeleted: boolean;
 }
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMERGENCY_ORG_ID = '00000000-0000-0000-0000-000000000001';
+const FALLBACK_ORG_ID =
+  process.env.DEFAULT_ORG_ID && UUID_REGEX.test(process.env.DEFAULT_ORG_ID)
+    ? process.env.DEFAULT_ORG_ID
+    : EMERGENCY_ORG_ID;
+
+const DIRECTION_MAP: Record<string, SyncDirection> = {
+  inbound: 'inbound',
+  outbound: 'outbound',
+  sync_down: 'inbound',
+  sync_up: 'outbound',
+  down: 'inbound',
+  up: 'outbound',
+};
+const DIRECTION_LABELS = ['sync_down', 'sync_up', 'inbound', 'outbound'];
 
 /**
  * Validate query parameters
@@ -60,29 +77,45 @@ function validateQueryParams(
   return { valid: true };
 }
 
+function resolveDirectionParam(raw?: string | null): SyncDirection | null {
+  if (!raw) {
+    return null;
+  }
+
+  const normalized = raw.trim().toLowerCase().replace(/-/g, '_');
+  return DIRECTION_MAP[normalized] ?? null;
+}
+
 /**
  * Extract organization ID from request context
  */
-function getOrgIdFromRequest(request: NextRequest, body?: unknown): string | null {
-  // Try to get from request body first (for POST requests)
-  if (body?.orgId) {
-    return body.orgId;
+function getOrgIdFromRequest(
+  request: NextRequest,
+  body?: Record<string, unknown>
+): { orgId: string | null; usedFallback: boolean } {
+  if (body) {
+    const bodyOrg =
+      typeof body.orgId === 'string'
+        ? body.orgId
+        : typeof body.org_id === 'string'
+          ? body.org_id
+          : null;
+    if (bodyOrg) {
+      return { orgId: bodyOrg, usedFallback: false };
+    }
   }
 
-  // Try to get from custom header (set by auth middleware)
-  const orgId = request.headers.get('x-org-id') || request.headers.get('x-organization-id');
-  if (orgId) {
-    return orgId;
+  const headerOrg = request.headers.get('x-org-id') || request.headers.get('x-organization-id');
+  if (headerOrg) {
+    return { orgId: headerOrg, usedFallback: false };
   }
 
-  // Try query parameter
   const url = new URL(request.url);
   const queryOrgId = url.searchParams.get('orgId');
   if (queryOrgId) {
-    return queryOrgId;
+    return { orgId: queryOrgId, usedFallback: false };
   }
 
-  // Alternative: Get from Authorization header (if JWT contains org_id)
   const auth = request.headers.get('authorization');
   if (auth?.startsWith('Bearer ')) {
     try {
@@ -90,8 +123,14 @@ function getOrgIdFromRequest(request: NextRequest, body?: unknown): string | nul
       const parts = token.split('.');
       if (parts.length === 3) {
         const payload = JSON.parse(atob(parts[1]));
-        if (payload.org_id || payload.organization_id) {
-          return payload.org_id || payload.organization_id;
+        const tokenOrg =
+          typeof payload.org_id === 'string'
+            ? payload.org_id
+            : typeof payload.organization_id === 'string'
+              ? payload.organization_id
+              : null;
+        if (tokenOrg) {
+          return { orgId: tokenOrg, usedFallback: false };
         }
       }
     } catch {
@@ -99,8 +138,7 @@ function getOrgIdFromRequest(request: NextRequest, body?: unknown): string | nul
     }
   }
 
-  // Default fallback for development/testing
-  return 'org-default';
+  return { orgId: FALLBACK_ORG_ID, usedFallback: true };
 }
 
 /**
@@ -114,6 +152,20 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const syncType = url.searchParams.get('sync_type');
     const entityType = url.searchParams.get('entity_type');
+    const rawDirection =
+      url.searchParams.get('direction') ?? url.searchParams.get('sync_direction');
+    const direction = resolveDirectionParam(rawDirection) ?? 'inbound';
+
+    if (rawDirection && !resolveDirectionParam(rawDirection)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid direction. Must be one of: ${DIRECTION_LABELS.join(', ')}`,
+          details: { requestId },
+        },
+        { status: 400 }
+      );
+    }
 
     // Validate parameters
     const validation = validateQueryParams(syncType, entityType);
@@ -129,12 +181,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get organization ID
-    const orgId = getOrgIdFromRequest(request);
+    const { orgId, usedFallback } = getOrgIdFromRequest(request);
     if (!orgId) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Unauthorized: Missing organization context. Please provide orgId in query params, headers, or request body.',
+          error:
+            'Unauthorized: Missing organization context. Please provide orgId in query params, headers, or request body.',
           details: { requestId },
         },
         { status: 401 }
@@ -142,22 +195,27 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify org exists and user has access (skip if using default org)
-    if (orgId !== 'org-default') {
-      const orgCheck = await query(
-        `SELECT id FROM organizations WHERE id = $1 LIMIT 1`,
-        [orgId]
-      );
+    try {
+      const orgCheck = await query(`SELECT id FROM organizations WHERE id = $1 LIMIT 1`, [orgId]);
 
       if (!orgCheck.rows.length) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Unauthorized: Invalid organization',
-            details: { requestId },
-          },
-          { status: 401 }
+        if (!usedFallback) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Unauthorized: Invalid organization',
+              details: { requestId },
+            },
+            { status: 401 }
+          );
+        }
+
+        console.warn(
+          `[Sync Preview] Fallback org_id ${orgId} not found in database. Proceeding with fallback context.`
         );
       }
+    } catch (orgError) {
+      console.warn('[Sync Preview] Organization verification failed:', orgError);
     }
 
     // Get preview snapshot
@@ -165,13 +223,15 @@ export async function GET(request: NextRequest) {
       orgId,
       syncType as SyncType,
       entityType as EntityType,
-      false
+      false,
+      direction
     );
 
     // Log successful operation
     await logRequest(orgId, 'sync_preview_fetch', 'success', {
       syncType,
       entityType,
+      direction,
       cacheHit: result.cacheHit,
       processingTime: Date.now() - startTime,
     });
@@ -184,6 +244,7 @@ export async function GET(request: NextRequest) {
           timestamp: new Date().toISOString(),
           requestId,
           processingTime: Date.now() - startTime,
+          direction,
         },
       },
       {
@@ -197,7 +258,7 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     console.error(`[Sync Preview] GET error:`, error);
 
-    const orgId = getOrgIdFromRequest(request);
+    const { orgId } = getOrgIdFromRequest(request);
     if (orgId) {
       await logRequest(orgId, 'sync_preview_fetch', 'failed', {
         error: error.message,
@@ -230,19 +291,40 @@ export async function POST(request: NextRequest) {
     const entityType = url.searchParams.get('entity_type');
 
     // Get organization ID
-    let body: unknown = {};
+    let rawBody: unknown = {};
     try {
-      body = await request.json();
+      rawBody = await request.json();
     } catch {
       // No body, continue
     }
 
-    const orgId = getOrgIdFromRequest(request, body);
+    const bodyRecord =
+      rawBody && typeof rawBody === 'object' ? (rawBody as Record<string, unknown>) : undefined;
+
+    const rawDirection =
+      url.searchParams.get('direction') ??
+      url.searchParams.get('sync_direction') ??
+      (typeof bodyRecord?.direction === 'string' ? (bodyRecord.direction as string) : null);
+    const directionResult = resolveDirectionParam(rawDirection);
+    if (rawDirection && !directionResult) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid direction. Must be one of: ${DIRECTION_LABELS.join(', ')}`,
+          details: { requestId },
+        },
+        { status: 400 }
+      );
+    }
+    const direction: SyncDirection = directionResult ?? 'inbound';
+
+    const { orgId, usedFallback } = getOrgIdFromRequest(request, bodyRecord);
     if (!orgId) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Unauthorized: Missing organization context. Please provide orgId in query params, headers, or request body.',
+          error:
+            'Unauthorized: Missing organization context. Please provide orgId in query params, headers, or request body.',
           details: { requestId },
         },
         { status: 401 }
@@ -250,22 +332,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify org exists (skip if using default org)
-    if (orgId !== 'org-default') {
-      const orgCheck = await query(
-        `SELECT id FROM organizations WHERE id = $1 LIMIT 1`,
-        [orgId]
-      );
+    try {
+      const orgCheck = await query(`SELECT id FROM organizations WHERE id = $1 LIMIT 1`, [orgId]);
 
       if (!orgCheck.rows.length) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Unauthorized: Invalid organization',
-            details: { requestId },
-          },
-          { status: 401 }
+        if (!usedFallback) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Unauthorized: Invalid organization',
+              details: { requestId },
+            },
+            { status: 401 }
+          );
+        }
+
+        console.warn(
+          `[Sync Preview] Fallback org_id ${orgId} not found in database. Proceeding with fallback context.`
         );
       }
+    } catch (orgError) {
+      console.warn('[Sync Preview] Organization verification failed:', orgError);
     }
 
     // Handle 'fetch' action - force refresh
@@ -286,19 +373,22 @@ export async function POST(request: NextRequest) {
       await DeltaDetectionService.invalidatePreviewCache(
         orgId,
         syncType as SyncType,
-        entityType as EntityType
+        entityType as EntityType,
+        direction
       );
 
       const result = await DeltaDetectionService.getPreviewSnapshot(
         orgId,
         syncType as SyncType,
         entityType as EntityType,
-        true
+        true,
+        direction
       );
 
       await logRequest(orgId, 'sync_preview_refresh', 'success', {
         syncType,
         entityType,
+        direction,
         processingTime: Date.now() - startTime,
       });
 
@@ -311,6 +401,7 @@ export async function POST(request: NextRequest) {
             timestamp: new Date().toISOString(),
             requestId,
             processingTime: Date.now() - startTime,
+            direction,
           },
         },
         {
@@ -336,7 +427,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const payload: SelectiveSyncPayload = await request.json();
+      if (!bodyRecord) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid payload. Expected JSON body.',
+            details: { requestId },
+          },
+          { status: 400 }
+        );
+      }
+
+      const payload = bodyRecord as Partial<SelectiveSyncPayload>;
 
       // Validate payload
       if (
@@ -347,7 +449,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Invalid payload. Expected: { includeNew: boolean, includeUpdated: boolean, includeDeleted: boolean }',
+            error:
+              'Invalid payload. Expected: { includeNew: boolean, includeUpdated: boolean, includeDeleted: boolean }',
             details: { requestId },
           },
           { status: 400 }
@@ -356,27 +459,43 @@ export async function POST(request: NextRequest) {
 
       // Store selective sync configuration
       const configId = `sync-config-${orgId}-${entityType}-${Date.now()}`;
+      const existingConfig = await query(
+        `SELECT config
+         FROM sync_selective_config
+         WHERE org_id = $1 AND entity_type = $2
+         LIMIT 1`,
+        [orgId, entityType]
+      );
+
+      const currentConfig =
+        existingConfig.rows[0]?.config && typeof existingConfig.rows[0].config === 'object'
+          ? (existingConfig.rows[0].config as Record<string, unknown>)
+          : {};
+
+      const updatedDirectionConfig = {
+        includeNew: payload.includeNew,
+        includeUpdated: payload.includeUpdated,
+        includeDeleted: payload.includeDeleted,
+        appliedAt: new Date().toISOString(),
+      };
+
+      const mergedConfig = {
+        ...currentConfig,
+        [direction]: updatedDirectionConfig,
+      };
+
       await query(
         `INSERT INTO sync_selective_config (id, org_id, entity_type, config)
          VALUES ($1, $2, $3, $4::jsonb)
          ON CONFLICT (org_id, entity_type) DO UPDATE
          SET config = $4::jsonb, updated_at = NOW()`,
-        [
-          configId,
-          orgId,
-          entityType,
-          JSON.stringify({
-            includeNew: payload.includeNew,
-            includeUpdated: payload.includeUpdated,
-            includeDeleted: payload.includeDeleted,
-            appliedAt: new Date().toISOString(),
-          }),
-        ]
+        [configId, orgId, entityType, JSON.stringify(mergedConfig)]
       );
 
       await logRequest(orgId, 'sync_selective_config', 'success', {
         entityType,
-        config: payload,
+        direction,
+        config: mergedConfig,
       });
 
       return NextResponse.json(
@@ -384,14 +503,15 @@ export async function POST(request: NextRequest) {
           success: true,
           data: {
             entityType,
-            selectiveSyncConfig: payload,
-            appliedAt: new Date().toISOString(),
+            direction,
+            selectiveSyncConfig: updatedDirectionConfig,
           },
           message: 'Selective sync configuration applied',
           meta: {
             timestamp: new Date().toISOString(),
             requestId,
             processingTime: Date.now() - startTime,
+            direction,
           },
         },
         {
@@ -415,7 +535,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error(`[Sync Preview] POST error:`, error);
 
-    const orgId = getOrgIdFromRequest(request);
+    const { orgId } = getOrgIdFromRequest(request);
     if (orgId) {
       const action = new URL(request.url).searchParams.get('action');
       await logRequest(orgId, `sync_${action || 'unknown'}`, 'failed', {
@@ -452,9 +572,11 @@ async function logRequest(
     );
   } catch (error: unknown) {
     // Handle missing table gracefully - this is non-fatal
-    if (error.message?.includes('does not exist') || 
-        error.message?.includes('relation') ||
-        error.code === '42P01') {
+    if (
+      error.message?.includes('does not exist') ||
+      error.message?.includes('relation') ||
+      error.code === '42P01'
+    ) {
       console.warn('[Sync Preview] Activity log table does not exist, skipping log:', activityType);
       return;
     }

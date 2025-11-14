@@ -8,26 +8,21 @@
 ### 1. Start a Sync Job
 
 ```typescript
-import { createClient } from '@supabase/supabase-js';
+import { Pool } from 'pg';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL });
 
 async function startSync(orgId: string, userId: string) {
   const syncId = `sync-woo-${Date.now()}`;
-
-  const { data, error } = await supabase
-    .from('sync_progress')
-    .insert({
-      org_id: orgId,
-      sync_id: syncId,
-      entity_type: 'customer',
-      total_items: 5000,
-      initiated_by: userId,
-      source_system: 'woocommerce'
-    })
-    .select();
-
-  if (error) throw error;
+  await pool.query(
+    `
+      INSERT INTO sync_progress (
+        id, org_id, sync_id, entity_type, total_items, initiated_by, source_system
+      )
+      VALUES (gen_random_uuid(), $1, $2, 'customer', 5000, $3, 'woocommerce')
+    `,
+    [orgId, syncId, userId]
+  );
   return syncId;
 }
 ```
@@ -41,27 +36,20 @@ async function updateSyncProgress(
   processedCount: number,
   failedCount: number = 0
 ) {
-  const { data, error } = await supabase
-    .from('sync_progress')
-    .update({
-      processed_count: processedCount,
-      failed_count: failedCount,
-      current_item: processedCount + failedCount
-    })
-    .eq('org_id', orgId)
-    .eq('sync_id', syncId)
-    .select()
-    .single();
+  const result = await pool.query(
+    `
+      UPDATE sync_progress
+         SET processed_count = $1,
+             failed_count = $2,
+             current_item = $3,
+             updated_at = NOW()
+       WHERE org_id = $4 AND sync_id = $5
+       RETURNING *
+    `,
+    [processedCount, failedCount, processedCount + failedCount, orgId, syncId]
+  );
 
-  if (error) throw error;
-
-  // Auto-calculated fields available:
-  // - elapsed_seconds
-  // - speed_items_per_min
-  // - eta_seconds
-  // - completed_at (if finished)
-
-  return data;
+  return result.rows[0];
 }
 ```
 
@@ -69,31 +57,18 @@ async function updateSyncProgress(
 
 ```typescript
 async function getLiveProgress(orgId: string) {
-  const { data, error } = await supabase
-    .from('sync_progress')
-    .select('*')
-    .eq('org_id', orgId)
-    .is('completed_at', null)  // Only active syncs
-    .order('updated_at', { ascending: false });
+  const { rows } = await pool.query(
+    `
+      SELECT *
+        FROM sync_progress
+       WHERE org_id = $1
+         AND completed_at IS NULL
+       ORDER BY updated_at DESC
+    `,
+    [orgId]
+  );
 
-  if (error) throw error;
-  return data;
-
-  // Example response:
-  // [
-  //   {
-  //     sync_id: 'sync-woo-1234567890',
-  //     entity_type: 'customer',
-  //     processed_count: 2500,
-  //     total_items: 5000,
-  //     failed_count: 3,
-  //     speed_items_per_min: 480.5,
-  //     eta_seconds: 312,
-  //     elapsed_seconds: 312,
-  //     started_at: '2025-11-06T10:00:00Z',
-  //     updated_at: '2025-11-06T10:05:12Z'
-  //   }
-  // ]
+  return rows;
 }
 ```
 
@@ -108,33 +83,34 @@ async function cachePreviewDelta(
 ) {
   const cacheKey = hashInputs({ syncType, ...filterParams });
 
-  const { data, error } = await supabase
-    .from('sync_preview_cache')
-    .insert({
-      org_id: orgId,
-      sync_type: syncType,
-      delta_json: deltaData,
-      computed_by: userId,
-      cache_key: cacheKey,
-      expires_at: new Date(Date.now() + 60 * 60 * 1000)  // 1 hour
-    })
-    .select();
-
-  if (error) throw error;
-  return data;
+  await pool.query(
+    `
+      INSERT INTO sync_preview_cache (
+        org_id, sync_type, delta_data, computed_by, cache_key, expires_at
+      )
+      VALUES ($1, $2, $3::jsonb, $4, $5, NOW() + INTERVAL '1 hour')
+      ON CONFLICT (org_id, sync_type, entity_type)
+      DO UPDATE SET delta_data = EXCLUDED.delta_data,
+                    computed_at = NOW(),
+                    expires_at = EXCLUDED.expires_at
+    `,
+    [orgId, syncType, JSON.stringify(deltaData), userId, cacheKey]
+  );
 }
 
 // Later: retrieve from cache
 async function getPreviewDelta(cacheKey: string) {
-  const { data, error } = await supabase
-    .from('sync_preview_cache')
-    .select('delta_json')
-    .eq('cache_key', cacheKey)
-    .gt('expires_at', new Date().toISOString())  // Not expired
-    .single();
-
-  if (error && error.code !== 'PGRST116') throw error;  // PGRST116 = no rows
-  return data?.delta_json || null;
+  const { rows } = await pool.query(
+    `
+      SELECT delta_data
+        FROM sync_preview_cache
+       WHERE cache_key = $1
+         AND expires_at > NOW()
+       LIMIT 1
+    `,
+    [cacheKey]
+  );
+  return rows.at(0)?.delta_data ?? null;
 }
 ```
 
@@ -146,44 +122,50 @@ async function getOrgActivity(
   orgId: string,
   days: number = 7
 ) {
-  const { data, error } = await supabase
-    .from('sync_activity_log')
-    .select('*')
-    .eq('org_id', orgId)
-    .gt('created_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
-    .order('created_at', { ascending: false })
-    .limit(1000);
-
-  if (error) throw error;
-  return data;
+  const { rows } = await pool.query(
+    `
+      SELECT *
+        FROM sync_activity_log
+       WHERE org_id = $1
+         AND created_at > NOW() - ($2 || ' days')::interval
+       ORDER BY created_at DESC
+       LIMIT 1000
+    `,
+    [orgId, days]
+  );
+  return rows;
 }
 
 // Get failed syncs only
 async function getFailedSyncs(orgId: string, days: number = 30) {
-  const { data, error } = await supabase
-    .from('sync_activity_log')
-    .select('*')
-    .eq('org_id', orgId)
-    .in('status', ['failed', 'completed_with_errors', 'timeout'])
-    .gt('created_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+  const { rows } = await pool.query(
+    `
+      SELECT *
+        FROM sync_activity_log
+       WHERE org_id = $1
+         AND status IN ('failed', 'completed_with_errors', 'timeout')
+         AND created_at > NOW() - ($2 || ' days')::interval
+       ORDER BY created_at DESC
+    `,
+    [orgId, days]
+  );
+  return rows;
 }
 
 // Get activity by user
 async function getUserActivity(orgId: string, userId: string) {
-  const { data, error } = await supabase
-    .from('sync_activity_log')
-    .select('*')
-    .eq('org_id', orgId)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(100);
-
-  if (error) throw error;
-  return data;
+  const { rows } = await pool.query(
+    `
+      SELECT *
+        FROM sync_activity_log
+       WHERE org_id = $1
+         AND user_id = $2
+       ORDER BY created_at DESC
+       LIMIT 100
+    `,
+    [orgId, userId]
+  );
+  return rows;
 }
 ```
 
@@ -203,19 +185,15 @@ async function syncWooCommerceCustomers(orgId: string, userId: string) {
   const syncId = `sync-woo-${Date.now()}`;
   const customers = await fetchWooCommerceCustomers();
   const BATCH_SIZE = 100;
-
-  const progress = await supabase
-    .from('sync_progress')
-    .insert({
-      org_id: orgId,
-      sync_id: syncId,
-      entity_type: 'customer',
-      total_items: customers.length,
-      initiated_by: userId,
-      source_system: 'woocommerce'
-    })
-    .select()
-    .single();
+  await pool.query(
+    `
+      INSERT INTO sync_progress (
+        id, org_id, sync_id, entity_type, total_items, initiated_by, source_system
+      )
+      VALUES (gen_random_uuid(), $1, $2, 'customer', $3, $4, 'woocommerce')
+    `,
+    [orgId, syncId, customers.length, userId]
+  );
 
   console.log(`Syncing ${customers.length} customers`);
 
@@ -237,40 +215,43 @@ async function syncWooCommerceCustomers(orgId: string, userId: string) {
           console.error(`Failed to sync customer ${customer.id}:`, error.message);
           failedCount++;
 
-          // Log individual error to activity log
-          await supabase
-            .from('sync_activity_log')
-            .insert({
-              org_id: orgId,
-              sync_id: syncId,
-              entity_type: 'customer',
-              action: 'batch_process',
-              status: 'completed_with_errors',
-              record_count: 1,
-              error_message: error.message,
-              user_id: userId,
-              created_at: new Date().toISOString()
-            });
+          await pool.query(
+            `
+              INSERT INTO sync_activity_log (
+                org_id, sync_id, entity_type, activity_type, status, details, user_id
+              )
+              VALUES ($1, $2, 'customer', 'batch_process', 'completed_with_errors', $3::jsonb, $4)
+            `,
+            [
+              orgId,
+              syncId,
+              JSON.stringify({ customerId: customer.id, error: error.message }),
+              userId,
+            ]
+          );
         }
       }
 
       // 3. Update progress (auto-calculates elapsed, speed, eta)
-      const updated = await supabase
-        .from('sync_progress')
-        .update({
-          processed_count: processedCount,
-          failed_count: failedCount,
-          current_item: processedCount + failedCount
-        })
-        .eq('org_id', orgId)
-        .eq('sync_id', syncId)
-        .select()
-        .single();
+      const { rows } = await pool.query(
+        `
+          UPDATE sync_progress
+             SET processed_count = $1,
+                 failed_count = $2,
+                 current_item = $3,
+                 updated_at = NOW()
+           WHERE org_id = $4 AND sync_id = $5
+           RETURNING *
+        `,
+        [processedCount, failedCount, processedCount + failedCount, orgId, syncId]
+      );
 
-      console.log(`Batch ${Math.ceil(i / BATCH_SIZE)}: ` +
-        `${processedCount}/${customers.length} processed, ` +
-        `${updated.speed_items_per_min.toFixed(1)} items/min, ` +
-        `ETA: ${(updated.eta_seconds / 60).toFixed(1)} min`);
+      const updated = rows[0];
+      console.log(
+        `Batch ${Math.ceil(i / BATCH_SIZE)}: ${processedCount}/${customers.length} processed, ` +
+        `${updated.speed_items_per_min?.toFixed(1) ?? '-'} items/min, ` +
+        `ETA: ${updated.eta_seconds ? (updated.eta_seconds / 60).toFixed(1) : '-'} min`
+      );
 
       // Delay between batches
       await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
@@ -279,13 +260,15 @@ async function syncWooCommerceCustomers(orgId: string, userId: string) {
       console.error(`Batch processing error:`, error);
       failedCount += batch.length;
 
-      await supabase
-        .from('sync_progress')
-        .update({
-          failed_count: failedCount
-        })
-        .eq('org_id', orgId)
-        .eq('sync_id', syncId);
+      await pool.query(
+        `
+          UPDATE sync_progress
+             SET failed_count = $1,
+                 updated_at = NOW()
+           WHERE org_id = $2 AND sync_id = $3
+        `,
+        [failedCount, orgId, syncId]
+      );
     }
   }
 
@@ -309,23 +292,26 @@ async function syncWooCommerceCustomers(orgId: string, userId: string) {
 
 ```typescript
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+
+type SyncRow = {
+  sync_id: string;
+  entity_type: string;
+  processed_count: number;
+  total_items: number;
+  failed_count: number;
+  speed_items_per_min: number | null;
+  eta_seconds: number | null;
+};
 
 export function SyncProgressDashboard({ orgId }: { orgId: string }) {
-  const [activeSyncs, setActiveSyncs] = useState([]);
+  const [activeSyncs, setActiveSyncs] = useState<SyncRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Poll for updates every 2 seconds
   useEffect(() => {
     const fetchProgress = async () => {
-      const { data } = await supabase
-        .from('sync_progress')
-        .select('*')
-        .eq('org_id', orgId)
-        .is('completed_at', null)
-        .order('updated_at', { ascending: false });
-
-      setActiveSyncs(data || []);
+      const res = await fetch(`/api/sync/progress?orgId=${orgId}`);
+      const data = await res.json();
+      setActiveSyncs(data);
       setLoading(false);
     };
 
@@ -334,46 +320,43 @@ export function SyncProgressDashboard({ orgId }: { orgId: string }) {
     return () => clearInterval(interval);
   }, [orgId]);
 
+  if (loading) return <div>Loading...</div>;
+  if (!activeSyncs.length) return <div>No active syncs</div>;
+
   return (
     <div className="space-y-4">
-      {loading ? (
-        <div>Loading...</div>
-      ) : activeSyncs.length === 0 ? (
-        <div>No active syncs</div>
-      ) : (
-        activeSyncs.map((sync) => (
-          <SyncCard key={sync.sync_id} sync={sync} />
-        ))
-      )}
+      {activeSyncs.map((sync) => (
+        <SyncCard key={sync.sync_id} sync={sync} />
+      ))}
     </div>
   );
 }
 
-function SyncCard({ sync }) {
+function SyncCard({ sync }: { sync: SyncRow }) {
   const progressPercent = (sync.processed_count / sync.total_items) * 100;
-  const etaMinutes = sync.eta_seconds ? (sync.eta_seconds / 60).toFixed(1) : '—';
+  const etaMinutes = sync.eta_seconds ? (sync.eta_seconds / 60).toFixed(1) : '-';
 
   return (
     <div className="border rounded-lg p-4">
       <h3 className="font-bold">{sync.entity_type.toUpperCase()} Sync</h3>
-
-      {/* Progress bar */}
       <div className="mt-2 bg-gray-200 rounded-full h-2">
         <div
           className="bg-blue-600 h-2 rounded-full transition-all"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
-
-      {/* Stats */}
       <div className="mt-3 grid grid-cols-4 gap-2 text-sm">
         <div>
           <div className="text-gray-600">Progress</div>
-          <div className="font-mono">{sync.processed_count} / {sync.total_items}</div>
+          <div className="font-mono">
+            {sync.processed_count} / {sync.total_items}
+          </div>
         </div>
         <div>
           <div className="text-gray-600">Speed</div>
-          <div className="font-mono">{sync.speed_items_per_min?.toFixed(1) || '—'} items/min</div>
+          <div className="font-mono">
+            {sync.speed_items_per_min?.toFixed(1) ?? '-'} items/min
+          </div>
         </div>
         <div>
           <div className="text-gray-600">Failed</div>
@@ -384,8 +367,6 @@ function SyncCard({ sync }) {
           <div className="font-mono">{etaMinutes} min</div>
         </div>
       </div>
-
-      {/* Errors */}
       {sync.failed_count > 0 && (
         <div className="mt-3 text-sm text-orange-600">
           {sync.failed_count} items failed - review logs for details
@@ -405,22 +386,22 @@ function SyncCard({ sync }) {
 ```typescript
 async function syncWithErrorHandling(orgId: string) {
   try {
-    const { data, error } = await supabase
-      .from('sync_progress')
-      .select('*')
-      .eq('org_id', orgId);
-
-    if (error?.code === 'PGRST100') {
-      // Row-level security error - user not in org
-      throw new Error('Access denied - you are not a member of this organization');
+    const { rows } = await pool.query(
+      `
+        SELECT *
+          FROM sync_progress
+         WHERE org_id = $1
+      `,
+      [orgId]
+    );
+    return rows;
+  } catch (error: any) {
+    if (error.message?.includes('policy')) {
+      throw new Error('Access denied - confirm app.current_org_id is set before querying Neon');
     }
-
-    if (error) throw error;
-    return data;
-
-  } catch (error) {
     console.error('Sync error:', error.message);
     // Report to error tracking (Sentry, etc)
+    throw error;
   }
 }
 ```
@@ -443,22 +424,22 @@ async function updateProgressSafely(
   }
 
   try {
-    const { data, error } = await supabase
-      .from('sync_progress')
-      .update({
-        processed_count: processed,
-        failed_count: failed
-      })
-      .eq('org_id', orgId)
-      .eq('sync_id', syncId)
-      .select()
-      .single();
+    const { rows } = await pool.query(
+      `
+        UPDATE sync_progress
+           SET processed_count = $1,
+               failed_count = $2,
+               current_item = $1 + $2,
+               updated_at = NOW()
+         WHERE org_id = $3 AND sync_id = $4
+         RETURNING *
+      `,
+      [processed, failed, orgId, syncId]
+    );
+    return rows[0];
 
-    if (error) throw error;
-    return data;
-
-  } catch (error) {
-    if (error.message.includes('violates check constraint')) {
+  } catch (error: any) {
+    if (error.message?.includes('check constraint')) {
       console.error('Progress validation failed', { processed, failed, total });
       // Handle as data quality issue
     }
@@ -532,19 +513,19 @@ ORDER BY entity_type;
 Add to `.env.local`:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://[project].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+NEON_DATABASE_URL=postgres://user:pass@ep-some-host.aws.neon.tech/neondb
 ```
 
-Import client:
+Create a shared pool (Node/Edge):
 
 ```typescript
-import { createClient } from '@supabase/supabase-js';
+// lib/db/pool.ts
+import { Pool } from 'pg';
 
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const pool = new Pool({
+  connectionString: process.env.NEON_DATABASE_URL,
+  max: 10,
+});
 ```
 
 ---
@@ -560,13 +541,11 @@ export const supabase = createClient(
 ```typescript
 // Debug helper
 async function debugRLS(userId: string) {
-  const { data } = await supabase
-    .from('auth.users_extended')
-    .select('id, org_id')
-    .eq('id', userId)
-    .single();
-
-  console.log('User org_id:', data?.org_id);
+  const { rows } = await pool.query(
+    `SELECT id, org_id FROM auth.users_extended WHERE id = $1`,
+    [userId]
+  );
+  console.log('User org_id:', rows[0]?.org_id);
   // Must match the org_id of the record you're trying to access
 }
 ```
@@ -590,8 +569,8 @@ CREATE TABLE IF NOT EXISTS sync_activity_log_2025_11 PARTITION OF sync_activity_
 
 ```typescript
 // Manual cleanup
-const result = await supabase.rpc('auto_cleanup_preview_cache');
-console.log(`Deleted ${result.data.deleted_count} expired caches`);
+const { rows } = await pool.query(`SELECT auto_cleanup_preview_cache() AS deleted_count`);
+console.log(`Deleted ${rows[0].deleted_count} expired caches`);
 ```
 
 ---

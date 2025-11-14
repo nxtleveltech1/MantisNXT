@@ -21,6 +21,7 @@ import { OdooService } from './OdooService';
 
 export type SyncType = 'woocommerce' | 'odoo';
 export type EntityType = 'customers' | 'products' | 'orders';
+export type SyncDirection = 'inbound' | 'outbound';
 
 interface DeltaRecord {
   id: string | number;
@@ -41,6 +42,7 @@ interface DeltaSnapshot {
 interface DeltaResult {
   syncType: SyncType;
   entityType: EntityType;
+  direction: SyncDirection;
   delta: {
     new: DeltaSnapshot;
     updated: DeltaSnapshot;
@@ -56,12 +58,17 @@ interface DeltaResult {
   };
 }
 
+interface CachedDeltaContainer {
+  inbound?: DeltaResult;
+  outbound?: DeltaResult;
+}
+
 interface PreviewCacheRecord {
   id: string;
   org_id: string;
   sync_type: SyncType;
   entity_type: EntityType;
-  delta_data: DeltaResult;
+  delta_data: CachedDeltaContainer | DeltaResult;
   computed_at: string;
   expires_at: string;
   created_at: string;
@@ -124,12 +131,13 @@ export class DeltaDetectionService {
     orgId: string,
     syncType: SyncType,
     entityType: EntityType,
-    forceRefresh: boolean = false
+    forceRefresh: boolean = false,
+    direction: SyncDirection = 'inbound'
   ): Promise<DeltaResult> {
     try {
       // Check cache first
       if (!forceRefresh) {
-        const cached = await this.getFromCache(orgId, syncType, entityType);
+        const cached = await this.getFromCache(orgId, syncType, entityType, direction);
         if (cached) {
           return {
             ...cached,
@@ -142,13 +150,13 @@ export class DeltaDetectionService {
       let delta;
       switch (entityType) {
         case 'customers':
-          delta = await this.detectCustomerDelta(orgId, syncType);
+          delta = await this.detectCustomerDelta(orgId, syncType, direction);
           break;
         case 'products':
-          delta = await this.detectProductDelta(orgId, syncType);
+          delta = await this.detectProductDelta(orgId, syncType, direction);
           break;
         case 'orders':
-          delta = await this.detectOrderDelta(orgId, syncType);
+          delta = await this.detectOrderDelta(orgId, syncType, direction);
           break;
         default:
           throw new Error(`Unsupported entity type: ${entityType}`);
@@ -161,6 +169,7 @@ export class DeltaDetectionService {
       const result: DeltaResult = {
         syncType,
         entityType,
+        direction,
         delta,
         computedAt: now.toISOString(),
         expiresAt: expiresAt.toISOString(),
@@ -168,13 +177,14 @@ export class DeltaDetectionService {
       };
 
       // Store in cache
-      await this.storeInCache(orgId, result);
+      await this.storeInCache(orgId, result, direction);
 
       // Log operation
       await this.logActivity(orgId, entityType, 'delta_computed', 'success', {
         newCount: delta.new.count,
         updatedCount: delta.updated.count,
         deletedCount: delta.deleted.count,
+        direction,
       });
 
       return result;
@@ -182,6 +192,7 @@ export class DeltaDetectionService {
       console.error(`[DeltaDetectionService] Error getting preview snapshot:`, error);
       await this.logActivity(orgId, entityType, 'delta_computed', 'failed', {
         error: error.message,
+        direction,
       });
       throw error;
     }
@@ -192,7 +203,8 @@ export class DeltaDetectionService {
    */
   static async detectCustomerDelta(
     orgId: string,
-    syncType: SyncType
+    syncType: SyncType,
+    direction: SyncDirection
   ): Promise<DeltaResult['delta']> {
     try {
       const externalCustomers = await this.fetchExternalCustomers(orgId, syncType);
@@ -200,13 +212,13 @@ export class DeltaDetectionService {
 
       // Map for quick lookup
       const externalMap = new Map(
-        externalCustomers.map((c) => [
+        externalCustomers.map(c => [
           c.email || c.id,
           { ...c, hash: generateHash(extractComparableFields(c, 'customers')) },
         ])
       );
       const localMap = new Map(
-        localCustomers.map((c) => [
+        localCustomers.map(c => [
           c.email || c.id,
           { ...c, hash: generateHash(extractComparableFields(c, 'customers')) },
         ])
@@ -216,32 +228,27 @@ export class DeltaDetectionService {
       const updatedCustomers: DeltaRecord[] = [];
       const deletedCustomers: DeltaRecord[] = [];
 
-      // Find new and updated
-      externalMap.forEach((extCustomer, key) => {
-        const locCustomer = localMap.get(key);
-        if (!locCustomer) {
-          newCustomers.push({
-            id: extCustomer.id,
-            name: extCustomer.name,
-            email: extCustomer.email,
-          });
-        } else if (extCustomer.hash !== locCustomer.hash) {
-          updatedCustomers.push({
-            id: extCustomer.id,
-            name: extCustomer.name,
-            email: extCustomer.email,
-          });
+      const sourceMap = direction === 'inbound' ? externalMap : localMap;
+      const targetMap = direction === 'inbound' ? localMap : externalMap;
+
+      const toCustomerRecord = (customer: Record<string, unknown>): DeltaRecord => ({
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+      });
+
+      sourceMap.forEach((sourceCustomer, key) => {
+        const targetCustomer = targetMap.get(key);
+        if (!targetCustomer) {
+          newCustomers.push(toCustomerRecord(sourceCustomer));
+        } else if (sourceCustomer.hash !== targetCustomer.hash) {
+          updatedCustomers.push(toCustomerRecord(sourceCustomer));
         }
       });
 
-      // Find deleted (in local but not in external)
-      localMap.forEach((locCustomer, key) => {
-        if (!externalMap.has(key)) {
-          deletedCustomers.push({
-            id: locCustomer.id,
-            name: locCustomer.name,
-            email: locCustomer.email,
-          });
+      targetMap.forEach((targetCustomer, key) => {
+        if (!sourceMap.has(key)) {
+          deletedCustomers.push(toCustomerRecord(targetCustomer));
         }
       });
 
@@ -270,7 +277,8 @@ export class DeltaDetectionService {
    */
   static async detectProductDelta(
     orgId: string,
-    syncType: SyncType
+    syncType: SyncType,
+    direction: SyncDirection
   ): Promise<DeltaResult['delta']> {
     try {
       const externalProducts = await this.fetchExternalProducts(orgId, syncType);
@@ -278,13 +286,13 @@ export class DeltaDetectionService {
 
       // Map for quick lookup by SKU or ID
       const externalMap = new Map(
-        externalProducts.map((p) => [
+        externalProducts.map(p => [
           p.sku || p.id,
           { ...p, hash: generateHash(extractComparableFields(p, 'products')) },
         ])
       );
       const localMap = new Map(
-        localProducts.map((p) => [
+        localProducts.map(p => [
           p.sku || p.id,
           { ...p, hash: generateHash(extractComparableFields(p, 'products')) },
         ])
@@ -294,32 +302,27 @@ export class DeltaDetectionService {
       const updatedProducts: DeltaRecord[] = [];
       const deletedProducts: DeltaRecord[] = [];
 
-      // Find new and updated
-      externalMap.forEach((extProduct, key) => {
-        const locProduct = localMap.get(key);
-        if (!locProduct) {
-          newProducts.push({
-            id: extProduct.id,
-            sku: extProduct.sku,
-            name: extProduct.name,
-          });
-        } else if (extProduct.hash !== locProduct.hash) {
-          updatedProducts.push({
-            id: extProduct.id,
-            sku: extProduct.sku,
-            name: extProduct.name,
-          });
+      const sourceMap = direction === 'inbound' ? externalMap : localMap;
+      const targetMap = direction === 'inbound' ? localMap : externalMap;
+
+      const toProductRecord = (product: Record<string, unknown>): DeltaRecord => ({
+        id: product.id,
+        sku: product.sku,
+        name: product.name,
+      });
+
+      sourceMap.forEach((sourceProduct, key) => {
+        const targetProduct = targetMap.get(key);
+        if (!targetProduct) {
+          newProducts.push(toProductRecord(sourceProduct));
+        } else if (sourceProduct.hash !== targetProduct.hash) {
+          updatedProducts.push(toProductRecord(sourceProduct));
         }
       });
 
-      // Find deleted
-      localMap.forEach((locProduct, key) => {
-        if (!externalMap.has(key)) {
-          deletedProducts.push({
-            id: locProduct.id,
-            sku: locProduct.sku,
-            name: locProduct.name,
-          });
+      targetMap.forEach((targetProduct, key) => {
+        if (!sourceMap.has(key)) {
+          deletedProducts.push(toProductRecord(targetProduct));
         }
       });
 
@@ -348,20 +351,21 @@ export class DeltaDetectionService {
    */
   static async detectOrderDelta(
     orgId: string,
-    syncType: SyncType
+    syncType: SyncType,
+    direction: SyncDirection
   ): Promise<DeltaResult['delta']> {
     try {
       const externalOrders = await this.fetchExternalOrders(orgId, syncType);
       const localOrders = await this.fetchLocalOrders(orgId);
 
       const externalMap = new Map(
-        externalOrders.map((o) => [
+        externalOrders.map(o => [
           o.id,
           { ...o, hash: generateHash(extractComparableFields(o, 'orders')) },
         ])
       );
       const localMap = new Map(
-        localOrders.map((o) => [
+        localOrders.map(o => [
           o.id,
           { ...o, hash: generateHash(extractComparableFields(o, 'orders')) },
         ])
@@ -371,32 +375,27 @@ export class DeltaDetectionService {
       const updatedOrders: DeltaRecord[] = [];
       const deletedOrders: DeltaRecord[] = [];
 
-      // Find new and updated
-      externalMap.forEach((extOrder, key) => {
-        const locOrder = localMap.get(key);
-        if (!locOrder) {
-          newOrders.push({
-            id: extOrder.id,
-            status: extOrder.status,
-            total: extOrder.total,
-          });
-        } else if (extOrder.hash !== locOrder.hash) {
-          updatedOrders.push({
-            id: extOrder.id,
-            status: extOrder.status,
-            total: extOrder.total,
-          });
+      const sourceMap = direction === 'inbound' ? externalMap : localMap;
+      const targetMap = direction === 'inbound' ? localMap : externalMap;
+
+      const toOrderRecord = (order: Record<string, unknown>): DeltaRecord => ({
+        id: order.id,
+        status: order.status,
+        total: order.total,
+      });
+
+      sourceMap.forEach((sourceOrder, key) => {
+        const targetOrder = targetMap.get(key);
+        if (!targetOrder) {
+          newOrders.push(toOrderRecord(sourceOrder));
+        } else if (sourceOrder.hash !== targetOrder.hash) {
+          updatedOrders.push(toOrderRecord(sourceOrder));
         }
       });
 
-      // Find deleted
-      localMap.forEach((locOrder, key) => {
-        if (!externalMap.has(key)) {
-          deletedOrders.push({
-            id: locOrder.id,
-            status: locOrder.status,
-            total: locOrder.total,
-          });
+      targetMap.forEach((targetOrder, key) => {
+        if (!sourceMap.has(key)) {
+          deletedOrders.push(toOrderRecord(targetOrder));
         }
       });
 
@@ -423,26 +422,50 @@ export class DeltaDetectionService {
   /**
    * Invalidate preview cache for org/sync type
    */
-  static async invalidatePreviewCache(orgId: string, syncType?: SyncType, entityType?: EntityType): Promise<void> {
+  static async invalidatePreviewCache(
+    orgId: string,
+    syncType?: SyncType,
+    entityType?: EntityType,
+    direction?: SyncDirection
+  ): Promise<void> {
     try {
-      if (syncType && entityType) {
+      if (direction && (!syncType || !entityType)) {
+        throw new Error('Direction requires syncType and entityType for cache invalidation');
+      }
+
+      if (direction && syncType && entityType) {
+        await query(
+          `UPDATE sync_preview_cache
+           SET delta_data = delta_data - $4::text, updated_at = NOW()
+           WHERE org_id = $1 AND sync_type = $2 AND entity_type = $3`,
+          [orgId, syncType, entityType, direction]
+        );
+
+        await query(
+          `DELETE FROM sync_preview_cache
+           WHERE org_id = $1 AND sync_type = $2 AND entity_type = $3
+             AND (delta_data IS NULL OR delta_data = '{}'::jsonb)`,
+          [orgId, syncType, entityType]
+        );
+      } else if (syncType && entityType) {
         await query(
           `DELETE FROM sync_preview_cache WHERE org_id = $1 AND sync_type = $2 AND entity_type = $3`,
           [orgId, syncType, entityType]
         );
       } else if (syncType) {
-        await query(
-          `DELETE FROM sync_preview_cache WHERE org_id = $1 AND sync_type = $2`,
-          [orgId, syncType]
-        );
+        await query(`DELETE FROM sync_preview_cache WHERE org_id = $1 AND sync_type = $2`, [
+          orgId,
+          syncType,
+        ]);
       } else {
-        await query(
-          `DELETE FROM sync_preview_cache WHERE org_id = $1`,
-          [orgId]
-        );
+        await query(`DELETE FROM sync_preview_cache WHERE org_id = $1`, [orgId]);
       }
 
-      console.log(`[DeltaDetectionService] Cache invalidated for org ${orgId}`);
+      console.log(
+        `[DeltaDetectionService] Cache invalidated for org ${orgId}${
+          direction ? ` (direction: ${direction})` : ''
+        }`
+      );
     } catch (error: unknown) {
       console.error(`[DeltaDetectionService] Error invalidating cache:`, error);
       throw error;
@@ -452,7 +475,10 @@ export class DeltaDetectionService {
   /**
    * Fetch external customers with timeout
    */
-  private static async fetchExternalCustomers(orgId: string, syncType: SyncType): Promise<unknown[]> {
+  private static async fetchExternalCustomers(
+    orgId: string,
+    syncType: SyncType
+  ): Promise<unknown[]> {
     const timeout = 30000; // 30 second timeout
 
     try {
@@ -460,11 +486,15 @@ export class DeltaDetectionService {
         const config = await this.getIntegrationConfig(orgId, 'woocommerce');
         const wooService = new WooCommerceService(config);
         return await Promise.race([
-          wooService.fetchAllPages((params) => wooService.getCustomers(params), {
-            per_page: 100,
-            order: 'desc',
-            orderby: 'registered_date',
-          }),
+          wooService.fetchAllPages(
+            params => wooService.getCustomers(params),
+            {
+              per_page: 100,
+              order: 'desc',
+              orderby: 'registered_date',
+            },
+            { maxPages: 10 }
+          ),
           new Promise<unknown[]>((_, reject) =>
             setTimeout(() => reject(new Error('WooCommerce API timeout')), timeout)
           ),
@@ -489,7 +519,10 @@ export class DeltaDetectionService {
   /**
    * Fetch external products with timeout
    */
-  private static async fetchExternalProducts(orgId: string, syncType: SyncType): Promise<unknown[]> {
+  private static async fetchExternalProducts(
+    orgId: string,
+    syncType: SyncType
+  ): Promise<unknown[]> {
     const timeout = 30000;
 
     try {
@@ -497,9 +530,13 @@ export class DeltaDetectionService {
         const config = await this.getIntegrationConfig(orgId, 'woocommerce');
         const wooService = new WooCommerceService(config);
         return await Promise.race([
-          wooService.fetchAllPages((params) => wooService.getProducts(params), {
-            per_page: 100,
-          }),
+          wooService.fetchAllPages(
+            params => wooService.getProducts(params),
+            {
+              per_page: 100,
+            },
+            { maxPages: 10 }
+          ),
           new Promise<unknown[]>((_, reject) =>
             setTimeout(() => reject(new Error('WooCommerce API timeout')), timeout)
           ),
@@ -532,11 +569,15 @@ export class DeltaDetectionService {
         const config = await this.getIntegrationConfig(orgId, 'woocommerce');
         const wooService = new WooCommerceService(config);
         return await Promise.race([
-          wooService.fetchAllPages((params) => wooService.getOrders(params), {
-            per_page: 100,
-            orderby: 'date',
-            order: 'desc',
-          }),
+          wooService.fetchAllPages(
+            params => wooService.getOrders(params),
+            {
+              per_page: 100,
+              orderby: 'date',
+              order: 'desc',
+            },
+            { maxPages: 10 }
+          ),
           new Promise<unknown[]>((_, reject) =>
             setTimeout(() => reject(new Error('WooCommerce API timeout')), timeout)
           ),
@@ -641,10 +682,36 @@ export class DeltaDetectionService {
   /**
    * Get cached preview snapshot
    */
+  private static normalizeCacheContainer(data: unknown): CachedDeltaContainer {
+    if (!data || typeof data !== 'object') {
+      return {};
+    }
+
+    const candidate = data as Record<string, unknown>;
+
+    if ('delta' in candidate && 'direction' in candidate) {
+      const direction = (candidate.direction as SyncDirection) ?? 'inbound';
+      return {
+        [direction]: candidate as unknown as DeltaResult,
+      };
+    }
+
+    const container: CachedDeltaContainer = {};
+    if ('inbound' in candidate && candidate.inbound) {
+      container.inbound = candidate.inbound as DeltaResult;
+    }
+    if ('outbound' in candidate && candidate.outbound) {
+      container.outbound = candidate.outbound as DeltaResult;
+    }
+
+    return container;
+  }
+
   private static async getFromCache(
     orgId: string,
     syncType: SyncType,
-    entityType: EntityType
+    entityType: EntityType,
+    direction: SyncDirection
   ): Promise<DeltaResult | null> {
     try {
       const result = await query<PreviewCacheRecord>(
@@ -660,7 +727,13 @@ export class DeltaDetectionService {
         return null;
       }
 
-      return result.rows[0].delta_data as unknown;
+      const container = this.normalizeCacheContainer(result.rows[0].delta_data);
+      const entry = container[direction];
+      if (!entry) {
+        return null;
+      }
+
+      return entry as DeltaResult;
     } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error reading cache:', error);
       return null;
@@ -670,16 +743,41 @@ export class DeltaDetectionService {
   /**
    * Store result in cache
    */
-  private static async storeInCache(orgId: string, result: DeltaResult): Promise<void> {
+  private static async storeInCache(
+    orgId: string,
+    result: DeltaResult,
+    direction: SyncDirection
+  ): Promise<void> {
     try {
       const expiresAt = new Date(result.expiresAt);
+
+      const existing = await query<PreviewCacheRecord>(
+        `SELECT delta_data
+         FROM sync_preview_cache
+         WHERE org_id = $1 AND sync_type = $2 AND entity_type = $3
+         LIMIT 1`,
+        [orgId, result.syncType, result.entityType]
+      );
+
+      const container = this.normalizeCacheContainer(existing.rows[0]?.delta_data);
+      const payload: CachedDeltaContainer = {
+        ...container,
+        [direction]: { ...result, cacheHit: false },
+      };
 
       await query(
         `INSERT INTO sync_preview_cache (org_id, sync_type, entity_type, delta_data, computed_at, expires_at)
          VALUES ($1, $2, $3, $4::jsonb, $5, $6)
          ON CONFLICT (org_id, sync_type, entity_type) DO UPDATE
          SET delta_data = $4::jsonb, computed_at = $5, expires_at = $6, updated_at = NOW()`,
-        [orgId, result.syncType, result.entityType, JSON.stringify(result), result.computedAt, expiresAt]
+        [
+          orgId,
+          result.syncType,
+          result.entityType,
+          JSON.stringify(payload),
+          result.computedAt,
+          expiresAt,
+        ]
       );
     } catch (error: unknown) {
       console.error('[DeltaDetectionService] Error storing cache:', error);

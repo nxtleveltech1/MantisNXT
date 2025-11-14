@@ -389,99 +389,105 @@ INSERT INTO sync_activity_log (
 
 ## Usage Examples
 
-### Example 1: Start a Customer Sync with Progress Tracking
+### Example 1: Start a Customer Sync with Progress Tracking (Neon / `pg`)
 
 ```typescript
-// 1. Create progress record
-const syncId = 'sync-woo-20251106-001';
-const result = await supabase
-  .from('sync_progress')
-  .insert({
-    org_id: orgId,
-    sync_id: syncId,
-    entity_type: 'customer',
-    total_items: customerList.length,
-    initiated_by: userId,
-    source_system: 'woocommerce'
-  });
+import { Pool } from 'pg';
 
-// 2. Process customers in batches
+const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL });
+const syncId = `sync-woo-${Date.now()}`;
+
+// 1. Create progress record
+await pool.query(
+  `
+    INSERT INTO sync_progress (
+      id, org_id, sync_id, entity_type, total_items, initiated_by, source_system
+    )
+    VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6)
+  `,
+  [orgId, syncId, 'customer', customerList.length, userId, 'woocommerce']
+);
+
+// 2. Process customers in batches and update progress
 for (let i = 0; i < customerList.length; i += BATCH_SIZE) {
   const batch = customerList.slice(i, i + BATCH_SIZE);
 
   try {
     await processBatch(batch);
-
-    // 3. Update progress (triggers auto-calculate elapsed, speed, eta)
-    await supabase
-      .from('sync_progress')
-      .update({
-        current_item: i + BATCH_SIZE,
-        processed_count: (await countProcessed(syncId))
-      })
-      .eq('sync_id', syncId);
+    await pool.query(
+      `
+        UPDATE sync_progress
+           SET current_item = $1,
+               processed_count = processed_count + $2,
+               updated_at = NOW()
+         WHERE org_id = $3 AND sync_id = $4
+      `,
+      [i + batch.length, batch.length, orgId, syncId]
+    );
   } catch (error) {
-    // 4. Log failure
-    await supabase
-      .from('sync_progress')
-      .update({ failed_count: failed_count + batch.length })
-      .eq('sync_id', syncId);
+    await pool.query(
+      `
+        UPDATE sync_progress
+           SET failed_count = failed_count + $1,
+               updated_at = NOW()
+         WHERE org_id = $2 AND sync_id = $3
+      `,
+      [batch.length, orgId, syncId]
+    );
   }
 }
 
-// 5. Sync completion logged automatically by trigger
-// No need to manually insert into sync_activity_log
+// 3. Completion entry is written automatically by the trigger defined in section 5.
 ```
 
 ### Example 2: Query Sync Progress for Live Dashboard
 
 ```typescript
-// Get active syncs with real-time metrics
-const activeSyncs = await supabase
-  .from('sync_progress')
-  .select('*')
-  .eq('org_id', orgId)
-  .is('completed_at', null)  -- Only active syncs
-  .order('updated_at', { ascending: false });
+const { rows: activeSyncs } = await pool.query(
+  `
+    SELECT *
+      FROM sync_progress
+     WHERE org_id = $1
+       AND completed_at IS NULL
+     ORDER BY updated_at DESC
+  `,
+  [orgId]
+);
 
-// Returns:
-// {
-//   sync_id: 'sync-woo-20251106-001',
-//   entity_type: 'customer',
-//   processed_count: 2500,
-//   total_items: 5000,
-//   speed_items_per_min: 480,    -- Auto-calculated!
-//   eta_seconds: 312,             -- 5 min 12 sec remaining
-//   elapsed_seconds: 312,         -- Running for 5 min 12 sec
-// }
+// rows include speed_items_per_min, eta_seconds, etc. computed by triggers
 ```
 
 ### Example 3: Query Sync Audit Trail
 
 ```typescript
-// Get all sync activity for an organization
-const activityLog = await supabase
-  .from('sync_activity_log')
-  .select('*')
-  .eq('org_id', orgId)
-  .eq('entity_type', 'customer')
-  .order('created_at', { ascending: false })
-  .limit(100);
+const { rows: activityLog } = await pool.query(
+  `
+    SELECT *
+      FROM sync_activity_log
+     WHERE org_id = $1
+       AND entity_type = $2
+     ORDER BY created_at DESC
+     LIMIT 100
+  `,
+  [orgId, 'customer']
+);
 
-// Get failed syncs for debugging
-const failedSyncs = await supabase
-  .from('sync_activity_log')
-  .select('*')
-  .eq('org_id', orgId)
-  .in('status', ['failed', 'completed_with_errors'])
-  .gt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))  -- Last 7 days
-  .order('created_at', { ascending: false });
+const { rows: failedSyncs } = await pool.query(
+  `
+    SELECT *
+      FROM sync_activity_log
+     WHERE org_id = $1
+       AND status IN ('failed', 'completed_with_errors')
+       AND created_at > NOW() - INTERVAL '7 days'
+     ORDER BY created_at DESC
+  `,
+  [orgId]
+);
 ```
 
 ### Example 4: Cache Preview Delta
 
 ```typescript
-// Compute delta once, cache for 1 hour
 const deltaJson = {
   new: [...],
   updated: [...],
@@ -489,25 +495,25 @@ const deltaJson = {
   statistics: { new_count: 10, updated_count: 5, deleted_count: 2 }
 };
 
-await supabase
-  .from('sync_preview_cache')
-  .insert({
-    org_id: orgId,
-    sync_type: 'woocommerce',
-    sync_id: 'sync-woo-20251106-001',
-    delta_json: deltaJson,
-    computed_by: userId,
-    cache_key: hashInputParams({...})  -- Deduplication key
-  });
+await pool.query(
+  `
+    INSERT INTO sync_preview_cache (
+      org_id, sync_type, sync_id, entity_type, delta_data, computed_by, cache_key
+    )
+    VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)
+  `,
+  [orgId, 'woocommerce', 'sync-woo-20251106-001', 'customer', JSON.stringify(deltaJson), userId, cacheKey]
+);
 
-// Later queries within 1 hour hit cache
-const cached = await supabase
-  .from('sync_preview_cache')
-  .select('delta_json')
-  .eq('cache_key', cacheKey)
-  .gt('expires_at', 'now()');  -- Only non-expired
-
-// After 1 hour, auto_cleanup_preview_cache() removes it
+const { rows: cached } = await pool.query(
+  `
+    SELECT delta_data
+      FROM sync_preview_cache
+     WHERE cache_key = $1
+       AND expires_at > NOW()
+  `,
+  [cacheKey]
+);
 ```
 
 ---

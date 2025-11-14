@@ -1,6 +1,6 @@
--- Migration: 0002_supply_chain.sql - CORRECTED FOR SUPABASE
+-- Migration: 0002_supply_chain.sql - LEGACY CORRECTED VERSION
 -- Description: Supply chain management tables - suppliers, inventory, purchase orders
--- PRODUCTION READY - 100% Supabase Compatible
+-- PRODUCTION READY - 100% Legacy-provider Compatible
 
 -- ===========================
 -- SUPPLY CHAIN ENUMS (COMPLETE)

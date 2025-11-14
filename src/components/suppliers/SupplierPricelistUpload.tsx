@@ -245,18 +245,20 @@ const SupplierPricelistUpload: React.FC<PricelistUploadProps> = ({
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className={`flex gap-2 ${onCancel ? "" : "justify-end"}`}>
                   <Button
                     onClick={handleFileUpload}
                     disabled={!selectedFile || uploading}
-                    className="flex-1"
+                    className={onCancel ? "flex-1" : "w-full"}
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Upload & Validate
                   </Button>
-                  <Button variant="outline" onClick={onCancel}>
-                    Cancel
-                  </Button>
+                  {onCancel && (
+                    <Button variant="outline" onClick={onCancel}>
+                      Cancel
+                    </Button>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -400,14 +402,16 @@ const SupplierPricelistUpload: React.FC<PricelistUploadProps> = ({
           )}
 
           {(validationResults || manualItems.length > 0) && (
-            <div className="flex gap-2 pt-4">
-              <Button onClick={handleSavePricelist} className="flex-1">
+            <div className={`flex gap-2 pt-4 ${onCancel ? "" : "justify-start"}`}>
+              <Button onClick={handleSavePricelist} className={onCancel ? "flex-1" : "w-full"}>
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Save Pricelist
               </Button>
-              <Button variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
+              {onCancel && (
+                <Button variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+              )}
             </div>
           )}
         </CardContent>

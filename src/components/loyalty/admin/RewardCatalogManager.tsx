@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -68,6 +68,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import type { RewardCatalog, RewardType, RewardAnalytics } from '@/types/loyalty'
@@ -89,7 +90,7 @@ const rewardSchema = z.object({
 
 type RewardFormData = z.infer<typeof rewardSchema>
 
-const REWARD_TYPE_ICONS: Record<RewardType, unknown> = {
+const REWARD_TYPE_ICONS: Record<RewardType, LucideIcon> = {
   points: Gift,
   discount: Percent,
   cashback: DollarSign,
@@ -99,12 +100,12 @@ const REWARD_TYPE_ICONS: Record<RewardType, unknown> = {
 }
 
 const REWARD_TYPE_COLORS: Record<RewardType, string> = {
-  points: 'bg-purple-500',
-  discount: 'bg-green-500',
-  cashback: 'bg-blue-500',
-  free_shipping: 'bg-orange-500',
-  upgrade: 'bg-pink-500',
-  gift: 'bg-yellow-500',
+  points: 'text-purple-500',
+  discount: 'text-green-500',
+  cashback: 'text-blue-500',
+  free_shipping: 'text-orange-500',
+  upgrade: 'text-pink-500',
+  gift: 'text-yellow-500',
 }
 
 export default function RewardCatalogManager() {
@@ -337,25 +338,22 @@ export default function RewardCatalogManager() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Reward Catalog</h2>
-          <p className="text-muted-foreground">Manage your loyalty rewards and redemptions</p>
-        </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Reward
-        </Button>
-      </div>
-
-      {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1">
+        <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-semibold">Reward Catalog</CardTitle>
+            <CardDescription>Manage your loyalty rewards and redemptions</CardDescription>
+          </div>
+          <Button className="w-full sm:w-auto" onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Reward
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+            <div className="w-full md:flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search rewards..."
                   value={search}
@@ -364,36 +362,50 @@ export default function RewardCatalogManager() {
                 />
               </div>
             </div>
-            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as unknown)}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="points">Points</SelectItem>
-                <SelectItem value="discount">Discount</SelectItem>
-                <SelectItem value="cashback">Cashback</SelectItem>
-                <SelectItem value="free_shipping">Free Shipping</SelectItem>
-                <SelectItem value="upgrade">Upgrade</SelectItem>
-                <SelectItem value="gift">Gift</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as unknown)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="w-full sm:w-auto">
+                <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as RewardType | 'all')}>
+                  <SelectTrigger className="w-full sm:w-44">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="points">Points</SelectItem>
+                    <SelectItem value="discount">Discount</SelectItem>
+                    <SelectItem value="cashback">Cashback</SelectItem>
+                    <SelectItem value="free_shipping">Free Shipping</SelectItem>
+                    <SelectItem value="upgrade">Upgrade</SelectItem>
+                    <SelectItem value="gift">Gift</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-full sm:w-auto">
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+                  <SelectTrigger className="w-full sm:w-40">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
+        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-lg font-semibold">Catalog Items</CardTitle>
+            <CardDescription>Track availability and redemption activity</CardDescription>
+          </div>
+          <Badge variant="secondary" className="w-fit">
+            {isLoading ? 'Loading...' : `${filteredRewards.length.toLocaleString()} rewards`}
+          </Badge>
+        </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-8 space-y-4">
@@ -418,14 +430,14 @@ export default function RewardCatalogManager() {
                 <TableBody>
                   {paginatedRewards.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                        No rewards found
+                      <TableCell colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
+                        No rewards match your filters
                       </TableCell>
                     </TableRow>
                   ) : (
                     paginatedRewards.map((reward) => {
                       const Icon = REWARD_TYPE_ICONS[reward.reward_type]
-                      const lowStock = reward.stock_quantity && reward.stock_quantity < 10
+                      const lowStock = reward.stock_quantity !== null && reward.stock_quantity < 10
 
                       return (
                         <TableRow key={reward.id}>
@@ -453,7 +465,7 @@ export default function RewardCatalogManager() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${REWARD_TYPE_COLORS[reward.reward_type]}`} />
+                              <Icon className={`h-4 w-4 ${REWARD_TYPE_COLORS[reward.reward_type]}`} />
                               <span className="capitalize">{reward.reward_type.replace('_', ' ')}</span>
                             </div>
                           </TableCell>
@@ -847,13 +859,14 @@ export default function RewardCatalogManager() {
                 min="0"
                 defaultValue={selectedReward?.stock_quantity || 0}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const input = e.target as HTMLInputElement
-                    selectedReward && stockMutation.mutate({
-                      id: selectedReward.id,
-                      quantity: parseInt(input.value),
-                    })
+                  if (e.key !== 'Enter' || !selectedReward) {
+                    return
                   }
+                  const input = e.target as HTMLInputElement
+                  stockMutation.mutate({
+                    id: selectedReward.id,
+                    quantity: parseInt(input.value, 10),
+                  })
                 }}
               />
             </div>
@@ -864,10 +877,13 @@ export default function RewardCatalogManager() {
             </Button>
             <Button
               onClick={() => {
-                const input = document.getElementById('new-stock') as HTMLInputElement
-                selectedReward && stockMutation.mutate({
+                const input = document.getElementById('new-stock') as HTMLInputElement | null
+                if (!input || !selectedReward) {
+                  return
+                }
+                stockMutation.mutate({
                   id: selectedReward.id,
-                  quantity: parseInt(input.value),
+                  quantity: parseInt(input.value, 10),
                 })
               }}
               disabled={stockMutation.isPending}

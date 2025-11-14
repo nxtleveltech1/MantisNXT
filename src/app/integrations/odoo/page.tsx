@@ -33,6 +33,19 @@ interface OdooConfig {
   sync_frequency: number;
 }
 
+interface PreviewSelection {
+  includeNew: boolean;
+  includeUpdated: boolean;
+  includeDeleted: boolean;
+  direction: 'inbound' | 'outbound';
+  selectedIds?: (string | number)[];
+  entityType?: string | null;
+}
+
+type EntityKey = 'products' | 'orders' | 'customers' | 'invoices';
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMERGENCY_ORG_ID = '00000000-0000-0000-0000-000000000001';
+
 export default function OdooPage() {
   const { toast } = useToast();
   const [config, setConfig] = useState<OdooConfig>({
@@ -56,21 +69,53 @@ export default function OdooPage() {
 
   // Sync preview and progress management
   const syncManager = useSyncManager();
-  const [orgId, setOrgId] = useState<string>('org-default');
+  const [orgId, setOrgId] = useState<string | null>(null);
+  const [channelDirections, setChannelDirections] = useState<Record<EntityKey, 'inbound' | 'outbound'>>({
+    products: 'inbound',
+    orders: 'inbound',
+    customers: 'inbound',
+    invoices: 'inbound',
+  });
 
   useEffect(() => {
     fetchConfiguration();
-    // Get org ID from user context (if available)
     const loadOrgId = async () => {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('orgId') : null;
+      if (stored && UUID_REGEX.test(stored)) {
+        setOrgId(stored);
+      }
+
       try {
         const response = await fetch('/api/auth/user');
         const data = await response.json();
-        if (data?.orgId) setOrgId(data.orgId);
+        if (data?.orgId && UUID_REGEX.test(data.orgId)) {
+          setOrgId(data.orgId);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('orgId', data.orgId);
+          }
+          return;
+        }
       } catch (error) {
-        console.error('Failed to load org ID:', error);
+        console.error('Failed to load org ID from auth service:', error);
       }
+
+      try {
+        const response = await fetch('/api/v1/organizations/current');
+        const data = await response.json();
+        if (data?.success && data.data?.id && UUID_REGEX.test(data.data.id)) {
+          setOrgId(data.data.id);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('orgId', data.data.id);
+          }
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to resolve organization from API:', error);
+      }
+
+      setOrgId(EMERGENCY_ORG_ID);
     };
-    loadOrgId();
+    void loadOrgId();
   }, []);
 
   const fetchConfiguration = async () => {
@@ -195,10 +240,27 @@ export default function OdooPage() {
     }
   };
 
-  const handleSync = async (entityType: string) => {
+  const handleSync = async (entityType: EntityKey) => {
     try {
+      if (!orgId) {
+        toast({
+          title: "Organization Error",
+          description: "Could not determine your organization. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const response = await fetch(`/api/v1/integrations/odoo/sync/${entityType}`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-org-id': orgId,
+        },
+        body: JSON.stringify({
+          orgId,
+          direction: channelDirections[entityType],
+        }),
       });
 
       const data = await response.json();
@@ -261,18 +323,28 @@ export default function OdooPage() {
     setPreviewData(null);
   };
 
-  const handlePreviewSync = (entityType: string) => {
-    syncManager.openPreview('odoo', entityType);
+  const handlePreviewSync = (entityType: EntityKey) => {
+    const nextDirection = channelDirections[entityType];
+    syncManager.openPreview('odoo', entityType, nextDirection);
   };
 
-  const handleSyncConfirmed = async (config: unknown) => {
+  const handleSyncConfirmed = async (config: PreviewSelection) => {
     syncManager.closePreview();
     // Generate job ID and start progress tracking
     const jobId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    syncManager.startProgress(jobId, 'odoo', config.entityType || 'unknown');
+    const resolvedEntity =
+      (config.entityType as EntityKey | undefined) ||
+      (syncManager.state.currentEntityType as EntityKey | null) ||
+      'products';
+    const resolvedDirection = config.direction || syncManager.state.direction || 'inbound';
+    syncManager.startProgress(jobId, 'odoo', resolvedEntity, resolvedDirection);
 
     // Trigger actual sync
     try {
+      if (!orgId) {
+        throw new Error('Missing organization context for sync orchestration');
+      }
+
       // Call sync API with job ID
       const response = await fetch('/api/v1/integrations/sync/orchestrate', {
         method: 'POST',
@@ -280,7 +352,9 @@ export default function OdooPage() {
         body: JSON.stringify({
           jobId,
           syncType: 'odoo',
-          entityType: config.entityType,
+          entityType: resolvedEntity,
+          direction: resolvedDirection,
+          orgId,
           includeNew: config.includeNew,
           includeUpdated: config.includeUpdated,
           includeDeleted: config.includeDeleted,
@@ -495,21 +569,64 @@ export default function OdooPage() {
                   <p className="text-xs text-muted-foreground mt-2">
                     Ready to sync
                   </p>
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handlePreview('products')}
-                      disabled={config.status !== 'active' || previewLoading === 'products'}
-                    >
-                      {previewLoading === 'products' ? (
-                        <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
+                  <div className="flex items-center justify-between mt-4 border-b border-border/40 pb-3">
+                    <Badge variant="outline" className="capitalize">
+                      {channelDirections.products === 'inbound' ? 'Sync Down' : 'Sync Up'}
+                    </Badge>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={channelDirections.products === 'inbound' ? 'default' : 'outline'}
+                        onClick={() =>
+                          setChannelDirections((prev) => ({
+                            ...prev,
+                            products: 'inbound',
+                          }))
+                        }
+                      >
+                        Down
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={channelDirections.products === 'outbound' ? 'default' : 'outline'}
+                        onClick={() =>
+                          setChannelDirections((prev) => ({
+                            ...prev,
+                            products: 'outbound',
+                          }))
+                        }
+                      >
+                        Up
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handlePreview('products')}
+                        disabled={config.status !== 'active' || previewLoading === 'products'}
+                      >
+                        {previewLoading === 'products' ? (
+                          <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Eye className="mr-2 h-3 w-3" />
+                        )}
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handlePreviewSync('products')}
+                        disabled={config.status !== 'active' || !orgId}
+                      >
                         <Eye className="mr-2 h-3 w-3" />
-                      )}
-                      Preview
-                    </Button>
+                        Sync Preview
+                      </Button>
+                    </div>
                     <Button
                       size="sm"
                       variant="outline"
@@ -534,21 +651,64 @@ export default function OdooPage() {
                   <p className="text-xs text-muted-foreground mt-2">
                     Ready to sync
                   </p>
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handlePreview('orders')}
-                      disabled={config.status !== 'active' || previewLoading === 'orders'}
-                    >
-                      {previewLoading === 'orders' ? (
-                        <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
+                  <div className="flex items-center justify-between mt-4 border-b border-border/40 pb-3">
+                    <Badge variant="outline" className="capitalize">
+                      {channelDirections.orders === 'inbound' ? 'Sync Down' : 'Sync Up'}
+                    </Badge>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={channelDirections.orders === 'inbound' ? 'default' : 'outline'}
+                        onClick={() =>
+                          setChannelDirections((prev) => ({
+                            ...prev,
+                            orders: 'inbound',
+                          }))
+                        }
+                      >
+                        Down
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={channelDirections.orders === 'outbound' ? 'default' : 'outline'}
+                        onClick={() =>
+                          setChannelDirections((prev) => ({
+                            ...prev,
+                            orders: 'outbound',
+                          }))
+                        }
+                      >
+                        Up
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handlePreview('orders')}
+                        disabled={config.status !== 'active' || previewLoading === 'orders'}
+                      >
+                        {previewLoading === 'orders' ? (
+                          <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Eye className="mr-2 h-3 w-3" />
+                        )}
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handlePreviewSync('orders')}
+                        disabled={config.status !== 'active' || !orgId}
+                      >
                         <Eye className="mr-2 h-3 w-3" />
-                      )}
-                      Preview
-                    </Button>
+                        Sync Preview
+                      </Button>
+                    </div>
                     <Button
                       size="sm"
                       variant="outline"
@@ -573,21 +733,64 @@ export default function OdooPage() {
                   <p className="text-xs text-muted-foreground mt-2">
                     Ready to sync
                   </p>
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handlePreview('customers')}
-                      disabled={config.status !== 'active' || previewLoading === 'customers'}
-                    >
-                      {previewLoading === 'customers' ? (
-                        <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
+                  <div className="flex items-center justify-between mt-4 border-b border-border/40 pb-3">
+                    <Badge variant="outline" className="capitalize">
+                      {channelDirections.customers === 'inbound' ? 'Sync Down' : 'Sync Up'}
+                    </Badge>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={channelDirections.customers === 'inbound' ? 'default' : 'outline'}
+                        onClick={() =>
+                          setChannelDirections((prev) => ({
+                            ...prev,
+                            customers: 'inbound',
+                          }))
+                        }
+                      >
+                        Down
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={channelDirections.customers === 'outbound' ? 'default' : 'outline'}
+                        onClick={() =>
+                          setChannelDirections((prev) => ({
+                            ...prev,
+                            customers: 'outbound',
+                          }))
+                        }
+                      >
+                        Up
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handlePreview('customers')}
+                        disabled={config.status !== 'active' || previewLoading === 'customers'}
+                      >
+                        {previewLoading === 'customers' ? (
+                          <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Eye className="mr-2 h-3 w-3" />
+                        )}
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handlePreviewSync('customers')}
+                        disabled={config.status !== 'active' || !orgId}
+                      >
                         <Eye className="mr-2 h-3 w-3" />
-                      )}
-                      Preview
-                    </Button>
+                        Sync Preview
+                      </Button>
+                    </div>
                     <Button
                       size="sm"
                       variant="outline"
@@ -612,21 +815,54 @@ export default function OdooPage() {
                   <p className="text-xs text-muted-foreground mt-2">
                     Ready to sync
                   </p>
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handlePreview('invoices')}
-                      disabled={config.status !== 'active' || previewLoading === 'invoices'}
-                    >
-                      {previewLoading === 'invoices' ? (
-                        <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Eye className="mr-2 h-3 w-3" />
-                      )}
-                      Preview
-                    </Button>
+                  <div className="flex items-center justify-between mt-4 border-b border-border/40 pb-3">
+                    <Badge variant="outline" className="capitalize">
+                      {channelDirections.invoices === 'inbound' ? 'Sync Down' : 'Sync Up'}
+                    </Badge>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={channelDirections.invoices === 'inbound' ? 'default' : 'outline'}
+                        onClick={() =>
+                          setChannelDirections((prev) => ({
+                            ...prev,
+                            invoices: 'inbound',
+                          }))
+                        }
+                      >
+                        Down
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={channelDirections.invoices === 'outbound' ? 'default' : 'outline'}
+                        onClick={() =>
+                          setChannelDirections((prev) => ({
+                            ...prev,
+                            invoices: 'outbound',
+                          }))
+                        }
+                      >
+                        Up
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handlePreview('invoices')}
+                        disabled={config.status !== 'active' || previewLoading === 'invoices'}
+                      >
+                        {previewLoading === 'invoices' ? (
+                          <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Eye className="mr-2 h-3 w-3" />
+                        )}
+                        Preview
+                      </Button>
+                    </div>
                     <Button
                       size="sm"
                       variant="outline"
@@ -878,7 +1114,7 @@ export default function OdooPage() {
             <TabsTrigger value="activity">Activity Log</TabsTrigger>
           </TabsList>
           <TabsContent value="activity">
-            <ActivityLog orgId={orgId} entityType="odoo" />
+            <ActivityLog orgId={orgId ?? EMERGENCY_ORG_ID} entityType="odoo" />
           </TabsContent>
         </Tabs>
       </div>
@@ -888,7 +1124,23 @@ export default function OdooPage() {
         isOpen={syncManager.state.isPreviewOpen}
         syncType="odoo"
         entityType={syncManager.state.currentEntityType || ''}
-        onConfirm={(config) => handleSyncConfirmed({ ...config, entityType: syncManager.state.currentEntityType })}
+        orgId={orgId}
+        direction={syncManager.state.direction}
+        onDirectionChange={(nextDirection) => {
+          syncManager.setDirection(nextDirection)
+          if (syncManager.state.currentEntityType) {
+            setChannelDirections((prev) => ({
+              ...prev,
+              [syncManager.state.currentEntityType as EntityKey]: nextDirection,
+            }))
+          }
+        }}
+        onConfirm={(config) =>
+          handleSyncConfirmed({
+            ...config,
+            entityType: syncManager.state.currentEntityType,
+          })
+        }
         onCancel={() => syncManager.closePreview()}
       />
 

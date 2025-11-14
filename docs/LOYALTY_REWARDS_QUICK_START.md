@@ -85,44 +85,50 @@ INSERT INTO reward_catalog (
 // In your order processing code
 async function processOrder(orderId: string, customerId: string, orderAmount: number) {
     // 1. Calculate points
-    const { data: points } = await supabase.rpc('calculate_points_for_order', {
-        p_customer_id: customerId,
-        p_order_amount: orderAmount,
-        p_order_id: orderId
-    });
+    const { rows: points } = await pool.query(
+        `SELECT * FROM loyalty.calculate_points_for_order($1, $2, $3, $4::jsonb)`,
+        [customerId, orderAmount, orderId, {}]
+    );
 
-    if (!points || points.length === 0) return;
+    if (points.length === 0) return;
 
     // 2. Get customer's program
-    const { data: customerLoyalty } = await supabase
-        .from('customer_loyalty')
-        .select('program_id, org_id')
-        .eq('customer_id', customerId)
-        .single();
+    const { rows: customerLoyaltyRows } = await pool.query(
+        `SELECT program_id, org_id FROM customer_loyalty WHERE customer_id = $1`,
+        [customerId]
+    );
+    const customerLoyalty = customerLoyaltyRows[0];
 
     // 3. Get expiry settings
-    const { data: program } = await supabase
-        .from('loyalty_program')
-        .select('points_expiry_days')
-        .eq('id', customerLoyalty.program_id)
-        .single();
+    const { rows: programRows } = await pool.query(
+        `SELECT points_expiry_days FROM loyalty_program WHERE id = $1`,
+        [customerLoyalty.program_id]
+    );
+    const program = programRows[0];
 
     // 4. Award points
     const expiresAt = program?.points_expiry_days
         ? new Date(Date.now() + program.points_expiry_days * 24 * 60 * 60 * 1000)
         : null;
 
-    await supabase.from('loyalty_transaction').insert({
-        org_id: customerLoyalty.org_id,
-        customer_id: customerId,
-        program_id: customerLoyalty.program_id,
-        transaction_type: 'earn',
-        points_amount: points[0].points_awarded,
-        reference_type: 'order',
-        reference_id: orderId,
-        description: `Earned ${points[0].points_awarded} points from order`,
-        expires_at: expiresAt
-    });
+    await pool.query(
+        `
+            INSERT INTO loyalty_transaction (
+                org_id, customer_id, program_id, transaction_type,
+                points_amount, reference_type, reference_id, description, expires_at
+            )
+            VALUES ($1, $2, $3, 'earn', $4, 'order', $5, $6, $7)
+        `,
+        [
+            customerLoyalty.org_id,
+            customerId,
+            customerLoyalty.program_id,
+            points[0].points_awarded,
+            orderId,
+            `Earned ${points[0].points_awarded} points from order`,
+            expiresAt,
+        ]
+    );
 }
 ```
 
@@ -130,15 +136,11 @@ async function processOrder(orderId: string, customerId: string, orderAmount: nu
 
 ```typescript
 async function redeemReward(customerId: string, rewardId: string) {
-    const { data, error } = await supabase.rpc('redeem_reward', {
-        p_customer_id: customerId,
-        p_reward_id: rewardId,
-        p_redemption_expiry_days: 30
-    });
-
-    if (error) throw error;
-
-    const result = data[0];
+    const { rows } = await pool.query(
+        `SELECT * FROM loyalty.redeem_reward($1, $2, $3)`,
+        [customerId, rewardId, 30]
+    );
+    const result = rows[0];
 
     if (!result.success) {
         throw new Error(result.error_message);
@@ -160,9 +162,10 @@ async function redeemReward(customerId: string, rewardId: string) {
 ```typescript
 async function getCustomerDashboard(customerId: string) {
     // Get summary
-    const { data: summary } = await supabase.rpc('get_customer_rewards_summary', {
-        p_customer_id: customerId
-    });
+    const { rows: summary } = await pool.query(
+        `SELECT * FROM loyalty.get_customer_rewards_summary($1)`,
+        [customerId]
+    );
 
     if (!summary || summary.length === 0) {
         return { enrolled: false };
@@ -171,12 +174,16 @@ async function getCustomerDashboard(customerId: string) {
     const customerData = summary[0];
 
     // Get available rewards
-    const { data: rewards } = await supabase
-        .from('reward_catalog')
-        .select('*')
-        .eq('is_active', true)
-        .lte('points_required', customerData.points_balance)
-        .order('points_required');
+    const { rows: rewards } = await pool.query(
+        `
+            SELECT *
+              FROM reward_catalog
+             WHERE is_active = TRUE
+               AND points_required <= $1
+             ORDER BY points_required
+        `,
+        [customerData.points_balance]
+    );
 
     return {
         enrolled: true,
@@ -245,49 +252,39 @@ INSERT INTO loyalty_transaction (
 
 ```typescript
 // app/api/loyalty/customer/[id]/summary/route.ts
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { pool } from '@/lib/db/pool';
 
 export async function GET(
     request: Request,
     { params }: { params: { id: string } }
 ) {
-    const supabase = createRouteHandlerClient({ cookies });
+    const { rows } = await pool.query(
+        `SELECT * FROM loyalty.get_customer_rewards_summary($1)`,
+        [params.id]
+    );
 
-    const { data, error } = await supabase.rpc('get_customer_rewards_summary', {
-        p_customer_id: params.id
-    });
-
-    if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    if (!data || data.length === 0) {
+    if (!rows.length) {
         return NextResponse.json({ error: 'Customer not enrolled' }, { status: 404 });
     }
 
-    return NextResponse.json(data[0]);
+    return NextResponse.json(rows[0]);
 }
 ```
 
 ```typescript
 // app/api/loyalty/redeem/route.ts
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/db/pool';
+
 export async function POST(request: Request) {
-    const supabase = createRouteHandlerClient({ cookies });
     const { customerId, rewardId } = await request.json();
 
-    const { data, error } = await supabase.rpc('redeem_reward', {
-        p_customer_id: customerId,
-        p_reward_id: rewardId,
-        p_redemption_expiry_days: 30
-    });
-
-    if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    const result = data[0];
+    const { rows } = await pool.query(
+        `SELECT * FROM loyalty.redeem_reward($1, $2, $3)`,
+        [customerId, rewardId, 30]
+    );
+    const result = rows[0];
 
     if (!result.success) {
         return NextResponse.json({ error: result.error_message }, { status: 400 });
@@ -303,32 +300,36 @@ export async function POST(request: Request) {
 
 ```typescript
 // app/api/loyalty/rewards/available/route.ts
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/db/pool';
+
 export async function GET(request: Request) {
-    const supabase = createRouteHandlerClient({ cookies });
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get('customerId');
 
-    // Get customer's points balance
-    const { data: loyalty } = await supabase
-        .from('customer_loyalty')
-        .select('points_balance, org_id')
-        .eq('customer_id', customerId)
-        .single();
+    const { rows: loyaltyRows } = await pool.query(
+        `SELECT points_balance, org_id FROM customer_loyalty WHERE customer_id = $1`,
+        [customerId]
+    );
+    const loyalty = loyaltyRows[0];
 
     if (!loyalty) {
         return NextResponse.json({ error: 'Customer not enrolled' }, { status: 404 });
     }
 
-    // Get available rewards
-    const { data: rewards } = await supabase
-        .from('reward_catalog')
-        .select('*')
-        .eq('org_id', loyalty.org_id)
-        .eq('is_active', true)
-        .lte('points_required', loyalty.points_balance)
-        .lte('valid_from', new Date().toISOString())
-        .or('valid_until.is.null,valid_until.gt.' + new Date().toISOString())
-        .order('points_required');
+    const { rows: rewards } = await pool.query(
+        `
+            SELECT *
+              FROM reward_catalog
+             WHERE org_id = $1
+               AND is_active = TRUE
+               AND points_required <= $2
+               AND valid_from <= NOW()
+               AND (valid_until IS NULL OR valid_until > NOW())
+             ORDER BY points_required
+        `,
+        [loyalty.org_id, loyalty.points_balance]
+    );
 
     return NextResponse.json(rewards);
 }
