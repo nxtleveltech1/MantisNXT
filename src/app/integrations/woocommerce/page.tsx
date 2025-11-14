@@ -59,11 +59,24 @@ interface SyncHistoryEntry {
   error?: string;
 }
 
+interface PreviewSelection {
+  includeNew: boolean;
+  includeUpdated: boolean;
+  includeDeleted: boolean;
+  direction: 'inbound' | 'outbound';
+  selectedIds?: (string | number)[];
+  entityType?: string | null;
+}
+
 const ENTITY_ICONS = {
   products: Package,
   orders: ShoppingCart,
   customers: Users,
 };
+
+type EntityKey = 'products' | 'orders' | 'customers';
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMERGENCY_ORG_ID = '00000000-0000-0000-0000-000000000001';
 
 const ENTITY_LABELS = {
   products: 'Products',
@@ -97,6 +110,11 @@ export default function WooCommercePage() {
 
   const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
   const [syncAllInProgress, setSyncAllInProgress] = useState(false);
+  const [channelDirections, setChannelDirections] = useState<Record<EntityKey, 'inbound' | 'outbound'>>({
+    products: 'inbound',
+    orders: 'inbound',
+    customers: 'inbound',
+  });
 
   // Sync preview and progress management
   const syncManager = useSyncManager();
@@ -105,13 +123,40 @@ export default function WooCommercePage() {
 
   useEffect(() => {
     if (isLoading) return
-    if (user?.org_id) {
-      setOrgId(user.org_id)
-      return
+
+    const resolveOrg = async () => {
+      if (user?.org_id && UUID_REGEX.test(user.org_id)) {
+        setOrgId(user.org_id)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('orgId', user.org_id)
+        }
+        return
+      }
+
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('orgId') : null
+      if (stored && UUID_REGEX.test(stored)) {
+        setOrgId(stored)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/v1/organizations/current')
+        const data = await response.json()
+        if (data?.success && data.data?.id && UUID_REGEX.test(data.data.id)) {
+          setOrgId(data.data.id)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('orgId', data.data.id)
+          }
+          return
+        }
+      } catch (error) {
+        console.warn('Failed to resolve organization via API:', error)
+      }
+
+      setOrgId(EMERGENCY_ORG_ID)
     }
-    // Fallback: use default org or stored org to avoid 404/HTML parse
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('orgId') : null
-    setOrgId(stored || 'org-default')
+
+    void resolveOrg()
   }, [user, isLoading])
 
   useEffect(() => {
@@ -219,7 +264,7 @@ export default function WooCommercePage() {
     }
   };
 
-  const handleSync = async (entityType: 'products' | 'orders' | 'customers') => {
+  const handleSync = async (entityType: EntityKey) => {
     try {
       // Validate configuration exists
       if (!config.id || !config.store_url || !config.consumer_key || !config.consumer_secret) {
@@ -231,18 +276,7 @@ export default function WooCommercePage() {
         return;
       }
 
-      // Get organization ID
-      let orgId: string;
-      try {
-        const orgResponse = await fetch('/api/v1/organizations/current');
-        const orgData = await orgResponse.json();
-
-        if (!orgData.success || !orgData.data?.id) {
-          throw new Error('Failed to get organization ID');
-        }
-
-        orgId = orgData.data.id;
-      } catch (error) {
+      if (!orgId) {
         toast({
           title: "Organization Error",
           description: "Could not determine your organization. Please contact support.",
@@ -275,6 +309,7 @@ export default function WooCommercePage() {
           consumerSecret: config.consumer_secret,
         },
         org_id: orgId,
+        direction: channelDirections[entityType],
         options: {
           limit: 100,
         },
@@ -388,15 +423,21 @@ export default function WooCommercePage() {
     }
   };
 
-  const handlePreviewSync = (entityType: string) => {
-    syncManager.openPreview('woocommerce', entityType);
+  const handlePreviewSync = (entityType: EntityKey) => {
+    const nextDirection = channelDirections[entityType];
+    syncManager.openPreview('woocommerce', entityType, nextDirection);
   };
 
-  const handleSyncConfirmed = async (config: unknown) => {
+  const handleSyncConfirmed = async (config: PreviewSelection) => {
     syncManager.closePreview();
     // Generate job ID and start progress tracking
     const jobId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    syncManager.startProgress(jobId, 'woocommerce', config.entityType || 'unknown');
+    const resolvedEntity =
+      (config.entityType as EntityKey | undefined) ||
+      (syncManager.state.currentEntityType as EntityKey | null) ||
+      'products';
+    const resolvedDirection = config.direction || syncManager.state.direction || 'inbound';
+    syncManager.startProgress(jobId, 'woocommerce', resolvedEntity, resolvedDirection);
 
     // Trigger actual sync
     try {
@@ -407,7 +448,9 @@ export default function WooCommercePage() {
         body: JSON.stringify({
           jobId,
           syncType: 'woocommerce',
-          entityType: config.entityType,
+          entityType: resolvedEntity,
+          direction: resolvedDirection,
+          orgId,
           includeNew: config.includeNew,
           includeUpdated: config.includeUpdated,
           includeDeleted: config.includeDeleted,
@@ -686,12 +729,44 @@ export default function WooCommercePage() {
                         </>
                       )}
 
+                      <div className="flex items-center justify-between pb-3 border-b border-border/40 mb-3">
+                        <Badge variant="outline" className="capitalize">
+                          {channelDirections[entityType as EntityKey] === 'inbound' ? 'Sync Down' : 'Sync Up'}
+                        </Badge>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={channelDirections[entityType as EntityKey] === 'inbound' ? 'default' : 'outline'}
+                            onClick={() =>
+                              setChannelDirections((prev) => ({
+                                ...prev,
+                                [entityType as EntityKey]: 'inbound',
+                              }))
+                            }
+                          >
+                            Down
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={channelDirections[entityType as EntityKey] === 'outbound' ? 'default' : 'outline'}
+                            onClick={() =>
+                              setChannelDirections((prev) => ({
+                                ...prev,
+                                [entityType as EntityKey]: 'outbound',
+                              }))
+                            }
+                          >
+                            Up
+                          </Button>
+                        </div>
+                      </div>
+
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           className="flex-1"
-                          onClick={() => handlePreviewSync(entityType)}
+                          onClick={() => handlePreviewSync(entityType as EntityKey)}
                           disabled={config.status !== 'active' || progress.status === 'syncing'}
                         >
                           <Eye className="mr-2 h-4 w-4" />
@@ -1036,7 +1111,7 @@ export default function WooCommercePage() {
             <TabsTrigger value="activity">Activity Log</TabsTrigger>
           </TabsList>
           <TabsContent value="activity">
-            <ActivityLog orgId={orgId || 'org-default'} entityType="woocommerce" />
+            <ActivityLog orgId={orgId ?? EMERGENCY_ORG_ID} entityType="woocommerce" />
           </TabsContent>
         </Tabs>
       </div>
@@ -1046,7 +1121,23 @@ export default function WooCommercePage() {
         isOpen={syncManager.state.isPreviewOpen}
         syncType="woocommerce"
         entityType={syncManager.state.currentEntityType || ''}
-        onConfirm={(config) => handleSyncConfirmed({ ...config, entityType: syncManager.state.currentEntityType })}
+        orgId={orgId}
+        direction={syncManager.state.direction}
+        onDirectionChange={(nextDirection) => {
+          syncManager.setDirection(nextDirection)
+          if (syncManager.state.currentEntityType) {
+            setChannelDirections((prev) => ({
+              ...prev,
+              [syncManager.state.currentEntityType as EntityKey]: nextDirection,
+            }))
+          }
+        }}
+        onConfirm={(config) =>
+          handleSyncConfirmed({
+            ...config,
+            entityType: syncManager.state.currentEntityType,
+          })
+        }
         onCancel={() => syncManager.closePreview()}
       />
 

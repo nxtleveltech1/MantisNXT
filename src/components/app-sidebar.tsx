@@ -15,6 +15,7 @@ import {
   Plug,
   TrendingUp,
   Users,
+  Settings as SettingsIcon,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -201,6 +202,37 @@ const data = {
         {
           title: "Health Monitor",
           url: "/admin/ai/health",
+        },
+      ],
+    },
+    {
+      title: "Administration",
+      url: "/admin/settings/general",
+      icon: SettingsIcon,
+      items: [
+        {
+          title: "General Settings",
+          url: "/admin/settings/general",
+        },
+        {
+          title: "Currency & Tax",
+          url: "/admin/settings/currency",
+        },
+        {
+          title: "Regional Settings",
+          url: "/admin/settings/regional",
+        },
+        {
+          title: "Email & Notifications",
+          url: "/admin/settings/email",
+        },
+        {
+          title: "Backup & Recovery",
+          url: "/admin/settings/backup",
+        },
+        {
+          title: "Integrations",
+          url: "/admin/settings/integrations",
         },
       ],
     },

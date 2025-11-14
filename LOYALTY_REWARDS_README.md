@@ -176,33 +176,39 @@ VALUES
 
 ```typescript
 // In your order processing code
-const { data: points } = await supabase.rpc('calculate_points_for_order', {
-    p_customer_id: customerId,
-    p_order_amount: orderAmount,
-    p_order_id: orderId
-});
+const { rows: points } = await pool.query(
+    `SELECT * FROM loyalty.calculate_points_for_order($1, $2, $3, $4::jsonb)`,
+    [customerId, orderAmount, orderId, {}]
+);
 
 // Award points
-await supabase.from('loyalty_transaction').insert({
-    org_id: orgId,
-    customer_id: customerId,
-    program_id: programId,
-    transaction_type: 'earn',
-    points_amount: points[0].points_awarded,
-    reference_type: 'order',
-    reference_id: orderId,
-    description: `Earned ${points[0].points_awarded} points`,
-    expires_at: expiresAt
-});
+await pool.query(
+    `
+        INSERT INTO loyalty_transaction (
+            org_id, customer_id, program_id, transaction_type,
+            points_amount, reference_type, reference_id, description, expires_at
+        )
+        VALUES ($1, $2, $3, 'earn', $4, 'order', $5, $6, $7)
+    `,
+    [
+        orgId,
+        customerId,
+        programId,
+        points[0].points_awarded,
+        orderId,
+        `Earned ${points[0].points_awarded} points`,
+        expiresAt,
+    ]
+);
 ```
 
 ### 5. Redeem Rewards
 
 ```typescript
-const { data } = await supabase.rpc('redeem_reward', {
-    p_customer_id: customerId,
-    p_reward_id: rewardId
-});
+const { rows: data } = await pool.query(
+    `SELECT * FROM loyalty.redeem_reward($1, $2, $3)`,
+    [customerId, rewardId, 30]
+);
 
 if (data[0].success) {
     console.log('Redemption code:', data[0].redemption_code);

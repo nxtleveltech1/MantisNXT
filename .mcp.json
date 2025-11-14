@@ -3,90 +3,68 @@
     "context7": {
       "command": "npx",
       "args": [
-        "@upstash/context7-mcp",
-        "--api-key",
-        "ctx7sk-63485f97-a194-4380-a721-55b3c5afee7b"
+        "-y",
+        "@upstash/context7-mcp@latest"
       ]
     },
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp"
-      ],
-      "disabled": true,
-      "alwaysAllow": []
-    },
-    "shadcn": {
-      "command": "npx",
-      "args": [
-        "@jpisnice/shadcn-ui-mcp-server"
-      ]
-    },
-    "fetch": {
-      "type": "stdio",
+    "sequential-thinking": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-fetch"
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "MCP_DOCKER": {
+      "command": "docker",
+      "args": [
+        "mcp",
+        "gateway",
+        "run"
       ],
-      "env": {},
-      "disabled": true,
-      "alwaysAllow": []
+      "env": {
+        "LOCALAPPDATA": "C:\\\\Users\\\\garet\\\\AppData\\\\Local",
+        "ProgramData": "C:\\\\ProgramData",
+        "ProgramFiles": "C:\\\\Program Files"
+      }
     },
     "neon": {
       "command": "npx",
       "args": [
         "-y",
         "@neondatabase/mcp-server-neon",
-        "start"
-      ],
-      "env": {
-        "NEON_API_KEY": "napi_78ar5t6y154b1wq4b572mwxkutziy5g9fb3hxuqcjztuiv4dqn6aztx51i1ysshp"
-      },
-      "disabled": false,
-      "alwaysAllow": []
+        "start",
+        "napi_6j94pe91xfup3ptznvom72svpnpd5v0luo452h6ljk0yt73xciprtt1qys4a9gvo"
+      ]
     },
-    "postgres": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "@modelcontextprotocol/server-postgres",
-        "postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require&channel_binding=require"
-      ],
-      "env": {}
-    },
-    "fs": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "@modelcontextprotocol/server-filesystem"
-      ],
-      "env": {}
-    },
-    "git": {
-      "type": "stdio",
+    "github": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-git"
+        "@modelcontextprotocol/server-github"
       ],
-      "env": {},
-      "disabled": true,
-      "alwaysAllow": []
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<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>"
+      }
+    },
+    "git-mcp": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://gitmcp.io/{owner}/{repo}"
+      ]
     },
     "chrome-devtools": {
-      "type": "stdio",
       "command": "npx",
       "args": [
         "chrome-devtools-mcp@latest"
-      ],
-      "env": {}
+      ]
     },
-    "factory": {
-      "type": "sse",
-      "url": "http://localhost:58952/sse",
-      "disabled": true,
-      "alwaysAllow": []
+    "TestSprite": {
+      "command": "npx @testsprite/testsprite-mcp@latest",
+      "args": [],
+      "env": {
+        "API_KEY": "sk-user-l5J_riQhHqgXxnhPdew4b_bP5YLduU8c0B1p386zMtgy9TJEA9jW7QpsTPYGGKO0Mt3_TW4fAS0R3wzaOcqQado6_T0HO8K7B7v08h1ySVmbutJKZZqPScTeI_S3i5o3K8A"
+      }
     }
   }
 }

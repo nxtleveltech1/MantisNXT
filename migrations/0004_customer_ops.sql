@@ -3,16 +3,57 @@
 -- up
 
 -- Customer operations enums
-CREATE TYPE customer_segment AS ENUM ('enterprise', 'mid_market', 'smb', 'startup', 'individual');
-CREATE TYPE customer_status AS ENUM ('active', 'inactive', 'prospect', 'churned', 'suspended');
-CREATE TYPE interaction_channel AS ENUM ('email', 'phone', 'chat', 'social', 'in_person', 'api', 'web');
-CREATE TYPE interaction_type AS ENUM ('inquiry', 'complaint', 'compliment', 'feature_request', 'bug_report', 'billing', 'onboarding', 'training');
-CREATE TYPE sentiment_score AS ENUM ('very_negative', 'negative', 'neutral', 'positive', 'very_positive');
-CREATE TYPE ticket_priority AS ENUM ('low', 'medium', 'high', 'urgent', 'critical');
-CREATE TYPE ticket_status AS ENUM ('open', 'in_progress', 'pending_customer', 'resolved', 'closed', 'escalated');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'customer_segment') THEN
+        CREATE TYPE customer_segment AS ENUM ('enterprise', 'mid_market', 'smb', 'startup', 'individual');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'customer_status') THEN
+        CREATE TYPE customer_status AS ENUM ('active', 'inactive', 'prospect', 'churned', 'suspended');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'interaction_channel') THEN
+        CREATE TYPE interaction_channel AS ENUM ('email', 'phone', 'chat', 'social', 'in_person', 'api', 'web');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'interaction_type') THEN
+        CREATE TYPE interaction_type AS ENUM ('inquiry', 'complaint', 'compliment', 'feature_request', 'bug_report', 'billing', 'onboarding', 'training');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sentiment_score') THEN
+        CREATE TYPE sentiment_score AS ENUM ('very_negative', 'negative', 'neutral', 'positive', 'very_positive');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ticket_priority') THEN
+        CREATE TYPE ticket_priority AS ENUM ('low', 'medium', 'high', 'urgent', 'critical');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ticket_status') THEN
+        CREATE TYPE ticket_status AS ENUM ('open', 'in_progress', 'pending_customer', 'resolved', 'closed', 'escalated');
+    END IF;
+END$$;
 
 -- Customers table
-CREATE TABLE customer (
+CREATE TABLE IF NOT EXISTS customer (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     name text NOT NULL,
@@ -37,11 +78,11 @@ CREATE TABLE customer (
 );
 
 -- Customer interactions table (partitioned by timestamp for performance)
-CREATE TABLE customer_interaction (
+CREATE TABLE IF NOT EXISTS customer_interaction (
     id uuid DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     customer_id uuid NOT NULL REFERENCES customer(id) ON DELETE CASCADE,
-    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    user_id uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     channel interaction_channel NOT NULL,
     type interaction_type NOT NULL,
     subject text,
@@ -58,21 +99,44 @@ CREATE TABLE customer_interaction (
 ) PARTITION BY RANGE (timestamp);
 
 -- Create partitions for customer_interaction (current quarter and next 3 quarters)
-CREATE TABLE customer_interaction_2024_q4 PARTITION OF customer_interaction
-    FOR VALUES FROM ('2024-10-01') TO ('2025-01-01');
-CREATE TABLE customer_interaction_2025_q1 PARTITION OF customer_interaction
-    FOR VALUES FROM ('2025-01-01') TO ('2025-04-01');
-CREATE TABLE customer_interaction_2025_q2 PARTITION OF customer_interaction
-    FOR VALUES FROM ('2025-04-01') TO ('2025-07-01');
-CREATE TABLE customer_interaction_2025_q3 PARTITION OF customer_interaction
-    FOR VALUES FROM ('2025-07-01') TO ('2025-10-01');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'customer_interaction_2024_q4') THEN
+        CREATE TABLE customer_interaction_2024_q4 PARTITION OF customer_interaction
+            FOR VALUES FROM ('2024-10-01') TO ('2025-01-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'customer_interaction_2025_q1') THEN
+        CREATE TABLE customer_interaction_2025_q1 PARTITION OF customer_interaction
+            FOR VALUES FROM ('2025-01-01') TO ('2025-04-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'customer_interaction_2025_q2') THEN
+        CREATE TABLE customer_interaction_2025_q2 PARTITION OF customer_interaction
+            FOR VALUES FROM ('2025-04-01') TO ('2025-07-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'customer_interaction_2025_q3') THEN
+        CREATE TABLE customer_interaction_2025_q3 PARTITION OF customer_interaction
+            FOR VALUES FROM ('2025-07-01') TO ('2025-10-01');
+    END IF;
+END$$;
 
 -- Support tickets table
-CREATE TABLE support_ticket (
+CREATE TABLE IF NOT EXISTS support_ticket (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     customer_id uuid NOT NULL REFERENCES customer(id) ON DELETE CASCADE,
-    assigned_to uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    assigned_to uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     ticket_number text NOT NULL,
     title text NOT NULL,
     description text NOT NULL,
@@ -97,10 +161,10 @@ CREATE TABLE support_ticket (
 );
 
 -- Support ticket comments/updates
-CREATE TABLE ticket_comment (
+CREATE TABLE IF NOT EXISTS ticket_comment (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     ticket_id uuid NOT NULL REFERENCES support_ticket(id) ON DELETE CASCADE,
-    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    user_id uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     content text NOT NULL,
     is_internal boolean DEFAULT false,
     is_resolution boolean DEFAULT false,
@@ -161,20 +225,26 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_customer_updated_at ON customer;
 CREATE TRIGGER update_customer_updated_at BEFORE UPDATE ON customer FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_support_ticket_updated_at ON support_ticket;
 CREATE TRIGGER update_support_ticket_updated_at BEFORE UPDATE ON support_ticket FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger to update customer last interaction
+DROP TRIGGER IF EXISTS update_customer_last_interaction_trigger ON customer_interaction;
 CREATE TRIGGER update_customer_last_interaction_trigger
     AFTER INSERT ON customer_interaction
     FOR EACH ROW EXECUTE FUNCTION update_customer_last_interaction();
 
 -- Trigger to update ticket first response
+DROP TRIGGER IF EXISTS update_ticket_first_response_trigger ON ticket_comment;
 CREATE TRIGGER update_ticket_first_response_trigger
     AFTER INSERT ON ticket_comment
     FOR EACH ROW EXECUTE FUNCTION update_ticket_first_response();
 
 -- Trigger to auto-generate ticket numbers
+DROP TRIGGER IF EXISTS generate_ticket_number_trigger ON support_ticket;
 CREATE TRIGGER generate_ticket_number_trigger
     BEFORE INSERT ON support_ticket
     FOR EACH ROW
@@ -182,9 +252,18 @@ CREATE TRIGGER generate_ticket_number_trigger
     EXECUTE FUNCTION generate_ticket_number();
 
 -- Audit triggers
+DROP TRIGGER IF EXISTS audit_customer ON customer;
 CREATE TRIGGER audit_customer AFTER INSERT OR UPDATE OR DELETE ON customer FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+DROP TRIGGER IF EXISTS audit_support_ticket ON support_ticket;
 CREATE TRIGGER audit_support_ticket AFTER INSERT OR UPDATE OR DELETE ON support_ticket FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+DROP TRIGGER IF EXISTS audit_ticket_comment ON ticket_comment;
 CREATE TRIGGER audit_ticket_comment AFTER INSERT OR UPDATE OR DELETE ON ticket_comment FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0004_customer_ops')
+ON CONFLICT (migration_name) DO NOTHING;
 
 -- down
 

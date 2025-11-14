@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS auth.users (
     created_at timestamptz DEFAULT now()
 );
 
--- Provide a stub for auth.uid() for non-Supabase Postgres environments
+-- Provide a stub for auth.uid() for non-managed Postgres environments
 CREATE OR REPLACE FUNCTION auth.uid()
 RETURNS uuid
 LANGUAGE sql
@@ -1816,5 +1816,4 @@ BEGIN
     RAISE NOTICE 'Mantis NXT unified schema created successfully.';
 END;
 $$;
-
 

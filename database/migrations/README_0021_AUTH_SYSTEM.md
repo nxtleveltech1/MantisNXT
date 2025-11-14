@@ -100,7 +100,7 @@ auth.user_preferences
 3. **Check Dependencies**
    - Migration 0001 (organization, profile tables) must be applied
    - Neon PostgreSQL with auth schema enabled
-   - Supabase auth.users table (if using Supabase Auth)
+   - Legacy auth.users table (only if migrating older data)
 
 ### Execution
 
@@ -179,7 +179,7 @@ END $$;
 ```sql
 -- Migrate from profile table to auth.users_extended
 INSERT INTO auth.users_extended (
-    supabase_user_id,
+    stack_auth_user_id,
     email,
     display_name,
     org_id,
@@ -194,7 +194,7 @@ SELECT
     is_active,
     created_at
 FROM profile p
-ON CONFLICT (supabase_user_id) DO NOTHING;
+ON CONFLICT (stack_auth_user_id) DO NOTHING;
 ```
 
 #### 4. Configure Environment Variables
@@ -404,8 +404,8 @@ CREATE SCHEMA IF NOT EXISTS auth;
 
 **Issue: "relation auth.users does not exist"**
 ```sql
--- Solution: Ensure Supabase auth is enabled or adjust FK constraints
--- Remove Supabase auth references if not using Supabase
+-- Solution: Ensure legacy auth schema is present or adjust FK constraints
+-- Remove legacy auth references if not required
 ```
 
 **Issue: RLS policies block all access**

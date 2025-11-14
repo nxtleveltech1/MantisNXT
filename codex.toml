@@ -1,0 +1,103 @@
+# =============================================================================
+# CODEX CONFIGURATION FILE
+# =============================================================================
+# Defines trusted project directories and MCP server configurations
+# Updated: 2025-11-12
+# =============================================================================
+
+# ----------------------------------------------------------------------------- 
+# GLOBAL MODEL SETTINGS
+# -----------------------------------------------------------------------------
+model = "gpt-5-codex"
+model_reasoning_effort = "high"
+
+# =============================================================================
+# TRUSTED PROJECT DIRECTORIES
+# =============================================================================
+[projects]
+
+# Development Environment Directories
+"I:\\00-DEV" = { trust_level = "trusted" }
+
+# Production-related development directories
+"I:\\00-DEV\\NXT-PROD\\nxt-prod-production" = { trust_level = "trusted" }
+"I:\\00-DEV\\NXT-PROD" = { trust_level = "trusted" }
+
+# User-specific directories
+"C:\\Users\\garet\\Downloads" = { trust_level = "trusted" }
+
+# Production build environments
+"C:\\.ProductionDevelopmentENV\\BB-PROD-BUILD" = { trust_level = "trusted" }
+"C:\\.ProductionDevelopmentENV\\BB-PRODX\\BB-PRODX" = { trust_level = "trusted" }
+
+# Project-specific directories
+"K:\\00Project\\00Project" = { trust_level = "trusted" }
+"K:\\.ProductionDevelopmentENV\\BB-PRODX\\BB-PRODX" = { trust_level = "trusted" }
+
+# System directories (use with caution)
+"C:\\WINDOWS\\system32" = { trust_level = "trusted" }
+
+# External drives
+"E:\\" = { trust_level = "trusted" }
+
+# Special UNC path for MantisNXT project
+"\\\\?\\K:\\00Project\\MantisNXT" = { trust_level = "trusted" }
+
+# =============================================================================
+# MCP SERVER CONFIGURATIONS
+# =============================================================================
+
+# Contextual Model Protocol Servers
+[mcpservers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+
+[mcpservers.sequential-thinking]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+
+[mcpservers.MCP_DOCKER]
+command = "docker"
+args = ["mcp", "gateway", "run"]
+
+[mcpservers.MCP_DOCKER.env]
+LOCALAPPDATA = "C:\\Users\\garet\\AppData\\Local"
+ProgramData = "C:\\ProgramData"
+ProgramFiles = "C:\\Program Files"
+
+[mcpservers.github]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+
+[mcpservers.github.env]
+# GitHub PAT stored directly (not recommended — use env vars if possible)
+GITHUB_PERSONAL_ACCESS_TOKEN = "<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>"
+
+[mcpservers.git-mcp]
+command = "npx"
+args = ["mcp-remote", "https://gitmcp.io/{owner}/{repo}"]
+
+[mcpservers.chrome-devtools]
+command = "npx"
+
+args = ["chrome-devtools-mcp@latest"]
+
+[mcpservers.TestSprite]
+command = "npx"
+args = ["@testsprite/testsprite-mcp@latest"]
+
+[mcpservers.TestSprite.env]
+API_KEY = "sk-user-l5J_riQhHqgXxnhPdew4b_bP5YLduU8c0B1p386zMtgy9TJEA9jW7QpsTPYGGKO0Mt3_TW4fAS0R3wzaOcqQado6_T0HO8K7B7v08h1ySVmbutJKZZqPScTeI_S3i5o3K8A"
+
+# =============================================================================
+# NEON MCP SERVER CONFIGURATION
+# =============================================================================
+[mcpservers.neon]
+command = "npx"
+args = ["-y", "@neondatabase/mcp-server-neon", "start", "<key>"]
+
+[mcpservers.neon.env]
+NEON_API_KEY = "napi_6j94pe91xfup3ptznvom72svpnpd5v0luo452h6ljk0yt73xciprtt1qys4a9gvo"
+NEON_PROJECT_ID = "proud-mud-50346856"
+NEON_BRANCH_ID = "br-spring-field-a9v3cjvz"
+NEON_DATABASE = "mantis_issoh"

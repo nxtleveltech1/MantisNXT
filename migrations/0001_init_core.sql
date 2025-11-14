@@ -25,7 +25,7 @@ CREATE TABLE organization (
     CONSTRAINT org_slug_format CHECK (slug ~ '^[a-z0-9-]+$' AND char_length(slug) >= 2)
 );
 
--- User profiles table (extends Supabase auth.users)
+-- User profiles table (extends legacy auth.users)
 CREATE TABLE profile (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,

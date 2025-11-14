@@ -72,8 +72,8 @@ INSERT INTO organization (name, slug) VALUES ('Test Org', 'test-org');
 
 ### Phase 5 (10 min): Apply migration 0024
 ```bash
-# Option A: Using Supabase CLI
-supabase db push
+# Option A: Using migration script
+yarn db:migrate --file database/migrations/0024_sync_preview_progress_logs.sql --database $NEON_DATABASE_URL
 
 # Option B: Direct SQL
 psql -f database/migrations/0024_sync_preview_progress_logs.sql

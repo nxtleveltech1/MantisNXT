@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import AppLayout from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -486,7 +486,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   const [activeTab, setActiveTab] = useState(initialTab)
   const [showFilters, setShowFilters] = useState(false)
   const [, setIsExporting] = useState(false)
-  const [showPricelistUpload, setShowPricelistUpload] = useState(false)
+  const uploadSectionRef = useRef<HTMLDivElement | null>(null)
   const [supplierActivities, setSupplierActivities] = useState<unknown[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(true)
 
@@ -625,6 +625,22 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   // Utility functions
 
   const getRiskColor = (risk: string) => {
+  const scrollToUploadSection = () => {
+    setActiveTab("overview")
+    if (typeof window === "undefined") return
+    window.requestAnimationFrame(() => {
+      const node = uploadSectionRef.current
+      if (node) {
+        node.scrollIntoView({ behavior: "smooth", block: "start" })
+      }
+    })
+  }
+
+  const handlePricelistUploadComplete = (pricelist: unknown) => {
+    console.log("Pricelist uploaded:", pricelist)
+    refresh()
+  }
+
     const colors = {
       low: "text-green-600",
       medium: "text-yellow-600",
@@ -796,6 +812,22 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
+            <div ref={uploadSectionRef} className="scroll-mt-24">
+              <Card className="bg-card border border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    Upload Supplier Pricelist
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <SupplierPricelistUpload
+                    onUploadComplete={handlePricelistUploadComplete}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Supplier Management Activity */}
             <Card className="bg-card border border-border">
               <CardHeader>
@@ -1554,36 +1586,13 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
             </DialogContent>
           </Dialog>
         )}
-
-        {/* Pricelist Upload Dialog */}
-        {showPricelistUpload && (
-          <Dialog open={showPricelistUpload} onOpenChange={setShowPricelistUpload}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Upload Supplier Pricelist</DialogTitle>
-                <DialogDescription>
-                  Upload a pricelist file or manually enter pricelist items for suppliers.
-                </DialogDescription>
-              </DialogHeader>
-              <SupplierPricelistUpload
-                supplierId={selectedSupplier?.id}
-                onUploadComplete={(pricelist) => {
-                  console.log('Pricelist uploaded:', pricelist)
-                  setShowPricelistUpload(false)
-                  // Refresh suppliers data
-                  window.location.reload()
-                }}
-                onCancel={() => setShowPricelistUpload(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
 
       {/* Quick Actions Sidebar */}
       <aside className="lg:w-80 xl:w-96 shrink-0">
         <div className="sticky top-4 space-y-4">
           <SupplierQuickActions
+            onUploadPricelist={scrollToUploadSection}
             onRefreshData={() => {
               refresh()
             }}

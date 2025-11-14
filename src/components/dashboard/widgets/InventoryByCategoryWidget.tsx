@@ -82,9 +82,18 @@ export function InventoryValueAreaChart({ dateRange = 'month' }: { dateRange?: s
 
   if (isLoading) return <LoadingSkeleton />;
   if (error) return <ErrorDisplay message={String(error)} />;
-  if (!data?.success || !data?.data) return <ErrorDisplay message="No data available" />;
+  if (!data?.success || !Array.isArray(data?.data) || data.data.length === 0) {
+    return <ErrorDisplay message="No category data available" />;
+  }
 
-  const chartData = data.data.slice(0, 10); // Top 10 categories
+  const chartData = data.data
+    .map((item: any) => ({
+      ...item,
+      totalValue: Number(item.totalValue ?? item.total_value ?? 0),
+      categoryName: item.categoryName ?? item.category_name ?? 'Uncategorized',
+    }))
+    .filter((item: any) => item.totalValue > 0)
+    .slice(0, 10); // Top 10 categories
 
   return (
     <div className="space-y-4">
@@ -145,9 +154,18 @@ export function ProductCountBarChart({ dateRange = 'month' }: { dateRange?: stri
 
   if (isLoading) return <LoadingSkeleton />;
   if (error) return <ErrorDisplay message={String(error)} />;
-  if (!data?.success || !data?.data) return <ErrorDisplay message="No data available" />;
+  if (!data?.success || !Array.isArray(data?.data) || data.data.length === 0) {
+    return <ErrorDisplay message="No category data available" />;
+  }
 
-  const chartData = data.data.slice(0, 10); // Top 10 categories
+  const chartData = data.data
+    .map((item: any) => ({
+      ...item,
+      productCount: Number(item.productCount ?? item.product_count ?? 0),
+      categoryName: item.categoryName ?? item.category_name ?? 'Uncategorized',
+    }))
+    .filter((item: any) => item.productCount > 0)
+    .slice(0, 10);
 
   return (
     <div className="space-y-4">

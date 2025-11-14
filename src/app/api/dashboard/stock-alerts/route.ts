@@ -10,84 +10,92 @@ import { CORE_TABLES, PUBLIC_VIEWS } from '@/lib/db/schema-contract';
 export async function GET() {
   try {
     const alertsQuery = `
-      WITH stock_alerts AS (
+      WITH latest_prices AS (
+        SELECT DISTINCT ON (ph.supplier_product_id)
+          ph.supplier_product_id,
+          ph.price
+        FROM ${CORE_TABLES.PRICE_HISTORY} ph
+        WHERE ph.is_current = true
+        ORDER BY ph.supplier_product_id, ph.valid_from DESC
+      ),
+      active_reorder_points AS (
+        SELECT
+          isi.supplier_product_id,
+          MAX(isi.reorder_point) AS reorder_point
+        FROM ${CORE_TABLES.INVENTORY_SELECTED_ITEM} isi
+        JOIN ${CORE_TABLES.INVENTORY_SELECTION} sel
+          ON sel.selection_id = isi.selection_id
+        WHERE isi.status = 'selected'
+          AND sel.status = 'active'
+        GROUP BY isi.supplier_product_id
+      ),
+      stock_with_context AS (
+        SELECT
+          soh.supplier_product_id,
+          soh.location_id,
+          soh.qty,
+          soh.unit_cost,
+          soh.total_value,
+          arp.reorder_point,
+          sp.supplier_sku,
+          sp.name_from_supplier,
+          sp.product_id,
+          p.name AS product_name,
+          s.name AS supplier_name,
+          sl.name AS location_name,
+          sl.type AS location_type,
+          lp.price AS unit_price
+        FROM ${CORE_TABLES.STOCK_ON_HAND} soh
+        JOIN ${CORE_TABLES.STOCK_LOCATION} sl
+          ON sl.location_id = soh.location_id
+        JOIN ${CORE_TABLES.SUPPLIER_PRODUCT} sp
+          ON sp.supplier_product_id = soh.supplier_product_id
+        LEFT JOIN ${CORE_TABLES.PRODUCT} p
+          ON p.product_id = sp.product_id
+        LEFT JOIN ${CORE_TABLES.SUPPLIER} s
+          ON s.supplier_id = sp.supplier_id
+        LEFT JOIN latest_prices lp
+          ON lp.supplier_product_id = soh.supplier_product_id
+        LEFT JOIN active_reorder_points arp
+          ON arp.supplier_product_id = soh.supplier_product_id
+      ),
+      stock_alerts AS (
         -- Critical: Out of stock
         SELECT
-          'critical' as severity,
-          soh.product_id,
-          p.name as product_name,
-          p.sku,
-          soh.quantity,
-          soh.reorder_point,
-          sl.location_name,
-          sl.location_type,
-          sp.name as supplier_name,
-          COALESCE(ph.price, 0) as unit_price,
-          'Out of stock' as alert_message
-        FROM ${CORE_TABLES.STOCK_ON_HAND} soh
-        JOIN ${CORE_TABLES.PRODUCT} p ON soh.product_id = p.product_id
-        JOIN ${CORE_TABLES.STOCK_LOCATION} sl ON soh.location_id = sl.location_id
-        LEFT JOIN ${CORE_TABLES.SUPPLIER_PRODUCT} sp_link ON p.product_id = sp_link.supplier_product_id
-        LEFT JOIN ${PUBLIC_VIEWS.SUPPLIERS} sp ON sp_link.supplier_id = sp.id
-        LEFT JOIN LATERAL (
-          SELECT price
-          FROM ${CORE_TABLES.PRICE_HISTORY}
-          WHERE supplier_product_id = soh.product_id AND is_current = true
-          LIMIT 1
-        ) ph ON true
-        WHERE soh.quantity = 0
+          'critical' AS severity,
+          COALESCE(swc.product_id, swc.supplier_product_id) AS product_id,
+          COALESCE(swc.product_name, swc.name_from_supplier) AS product_name,
+          swc.supplier_sku AS sku,
+          swc.qty AS quantity,
+          swc.reorder_point,
+          swc.location_name,
+          swc.location_type,
+          swc.supplier_name,
+          COALESCE(swc.unit_price, 0) AS unit_price,
+          'Out of stock' AS alert_message
+        FROM stock_with_context swc
+        WHERE swc.qty <= 0
 
         UNION ALL
 
         -- Warning: Low stock
         SELECT
-          'warning' as severity,
-          soh.product_id,
-          p.name as product_name,
-          p.sku,
-          soh.quantity,
-          soh.reorder_point,
-          sl.location_name,
-          sl.location_type,
-          sp.name as supplier_name,
-          COALESCE(ph.price, 0) as unit_price,
-          'Low stock - below reorder point' as alert_message
-        FROM ${CORE_TABLES.STOCK_ON_HAND} soh
-        JOIN ${CORE_TABLES.PRODUCT} p ON soh.product_id = p.product_id
-        JOIN ${CORE_TABLES.STOCK_LOCATION} sl ON soh.location_id = sl.location_id
-        LEFT JOIN ${CORE_TABLES.SUPPLIER_PRODUCT} sp_link ON p.product_id = sp_link.supplier_product_id
-        LEFT JOIN ${PUBLIC_VIEWS.SUPPLIERS} sp ON sp_link.supplier_id = sp.id
-        LEFT JOIN LATERAL (
-          SELECT price
-          FROM ${CORE_TABLES.PRICE_HISTORY}
-          WHERE supplier_product_id = soh.product_id AND is_current = true
-          LIMIT 1
-        ) ph ON true
-        WHERE soh.quantity > 0 AND soh.quantity < soh.reorder_point
+          'warning' AS severity,
+          COALESCE(swc.product_id, swc.supplier_product_id) AS product_id,
+          COALESCE(swc.product_name, swc.name_from_supplier) AS product_name,
+          swc.supplier_sku AS sku,
+          swc.qty AS quantity,
+          swc.reorder_point,
+          swc.location_name,
+          swc.location_type,
+          swc.supplier_name,
+          COALESCE(swc.unit_price, 0) AS unit_price,
+          'Low stock - below reorder point' AS alert_message
+        FROM stock_with_context swc
+        WHERE swc.qty > 0
+          AND swc.reorder_point IS NOT NULL
+          AND swc.qty < swc.reorder_point
 
-        UNION ALL
-
-        -- Info: Expiring pricelists
-        SELECT
-          'info' as severity,
-          NULL as product_id,
-          spl.name as product_name,
-          NULL as sku,
-          NULL as quantity,
-          NULL as reorder_point,
-          s.name as location_name,
-          'pricelist' as location_type,
-          s.name as supplier_name,
-          NULL as unit_price,
-          'Pricelist expiring in ' ||
-            EXTRACT(DAY FROM (spl.effective_to - CURRENT_DATE))::text ||
-            ' days' as alert_message
-        FROM ${CORE_TABLES.SUPPLIER_PRICELISTS} spl
-        JOIN ${PUBLIC_VIEWS.SUPPLIERS} s ON spl.supplier_id = s.id
-        WHERE spl.effective_to IS NOT NULL
-          AND spl.effective_to > CURRENT_DATE
-          AND spl.effective_to <= CURRENT_DATE + INTERVAL '30 days'
-          AND spl.is_active = true
       )
       SELECT
         severity,
@@ -106,25 +114,42 @@ export async function GET() {
         CASE severity
           WHEN 'critical' THEN 1
           WHEN 'warning' THEN 2
-          WHEN 'info' THEN 3
+          ELSE 3
         END,
         quantity ASC NULLS LAST
       LIMIT 100;
     `;
 
     const countsQuery = `
+      WITH active_reorder_points AS (
+        SELECT
+          isi.supplier_product_id,
+          MAX(isi.reorder_point) AS reorder_point
+        FROM ${CORE_TABLES.INVENTORY_SELECTED_ITEM} isi
+        JOIN ${CORE_TABLES.INVENTORY_SELECTION} sel
+          ON sel.selection_id = isi.selection_id
+        WHERE isi.status = 'selected'
+          AND sel.status = 'active'
+        GROUP BY isi.supplier_product_id
+      ),
+      stock_with_context AS (
+        SELECT
+          soh.supplier_product_id,
+          soh.qty,
+          arp.reorder_point
+        FROM ${CORE_TABLES.STOCK_ON_HAND} soh
+        LEFT JOIN active_reorder_points arp
+          ON arp.supplier_product_id = soh.supplier_product_id
+      )
       SELECT
-        COUNT(*) FILTER (WHERE soh.quantity = 0) as critical_count,
-        COUNT(*) FILTER (WHERE soh.quantity > 0 AND soh.quantity < soh.reorder_point) as warning_count,
-        (
-          SELECT COUNT(*)
-          FROM ${CORE_TABLES.SUPPLIER_PRICELISTS}
-          WHERE effective_to IS NOT NULL
-            AND effective_to > CURRENT_DATE
-            AND effective_to <= CURRENT_DATE + INTERVAL '30 days'
-            AND is_active = true
-        ) as info_count
-      FROM ${CORE_TABLES.STOCK_ON_HAND} soh;
+        COUNT(*) FILTER (WHERE swc.qty <= 0) AS critical_count,
+        COUNT(*) FILTER (
+          WHERE swc.qty > 0
+            AND swc.reorder_point IS NOT NULL
+            AND swc.qty < swc.reorder_point
+        ) AS warning_count,
+        0 AS info_count
+      FROM stock_with_context swc;
     `;
 
     const [alertsResult, countsResult] = await Promise.all([

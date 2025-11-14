@@ -13,19 +13,13 @@ import RewardCatalogManager from "@/components/loyalty/admin/RewardCatalogManage
 export default function RewardCatalogPage() {
   return (
     <AppLayout
+      title="Loyalty & Rewards"
       breadcrumbs={[
         { label: "Loyalty & Rewards", href: "/admin/loyalty" },
         { label: "Rewards" },
       ]}
     >
-      <div className="max-w-7xl mx-auto w-full space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reward Catalog</h1>
-          <p className="text-muted-foreground">
-            Manage reward items, pricing, stock levels, and availability
-          </p>
-        </div>
-
+      <div className="mx-auto w-full space-y-6 xl:max-w-7xl">
         <RewardCatalogManager />
       </div>
     </AppLayout>

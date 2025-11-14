@@ -3,5 +3,9 @@
         {
             "path": "../../.."
         }
-    ]
+    ],
+    "settings": {
+        "editor.codeActions.triggerOnFocusChange": true,
+        "powershell.cwd": "MantisNXT"
+    }
 }

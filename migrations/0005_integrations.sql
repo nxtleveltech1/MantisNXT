@@ -3,15 +3,50 @@
 -- up
 
 -- Integration enums
-CREATE TYPE integration_provider AS ENUM ('salesforce', 'hubspot', 'zendesk', 'slack', 'microsoft_teams', 'shopify', 'stripe', 'quickbooks', 'mailchimp', 'google_workspace', 'aws', 'azure', 'custom_api', 'webhook', 'csv_upload', 'database');
-CREATE TYPE connector_status AS ENUM ('active', 'inactive', 'error', 'configuring', 'authenticating');
-CREATE TYPE import_status AS ENUM ('pending', 'processing', 'completed', 'failed', 'cancelled');
-CREATE TYPE pipeline_status AS ENUM ('active', 'inactive', 'error', 'paused');
-CREATE TYPE execution_status AS ENUM ('pending', 'running', 'completed', 'failed', 'cancelled', 'timeout');
-CREATE TYPE trigger_type AS ENUM ('manual', 'schedule', 'webhook', 'file_upload', 'data_change', 'api_call');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'integration_provider') THEN
+        CREATE TYPE integration_provider AS ENUM ('salesforce', 'hubspot', 'zendesk', 'slack', 'microsoft_teams', 'shopify', 'stripe', 'quickbooks', 'mailchimp', 'google_workspace', 'aws', 'azure', 'custom_api', 'webhook', 'csv_upload', 'database');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'connector_status') THEN
+        CREATE TYPE connector_status AS ENUM ('active', 'inactive', 'error', 'configuring', 'authenticating');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'import_status') THEN
+        CREATE TYPE import_status AS ENUM ('pending', 'processing', 'completed', 'failed', 'cancelled');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pipeline_status') THEN
+        CREATE TYPE pipeline_status AS ENUM ('active', 'inactive', 'error', 'paused');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'execution_status') THEN
+        CREATE TYPE execution_status AS ENUM ('pending', 'running', 'completed', 'failed', 'cancelled', 'timeout');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'trigger_type') THEN
+        CREATE TYPE trigger_type AS ENUM ('manual', 'schedule', 'webhook', 'file_upload', 'data_change', 'api_call');
+    END IF;
+END$$;
 
 -- Integration connectors table
-CREATE TABLE integration_connector (
+CREATE TABLE IF NOT EXISTS integration_connector (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     name text NOT NULL,
@@ -24,7 +59,7 @@ CREATE TABLE integration_connector (
     error_message text,
     retry_count integer DEFAULT 0,
     max_retries integer DEFAULT 3,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -35,7 +70,7 @@ CREATE TABLE integration_connector (
 );
 
 -- Data imports table (for file uploads and manual imports)
-CREATE TABLE data_import (
+CREATE TABLE IF NOT EXISTS data_import (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     connector_id uuid REFERENCES integration_connector(id) ON DELETE SET NULL,
@@ -52,7 +87,7 @@ CREATE TABLE data_import (
     preview_data jsonb DEFAULT '{}',
     started_at timestamptz,
     completed_at timestamptz,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -64,7 +99,7 @@ CREATE TABLE data_import (
 );
 
 -- Automation pipelines table
-CREATE TABLE automation_pipeline (
+CREATE TABLE IF NOT EXISTS automation_pipeline (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     name text NOT NULL,
@@ -77,7 +112,7 @@ CREATE TABLE automation_pipeline (
     last_execution_at timestamptz,
     next_execution_at timestamptz,
     error_count integer DEFAULT 0,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -88,7 +123,7 @@ CREATE TABLE automation_pipeline (
 );
 
 -- Pipeline executions table (partitioned by started_at for performance)
-CREATE TABLE pipeline_execution (
+CREATE TABLE IF NOT EXISTS pipeline_execution (
     id uuid DEFAULT uuid_generate_v4(),
     pipeline_id uuid NOT NULL REFERENCES automation_pipeline(id) ON DELETE CASCADE,
     status execution_status DEFAULT 'pending',
@@ -107,17 +142,40 @@ CREATE TABLE pipeline_execution (
 ) PARTITION BY RANGE (started_at);
 
 -- Create partitions for pipeline_execution (current month and next 6 months)
-CREATE TABLE pipeline_execution_2024_q4 PARTITION OF pipeline_execution
-    FOR VALUES FROM ('2024-10-01') TO ('2025-01-01');
-CREATE TABLE pipeline_execution_2025_q1 PARTITION OF pipeline_execution
-    FOR VALUES FROM ('2025-01-01') TO ('2025-04-01');
-CREATE TABLE pipeline_execution_2025_q2 PARTITION OF pipeline_execution
-    FOR VALUES FROM ('2025-04-01') TO ('2025-07-01');
-CREATE TABLE pipeline_execution_2025_q3 PARTITION OF pipeline_execution
-    FOR VALUES FROM ('2025-07-01') TO ('2025-10-01');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'pipeline_execution_2024_q4') THEN
+        CREATE TABLE pipeline_execution_2024_q4 PARTITION OF pipeline_execution
+            FOR VALUES FROM ('2024-10-01') TO ('2025-01-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'pipeline_execution_2025_q1') THEN
+        CREATE TABLE pipeline_execution_2025_q1 PARTITION OF pipeline_execution
+            FOR VALUES FROM ('2025-01-01') TO ('2025-04-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'pipeline_execution_2025_q2') THEN
+        CREATE TABLE pipeline_execution_2025_q2 PARTITION OF pipeline_execution
+            FOR VALUES FROM ('2025-04-01') TO ('2025-07-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'pipeline_execution_2025_q3') THEN
+        CREATE TABLE pipeline_execution_2025_q3 PARTITION OF pipeline_execution
+            FOR VALUES FROM ('2025-07-01') TO ('2025-10-01');
+    END IF;
+END$$;
 
 -- Integration logs table for debugging and monitoring
-CREATE TABLE integration_log (
+CREATE TABLE IF NOT EXISTS integration_log (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     connector_id uuid REFERENCES integration_connector(id) ON DELETE CASCADE,
@@ -180,29 +238,46 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_integration_connector_updated_at ON integration_connector;
 CREATE TRIGGER update_integration_connector_updated_at BEFORE UPDATE ON integration_connector FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_data_import_updated_at ON data_import;
 CREATE TRIGGER update_data_import_updated_at BEFORE UPDATE ON data_import FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_automation_pipeline_updated_at ON automation_pipeline;
 CREATE TRIGGER update_automation_pipeline_updated_at BEFORE UPDATE ON automation_pipeline FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger to update pipeline stats
+DROP TRIGGER IF EXISTS update_pipeline_stats_trigger ON pipeline_execution;
 CREATE TRIGGER update_pipeline_stats_trigger
     AFTER INSERT OR UPDATE ON pipeline_execution
     FOR EACH ROW EXECUTE FUNCTION update_pipeline_stats();
 
 -- Trigger to calculate execution duration
+DROP TRIGGER IF EXISTS calculate_execution_duration_trigger ON pipeline_execution;
 CREATE TRIGGER calculate_execution_duration_trigger
     BEFORE UPDATE ON pipeline_execution
     FOR EACH ROW EXECUTE FUNCTION calculate_execution_duration();
 
 -- Trigger to schedule next execution
+DROP TRIGGER IF EXISTS schedule_next_execution_trigger ON automation_pipeline;
 CREATE TRIGGER schedule_next_execution_trigger
     BEFORE INSERT OR UPDATE ON automation_pipeline
     FOR EACH ROW EXECUTE FUNCTION schedule_next_execution();
 
 -- Audit triggers
+DROP TRIGGER IF EXISTS audit_integration_connector ON integration_connector;
 CREATE TRIGGER audit_integration_connector AFTER INSERT OR UPDATE OR DELETE ON integration_connector FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+DROP TRIGGER IF EXISTS audit_data_import ON data_import;
 CREATE TRIGGER audit_data_import AFTER INSERT OR UPDATE OR DELETE ON data_import FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+DROP TRIGGER IF EXISTS audit_automation_pipeline ON automation_pipeline;
 CREATE TRIGGER audit_automation_pipeline AFTER INSERT OR UPDATE OR DELETE ON automation_pipeline FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0005_integrations')
+ON CONFLICT (migration_name) DO NOTHING;
 
 -- down
 

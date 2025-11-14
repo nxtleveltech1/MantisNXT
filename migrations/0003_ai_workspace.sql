@@ -3,15 +3,32 @@
 -- up
 
 -- AI workspace enums
-CREATE TYPE ai_message_role AS ENUM ('user', 'assistant', 'system');
-CREATE TYPE ai_dataset_type AS ENUM ('csv', 'json', 'xml', 'parquet', 'database', 'api');
-CREATE TYPE ai_prompt_category AS ENUM ('analysis', 'generation', 'classification', 'summarization', 'translation', 'custom');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ai_message_role') THEN
+        CREATE TYPE ai_message_role AS ENUM ('user', 'assistant', 'system');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ai_dataset_type') THEN
+        CREATE TYPE ai_dataset_type AS ENUM ('csv', 'json', 'xml', 'parquet', 'database', 'api');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ai_prompt_category') THEN
+        CREATE TYPE ai_prompt_category AS ENUM ('analysis', 'generation', 'classification', 'summarization', 'translation', 'custom');
+    END IF;
+END$$;
 
 -- AI conversations table
-CREATE TABLE ai_conversation (
+CREATE TABLE IF NOT EXISTS ai_conversation (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
-    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     title text NOT NULL,
     model text NOT NULL DEFAULT 'gpt-4',
     total_messages integer DEFAULT 0,
@@ -28,7 +45,7 @@ CREATE TABLE ai_conversation (
 );
 
 -- AI messages table (partitioned by created_at for performance)
-CREATE TABLE ai_message (
+CREATE TABLE IF NOT EXISTS ai_message (
     id uuid DEFAULT uuid_generate_v4(),
     conversation_id uuid NOT NULL REFERENCES ai_conversation(id) ON DELETE CASCADE,
     role ai_message_role NOT NULL,
@@ -45,17 +62,40 @@ CREATE TABLE ai_message (
 ) PARTITION BY RANGE (timestamp);
 
 -- Create partitions for ai_message (current month and next 6 months)
-CREATE TABLE ai_message_2024_q4 PARTITION OF ai_message
-    FOR VALUES FROM ('2024-10-01') TO ('2025-01-01');
-CREATE TABLE ai_message_2025_q1 PARTITION OF ai_message
-    FOR VALUES FROM ('2025-01-01') TO ('2025-04-01');
-CREATE TABLE ai_message_2025_q2 PARTITION OF ai_message
-    FOR VALUES FROM ('2025-04-01') TO ('2025-07-01');
-CREATE TABLE ai_message_2025_q3 PARTITION OF ai_message
-    FOR VALUES FROM ('2025-07-01') TO ('2025-10-01');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'ai_message_2024_q4') THEN
+        CREATE TABLE ai_message_2024_q4 PARTITION OF ai_message
+            FOR VALUES FROM ('2024-10-01') TO ('2025-01-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'ai_message_2025_q1') THEN
+        CREATE TABLE ai_message_2025_q1 PARTITION OF ai_message
+            FOR VALUES FROM ('2025-01-01') TO ('2025-04-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'ai_message_2025_q2') THEN
+        CREATE TABLE ai_message_2025_q2 PARTITION OF ai_message
+            FOR VALUES FROM ('2025-04-01') TO ('2025-07-01');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'ai_message_2025_q3') THEN
+        CREATE TABLE ai_message_2025_q3 PARTITION OF ai_message
+            FOR VALUES FROM ('2025-07-01') TO ('2025-10-01');
+    END IF;
+END$$;
 
 -- AI datasets table
-CREATE TABLE ai_dataset (
+CREATE TABLE IF NOT EXISTS ai_dataset (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     name text NOT NULL,
@@ -67,7 +107,7 @@ CREATE TABLE ai_dataset (
     schema_info jsonb DEFAULT '{}',
     tags text[] DEFAULT '{}',
     is_public boolean DEFAULT false,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -78,7 +118,7 @@ CREATE TABLE ai_dataset (
 );
 
 -- AI prompt templates table
-CREATE TABLE ai_prompt_template (
+CREATE TABLE IF NOT EXISTS ai_prompt_template (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     name text NOT NULL,
@@ -88,7 +128,7 @@ CREATE TABLE ai_prompt_template (
     variables text[] DEFAULT '{}',
     usage_count integer DEFAULT 0,
     is_public boolean DEFAULT false,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -141,19 +181,34 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_ai_conversation_updated_at ON ai_conversation;
 CREATE TRIGGER update_ai_conversation_updated_at BEFORE UPDATE ON ai_conversation FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_ai_dataset_updated_at ON ai_dataset;
 CREATE TRIGGER update_ai_dataset_updated_at BEFORE UPDATE ON ai_dataset FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_ai_prompt_template_updated_at ON ai_prompt_template;
 CREATE TRIGGER update_ai_prompt_template_updated_at BEFORE UPDATE ON ai_prompt_template FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger to update conversation stats
+DROP TRIGGER IF EXISTS update_conversation_stats_trigger ON ai_message;
 CREATE TRIGGER update_conversation_stats_trigger
     AFTER INSERT OR UPDATE OR DELETE ON ai_message
     FOR EACH ROW EXECUTE FUNCTION update_conversation_stats();
 
 -- Audit triggers
+DROP TRIGGER IF EXISTS audit_ai_conversation ON ai_conversation;
 CREATE TRIGGER audit_ai_conversation AFTER INSERT OR UPDATE OR DELETE ON ai_conversation FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+DROP TRIGGER IF EXISTS audit_ai_dataset ON ai_dataset;
 CREATE TRIGGER audit_ai_dataset AFTER INSERT OR UPDATE OR DELETE ON ai_dataset FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+DROP TRIGGER IF EXISTS audit_ai_prompt_template ON ai_prompt_template;
 CREATE TRIGGER audit_ai_prompt_template AFTER INSERT OR UPDATE OR DELETE ON ai_prompt_template FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0003_ai_workspace')
+ON CONFLICT (migration_name) DO NOTHING;
 
 -- down
 

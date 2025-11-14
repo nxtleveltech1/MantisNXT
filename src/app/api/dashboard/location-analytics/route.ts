@@ -10,69 +10,92 @@ import { CORE_TABLES } from '@/lib/db/schema-contract';
 export async function GET() {
   try {
     const locationQuery = `
-      WITH location_metrics AS (
+      WITH latest_prices AS (
+        SELECT DISTINCT ON (ph.supplier_product_id)
+          ph.supplier_product_id,
+          ph.price
+        FROM ${CORE_TABLES.PRICE_HISTORY} ph
+        WHERE ph.is_current = true
+        ORDER BY ph.supplier_product_id, ph.valid_from DESC
+      ),
+      active_reorder_points AS (
+        SELECT
+          isi.supplier_product_id,
+          MAX(isi.reorder_point) AS reorder_point
+        FROM ${CORE_TABLES.INVENTORY_SELECTED_ITEM} isi
+        JOIN ${CORE_TABLES.INVENTORY_SELECTION} sel
+          ON sel.selection_id = isi.selection_id
+        WHERE isi.status = 'selected'
+          AND sel.status = 'active'
+        GROUP BY isi.supplier_product_id
+      ),
+      location_metrics AS (
         SELECT
           sl.location_id,
-          sl.location_name,
-          sl.location_type,
-          sl.metadata->>'storage_type' as storage_type,
-          COUNT(DISTINCT soh.product_id) as product_count,
-          SUM(soh.quantity) as total_quantity,
-          SUM(soh.quantity * COALESCE(ph.price, 0)) as total_value,
-          AVG(soh.quantity) as avg_quantity_per_product,
-          COUNT(CASE WHEN soh.quantity = 0 THEN 1 END) as out_of_stock_count,
-          COUNT(CASE WHEN soh.quantity > 0 AND soh.quantity < soh.reorder_point THEN 1 END) as low_stock_count
+          sl.name AS location_name,
+          sl.type AS location_type,
+          sl.metadata->>'storage_type' AS storage_type,
+          COUNT(DISTINCT soh.supplier_product_id) AS product_count,
+          COALESCE(SUM(soh.qty), 0) AS total_quantity,
+          COALESCE(SUM(soh.qty * COALESCE(lp.price, soh.unit_cost, 0)), 0) AS total_value,
+          AVG(soh.qty) AS avg_quantity_per_product,
+          COUNT(CASE WHEN soh.qty <= 0 THEN 1 END) AS out_of_stock_count,
+          COUNT(
+            CASE
+              WHEN soh.qty > 0
+                AND arp.reorder_point IS NOT NULL
+                AND soh.qty < arp.reorder_point
+              THEN 1
+            END
+          ) AS low_stock_count
         FROM ${CORE_TABLES.STOCK_LOCATION} sl
-        LEFT JOIN ${CORE_TABLES.STOCK_ON_HAND} soh ON sl.location_id = soh.location_id
-        LEFT JOIN LATERAL (
-          SELECT price
-          FROM ${CORE_TABLES.PRICE_HISTORY}
-          WHERE supplier_product_id = soh.product_id AND is_current = true
-          LIMIT 1
-        ) ph ON true
-        GROUP BY sl.location_id, sl.location_name, sl.location_type, sl.metadata
-      ),
-      location_categories AS (
-        SELECT
-          'in-store' as category,
-          SUM(product_count) as product_count,
-          SUM(total_value) as total_value
-        FROM location_metrics
-        WHERE location_type IN ('warehouse', 'store', 'main')
-        UNION ALL
-        SELECT
-          'dropship' as category,
-          SUM(product_count) as product_count,
-          SUM(total_value) as total_value
-        FROM location_metrics
-        WHERE location_type IN ('dropship', 'supplier', 'virtual')
+        LEFT JOIN ${CORE_TABLES.STOCK_ON_HAND} soh
+          ON sl.location_id = soh.location_id
+        LEFT JOIN latest_prices lp
+          ON lp.supplier_product_id = soh.supplier_product_id
+        LEFT JOIN active_reorder_points arp
+          ON arp.supplier_product_id = soh.supplier_product_id
+        GROUP BY sl.location_id
       )
       SELECT
         lm.*,
-        ROUND((lm.total_value / NULLIF(SUM(lm.total_value) OVER (), 0)) * 100, 2) as value_percentage
+        ROUND((lm.total_value / NULLIF(SUM(lm.total_value) OVER (), 0)) * 100, 2) AS value_percentage
       FROM location_metrics lm
       WHERE lm.product_count > 0
       ORDER BY lm.total_value DESC;
     `;
 
     const summaryQuery = `
+      WITH latest_prices AS (
+        SELECT DISTINCT ON (ph.supplier_product_id)
+          ph.supplier_product_id,
+          ph.price
+        FROM ${CORE_TABLES.PRICE_HISTORY} ph
+        WHERE ph.is_current = true
+        ORDER BY ph.supplier_product_id, ph.valid_from DESC
+      ),
+      location_distribution AS (
+        SELECT
+          CASE
+            WHEN sl.type IN ('internal', 'main') THEN 'In-Store/Main'
+            WHEN sl.type IN ('supplier', 'consignment', 'dropship', 'virtual') THEN 'Dropshipping'
+            ELSE 'Other'
+          END AS distribution_type,
+          soh.supplier_product_id,
+          soh.qty,
+          COALESCE(lp.price, soh.unit_cost, 0) AS unit_price
+        FROM ${CORE_TABLES.STOCK_LOCATION} sl
+        LEFT JOIN ${CORE_TABLES.STOCK_ON_HAND} soh
+          ON sl.location_id = soh.location_id
+        LEFT JOIN latest_prices lp
+          ON lp.supplier_product_id = soh.supplier_product_id
+        WHERE soh.qty > 0
+      )
       SELECT
-        CASE
-          WHEN location_type IN ('warehouse', 'store', 'main') THEN 'In-Store/Main'
-          WHEN location_type IN ('dropship', 'supplier', 'virtual') THEN 'Dropshipping'
-          ELSE 'Other'
-        END as distribution_type,
-        COUNT(DISTINCT soh.product_id) as product_count,
-        SUM(soh.quantity * COALESCE(ph.price, 0)) as total_value
-      FROM ${CORE_TABLES.STOCK_LOCATION} sl
-      LEFT JOIN ${CORE_TABLES.STOCK_ON_HAND} soh ON sl.location_id = soh.location_id
-      LEFT JOIN LATERAL (
-        SELECT price
-        FROM ${CORE_TABLES.PRICE_HISTORY}
-        WHERE supplier_product_id = soh.product_id AND is_current = true
-        LIMIT 1
-      ) ph ON true
-      WHERE soh.quantity > 0
+        distribution_type,
+        COUNT(DISTINCT supplier_product_id) AS product_count,
+        SUM(qty * unit_price) AS total_value
+      FROM location_distribution
       GROUP BY distribution_type
       ORDER BY total_value DESC;
     `;

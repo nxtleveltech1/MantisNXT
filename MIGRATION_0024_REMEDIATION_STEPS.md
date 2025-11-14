@@ -216,11 +216,11 @@ WHERE email = 'test@example.com';
 
 **Now that prerequisites are in place, apply migration 0024:**
 
-**Option A: Using Supabase CLI (Recommended)**
+**Option A: Using Neon migration script (Recommended)**
 
 ```bash
 cd K:/00Project/MantisNXT
-supabase db push
+ yarn db:migrate --file database/migrations/0024_sync_preview_progress_logs.sql --database $NEON_DATABASE_URL
 ```
 
 **Option B: Manual SQL Execution**

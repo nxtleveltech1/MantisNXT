@@ -95,15 +95,11 @@ CREATE TYPE bee_status_type AS ENUM (
 -- PART 2: CORE AUTHENTICATION TABLES
 -- ============================================================================
 
--- Enhanced users table (extends Supabase auth.users)
--- Links to both Supabase auth and Neon Auth (Stack Auth)
+-- Enhanced users table (links solely to Neon Auth / Stack Auth)
 CREATE TABLE IF NOT EXISTS auth.users_extended (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    -- Link to Supabase auth.users (if using Supabase Auth)
-    supabase_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-
-    -- Neon Auth (Stack Auth) integration
+    -- Stack Auth integration
     stack_auth_user_id TEXT UNIQUE, -- Stack Auth user ID
     stack_auth_provider TEXT, -- 'stack', 'google', 'github', etc.
 
@@ -177,7 +173,8 @@ CREATE TABLE IF NOT EXISTS auth.users_extended (
     -- Constraints
     CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
     CONSTRAINT valid_display_name CHECK (LENGTH(display_name) >= 1 AND LENGTH(display_name) <= 100),
-    CONSTRAINT valid_phone CHECK (phone IS NULL OR phone ~ '^\+?[0-9\s\-\(\)]+$')
+    CONSTRAINT valid_phone CHECK (phone IS NULL OR phone ~ '^\+?[0-9\s\-\(\)]+$'),
+    CONSTRAINT stack_auth_required CHECK (stack_auth_user_id IS NOT NULL)
 );
 
 -- Create indexes for users_extended

@@ -243,7 +243,7 @@ class EnterpriseConnectionManager {
 
       ),
 
-      // SSL configuration for secure connections (required for Neon, Supabase, AWS RDS, etc.)
+      // SSL configuration for secure connections (required for Neon/AWS RDS, etc.)
 
       ssl: requiresSsl ? { rejectUnauthorized: false } : undefined,
 

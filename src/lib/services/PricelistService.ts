@@ -10,6 +10,16 @@
  * - Track upload status and history
  */
 
+/**
+ * PricelistService - Handles pricelist upload, validation, and merging
+ *
+ * Responsibilities:
+ * - Upload pricelist files to SPP schema
+ * - Validate pricelist data against business rules
+ * - Merge validated pricelists into CORE schema
+ * - Track upload status and history
+ */
+
 import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
 import { isFeatureEnabled, FeatureFlag } from '@/lib/feature-flags';
 import type {
@@ -518,7 +528,7 @@ export class PricelistService {
         upload.valid_from
       ]);
 
-      // Step 3: Insert new price history records
+      // Step 3: Insert new price history records (guard against missing table)
       const insertPricesQuery = `
         INSERT INTO core.price_history (
           supplier_product_id, price, currency, valid_from, is_current
@@ -532,14 +542,24 @@ export class PricelistService {
         FROM spp.pricelist_row r
         JOIN core.supplier_product sp
           ON sp.supplier_id = $1 AND sp.supplier_sku = r.supplier_sku
-        WHERE r.upload_id = $2
-        ${filterValidOnly ? `AND ${validRowCondition}` : ''}
+          WHERE r.upload_id = $2
+          ${filterValidOnly ? `AND ${validRowCondition}` : ''}
         ON CONFLICT (supplier_product_id, valid_from) WHERE (is_current = true)
         DO UPDATE SET
           price = EXCLUDED.price,
           currency = EXCLUDED.currency
         RETURNING price_history_id
       `;
+
+      // Check if core.price_history exists before attempting operations
+      const priceHistoryCheck = await client.query(
+        'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2)',
+        ['core', 'price_history']
+      );
+      
+      if (!priceHistoryCheck.rows[0]?.exists) {
+        throw new Error('core.price_history table does not exist. Please run migration 0207_restore_core_price_history.sql first.');
+      }
 
       const priceResult = await client.query(insertPricesQuery, [
         upload.supplier_id,
@@ -549,11 +569,17 @@ export class PricelistService {
 
       pricesUpdated = priceResult.rowCount || 0;
 
-      // Update upload status
+      // Update upload status and invalidate cache on success
       await client.query(
         'UPDATE spp.pricelist_upload SET status = $1, processed_at = NOW() WHERE upload_id = $2',
         ['merged', uploadId]
       );
+
+      // Trigger cache invalidation for catalog refresh
+      const { triggerCacheInvalidation } = await import('@/lib/cache/event-invalidation');
+      await triggerCacheInvalidation('product.updated', {
+        supplierId: upload.supplier_id
+      });
     });
 
     return {

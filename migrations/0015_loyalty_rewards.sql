@@ -8,35 +8,59 @@
 -- ============================================================================
 
 -- Loyalty tier levels for customer segmentation
-CREATE TYPE loyalty_tier AS ENUM ('bronze', 'silver', 'gold', 'platinum', 'diamond');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'loyalty_tier') THEN
+        CREATE TYPE loyalty_tier AS ENUM ('bronze', 'silver', 'gold', 'platinum', 'diamond');
+    END IF;
+END
+$$;
 
 -- Types of rewards that can be offered
-CREATE TYPE reward_type AS ENUM (
-    'points',           -- Additional loyalty points
-    'discount',         -- Percentage or fixed discount on next order
-    'cashback',         -- Cash credit to customer account
-    'free_shipping',    -- Free shipping on next N orders
-    'upgrade',          -- Tier upgrade or expedited service
-    'gift'              -- Physical or digital gift
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'reward_type') THEN
+        CREATE TYPE reward_type AS ENUM (
+            'points',           -- Additional loyalty points
+            'discount',         -- Percentage or fixed discount on next order
+            'cashback',         -- Cash credit to customer account
+            'free_shipping',    -- Free shipping on next N orders
+            'upgrade',          -- Tier upgrade or expedited service
+            'gift'              -- Physical or digital gift
+        );
+    END IF;
+END
+$$;
 
 -- Transaction types for points movement
-CREATE TYPE transaction_type AS ENUM (
-    'earn',      -- Points earned from purchases or activities
-    'redeem',    -- Points redeemed for rewards
-    'expire',    -- Points expired due to time limit
-    'adjust',    -- Manual adjustment (positive or negative)
-    'bonus'      -- Bonus points from promotions or special events
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'transaction_type') THEN
+        CREATE TYPE transaction_type AS ENUM (
+            'earn',      -- Points earned from purchases or activities
+            'redeem',    -- Points redeemed for rewards
+            'expire',    -- Points expired due to time limit
+            'adjust',    -- Manual adjustment (positive or negative)
+            'bonus'      -- Bonus points from promotions or special events
+        );
+    END IF;
+END
+$$;
 
 -- Status of reward redemptions
-CREATE TYPE redemption_status AS ENUM (
-    'pending',    -- Redemption created, awaiting approval
-    'approved',   -- Approved, awaiting fulfillment
-    'fulfilled',  -- Reward delivered to customer
-    'cancelled',  -- Redemption cancelled
-    'expired'     -- Redemption expired before fulfillment
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'redemption_status') THEN
+        CREATE TYPE redemption_status AS ENUM (
+            'pending',    -- Redemption created, awaiting approval
+            'approved',   -- Approved, awaiting fulfillment
+            'fulfilled',  -- Reward delivered to customer
+            'cancelled',  -- Redemption cancelled
+            'expired'     -- Redemption expired before fulfillment
+        );
+    END IF;
+END
+$$;
 
 -- ============================================================================
 -- CORE TABLES
@@ -85,10 +109,13 @@ CREATE TABLE loyalty_program (
     CONSTRAINT loyalty_program_name_length CHECK (char_length(name) >= 1 AND char_length(name) <= 200),
     CONSTRAINT loyalty_program_earn_rate_positive CHECK (earn_rate > 0),
     CONSTRAINT loyalty_program_expiry_positive CHECK (points_expiry_days IS NULL OR points_expiry_days > 0),
-    CONSTRAINT loyalty_program_org_name_unique UNIQUE(org_id, name),
-    -- Only one default program per organization
-    CONSTRAINT loyalty_program_single_default UNIQUE NULLS NOT DISTINCT (org_id, CASE WHEN is_default THEN TRUE END)
+    CONSTRAINT loyalty_program_org_name_unique UNIQUE(org_id, name)
 );
+
+-- Ensure only one default loyalty program per organization
+CREATE UNIQUE INDEX IF NOT EXISTS loyalty_program_single_default_idx
+    ON loyalty_program(org_id)
+    WHERE is_default = true;
 
 -- Customer loyalty status and points balance
 CREATE TABLE customer_loyalty (
@@ -148,7 +175,7 @@ CREATE TABLE loyalty_transaction (
     expires_at timestamptz,
 
     -- Audit
-    created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     created_at timestamptz DEFAULT now(),
 
     CONSTRAINT loyalty_transaction_description_not_empty CHECK (char_length(description) > 0),
@@ -234,7 +261,7 @@ CREATE TABLE reward_redemption (
     redeemed_at timestamptz DEFAULT now(),
     expires_at timestamptz,  -- Redemption must be used by this date
     fulfilled_at timestamptz,
-    fulfilled_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    fulfilled_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     fulfillment_notes text,
 
     -- Metadata
@@ -338,6 +365,14 @@ CREATE INDEX idx_loyalty_rule_trigger ON loyalty_rule(trigger_type);
 -- ============================================================================
 -- FUNCTIONS FOR BUSINESS LOGIC
 -- ============================================================================
+
+-- Drop existing functions to avoid conflicts
+DROP FUNCTION IF EXISTS calculate_points_for_order(uuid, numeric, uuid, jsonb) CASCADE;
+DROP FUNCTION IF EXISTS redeem_reward(uuid, uuid, integer, uuid) CASCADE;
+DROP FUNCTION IF EXISTS redeem_reward(uuid, uuid, integer) CASCADE;
+DROP FUNCTION IF EXISTS update_customer_tier(uuid) CASCADE;
+DROP FUNCTION IF EXISTS expire_points() CASCADE;
+DROP FUNCTION IF EXISTS get_customer_rewards_summary(uuid) CASCADE;
 
 -- Calculate points to award for an order
 CREATE OR REPLACE FUNCTION calculate_points_for_order(
@@ -940,7 +975,8 @@ SELECT
     -- Popularity score (redemptions per active day)
     CASE
         WHEN rc.created_at >= CURRENT_DATE THEN 0
-        ELSE rc.redemption_count::numeric / GREATEST(1, EXTRACT(DAY FROM (CURRENT_DATE - rc.created_at::date)))
+        ELSE rc.redemption_count::numeric /
+             GREATEST(1::numeric, (CURRENT_DATE - rc.created_at::date)::numeric)
     END as daily_redemption_rate
 FROM reward_catalog rc
 LEFT JOIN reward_redemption rr ON rc.id = rr.reward_id
@@ -951,6 +987,11 @@ GROUP BY rc.id, rc.org_id, rc.name, rc.reward_type, rc.points_required,
 -- ============================================================================
 -- TRIGGERS
 -- ============================================================================
+
+-- Ensure trigger helper functions are dropped before recreation
+DROP FUNCTION IF EXISTS update_customer_loyalty_on_transaction() CASCADE;
+DROP FUNCTION IF EXISTS validate_reward_redemption() CASCADE;
+DROP FUNCTION IF EXISTS auto_expire_redemptions() CASCADE;
 
 -- Auto-update customer loyalty points on transaction insert
 CREATE OR REPLACE FUNCTION update_customer_loyalty_on_transaction()
@@ -980,11 +1021,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_customer_loyalty_on_transaction_trigger
-    AFTER INSERT ON loyalty_transaction
-    FOR EACH ROW
-    EXECUTE FUNCTION update_customer_loyalty_on_transaction();
 
 -- Validate reward redemption business rules
 CREATE OR REPLACE FUNCTION validate_reward_redemption()
@@ -1121,7 +1157,7 @@ CREATE POLICY loyalty_program_select_public ON loyalty_program
 CREATE POLICY loyalty_program_admin_only ON loyalty_program
     FOR INSERT
     WITH CHECK (
-        (SELECT role FROM profile WHERE id = auth.uid()) IN ('admin', 'ops_manager')
+        (SELECT role FROM profile WHERE id = auth.uid()) IN ('admin', 'manager')
     );
 
 -- Customer loyalty policies
@@ -1162,7 +1198,7 @@ CREATE POLICY reward_catalog_active_public ON reward_catalog
 CREATE POLICY reward_catalog_admin_only ON reward_catalog
     FOR INSERT
     WITH CHECK (
-        (SELECT role FROM profile WHERE id = auth.uid()) IN ('admin', 'ops_manager')
+        (SELECT role FROM profile WHERE id = auth.uid()) IN ('admin', 'manager')
     );
 
 -- Reward redemption policies
@@ -1186,7 +1222,7 @@ CREATE POLICY loyalty_rule_org_isolation ON loyalty_rule
 CREATE POLICY loyalty_rule_admin_only ON loyalty_rule
     FOR ALL
     USING (
-        (SELECT role FROM profile WHERE id = auth.uid()) IN ('admin', 'ops_manager')
+        (SELECT role FROM profile WHERE id = auth.uid()) IN ('admin', 'manager')
     );
 
 -- ============================================================================
@@ -1205,6 +1241,10 @@ COMMENT ON FUNCTION redeem_reward IS 'Processes a reward redemption with validat
 COMMENT ON FUNCTION update_customer_tier IS 'Updates customer tier based on lifetime points earned';
 COMMENT ON FUNCTION expire_points IS 'Batch process to expire old points based on program expiry settings';
 COMMENT ON FUNCTION get_customer_rewards_summary IS 'Comprehensive customer rewards summary with benefits and progress';
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0015_loyalty_rewards')
+ON CONFLICT (migration_name) DO NOTHING;
 
 COMMENT ON VIEW loyalty_leaderboard IS 'Customer rankings for gamification and engagement';
 COMMENT ON VIEW reward_analytics IS 'Business intelligence on reward performance and popularity';
@@ -1240,18 +1280,19 @@ DROP TRIGGER IF EXISTS auto_expire_redemptions_trigger ON reward_redemption;
 DROP TRIGGER IF EXISTS validate_reward_redemption_trigger ON reward_redemption;
 DROP TRIGGER IF EXISTS update_customer_loyalty_on_transaction_trigger ON loyalty_transaction;
 
-DROP FUNCTION IF EXISTS auto_expire_redemptions();
-DROP FUNCTION IF EXISTS validate_reward_redemption();
-DROP FUNCTION IF EXISTS update_customer_loyalty_on_transaction();
+DROP FUNCTION IF EXISTS auto_expire_redemptions() CASCADE;
+DROP FUNCTION IF EXISTS validate_reward_redemption() CASCADE;
+DROP FUNCTION IF EXISTS update_customer_loyalty_on_transaction() CASCADE;
 
 DROP VIEW IF EXISTS reward_analytics;
 DROP VIEW IF EXISTS loyalty_leaderboard;
 
-DROP FUNCTION IF EXISTS get_customer_rewards_summary(uuid);
-DROP FUNCTION IF EXISTS expire_points();
-DROP FUNCTION IF EXISTS update_customer_tier(uuid);
-DROP FUNCTION IF EXISTS redeem_reward(uuid, uuid, integer);
-DROP FUNCTION IF EXISTS calculate_points_for_order(uuid, numeric, uuid, jsonb);
+DROP FUNCTION IF EXISTS get_customer_rewards_summary(uuid) CASCADE;
+DROP FUNCTION IF EXISTS expire_points() CASCADE;
+DROP FUNCTION IF EXISTS update_customer_tier(uuid) CASCADE;
+DROP FUNCTION IF EXISTS redeem_reward(uuid, uuid, integer, uuid) CASCADE;
+DROP FUNCTION IF EXISTS redeem_reward(uuid, uuid, integer) CASCADE;
+DROP FUNCTION IF EXISTS calculate_points_for_order(uuid, numeric, uuid, jsonb) CASCADE;
 
 DROP INDEX IF EXISTS idx_loyalty_rule_trigger;
 DROP INDEX IF EXISTS idx_loyalty_rule_active;

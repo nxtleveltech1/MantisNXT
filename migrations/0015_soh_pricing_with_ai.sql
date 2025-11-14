@@ -139,7 +139,7 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 -- Add review workflow columns to pricing_recommendation
 ALTER TABLE pricing_recommendation
 ADD COLUMN IF NOT EXISTS review_status VARCHAR(20) DEFAULT 'pending',
-ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES auth.users(id),
+ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES auth.users_extended(id),
 ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ,
 ADD COLUMN IF NOT EXISTS review_notes TEXT,
 ADD COLUMN IF NOT EXISTS auto_applied BOOLEAN DEFAULT false,
@@ -187,11 +187,11 @@ SELECT
   pr.confidence_score,
 
   -- Impact analysis
-  pr.impact_on_revenue,
-  pr.impact_on_margin,
-  pr.impact_on_volume,
+  pr.estimated_revenue_impact AS impact_on_revenue,
+  pr.estimated_margin_impact AS impact_on_margin,
+  pr.estimated_volume_impact AS impact_on_volume,
   pr.reasoning,
-  pr.risk_factors,
+  pr.data_points ->> 'risk_factors' AS risk_factors,
 
   -- Review status
   pr.review_status,
@@ -311,6 +311,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 COMMIT;
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0015_soh_pricing_with_ai')
+ON CONFLICT (migration_name) DO NOTHING;
 
 -- =====================================================
 -- VERIFICATION QUERIES

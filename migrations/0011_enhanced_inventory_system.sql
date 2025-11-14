@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS stock_movement (
     location_to text,
     notes text,
     movement_date timestamptz DEFAULT now(),
-    created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     created_at timestamptz DEFAULT now(),
 
     CONSTRAINT stock_movement_quantity_not_zero CHECK (quantity_change != 0),
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS price_list (
     is_default boolean DEFAULT false,
     effective_from date NOT NULL DEFAULT CURRENT_DATE,
     effective_until date,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -238,7 +238,7 @@ CREATE TABLE IF NOT EXISTS price_list_item (
     max_quantity integer,
     effective_from timestamptz NOT NULL DEFAULT now(),
     effective_until timestamptz,
-    created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
 
     CONSTRAINT price_list_item_unique UNIQUE(price_list_id, inventory_item_id, effective_from),
@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS price_change_history (
     change_percentage numeric(6,3),
     effective_date timestamptz NOT NULL DEFAULT now(),
     notes text,
-    changed_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    changed_by uuid NOT NULL REFERENCES auth.users_extended(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now(),
 
     CONSTRAINT price_change_prices_positive CHECK (
@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS stock_level (
     reorder_point integer DEFAULT 0,
     max_stock_level integer,
     last_counted_date date,
-    last_counted_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    last_counted_by uuid REFERENCES auth.users_extended(id) ON DELETE SET NULL,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
 
@@ -785,7 +785,10 @@ BEGIN
     RAISE NOTICE '- Multi-location stock levels';
     RAISE NOTICE '- XLSX converter compatibility views';
     RAISE NOTICE '- Full audit trail for all operations';
-    RAISE NOTICE '- Performance-optimized indexes';
     RAISE NOTICE 'XLSX Fields Supported: supplier_name, brand, category, sku, description, price, vat_rate, stock_qty';
 END;
 $$;
+
+INSERT INTO schema_migrations (migration_name)
+VALUES ('0011_enhanced_inventory_system')
+ON CONFLICT (migration_name) DO NOTHING;
