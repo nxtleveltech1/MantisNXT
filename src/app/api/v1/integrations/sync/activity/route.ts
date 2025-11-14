@@ -1,68 +1,26 @@
-/**
- * Sync Activity Log API Route
- *
- * Endpoint: /api/v1/integrations/sync/activity
- *
- * GET /api/v1/integrations/sync/activity?orgId={orgId}
- *   - Fetch activity log entries for an organization
- *   - Returns array of ActivityLogEntry objects
- *   - Falls back to localStorage if API unavailable
- *
- * Authentication: Optional (falls back to localStorage if not authenticated)
- * Rate Limit: 30 requests/min per org
- */
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { query } from '@/lib/database'
 
-import { query } from '@/lib/database';
-
-interface ActivityLogEntry {
-  id: string;
-  timestamp: string;
-  action: 'sync' | 'preview' | 'orchestrate' | 'cancel';
-  entityType: string;
-  syncType: 'woocommerce' | 'odoo';
-  status: 'completed' | 'failed' | 'partial' | 'cancelled';
-  recordCount: number;
-  createdCount?: number;
-  updatedCount?: number;
-  deletedCount?: number;
-  failedCount?: number;
-  duration: number;
-  errorMessage?: string;
-}
-
-/**
- * GET - Fetch activity log entries
- */
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
-    const orgId = searchParams.get('orgId')
-    if (!orgId) {
-      return new Response(JSON.stringify({ error: 'orgId is required' }), { status: 400 })
-    }
+    const url = new URL(request.url)
+    const orgId = url.searchParams.get('orgId') || undefined
+    const limit = 100
 
-    // Use action::text to avoid enum coercion when rows contain unexpected/null values
-    const sql = `
-      SELECT
-        id,
-        org_id,
-        (action)::text as action,
-        status,
-        started_at,
-        finished_at,
-        COALESCE(error_message, '') as error_message
-      FROM integration_sync_activity
-      WHERE org_id = $1
-      ORDER BY started_at DESC
-      LIMIT 100
-    `
+    const rows = await query<any>(
+      `SELECT id, org_id, entity_type::text as entity_type, sync_status::text as status,
+              operation, records_affected, started_at, completed_at,
+              COALESCE(error_details::text, '') as error_message
+       FROM sync_log
+       ${orgId ? 'WHERE org_id = $1' : ''}
+       ORDER BY started_at DESC
+       LIMIT ${limit}`,
+      orgId ? [orgId] : []
+    )
 
-    const result = await query(sql, [orgId])
-    return new Response(JSON.stringify({ data: result.rows, rowCount: result.rowCount }), {
-      status: 200,
-    })
-  } catch (err: unknown) {
-    return new Response(JSON.stringify({ error: err?.message || 'Internal error' }), { status: 500 })
+    return NextResponse.json({ data: rows.rows, rowCount: rows.rowCount })
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || 'Failed' }, { status: 500 })
   }
 }
-

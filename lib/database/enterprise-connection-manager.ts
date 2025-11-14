@@ -186,8 +186,15 @@ class EnterpriseConnectionManager {
 
 
   constructor(config?: PoolConfig) {
-
+    
     this.poolConfig = config ?? this.buildConfigFromEnv();
+
+    const pc: any = this.poolConfig;
+    if (pc.min == null) pc.min = this.parseIntEnv('ENTERPRISE_DB_POOL_MIN', 1);
+    if (pc.keepAlive == null) pc.keepAlive = this.parseBoolEnv('ENTERPRISE_DB_KEEPALIVE', true);
+    if (pc.keepAliveInitialDelayMillis == null) pc.keepAliveInitialDelayMillis = this.parseIntEnv('ENTERPRISE_DB_KEEPALIVE_DELAY_MS', 30000);
+    const maxUses = this.parseIntEnv('ENTERPRISE_DB_MAX_USES', 0);
+    if (maxUses > 0 && pc.maxUses == null) pc.maxUses = maxUses;
 
     this.queryLogConfig = this.buildQueryLogConfig();
 
@@ -335,7 +342,7 @@ class EnterpriseConnectionManager {
 
 
 
-      this.pool = new Pool(this.poolConfig);
+    this.pool = new Pool(this.poolConfig);
 
 
 
@@ -375,9 +382,14 @@ class EnterpriseConnectionManager {
 
       this.pool.on('connect', client => {
         console.log('✅ New client connected to enterprise pool');
+        const stmtTimeout = this.parseIntEnv('ENTERPRISE_DB_STATEMENT_TIMEOUT_MS', 30000);
+        const idleTxTimeout = this.parseIntEnv('ENTERPRISE_DB_IDLE_TX_TIMEOUT_MS', 60000);
         void client
-          .query('SET search_path TO public, core, "$user"')
-          .catch(err => console.error('⚠️ Failed to set search_path for connection', err));
+          .query(
+            'SET search_path TO public, core, "$user"; SET statement_timeout = $1; SET idle_in_transaction_session_timeout = $2;',
+            [stmtTimeout, idleTxTimeout]
+          )
+          .catch(err => console.error('⚠️ Failed to initialize session parameters', err));
       });
 
 

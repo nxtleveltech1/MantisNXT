@@ -5,6 +5,8 @@
  * instead of re-processing the file.
  */
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';

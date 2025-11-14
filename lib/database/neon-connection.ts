@@ -1,11 +1,11 @@
 import { neon } from '@neondatabase/serverless';
 
-// Get connection string (fallback to MCP postgres config if env missing)
-const FALLBACK_URL =
-  'postgresql://neondb_owner:npg_84ELeCFbOcGA@ep-steep-waterfall-a96wibpm-pooler.gwc.azure.neon.tech/mantis_issoh?sslmode=require';
-const connectionString = process.env.NEON_SPP_DATABASE_URL || FALLBACK_URL;
+const connectionString =
+  process.env.NEON_SPP_DATABASE_URL || process.env.DATABASE_URL || '';
+if (!connectionString) {
+  throw new Error('Missing database connection string');
+}
 
-// Base Neon client (tagged template)
 const sql = neon(connectionString) as unknown;
 
 // Lightweight wrapper exposing a pg-like query(text, params) API
@@ -75,5 +75,3 @@ export const neonDb = Object.assign(sql, {
   query: runQuery,
   withTransaction,
 });
-
-console.log('🚀 Neon serverless database connection module initialized');

@@ -145,14 +145,27 @@ export function useUploadPricelist() {
       const response = await fetch('/api/spp/upload', {
         method: 'POST',
         body: formData,
+        headers: { Accept: 'application/json' },
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
+        const ct = response.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const error = await response.json();
+          throw new Error(error.error || error.message || 'Upload failed');
+        } else {
+          const text = await response.text();
+          throw new Error('Upload failed');
+        }
       }
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        const text = await response.text();
+        throw new Error('Upload failed');
+      }
       // Support both { upload_id } and { data: { upload_id } } shapes
       return (
         data.upload_id ||
@@ -178,16 +191,28 @@ export function useMergeUpload() {
 
       const response = await fetch('/api/spp/merge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ upload_id: uploadId, skip_invalid_rows: skipInvalid }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Merge failed');
+        const ct = response.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const error = await response.json();
+          throw new Error(error.error || error.message || 'Merge failed');
+        } else {
+          const text = await response.text();
+          throw new Error('Merge failed');
+        }
       }
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        const text = await response.text();
+        throw new Error('Merge failed');
+      }
       return data.data;
     },
     onSuccess: () => {

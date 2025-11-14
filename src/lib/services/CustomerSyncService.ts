@@ -13,8 +13,9 @@
  */
 
 import { query } from '@/lib/database';
+import { IntegrationMappingService } from '@/lib/services/IntegrationMappingService';
 import type { WooCommerceService, WooCommerceCustomer } from '@/lib/services/WooCommerceService';
-import { WooCommerceSyncQueue } from '@/lib/services/WooCommerceSyncQueue';
+import { WooCommerceSyncQueue } from '@/lib/services/WooCommerceSyncQueue.SECURE';
 
 interface SyncConfig {
   batchSize?: number;
@@ -118,11 +119,12 @@ async function mapWooCustomerToMantis(
 /**
  * Sync a single customer from WooCommerce to MantisNXT
  */
-async function syncSingleCustomer(
-  wooService: WooCommerceService,
-  wooCustomer: WooCommerceCustomer,
-  orgId: string
-): Promise<{ success: boolean; customerId?: string; wasUpdate?: boolean; error?: string }> {
+  async function syncSingleCustomer(
+    wooService: WooCommerceService,
+    wooCustomer: WooCommerceCustomer,
+    orgId: string,
+    connectorId: string
+  ): Promise<{ success: boolean; customerId?: string; wasUpdate?: boolean; error?: string }> {
   try {
     // Fetch customer's orders
     const ordersResponse = await wooService.getOrders({
@@ -176,6 +178,32 @@ async function syncSingleCustomer(
         ]
       );
 
+      // Ensure integration mapping exists
+      const mappingService = new IntegrationMappingService(connectorId, orgId);
+      const existingMap = await mappingService.getMapping('customer', customerId);
+      if (!existingMap) {
+        await mappingService.createMapping({
+          entityType: 'customer',
+          internalId: customerId,
+          externalId: String(wooCustomer.id),
+          mappingData: { email: wooCustomer.email },
+          syncData: wooCustomer,
+          direction: 'inbound',
+        });
+      } else {
+        await mappingService.updateSyncStatus('customer', String(wooCustomer.id), 'completed', wooCustomer);
+      }
+      await mappingService.logSync({
+        entityType: 'customer',
+        entityId: customerId,
+        externalId: String(wooCustomer.id),
+        direction: 'inbound',
+        status: 'completed',
+        operation: 'update',
+        recordsAffected: 1,
+        responsePayload: wooCustomer,
+      });
+
       return { success: true, customerId, wasUpdate: true };
     } else {
       // Create new customer
@@ -214,8 +242,27 @@ async function syncSingleCustomer(
           mantisCustomer.tags,
         ]
       );
-
-      return { success: true, customerId: result.rows[0].id, wasUpdate: false };
+      const newId = result.rows[0].id;
+      const mappingService = new IntegrationMappingService(connectorId, orgId);
+      await mappingService.createMapping({
+        entityType: 'customer',
+        internalId: newId,
+        externalId: String(wooCustomer.id),
+        mappingData: { email: wooCustomer.email },
+        syncData: wooCustomer,
+        direction: 'inbound',
+      });
+      await mappingService.logSync({
+        entityType: 'customer',
+        entityId: newId,
+        externalId: String(wooCustomer.id),
+        direction: 'inbound',
+        status: 'completed',
+        operation: 'create',
+        recordsAffected: 1,
+        responsePayload: wooCustomer,
+      });
+      return { success: true, customerId: newId, wasUpdate: false };
     }
   } catch (error: unknown) {
     console.error(`Error syncing customer ${wooCustomer.email}:`, error);
@@ -253,7 +300,7 @@ export class CustomerSyncService {
     orgId: string,
     userId: string,
     config: SyncConfig = {},
-    options?: { email?: string; wooCustomerId?: number }
+    options?: { email?: string; wooCustomerId?: number; selectedIds?: number[] }
   ): Promise<string> {
     // Use idempotency key for safe retries
     const idempotencyKey = `customer-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -286,6 +333,12 @@ export class CustomerSyncService {
     } else if (options?.email) {
       const response = await wooService.getCustomers({ email: options.email });
       wooCustomers = response.data;
+    } else if (options?.selectedIds && options.selectedIds.length > 0) {
+      wooCustomers = [];
+      for (const id of options.selectedIds) {
+        const resp = await wooService.getCustomer(id);
+        wooCustomers.push(resp.data);
+      }
     } else {
       wooCustomers = await wooService.fetchAllPages(params => wooService.getCustomers(params), {
         per_page: 100,
@@ -319,7 +372,8 @@ export class CustomerSyncService {
     wooService: WooCommerceService,
     queueId: string,
     orgId: string,
-    config: SyncConfig = {}
+    config: SyncConfig = {},
+    connectorId?: string
   ): Promise<SyncProgress> {
     const batchSize = config.batchSize || 50;
     const batchDelayMs = config.batchDelayMs || 2000;
@@ -328,8 +382,8 @@ export class CustomerSyncService {
     const initialBackoffMs = config.initialBackoffMs || 1000;
 
     // Mark queue as processing
-    await WooCommerceSyncQueue.setQueueProcessing(queueId, true);
-    await WooCommerceSyncQueue.incrementQueueProcessCount(queueId);
+    await WooCommerceSyncQueue.setQueueProcessing(queueId, orgId, true);
+    await WooCommerceSyncQueue.incrementQueueProcessCount(queueId, orgId);
 
     let totalProcessed = 0;
     let totalCreated = 0;
@@ -338,14 +392,14 @@ export class CustomerSyncService {
 
     try {
       // Get initial status
-      const initialStatus = await WooCommerceSyncQueue.getQueueStatus(queueId);
+      const initialStatus = await WooCommerceSyncQueue.getQueueStatus(queueId, orgId);
 
       // Process in batches
       let batchNumber = 1;
       let hasMore = true;
 
       while (hasMore) {
-        const batch = await WooCommerceSyncQueue.getNextBatch(queueId, batchSize);
+        const batch = await WooCommerceSyncQueue.getNextBatch(queueId, orgId, batchSize);
 
         if (batch.length === 0) {
           hasMore = false;
@@ -355,7 +409,7 @@ export class CustomerSyncService {
         console.log(`Processing batch ${batchNumber}: ${batch.length} customers`);
 
         // Mark lines as processing
-        await WooCommerceSyncQueue.markLinesProcessing(batch.map(b => b.id));
+        await WooCommerceSyncQueue.markLinesProcessing(batch.map(b => b.id), orgId);
 
         // Process each customer in batch
         for (const line of batch) {
@@ -368,7 +422,7 @@ export class CustomerSyncService {
           while (retryCount < maxRetries && !success) {
             try {
               const wooCustomer = line.customer_data as WooCommerceCustomer;
-              const result = await syncSingleCustomer(wooService, wooCustomer, orgId);
+              const result = await syncSingleCustomer(wooService, wooCustomer, orgId, connectorId || '');
 
               if (result.success) {
                 await WooCommerceSyncQueue.markLineDone(
@@ -439,9 +493,9 @@ export class CustomerSyncService {
       }
 
       // Check if action required (max retries exceeded)
-      await WooCommerceSyncQueue.checkQueueActionRequired(queueId);
+      await WooCommerceSyncQueue.checkQueueActionRequired(queueId, orgId);
     } finally {
-      await WooCommerceSyncQueue.setQueueProcessing(queueId, false);
+      await WooCommerceSyncQueue.setQueueProcessing(queueId, orgId, false);
     }
 
     // Get final status
@@ -464,15 +518,18 @@ export class CustomerSyncService {
    * Get sync queue status
    */
   static async getStatus(queueId: string): Promise<SyncProgress> {
-    const status = await WooCommerceSyncQueue.getQueueStatus(queueId);
+    throw new Error('orgId required');
+  }
 
+  static async getStatus(queueId: string, orgId: string): Promise<SyncProgress> {
+    const status: any = await WooCommerceSyncQueue.getQueueStatus(queueId, orgId);
     return {
       queueId: status.id,
       queueName: status.queue_name,
       totalCustomers: status.total_count,
       processedCount: status.done_count + status.failed_count,
-      createdCount: 0, // Would need to query lines
-      updatedCount: 0, // Would need to query lines
+      createdCount: 0,
+      updatedCount: 0,
       failedCount: status.failed_count,
       state: status.state,
       progress: status.progress,
@@ -491,7 +548,7 @@ export class CustomerSyncService {
     const maxRetries = config.maxRetries || 3;
 
     // Get retryable failed lines
-    const failed = await WooCommerceSyncQueue.getRetryableFailed(queueId, maxRetries);
+    const failed = await WooCommerceSyncQueue.getRetryableFailed(queueId, orgId, maxRetries);
 
     if (failed.length === 0) {
       return this.getStatus(queueId);
@@ -516,15 +573,15 @@ export class CustomerSyncService {
   /**
    * Force complete queue (cancel remaining items)
    */
-  static async forceDone(queueId: string): Promise<SyncProgress> {
-    await WooCommerceSyncQueue.forceDone(queueId);
-    return this.getStatus(queueId);
+  static async forceDone(queueId: string, orgId: string, userId: string): Promise<SyncProgress> {
+    await WooCommerceSyncQueue.forceDone(queueId, orgId, userId);
+    return this.getStatus(queueId, orgId);
   }
 
   /**
    * Get activity log
    */
-  static async getActivityLog(queueId: string, limit: number = 100): Promise<unknown[]> {
-    return WooCommerceSyncQueue.getActivityLog(queueId, limit);
+  static async getActivityLog(queueId: string, orgId: string, limit: number = 100): Promise<unknown[]> {
+    return WooCommerceSyncQueue.getActivityLog(queueId, orgId, limit);
   }
 }

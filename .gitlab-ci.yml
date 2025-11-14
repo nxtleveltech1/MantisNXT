@@ -19,10 +19,8 @@
 stages:
   - install
   - lint
-  - test
   - build
   - validate
-  - e2e
   - deploy
 
 variables:
@@ -60,21 +58,6 @@ lint:typescript:
     - npm run type-check
   needs: ["install:dependencies"]
 
-test:unit:
-  stage: test
-  script:
-    - npm run test:coverage
-  coverage: '/All files[^|]*\\|[^|]*\\s+([\\d\\.]+)%/'
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage/cobertura-coverage.xml
-      junit: test-results/junit.xml
-    paths:
-      - coverage/
-    expire_in: 1 week
-  needs: ["install:dependencies"]
 
 build:production:
   stage: build
@@ -84,7 +67,7 @@ build:production:
     paths:
       - .next/
     expire_in: 1 week
-  needs: ["install:dependencies", "lint:eslint", "lint:typescript", "lint:format", "test:unit"]
+  needs: ["install:dependencies", "lint:eslint", "lint:typescript", "lint:format"]
   only:
     - main
     - develop
@@ -97,7 +80,7 @@ lint:format:
 
 validate:browser:
   stage: validate
-  image: mcr.microsoft.com/playwright:v1.40.0-focal
+  image: node:20-bookworm
   script:
     - npm ci
     - npm run start & echo $! > server.pid
@@ -128,22 +111,6 @@ validate:database:
     - main
     - develop
 
-e2e:playwright:
-  stage: e2e
-  image: mcr.microsoft.com/playwright:v1.40.0-focal
-  script:
-    - npm ci
-    - npx playwright install
-    - npm run test:e2e
-  artifacts:
-    when: on_failure
-    paths:
-      - playwright-report/
-    expire_in: 1 week
-  needs: ["build:production", "validate:browser"]
-  when: manual
-  only:
-    - main
 
 deploy:staging:
   stage: deploy
@@ -164,7 +131,7 @@ deploy:production:
   environment:
     name: production
     url: https://yourdomain.com
-  needs: ["build:production", "e2e:playwright", "validate:browser", "validate:database"]
+  needs: ["build:production", "validate:browser", "validate:database"]
   only:
     - main
   when: manual

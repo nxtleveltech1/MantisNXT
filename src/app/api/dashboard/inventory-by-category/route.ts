@@ -3,6 +3,8 @@
  * Returns inventory value and product count breakdown by category
  */
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/unified-connection';
 import { CORE_TABLES, SERVE_VIEWS } from '@/lib/db/schema-contract';

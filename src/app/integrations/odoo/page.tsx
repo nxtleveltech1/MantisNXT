@@ -66,6 +66,10 @@ export default function OdooPage() {
   const [testing, setTesting] = useState(false);
   const [previewData, setPreviewData] = useState<unknown>(null);
   const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  const [dataLoading, setDataLoading] = useState<Record<string, boolean>>({ products: false, customers: false, orders: false });
+  const [tableData, setTableData] = useState<Record<string, { rows: Array<{ external_id: string; status: string; raw: unknown }>; rowCount: number; page: number; pageSize: number }>>({ products: { rows: [], rowCount: 0, page: 1, pageSize: 50 }, customers: { rows: [], rowCount: 0, page: 1, pageSize: 50 }, orders: { rows: [], rowCount: 0, page: 1, pageSize: 50 } });
+  const [queueStatus, setQueueStatus] = useState<unknown | null>(null)
+  const [orchestrating, setOrchestrating] = useState(false)
 
   // Sync preview and progress management
   const syncManager = useSyncManager();
@@ -319,6 +323,72 @@ export default function OdooPage() {
     }
   };
 
+  const loadTable = async (entity: "products" | "customers" | "orders", page = 1, pageSize = 50) => {
+    setDataLoading(prev => ({ ...prev, [entity]: true }));
+    try {
+      const res = await fetch(`/api/v1/integrations/odoo/table?entity=${entity}&page=${page}&pageSize=${pageSize}`);
+      const json = await res.json();
+      if (json.success) {
+        setTableData(prev => ({ ...prev, [entity]: { rows: json.data || [], rowCount: json.rowCount || 0, page, pageSize } }));
+      }
+    } finally {
+      setDataLoading(prev => ({ ...prev, [entity]: false }));
+    }
+  };
+
+  const stageQueue = async (entity: "products" | "customers" | "orders") => {
+    if (!orgId) return;
+    const res = await fetch(`/api/v1/integrations/odoo/queue/${entity}`, { method: "POST", headers: { "x-org-id": orgId } });
+    const json = await res.json();
+    if (json.success) {
+      await loadTable(entity);
+      toast({ title: "Staged", description: `${entity} queued: ${json.data.inserted || 0}` });
+    } else {
+      toast({ title: "Error", description: json.error || "Failed to stage", variant: "destructive" });
+    }
+  };
+
+  const selectRows = async (entity: "products" | "customers" | "orders", ids: string[], selected: boolean) => {
+    const res = await fetch(`/api/v1/integrations/odoo/select`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-id": "00000000-0000-0000-0000-000000000001" }, body: JSON.stringify({ entity, ids, selected }) });
+    const json = await res.json();
+    if (json.success) {
+      await loadTable(entity, tableData[entity].page, tableData[entity].pageSize);
+      toast({ title: "Selection Updated", description: `${json.data.updated} rows updated` });
+    } else {
+      toast({ title: "Error", description: json.error || "Failed to update selection", variant: "destructive" });
+    }
+  };
+
+  const loadQueueStatus = async () => {
+    if (!orgId) return
+    const res = await fetch(`/api/v1/integrations/odoo/queue/status`, { headers: { 'x-org-id': orgId } })
+    const json = await res.json()
+    if (json.success) {
+      setQueueStatus(json.data)
+    }
+  }
+
+  const startOrchestration = async () => {
+    if (!orgId) return
+    setOrchestrating(true)
+    try {
+      const res = await fetch(`/api/v1/integrations/odoo/orchestrate/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
+        body: JSON.stringify({ entityTypes: ['customers','products'], conflictStrategy: 'auto-retry', batchSize: 50, maxRetries: 3, rateLimit: 10 })
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast({ title: 'Orchestration Started', description: `Sync ${json.data.syncId}` })
+        await loadQueueStatus()
+      } else {
+        toast({ title: 'Error', description: json.error || 'Failed to start orchestration', variant: 'destructive' })
+      }
+    } finally {
+      setOrchestrating(false)
+    }
+  }
+
   const closePreview = () => {
     setPreviewData(null);
   };
@@ -438,6 +508,7 @@ export default function OdooPage() {
           <TabsList>
             <TabsTrigger value="configuration">Configuration</TabsTrigger>
             <TabsTrigger value="sync">Sync & Operations</TabsTrigger>
+            <TabsTrigger value="data">Odoo Data</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -1014,6 +1085,83 @@ export default function OdooPage() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="data" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Staging Explorer</CardTitle>
+                <CardDescription>Load and review data from Odoo</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={loadQueueStatus} disabled={!orgId}>
+                      <RefreshCw className="mr-2 h-3 w-3" />
+                      Queue Status
+                    </Button>
+                    <Button onClick={startOrchestration} disabled={!orgId || orchestrating}>
+                      {orchestrating ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-2 h-3 w-3" />}
+                      Start Orchestration
+                    </Button>
+                  </div>
+                  <Badge variant="outline">{orgId || 'No Org'}</Badge>
+                </div>
+                {queueStatus && (
+                  <div className="rounded-md border p-3 text-sm">
+                    <pre className="overflow-auto max-h-48">{JSON.stringify(queueStatus, null, 2)}</pre>
+                  </div>
+                )}
+                <div className="grid gap-4 md:grid-cols-3">
+                  {(["products", "customers", "orders"] as const).map(entity => (
+                    <div key={entity} className="space-y-2">
+                      <Label className="capitalize">{entity}</Label>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => stageQueue(entity)} disabled={!orgId || dataLoading[entity]}>
+                          {dataLoading[entity] ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-2 h-3 w-3" />}
+                          Stage
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => loadTable(entity)} disabled={dataLoading[entity]}>
+                          {dataLoading[entity] ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Eye className="mr-2 h-3 w-3" />}
+                          Load
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {(["products", "customers", "orders"] as const).map(entity => (
+                  <div key={`table-${entity}`} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="capitalize">{entity}</Badge>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => selectRows(entity, tableData[entity].rows.map(r => r.external_id), true)} disabled={tableData[entity].rows.length === 0}>Select All</Button>
+                        <Button size="sm" variant="outline" onClick={() => selectRows(entity, tableData[entity].rows.map(r => r.external_id), false)} disabled={tableData[entity].rows.length === 0}>Clear</Button>
+                      </div>
+                    </div>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>External ID</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Payload</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {tableData[entity].rows.map((row, idx) => (
+                            <TableRow key={`${entity}-${idx}`}>
+                              <TableCell>{row.external_id}</TableCell>
+                              <TableCell><Badge variant="outline" className="capitalize">{row.status}</Badge></TableCell>
+                              <TableCell className="max-w-xl truncate" title={JSON.stringify(row.raw)}>{JSON.stringify(row.raw).substring(0, 100)}...</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Settings Tab */}

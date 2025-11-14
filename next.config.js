@@ -61,6 +61,10 @@ const nextConfig = {
 
   // Enhanced webpack configuration for stability
   webpack: (config, { dev, isServer, webpack }) => {
+    config.output = {
+      ...config.output,
+      uniqueName: 'mantisnxt',
+    };
     // Optimize cache configuration
     if (!dev) {
       config.cache = {

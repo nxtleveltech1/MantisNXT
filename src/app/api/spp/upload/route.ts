@@ -4,6 +4,8 @@
  * Handles file upload to SPP schema for validation and merging
  */
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { pricelistService } from '@/lib/services/PricelistService';

@@ -3,6 +3,8 @@
  * Returns critical, warning, and info level stock alerts
  */
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/database/unified-connection';
 import { CORE_TABLES, PUBLIC_VIEWS } from '@/lib/db/schema-contract';
