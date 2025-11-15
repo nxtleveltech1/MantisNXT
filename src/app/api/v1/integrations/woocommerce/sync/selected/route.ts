@@ -4,6 +4,7 @@ import { query } from '@/lib/database'
 import { WooCommerceService } from '@/lib/services/WooCommerceService'
 import { IntegrationMappingService } from '@/lib/services/IntegrationMappingService'
 import { createErrorResponse } from '@/lib/utils/neon-error-handler'
+import { IntegrationSyncService } from '@/lib/services/IntegrationSyncService'
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
     let created = 0
     let updated = 0
     let failed = 0
+    let materialized = 0
 
     for (const id of ids) {
       try {
@@ -128,7 +130,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, data: { created, updated, failed } })
+    if (entity === 'orders') {
+      const sync = new IntegrationSyncService(connectorId, orgIdResolved)
+      const r = await sync.materializeOrdersFromSync(1000)
+      materialized = r.recordsCreated
+    }
+
+    return NextResponse.json({ success: true, data: { created, updated, failed, materialized } })
   } catch (e: any) {
     return createErrorResponse(e, 500)
   }

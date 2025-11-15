@@ -1,16 +1,17 @@
 {
-  "status": "commited",
+  "status": "init",
   "type": "frontend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:3000",
+  "localEndpoint": "http://localhost:3000/",
   "executionArgs": {
     "projectName": "MantisNXT",
-    "projectPath": "K:\\00Project\\MantisNXT",
+    "projectPath": "k:\\00Project\\MantisNXT",
     "testIds": [],
-    "additionalInstruction": "Test all the implemented fixes including authentication, security, performance optimization, quality assurance, and integration features. Focus on validating that all Phase 1, 2, and 3 fixes are working correctly.",
+    "additionalInstruction": "Focus on integrations pages and Woo Data UI: tabs render, refresh triggers preview fetch then table load, selection persistence, and Sync Selected posts orchestrate.",
     "envs": {
       "API_KEY": "sk-user-l5J_riQhHqgXxnhPdew4b_bP5YLduU8c0B1p386zMtgy9TJEA9jW7QpsTPYGGKO0Mt3_TW4fAS0R3wzaOcqQado6_T0HO8K7B7v08h1ySVmbutJKZZqPScTeI_S3i5o3K8A"
     }
   },
-  "proxy": "http://1fd699c4-bb54-4fce-b75f-f3f844abdc89:pbZamySxA3eUawguxSPqatygOzMfMfJd@tun.testsprite.com:8080"
+  "proxy": "http://1fd699c4-bb54-4fce-b75f-f3f844abdc89:pbZamySxA3eUawguxSPqatygOzMfMfJd@tun.testsprite.com:8080",
+  "serverPort": 59666
 }

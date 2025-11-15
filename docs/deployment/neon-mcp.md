@@ -69,4 +69,3 @@ await withTransaction(async (client) => {
 // Health
 const health = await testConnection();
 ```
-

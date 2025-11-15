@@ -161,14 +161,18 @@ export default function WooPage() {
       return
     }
     try {
-      const res = await fetch('/api/v1/integrations/woocommerce/sync/selected', {
+      if (entity !== 'customers') {
+        toast({ title: 'Not supported', description: 'Selected sync currently supports Customers', variant: 'destructive' })
+        return
+      }
+      const res = await fetch('/api/v1/integrations/woocommerce/sync/customers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-org-id': orgId },
-        body: JSON.stringify({ org_id: orgId, entity, ids: ids.map(id => Number(id)) })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ org_id: orgId, action: 'start-selected', options: { selectedIds: ids.map(id => Number(id)) }, config: { url: '', consumerKey: '', consumerSecret: '' } })
       })
       if (!res.ok) throw new Error(`Sync start failed: ${res.status}`)
       const json = await res.json()
-      toast({ title: 'Selected sync', description: `Created ${json?.data?.created || 0}, Updated ${json?.data?.updated || 0}` })
+      toast({ title: 'Sync started', description: `Queue: ${json?.data?.queueId || ''}` })
     } catch (e: any) {
       toast({ title: 'Sync failed', description: e?.message || 'Error', variant: 'destructive' })
     }

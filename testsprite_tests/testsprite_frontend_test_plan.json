@@ -1,474 +1,434 @@
 [
   {
     "id": "TC001",
-    "title": "User Login Success",
-    "description": "Verify that a user can log into the system successfully with correct credentials.",
+    "title": "Supplier Pricelist Upload Success",
+    "description": "Verify that a procurement analyst can successfully upload a supplier pricelist file through the upload wizard and that the file is validated, processed, and integrated correctly.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to the login page."
+        "description": "Login as a user with Procument Analyst role."
       },
       {
         "type": "action",
-        "description": "Enter valid username/email and password."
+        "description": "Navigate to the Supplier Pricelist Upload page."
       },
       {
         "type": "action",
-        "description": "Click the login button."
+        "description": "Start the upload wizard and select a valid pricelist file."
       },
       {
         "type": "assertion",
-        "description": "Verify that login is successful and user is redirected to the dashboard."
+        "description": "System performs automated validation on the file without errors."
+      },
+      {
+        "type": "action",
+        "description": "Submit the valid pricelist for integration."
+      },
+      {
+        "type": "assertion",
+        "description": "Pricelist is ingested, merged into the canonical model, and audit trail entries are created."
       }
     ]
   },
   {
     "id": "TC002",
-    "title": "User Login Failure with Invalid Credentials",
-    "description": "Verify that login fails with invalid username or password and appropriate error message is shown.",
+    "title": "Pricelist Upload Validation Failure Handling",
+    "description": "Verify that the upload wizard correctly detects validation errors in the pricelist file and provides clear feedback to allow error resolution.",
     "category": "error handling",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to the login page."
+        "description": "Login as a user with Procurement Analyst role."
       },
       {
         "type": "action",
-        "description": "Enter invalid username/email and/or password."
+        "description": "Navigate to the Supplier Pricelist Upload page."
       },
       {
         "type": "action",
-        "description": "Click the login button."
+        "description": "Start the upload wizard and select an invalid pricelist file with structural and data errors."
       },
       {
         "type": "assertion",
-        "description": "Verify that login is rejected with error message 'Invalid credentials'."
+        "description": "System detects validation errors and displays detailed, actionable feedback."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit the file."
+      },
+      {
+        "type": "assertion",
+        "description": "Submission is blocked until errors are resolved."
       }
     ]
   },
   {
     "id": "TC003",
-    "title": "Role-Based Access Control Enforcement",
-    "description": "Validate that users can access only resources permitted by their roles and restricted areas are blocked.",
-    "category": "security",
+    "title": "Single Active Inventory Selection Enforcement",
+    "description": "Verify that the system enforces the business rule allowing only one active selection per product and maintains historical selections for analytics.",
+    "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as a user with limited permissions (e.g., Procurement Analyst)."
+        "description": "Login as Inventory Manager."
       },
       {
         "type": "action",
-        "description": "Attempt to access a restricted page (e.g., audit logs, activation of pricelists)."
+        "description": "Navigate to the Inventory Selection Interface."
+      },
+      {
+        "type": "action",
+        "description": "Activate a selection for a certain product from a supplier."
       },
       {
         "type": "assertion",
-        "description": "Verify that access is denied with proper authorization error."
+        "description": "The selection is marked active and reflected on the dashboard."
       },
       {
         "type": "action",
-        "description": "Log in as a user with elevated permissions (e.g., Inventory Manager)."
-      },
-      {
-        "type": "action",
-        "description": "Access authorized pages like product selection workspace."
+        "description": "Attempt to activate a second selection for the same product from a different supplier."
       },
       {
         "type": "assertion",
-        "description": "Verify access is granted."
+        "description": "System prevents multiple active selections for the same product and prompts to deactivate the current active before activating another."
+      },
+      {
+        "type": "action",
+        "description": "Deactivate the first selection and activate the second selection."
+      },
+      {
+        "type": "assertion",
+        "description": "Historical selections remain retrievable for analytics and reporting."
       }
     ]
   },
   {
     "id": "TC004",
-    "title": "Supplier Pricelist Upload and Validation Success",
-    "description": "Verify the supplier pricelist upload wizard accepts valid files, performs validations, and allows submission.",
+    "title": "Stock on Hand Real-time Status and Alerts",
+    "description": "Verify real-time stock reporting reflects accurate stock levels, and alerts are triggered upon threshold breaches.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as Procurement Analyst."
+        "description": "Login as Inventory Manager or authorized user."
       },
       {
         "type": "action",
-        "description": "Navigate to the pricelist upload wizard."
-      },
-      {
-        "type": "action",
-        "description": "Upload a valid supplier pricelist file."
+        "description": "Navigate to the Stock on Hand Reporting dashboard."
       },
       {
         "type": "assertion",
-        "description": "Verify that the system performs automated validations and displays success."
+        "description": "Dashboard displays real-time data covering over 98% of SKUs with correct stock status."
       },
       {
         "type": "action",
-        "description": "Submit the pricelist for integration."
+        "description": "Simulate stock dropping below an alert threshold."
       },
       {
         "type": "assertion",
-        "description": "Verify pricelist is queued for merging and reflected in the supplier directory."
+        "description": "System triggers threshold breach alerts and updates visual indicators on the dashboard."
       }
     ]
   },
   {
     "id": "TC005",
-    "title": "Supplier Pricelist Upload Validation Failure",
-    "description": "Verify the upload wizard detects invalid pricelist files and provides actionable error messages.",
-    "category": "error handling",
+    "title": "REST API Authentication and Authorization",
+    "description": "Verify that all REST API endpoints enforce JWT-based authentication and role-based authorization with proper error handling.",
+    "category": "security",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as Procurement Analyst."
-      },
-      {
-        "type": "action",
-        "description": "Navigate to the pricelist upload wizard."
-      },
-      {
-        "type": "action",
-        "description": "Upload a malformed or invalid pricelist file (e.g., missing fields, incorrect format)."
+        "description": "Attempt to access a secured REST API endpoint without token."
       },
       {
         "type": "assertion",
-        "description": "Verify validation errors are displayed clearly specifying the issues."
+        "description": "Access is denied with 401 Unauthorized error."
       },
       {
         "type": "action",
-        "description": "Attempt to submit the pricelist with errors."
+        "description": "Attempt to access a secured endpoint with an invalid or expired token."
       },
       {
         "type": "assertion",
-        "description": "Verify submission is blocked until errors are resolved."
+        "description": "Access is denied with 401 Unauthorized or 403 Forbidden as appropriate."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to perform an action not allowed by the user's role with valid token."
+      },
+      {
+        "type": "assertion",
+        "description": "Access is denied with 403 Forbidden."
+      },
+      {
+        "type": "action",
+        "description": "Perform allowed actions with valid token and appropriate role."
+      },
+      {
+        "type": "assertion",
+        "description": "Actions complete successfully with correct response codes."
       }
     ]
   },
   {
     "id": "TC006",
-    "title": "Enforce Single Active Selection Rule",
-    "description": "Ensure that only one active inventory selection exists per product at any time and previous selections are retained for history.",
-    "category": "functional",
+    "title": "Role-Based Access Control for UI Views",
+    "description": "Verify the role-based access control on the web UI views such as dashboard, selections, stock reports, and pricelist upload pages.",
+    "category": "security",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as Inventory Manager."
-      },
-      {
-        "type": "action",
-        "description": "Access the inventory selection interface for a product."
-      },
-      {
-        "type": "action",
-        "description": "Activate a supplier selection for the product."
+        "description": "Login as Inventory Manager."
       },
       {
         "type": "assertion",
-        "description": "Verify the selection is marked active."
+        "description": "Access is granted to Inventory dashboard, Selection Interface, and Stock reports."
+      },
+      {
+        "type": "assertion",
+        "description": "Pricelist upload page is not accessible."
       },
       {
         "type": "action",
-        "description": "Attempt to activate a different supplier selection for the same product."
+        "description": "Logout and login as Procurement Analyst."
       },
       {
         "type": "assertion",
-        "description": "Verify the system deactivates the previous selection and activates the new one."
+        "description": "Access is granted to Pricelist Upload wizard and Supplier Dashboard."
       },
       {
         "type": "assertion",
-        "description": "Verify previous selections remain accessible for history and analytics."
+        "description": "Inventory selection UI and stock reports are not accessible."
+      },
+      {
+        "type": "action",
+        "description": "Logout and login as Finance Controller."
+      },
+      {
+        "type": "assertion",
+        "description": "Access is granted to Analytics dashboard and reporting features."
       }
     ]
   },
   {
     "id": "TC007",
-    "title": "Real-Time Stock on Hand Reporting Accuracy",
-    "description": "Verify that the Stock on Hand dashboard displays accurate and real-time stock levels and triggers alerts when thresholds breach.",
-    "category": "functional",
+    "title": "API Performance Monitoring and Error Rate Verification",
+    "description": "Verify the API performance meets the latency (<500 ms p95) and error rate (<0.1%) criteria using monitoring endpoints.",
+    "category": "performance",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as Inventory Manager or Finance Controller."
+        "description": "Use integration CLI or API to generate load simulating normal and peak usage patterns."
       },
       {
         "type": "action",
-        "description": "Navigate to the stock on hand dashboard."
+        "description": "Access API performance monitoring endpoints."
       },
       {
         "type": "assertion",
-        "description": "Verify displayed stock levels match underlying database values for all SKUs."
-      },
-      {
-        "type": "action",
-        "description": "Simulate stock decrease below threshold for a product."
+        "description": "API error rates remain below 0.1%."
       },
       {
         "type": "assertion",
-        "description": "Verify the alert is triggered and displayed on dashboard."
+        "description": "p95 query latency remains below 500 ms."
       }
     ]
   },
   {
     "id": "TC008",
-    "title": "Analytics & History Reporting",
-    "description": "Confirm multi-supplier price history and trend analysis reports are generated correctly and downloadable in supported formats.",
-    "category": "functional",
+    "title": "Audit Logging of Pricelist Upload and Selection Activation",
+    "description": "Verify audit trails are created correctly for supplier pricelist uploads, validations, and activation/deactivation of inventory selections.",
+    "category": "security",
     "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as Finance Controller."
-      },
-      {
-        "type": "action",
-        "description": "Navigate to the analytics dashboard."
-      },
-      {
-        "type": "action",
-        "description": "Select options to view price history and trend analysis for multiple suppliers."
+        "description": "Login as Procurement Analyst and upload a supplier pricelist."
       },
       {
         "type": "assertion",
-        "description": "Verify reports display correct historical data and trend charts."
+        "description": "Audit log entry is created with user, timestamp, file details, and validation results."
       },
       {
         "type": "action",
-        "description": "Download reports in CSV and PDF formats."
+        "description": "Login as Inventory Manager and activate a product selection."
       },
       {
         "type": "assertion",
-        "description": "Verify downloaded files are complete, correctly formatted and match displayed data."
+        "description": "Audit log entry is created with user, timestamp, product and supplier details, and activation status."
+      },
+      {
+        "type": "action",
+        "description": "Deactivate the product selection."
+      },
+      {
+        "type": "assertion",
+        "description": "Deactivation is also logged in the audit trail."
       }
     ]
   },
   {
     "id": "TC009",
-    "title": "REST API Authentication and Error Handling",
-    "description": "Validate that all REST API endpoints require authentication and return appropriate errors for unauthorized or malformed requests.",
-    "category": "security",
-    "priority": "High",
+    "title": "Pricelist Upload Invalid File Format Handling",
+    "description": "Verify system behavior when uploading files with unsupported formats or corrupted files.",
+    "category": "error handling",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Send API request without authentication token to an authenticated endpoint."
-      },
-      {
-        "type": "assertion",
-        "description": "Verify response is 401 Unauthorized."
+        "description": "Login as Procurement Analyst."
       },
       {
         "type": "action",
-        "description": "Send API request with invalid or expired token."
-      },
-      {
-        "type": "assertion",
-        "description": "Verify response is 401 Unauthorized."
+        "description": "Navigate to Pricelist Upload wizard."
       },
       {
         "type": "action",
-        "description": "Send API request with invalid parameter (e.g., wrong schema)."
+        "description": "Attempt to upload a file with unsupported format (e.g., .exe, .txt)."
       },
       {
         "type": "assertion",
-        "description": "Verify response is 400 Bad Request with validation error details."
+        "description": "System rejects the upload and displays a clear error message about allowed file types."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to upload a corrupted or partially downloaded file."
+      },
+      {
+        "type": "assertion",
+        "description": "System detects file corruption and prompts the user to re-upload a valid file."
       }
     ]
   },
   {
     "id": "TC010",
-    "title": "Integration CLI Scripts Execution",
-    "description": "Verify that Integration CLI scripts for schema setup, data seeding, and verification run successfully and produce expected results.",
+    "title": "Integration CLI Script Execution and Rollback",
+    "description": "Verify CLI scripts for schema setup, data seeding, verification, and database migrations perform correctly and support rollback.",
     "category": "functional",
     "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Run CLI script to setup database schema."
+        "description": "Run integration CLI script to setup schema on a fresh environment."
       },
       {
         "type": "assertion",
-        "description": "Verify successful completion with no errors and schema is created."
+        "description": "Schema is created successfully without errors."
       },
       {
         "type": "action",
-        "description": "Run CLI script to seed test data."
+        "description": "Run data seeding CLI script to populate sample data."
       },
       {
         "type": "assertion",
-        "description": "Verify data is inserted correctly into database tables."
+        "description": "Sample data is inserted correctly."
       },
       {
         "type": "action",
-        "description": "Run CLI script to verify data integrity."
+        "description": "Run database migration with rollback option."
       },
       {
         "type": "assertion",
-        "description": "Verify verification reports success with no errors."
+        "description": "Migration applies changes successfully and rollback restores previous schema state."
       }
     ]
   },
   {
     "id": "TC011",
-    "title": "Audit Logging of User Actions",
-    "description": "Validate that all critical user actions (e.g., uploads, selections, activations) are logged correctly and accessible for audit review.",
-    "category": "security",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Perform key actions such as pricelist upload, selection activation, and report download."
-      },
-      {
-        "type": "action",
-        "description": "Access audit logs via the audit log API or UI."
-      },
-      {
-        "type": "assertion",
-        "description": "Verify logs contain entries with correct user ID, timestamp, action type, and details."
-      }
-    ]
-  },
-  {
-    "id": "TC012",
-    "title": "Pricelist Processing Time Performance",
-    "description": "Ensure pricelist processing (upload through activation) completes within target performance thresholds.",
-    "category": "performance",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Upload large but valid pricelist file."
-      },
-      {
-        "type": "assertion",
-        "description": "Measure time taken from upload to activation completion."
-      },
-      {
-        "type": "assertion",
-        "description": "Verify processing time meets target reduction compared to baseline."
-      }
-    ]
-  },
-  {
-    "id": "TC013",
-    "title": "API Reliability and Latency",
-    "description": "Verify the REST API maintains error rate below 0.1% and 95th percentile query response latency below 500ms under load.",
-    "category": "performance",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Execute load test with simulated concurrent API requests representing typical user activity."
-      },
-      {
-        "type": "assertion",
-        "description": "Collect metrics on error rates and response times."
-      },
-      {
-        "type": "assertion",
-        "description": "Confirm error rate is below 0.1% and p95 latency below 500ms."
-      }
-    ]
-  },
-  {
-    "id": "TC014",
-    "title": "User Adoption Metrics Tracking",
-    "description": "Validate that system usage metrics such as weekly active users and time-on-task are captured and reported accurately.",
+    "title": "Dashboard Real-time Data Visualization Accuracy",
+    "description": "Verify real-time dashboards display correct metrics, KPIs, and data visualizations with filtering capabilities.",
     "category": "functional",
     "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Use system for several typical workflows over a week."
+        "description": "Login as authorized user."
       },
       {
         "type": "action",
-        "description": "Access usage metrics dashboard or reports."
+        "description": "Navigate to Real-time Dashboard."
       },
       {
         "type": "assertion",
-        "description": "Verify accurate capture of weekly active users and average time spent per task."
+        "description": "Dashboard shows up-to-date metrics on supplier pricing, stock levels, and cost trends."
+      },
+      {
+        "type": "action",
+        "description": "Apply various filters (by supplier, date range, product categories)."
+      },
+      {
+        "type": "assertion",
+        "description": "Dashboard data updates accordingly reflecting filters with no lag."
       }
     ]
   },
   {
-    "id": "TC015",
-    "title": "Security Compliance Verification",
-    "description": "Check that audit logging, role-based access controls, and secure credential handling comply with South African POPIA and other regulations.",
-    "category": "security",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Review audit logs for completeness and tamper-resistance."
-      },
-      {
-        "type": "action",
-        "description": "Verify encryption and secure storage of credentials and tokens."
-      },
-      {
-        "type": "action",
-        "description": "Test access control enforcement according to role policy."
-      },
-      {
-        "type": "assertion",
-        "description": "Confirm all security compliance checkpoints are met per defined standards."
-      }
-    ]
-  },
-  {
-    "id": "TC016",
-    "title": "UI Responsiveness and Navigation Across Tabs",
-    "description": "Verify the web UI at /nxt-spp supports smooth navigation across dashboard, selections, and stock reports with responsive design.",
-    "category": "ui",
+    "id": "TC012",
+    "title": "Invoice Management Data Integrity and Access",
+    "description": "Verify that invoice management pages correctly integrate supplier data and financial tracking with role-based access enforced.",
+    "category": "functional",
     "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Log in and navigate through tabs Dashboard, Selections, Stock Reports."
-      },
-      {
-        "type": "assertion",
-        "description": "Verify data and UI components load correctly and tabs switch without errors."
+        "description": "Login as Finance Controller."
       },
       {
         "type": "action",
-        "description": "Resize browser window to several screen sizes."
+        "description": "Navigate to the Invoice Management page."
       },
       {
         "type": "assertion",
-        "description": "Confirm responsive layout adapts appropriately without UI breaks."
+        "description": "Invoices linked to suppliers display accurate financial data."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access Invoice Management as Inventory Manager."
+      },
+      {
+        "type": "assertion",
+        "description": "Access denied or restricted as per role-based policy."
       }
     ]
   },
   {
-    "id": "TC017",
-    "title": "Pricelist Upload Security Scanning",
-    "description": "Verify that uploaded pricelist files are scanned for security vulnerabilities or malware before processing.",
+    "id": "TC013",
+    "title": "Security Compliance: Secure Credential Storage and Audit Logging",
+    "description": "Verify user credentials are securely stored and audit logging complies with South African regulatory standards.",
     "category": "security",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Upload a file containing known test virus signature or suspicious content."
+        "description": "Register a new user with password."
       },
       {
         "type": "assertion",
-        "description": "Verify system detects the threat and rejects file upload with warning."
+        "description": "Passwords are hashed with bcrypt and no plaintext credentials stored."
       },
       {
         "type": "action",
-        "description": "Upload a clean file."
+        "description": "Perform user login."
       },
       {
         "type": "assertion",
-        "description": "Verify upload proceeds to validation stage."
+        "description": "JWT token is issued securely and revoked properly on logout."
+      },
+      {
+        "type": "action",
+        "description": "Review audit logs of login, logout, and role changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Audit entries contain required fields per POPIA and financial compliance guidelines."
       }
     ]
   }
