@@ -573,3 +573,16 @@ If you want, next step I can do is generate:
 - Recommended safest compliant path
 - Decision owner and timestamp
 
+## Delivery Summary
+
+- A2: Unified Woo config validated; connection check enforced before sync.
+- B1: Customers inbound queue executed; core upsert, mappings, logs complete.
+- C4: Selection flags persisted; orchestrate consumes targeted IDs from preview.
+- D1/D2: Core ingestion delivered; products mirrored to inventory; deterministic SKU rule applied.
+- E-series: Org scoping and rate limits enforced; activity typing strict; materialize guarded by org header.
+
+## Verification Summary
+- Endpoints verified: schema-compat, activity, preview+table, sync, materialize.
+- UI verified: Woo Data tabs, refresh, selection, sync-selected.
+- Data verified: customer/product rows, integration mappings, inventory mirroring, order normalization.
+

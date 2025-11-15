@@ -12,4 +12,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: error.message || 'Failed to get queue status' }, { status: 500 })
   }
 }
-

@@ -5,6 +5,7 @@ import { CustomerSyncService } from '@/lib/services/CustomerSyncService'
 import { createErrorResponse } from '@/lib/utils/neon-error-handler'
 import { getCircuitBreaker } from '@/lib/utils/rate-limiter'
 import { query } from '@/lib/database'
+import jwt from 'jsonwebtoken'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,8 +13,21 @@ export async function POST(request: NextRequest) {
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!uuidRe.test(orgId)) return NextResponse.json({ success: false, error: 'orgId required' }, { status: 400 })
 
-    const isAdmin = request.headers.get('x-admin') === 'true'
-    if (!isAdmin) return NextResponse.json({ success: false, error: 'Admin required' }, { status: 403 })
+    const isAdminHeader = request.headers.get('x-admin') === 'true'
+    let isAdminToken = false
+    const authHeader = request.headers.get('Authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7)
+      try {
+        const secret = process.env.JWT_SECRET || ''
+        const payload: any = secret ? jwt.verify(token, secret) : null
+        const role = payload?.role || payload?.roles?.[0] || null
+        isAdminToken = role === 'admin' || payload?.isAdmin === true
+      } catch {}
+    }
+    if (!isAdminHeader && !isAdminToken) {
+      return NextResponse.json({ success: false, error: 'Admin required' }, { status: 403 })
+    }
 
     // Resolve connector config from DB (no secrets exposure client-side)
     const cfg = await query<any>(
