@@ -573,6 +573,15 @@ export default function SupplierContactsDirectoryPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => {
+                                window.location.href = `/suppliers/${contact.supplierId}/profile`
+                              }}
+                            >
+                              <Building2 className="h-4 w-4 mr-2" />
+                              Open Supplier Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
                                 setEditingContact(contact)
                                 setIsEditDialogOpen(true)
                               }}

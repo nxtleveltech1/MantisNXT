@@ -69,6 +69,14 @@ const data = {
           url: "/nxt-spp",
         },
         {
+          title: "Supplier Rules Engine",
+          url: "/nxt-spp/rules",
+        },
+        {
+          title: "Supplier Profiles",
+          url: "/nxt-spp/profiles",
+        },
+        {
           title: "Supplier Directory",
           url: "/directories/suppliers",
         },
