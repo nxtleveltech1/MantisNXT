@@ -44,7 +44,8 @@ const doVerify = args.has('--verify') || !args.has('--apply');
 const PHASE_A_MIGRATIONS = [
   'database/migrations/005_fix_analytics_sequences.sql',
   'database/migrations/006_add_supplier_contact_person.sql',
-  'database/migrations/neon/005_update_public_suppliers_view_add_contact_person.sql'
+  'database/migrations/neon/005_update_public_suppliers_view_add_contact_person.sql',
+  'database/migrations/0212_supplier_rules_engine.sql'
 ];
 
 const VERIFICATION_QUERIES = [
@@ -58,14 +59,20 @@ const VERIFICATION_QUERIES = [
 ];
 
 async function main() {
-  const client = new Client({ name: 'mantis-mcp-client', version: '1.0.0' });
+  const client = new Client({
+    name: 'mantis-mcp-client',
+    version: '1.0.0',
+    // MCP client requires capabilities object on recent SDK builds
+    capabilities: { tools: {}, sampling: {}, resources: {}, prompts: {} } as any
+  });
   let transport: any;
   if (neonApiKey) {
     // Spawn Neon MCP server via stdio
     transport = new StdioClientTransport({
       command: 'npx',
       args: ['-y', '@neondatabase/mcp-server-neon', 'start', neonApiKey],
-      env: process.env as any
+      env: process.env as any,
+      capabilities: { tools: {}, sampling: {}, resources: {}, prompts: {} } as any
     });
     await client.connect(transport);
   } else {

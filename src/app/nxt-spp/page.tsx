@@ -124,8 +124,8 @@ function NxtSppContent() {
                 </div>
               </div>
 
-              {/* Upload Pricelist Button */}
-              <div className="flex-shrink-0">
+              {/* Header Actions */}
+              <div className="flex-shrink-0 flex gap-2">
                 <Button
                   onClick={() => {
                     setUploadOpen(true);
@@ -135,6 +135,26 @@ function NxtSppContent() {
                 >
                   <Upload className="h-4 w-4" />
                   <span>Upload Pricelist</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const url = `/nxt-spp/rules${currentSupplierId ? `?supplier_id=${currentSupplierId}` : ''}`
+                    router.push(url)
+                  }}
+                  className="h-11 px-4"
+                >
+                  Rules Engine
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const url = `/nxt-spp/profiles${currentSupplierId ? `?supplier_id=${currentSupplierId}` : ''}`
+                    router.push(url)
+                  }}
+                  className="h-11 px-4"
+                >
+                  Supplier Profiles
                 </Button>
               </div>
             </div>

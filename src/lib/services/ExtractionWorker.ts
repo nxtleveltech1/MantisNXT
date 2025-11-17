@@ -19,6 +19,7 @@ import { parse } from 'csv-parse';
 import { query } from '@/lib/database/unified-connection';
 import { AppError, ErrorCode } from '@/lib/errors/AppError';
 import { extractionCache } from './ExtractionCache';
+import { applyPricelistRulesToExcel } from '@/lib/cmm/supplier-rules-engine'
 import type {
   ExtractionJob,
   ExtractedProduct,
@@ -191,13 +192,18 @@ export class ExtractionWorker extends EventEmitter {
         );
       }
 
-      // Parse file based on type
+      let rawData: Array<Record<string, unknown>> = []
       this.emitStatus('Parsing file', 10);
-      const rawData = await this.parseFile(
-        fileUpload.storage_path,
-        fileUpload.file_type,
-        job.config
-      );
+      if (fileUpload.file_type === 'xlsx' && job.config && job.config['use_rules_engine'] !== false) {
+        const ruled = await applyPricelistRulesToExcel(fileUpload.storage_path, fileUpload.supplier_id)
+        if (ruled && ruled.length > 0) {
+          rawData = ruled
+        } else {
+          rawData = await this.parseFile(fileUpload.storage_path, fileUpload.file_type, job.config)
+        }
+      } else {
+        rawData = await this.parseFile(fileUpload.storage_path, fileUpload.file_type, job.config)
+      }
 
       this.emitStatus('Extracting products', 30);
       const products = await this.extractProductsChunked(rawData, job.config);

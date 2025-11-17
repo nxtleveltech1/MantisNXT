@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import { query } from "@/lib/database"
+import * as XLSX from 'xlsx'
 
 export interface SupplierRule {
   id: number
@@ -47,6 +48,175 @@ export interface RuleEngineResult {
   errors: string[]
   warnings: string[]
   transformedData?: Record<string, unknown>
+}
+
+function norm(v: unknown): string {
+  return String(v || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function findSheet(workbook: XLSX.WorkBook, nameLike: string): { name: string; rows: unknown[][] } | null {
+  const target = norm(nameLike)
+  for (const n of workbook.SheetNames) {
+    const nn = norm(n)
+    if (nn.includes(target)) {
+      const ws = workbook.Sheets[n]
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, blankrows: false }) as unknown[][]
+      return { name: n, rows: data }
+    }
+  }
+  return null
+}
+
+function headerIndex(headers: unknown[], columnName: string): number {
+  const target = norm(columnName)
+  for (let i = 0; i < headers.length; i++) {
+    if (norm(headers[i]) === target) return i
+  }
+  return -1
+}
+
+export async function applyPricelistRulesToExcel(
+  filePath: string,
+  supplierId: string
+): Promise<Record<string, unknown>[]> {
+  const rules = await getSupplierRules(supplierId, 'pricelist_upload')
+  const transform = rules.find(r => r.ruleType === 'transformation' && (r.ruleConfig as any)?.join_sheets)
+  if (!transform) return []
+
+  const cfg = (transform.ruleConfig as any).join_sheets
+  const buffer = await (await import('fs/promises')).readFile(filePath)
+  const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true, cellNF: false, cellText: false })
+
+  function lev(a: string, b: string): number {
+    const s = a, t = b
+    const m = s.length, n = t.length
+    const d: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0))
+    for (let i = 0; i <= m; i++) d[i][0] = i
+    for (let j = 0; j <= n; j++) d[0][j] = j
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = s[i - 1] === t[j - 1] ? 0 : 1
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+      }
+    }
+    return d[m][n]
+  }
+  function fuzzyFind(nameLike: string): string | null {
+    const thresh = typeof cfg.sheet_matcher?.threshold === 'number' ? cfg.sheet_matcher.threshold : 0.6
+    const target = norm(nameLike)
+    let best: { name: string; score: number } | null = null
+    for (const n of wb.SheetNames) {
+      const nn = norm(n)
+      const dist = lev(target, nn)
+      const maxLen = Math.max(target.length, nn.length) || 1
+      const score = 1 - dist / maxLen
+      if (!best || score > best.score) best = { name: n, score }
+    }
+    if (best && best.score >= thresh) return best.name
+    return null
+  }
+
+  function pickSheet(nameLike: string): { name: string; rows: unknown[][] } | null {
+    const mode = cfg.sheet_matcher?.type || 'includes'
+    let name: string | null = null
+    if (mode === 'exact') {
+      name = wb.SheetNames.find(s => norm(s) === norm(nameLike)) || null
+    } else if (mode === 'includes') {
+      name = wb.SheetNames.find(s => norm(s).includes(norm(nameLike))) || null
+    } else {
+      name = fuzzyFind(nameLike)
+    }
+    if (!name) return null
+    const ws = wb.Sheets[name]
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, blankrows: false }) as unknown[][]
+    return { name, rows: data }
+  }
+
+  const left = pickSheet(cfg.left_sheet)
+  const right = pickSheet(cfg.right_sheet)
+  if (!left || !right || left.rows.length === 0 || right.rows.length === 0) return []
+
+  const leftHeaders = left.rows[0] as unknown[]
+  const rightHeaders = right.rows[0] as unknown[]
+  const li = {
+    joinKey: headerIndex(leftHeaders, cfg.join_on?.left),
+    part: headerIndex(leftHeaders, (cfg.output_map?.sku?.column) || 'Part#'),
+    title: headerIndex(leftHeaders, (cfg.output_map?.description?.column) || 'Product Title'),
+    materials: headerIndex(leftHeaders, (cfg.output_map?.category?.column) || 'Materials'),
+  }
+  const ri = {
+    joinKey: headerIndex(rightHeaders, cfg.join_on?.right),
+    nettExcl: headerIndex(rightHeaders, (cfg.output_map?.priceExVat?.column) || 'NETT EXCL'),
+  }
+
+  if (li.joinKey < 0 || ri.joinKey < 0) return []
+
+  const rightMap = new Map<string, unknown[]>()
+  for (let i = 1; i < right.rows.length; i++) {
+    const row = right.rows[i]
+    if (!row || !Array.isArray(row)) continue
+    const key = norm((row as unknown[])[ri.joinKey])
+    if (key) rightMap.set(key, row as unknown[])
+  }
+
+  const brandName = ((): string => {
+    const n = left.name.trim()
+    const m = n.match(/^(.+?)\s+product\s+list/i)
+    if (m && m[1]) return m[1].trim()
+    return n
+  })()
+
+  const out: Record<string, unknown>[] = []
+  for (let i = 1; i < left.rows.length; i++) {
+    const lrow = left.rows[i] as unknown[]
+    if (!lrow || lrow.every(c => c == null || c === '')) continue
+    const lk = norm(lrow[li.joinKey])
+    if (!lk) continue
+    const rrow = rightMap.get(lk)
+    if (!rrow) continue
+
+    const sku = li.part >= 0 ? lrow[li.part] : undefined
+    const title = li.title >= 0 ? lrow[li.title] : undefined
+    const materials = li.materials >= 0 ? lrow[li.materials] : undefined
+    const nett = ri.nettExcl >= 0 ? rrow[ri.nettExcl] : undefined
+
+    const rec: Record<string, unknown> = {}
+    rec['sku'] = sku
+    rec['description'] = title
+    rec['brand'] = brandName
+    rec['priceExVat'] = nett
+    if (materials !== undefined && materials !== null && String(materials).trim() !== '') {
+      rec['category'] = materials
+    }
+    out.push(rec)
+  }
+
+  return out
+}
+
+export async function createDecksaverJoinRule(supplierId: string): Promise<void> {
+  const cfg = {
+    join_sheets: {
+      left_sheet: 'Decksaver product list',
+      right_sheet: 'Decksaver price list',
+      join_on: { left: 'Product Title', right: 'Description' },
+      drop_right: ['sku'],
+      output_map: {
+        sku: { sheet: 'left', column: 'Part#' },
+        description: { sheet: 'left', column: 'Product Title' },
+        priceExVat: { sheet: 'right', column: 'NETT EXCL' },
+        brand: { source: 'sheet_name' },
+        category: { sheet: 'left', column: 'Materials' }
+      }
+    }
+  }
+  await query(
+    `INSERT INTO public.supplier_rules (
+      supplier_id, rule_name, rule_type, trigger_event, execution_order, rule_config, is_blocking, is_active
+    ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)
+    ON CONFLICT DO NOTHING`,
+    [supplierId, 'Decksaver join sheets', 'transformation', 'pricelist_upload', 1, JSON.stringify(cfg), false, true]
+  )
 }
 
 /**
@@ -530,5 +700,109 @@ export async function checkSupplierOperationAllowed(
   // Add any profile-level checks here
 
   return { allowed: true }
+}
+
+export function applyJoinSheetsConfigFromBuffer(
+  buffer: Buffer,
+  cfg: any
+): Record<string, unknown>[] {
+  const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true, cellNF: false, cellText: false })
+
+  function lev(a: string, b: string): number {
+    const m = a.length, n = b.length
+    const d: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0))
+    for (let i = 0; i <= m; i++) d[i][0] = i
+    for (let j = 0; j <= n; j++) d[0][j] = j
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+      }
+    }
+    return d[m][n]
+  }
+  function pickName(nameLike: string): string | null {
+    const mode = cfg.sheet_matcher?.type || 'includes'
+    const target = norm(nameLike)
+    if (mode === 'exact') {
+      return wb.SheetNames.find(n => norm(n) === target) || null
+    }
+    if (mode === 'includes') {
+      return wb.SheetNames.find(n => norm(n).includes(target)) || null
+    }
+    const thresh = typeof cfg.sheet_matcher?.threshold === 'number' ? cfg.sheet_matcher.threshold : 0.6
+    let best: { name: string; score: number } | null = null
+    for (const n of wb.SheetNames) {
+      const nn = norm(n)
+      const dist = lev(target, nn)
+      const maxLen = Math.max(target.length, nn.length) || 1
+      const score = 1 - dist / maxLen
+      if (!best || score > best.score) best = { name: n, score }
+    }
+    return best && best.score >= thresh ? best.name : null
+  }
+
+  function pickSheet(nameLike: string): { name: string; rows: unknown[][] } | null {
+    const name = pickName(nameLike)
+    if (!name) return null
+    const ws = wb.Sheets[name]
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, blankrows: false }) as unknown[][]
+    return { name, rows: data }
+  }
+
+  const left = pickSheet(cfg.left_sheet)
+  const right = pickSheet(cfg.right_sheet)
+  if (!left || !right || left.rows.length === 0 || right.rows.length === 0) return []
+
+  const leftHeaders = left.rows[0] as unknown[]
+  const rightHeaders = right.rows[0] as unknown[]
+  const li = {
+    joinKey: headerIndex(leftHeaders, cfg.join_on?.left),
+    part: headerIndex(leftHeaders, (cfg.output_map?.sku?.column) || 'Part#'),
+    title: headerIndex(leftHeaders, (cfg.output_map?.description?.column) || 'Product Title'),
+    materials: headerIndex(leftHeaders, (cfg.output_map?.category?.column) || 'Materials'),
+  }
+  const ri = {
+    joinKey: headerIndex(rightHeaders, cfg.join_on?.right),
+    nettExcl: headerIndex(rightHeaders, (cfg.output_map?.priceExVat?.column) || 'NETT EXCL'),
+  }
+  if (li.joinKey < 0 || ri.joinKey < 0) return []
+
+  const rightMap = new Map<string, unknown[]>()
+  for (let i = 1; i < right.rows.length; i++) {
+    const row = right.rows[i]
+    if (!row || !Array.isArray(row)) continue
+    const key = norm((row as unknown[])[ri.joinKey])
+    if (key) rightMap.set(key, row as unknown[])
+  }
+  const brandName = ((): string => {
+    const n = left.name.trim()
+    const m = n.match(/^(.+?)\s+product\s+list/i)
+    return m && m[1] ? m[1].trim() : n
+  })()
+
+  const out: Record<string, unknown>[] = []
+  for (let i = 1; i < left.rows.length; i++) {
+    const lrow = left.rows[i] as unknown[]
+    if (!lrow || lrow.every(c => c == null || c === '')) continue
+    const lk = norm(lrow[li.joinKey])
+    if (!lk) continue
+    const rrow = rightMap.get(lk)
+    if (!rrow) continue
+    const sku = li.part >= 0 ? lrow[li.part] : undefined
+    const title = li.title >= 0 ? lrow[li.title] : undefined
+    const materials = li.materials >= 0 ? lrow[li.materials] : undefined
+    const nett = ri.nettExcl >= 0 ? rrow[ri.nettExcl] : undefined
+    const rec: Record<string, unknown> = {}
+    rec['sku'] = sku
+    rec['description'] = title
+    rec['brand'] = brandName
+    rec['priceExVat'] = nett
+    if (materials !== undefined && materials !== null && String(materials).trim() !== '') {
+      rec['category'] = materials
+    }
+    out.push(rec)
+  }
+  return out
 }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Dialog,
@@ -8,13 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -41,6 +44,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useUploadPricelist, useMergeUpload } from '@/hooks/useNeonSpp'
 import { useQuery } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 import type {
   PricelistValidationResult,
   MergeResult,
@@ -86,6 +90,19 @@ export function EnhancedPricelistUpload({
   const [validationResult, setValidationResult] = useState<PricelistValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [validationProgress, setValidationProgress] = useState(0)
+  const [applyRules, setApplyRules] = useState(false)
+  const [aiActive, setAiActive] = useState(false)
+  const [aiInfo, setAiInfo] = useState<{enabled:boolean;defaultProvider:string;enableFallback:boolean} | null>(null)
+  const [events, setEvents] = useState<Array<{ action: string; status: string; started_at: string; finished_at?: string }>>([])
+  const [es, setEs] = useState<EventSource | null>(null)
+  const [ruleDialogOpen, setRuleDialogOpen] = useState(false)
+  const [ruleError, setRuleError] = useState<string | null>(null)
+  const [ruleName, setRuleName] = useState("")
+  const [ruleType, setRuleType] = useState("transformation")
+  const [ruleOrder, setRuleOrder] = useState(0)
+  const [ruleBlocking, setRuleBlocking] = useState(false)
+  const [ruleJson, setRuleJson] = useState("{}")
+  const [nlInstruction, setNlInstruction] = useState("")
   // Selection integration removed from NXT-SPP workflow
 
   // Load suppliers query
@@ -185,23 +202,47 @@ export function EnhancedPricelistUpload({
                        (selectedSupplier as unknown)?.currency || 
                        'ZAR'
       
-      const newUploadId = await uploadMutation.mutateAsync({
+      const uploadRes = await uploadMutation.mutateAsync({
         file,
         supplier_id: supplierId,
         filename: file.name,
         currency: currency,
       })
-
+      const newUploadId = uploadRes.upload_id
       setUploadId(newUploadId)
-      setCurrentStep(2)
+      if (uploadRes.validation) {
+        setValidationResult(uploadRes.validation as PricelistValidationResult)
+        setCurrentStep(3)
+      } else {
+        setCurrentStep(2)
+      }
+      setAiActive(true)
+      try {
+        if (es) { es.close(); setEs(null) }
+        const src = new EventSource(`/api/spp/events?upload_id=${newUploadId}`)
+        src.addEventListener('audit', (e: MessageEvent) => {
+          try {
+            const data = JSON.parse(e.data)
+            setEvents(prev => [...prev, { action: data.action, status: data.status, started_at: data.started_at, finished_at: data.finished_at }])
+            const status = String(data.status)
+            const action = String(data.action)
+            const pct =
+              action === 'upload' ? 10 :
+              action === 'ai_review' ? (status === 'completed' ? 30 : 25) :
+              action === 'extraction' ? (status === 'completed' ? 70 : 60) :
+              action === 'validation' ? (status === 'completed' ? 100 : 90) : validationProgress
+            setValidationProgress(pct)
+          } catch {}
+        })
+        setEs(src)
+      } catch {}
 
       toast({
         title: 'Upload successful',
         description: 'Pricelist uploaded successfully',
       })
 
-      // Auto-validate if enabled
-      if (autoValidate) {
+      if (autoValidate && !uploadRes.validation) {
         await handleValidate(newUploadId)
       }
     } catch (err) {
@@ -229,10 +270,10 @@ export function EnhancedPricelistUpload({
         setValidationProgress(prev => Math.min(prev + 10, 90))
       }, 200)
 
-      const response = await fetch('/api/spp/validate', {
+      const response = await fetch('/api/spp/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ upload_id: idToUse }),
+        body: JSON.stringify({ action: 'validate', upload_id: idToUse, supplier_id: supplierId }),
       })
 
       clearInterval(progressInterval)
@@ -265,6 +306,23 @@ export function EnhancedPricelistUpload({
       })
     }
   }
+
+  useEffect(() => {
+    let cancelled = false
+    const loadStatus = async () => {
+      try {
+        const res = await fetch('/api/ai/status')
+        if (!res.ok) return
+        const data = await res.json()
+        const info = data?.data || data
+        if (!cancelled) setAiInfo({ enabled: !!info.enabled, defaultProvider: String(info.defaultProvider || ''), enableFallback: !!info.enableFallback })
+      } catch {}
+    }
+    if (open || aiActive) {
+      loadStatus()
+    }
+    return () => { cancelled = true }
+  }, [open, aiActive])
 
   // Step 4: Merge
   const handleMerge = async (skipInvalidRows?: boolean) => {
@@ -300,6 +358,7 @@ export function EnhancedPricelistUpload({
     }
     onOpenChange?.(false)
     setTimeout(resetState, 300)
+    if (es) { es.close(); setEs(null) }
   }
 
   // Render step content
@@ -386,6 +445,15 @@ export function EnhancedPricelistUpload({
               </Select>
             </div>
 
+            <div className="flex items-center gap-2">
+              <input id="apply-rules" type="checkbox" checked={applyRules} onChange={e => setApplyRules(e.target.checked)} />
+              <Label htmlFor="apply-rules">Apply active supplier rules during processing</Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setRuleDialogOpen(true)}>Create Rule</Button>
+            </div>
+
             {/* Currency Info */}
             <Alert>
               <Info className="h-4 w-4" />
@@ -409,17 +477,47 @@ export function EnhancedPricelistUpload({
       case 2:
         return (
           <div className="space-y-6">
-            <div className="text-center py-8">
+             <div className="text-center py-8">
               <Loader2 className="h-16 w-16 animate-spin text-blue-600 mx-auto" />
               <div className="mt-4 font-medium text-lg">Validating Upload...</div>
               <div className="text-sm text-muted-foreground mt-2">
                 Checking data quality and mapping fields
               </div>
+              {uploadId && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Upload ID: <span className="font-mono">{uploadId}</span>
+                  <Button variant="ghost" size="sm" className="ml-2" onClick={() => navigator.clipboard.writeText(uploadId!)}>Copy</Button>
+                </div>
+              )}
               <Progress value={validationProgress} className="mt-4 max-w-md mx-auto" />
               <div className="text-xs text-muted-foreground mt-2">
                 {validationProgress}% complete
               </div>
+              {aiActive && (
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <Badge variant="secondary">AI Agent Active</Badge>
+                  {aiInfo && (
+                    <span className="text-xs text-muted-foreground">Provider: {aiInfo.defaultProvider} {aiInfo.enableFallback ? '(fallback enabled)' : ''}</span>
+                  )}
+                </div>
+              )}
             </div>
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Agent Timeline</CardTitle></CardHeader>
+              <CardContent>
+                <ScrollArea className="h-32">
+                  <div className="space-y-2">
+                    {events.map((ev, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs p-2 border rounded">
+                        <div className="font-medium">{ev.action}</div>
+                        <Badge variant={ev.status === 'failed' ? 'destructive' : 'outline'}>{ev.status}</Badge>
+                      </div>
+                    ))}
+                    {events.length === 0 && <div className="text-xs text-muted-foreground">No events yet</div>}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </div>
         )
 
@@ -428,6 +526,35 @@ export function EnhancedPricelistUpload({
           <div className="space-y-6">
             {validationResult && (
               <>
+                {aiActive && (
+                  <Alert>
+                    <AlertDescription>
+                      AI Agent processed document review, extraction, validation and rules application
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {uploadId && (
+                  <div className="text-xs text-muted-foreground">
+                    Upload ID: <span className="font-mono">{uploadId}</span>
+                    <Button variant="ghost" size="sm" className="ml-2" onClick={() => navigator.clipboard.writeText(uploadId!)}>Copy</Button>
+                  </div>
+                )}
+                <Card>
+                  <CardHeader><CardTitle className="text-sm">Audit Timeline</CardTitle></CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-32">
+                      <div className="space-y-2">
+                        {events.map((ev, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs p-2 border rounded">
+                            <div className="font-medium">{ev.action}</div>
+                            <Badge variant={ev.status === 'failed' ? 'destructive' : 'outline'}>{ev.status}</Badge>
+                          </div>
+                        ))}
+                        {events.length === 0 && <div className="text-xs text-muted-foreground">No audit events</div>}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
                 {/* Summary Cards */}
                 <div className="grid grid-cols-3 gap-4">
                   <Card>
@@ -481,6 +608,33 @@ export function EnhancedPricelistUpload({
                     {validationResult.status === 'warning' && `Validation passed with ${validationResult.warnings.length} warnings.`}
                   </AlertDescription>
                 </Alert>
+
+                <div className="flex gap-2">
+                  {uploadId && (
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        if (!uploadId) return
+                        try {
+                          const res = await fetch('/api/spp/agent', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'apply_rules_and_validate', upload_id: uploadId, supplier_id: supplierId })
+                          })
+                          if (!res.ok) throw new Error('Failed to queue rule processing')
+                          toast({ title: 'Queued', description: 'Rule-based processing queued' })
+                          await handleValidate(uploadId)
+                        } catch (e) {
+                          const message = e instanceof Error ? e.message : 'Failed to apply rules'
+                          setError(message)
+                          toast({ title: 'Apply rules failed', description: message, variant: 'destructive' })
+                        }
+                      }}
+                    >
+                      Apply Active Rules
+                    </Button>
+                  )}
+                </div>
 
                 {/* Summary Metrics */}
                 <div className="grid grid-cols-2 gap-4">
@@ -557,8 +711,8 @@ export function EnhancedPricelistUpload({
                 )}
               </>
             )}
-          </div>
-        )
+        </div>
+      )
 
       case 4:
         return (
@@ -647,6 +801,8 @@ export function EnhancedPricelistUpload({
   }
 
   return (
+    <>
+    <Toaster richColors position="top-right" />
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
         <DialogHeader>
@@ -755,5 +911,60 @@ export function EnhancedPricelistUpload({
         </div>
       </DialogContent>
     </Dialog>
+    <Dialog open={ruleDialogOpen} onOpenChange={setRuleDialogOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Create Supplier Rule</DialogTitle>
+          <DialogDescription>Generate and save a rule before uploading.</DialogDescription>
+        </DialogHeader>
+        {ruleError && (
+          <Alert variant="destructive"><AlertDescription>{ruleError}</AlertDescription></Alert>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="space-y-2"><Label>Name</Label><Input value={ruleName} onChange={e => setRuleName(e.target.value)} /></div>
+          <div className="space-y-2"><Label>Type</Label>
+            <Select value={ruleType} onValueChange={setRuleType}>
+              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="validation">validation</SelectItem>
+                <SelectItem value="transformation">transformation</SelectItem>
+                <SelectItem value="approval">approval</SelectItem>
+                <SelectItem value="notification">notification</SelectItem>
+                <SelectItem value="enforcement">enforcement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2"><Label>Order</Label><Input type="number" value={ruleOrder} onChange={e => setRuleOrder(parseInt(e.target.value || '0'))} /></div>
+          <div className="space-y-2"><Label>Blocking</Label><Button variant={ruleBlocking ? 'default' : 'outline'} onClick={() => setRuleBlocking(v => !v)}>{ruleBlocking ? 'Yes' : 'No'}</Button></div>
+        </div>
+        <div className="space-y-2"><Label>Natural-language Instruction</Label><Textarea rows={6} value={nlInstruction} onChange={e => setNlInstruction(e.target.value)} /></div>
+        <div className="space-y-2"><Label>Rule Config (JSON)</Label><Textarea rows={8} value={ruleJson} onChange={e => setRuleJson(e.target.value)} /></div>
+        <DialogFooter>
+          <Button variant="outline" onClick={async () => {
+            try {
+              setRuleError(null)
+              if (!supplierId) { throw new Error('Select supplier first') }
+              if (!nlInstruction || nlInstruction.length < 10) { throw new Error('Enter natural-language instruction') }
+              const res = await fetch('/api/supplier-rulesets/nlp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ supplier_id: supplierId, instruction: nlInstruction }) })
+              const data = await res.json()
+              if (!data.success) throw new Error(data.error || 'Failed to synthesize rule')
+              setRuleJson(JSON.stringify(data.data, null, 2))
+            } catch (e) { setRuleError(e instanceof Error ? e.message : 'Failed to synthesize rule') }
+          }}>Generate with AI</Button>
+          <Button onClick={async () => {
+            try {
+              setRuleError(null)
+              if (!supplierId) { throw new Error('Select supplier first') }
+              const parsed = JSON.parse(ruleJson)
+              const body = { supplier_id: supplierId, rule_name: ruleName || 'Generated Rule', rule_type: ruleType, trigger_event: 'pricelist_upload', execution_order: ruleOrder, rule_config: parsed, is_blocking: ruleBlocking }
+              const res = await fetch('/api/supplier-rulesets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+              if (!res.ok) { const t = await res.json(); throw new Error(t.error || 'Failed to save rule') }
+              setRuleDialogOpen(false)
+            } catch (e) { setRuleError(e instanceof Error ? e.message : 'Failed to save rule') }
+          }}>Save Rule</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

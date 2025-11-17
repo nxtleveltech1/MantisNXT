@@ -132,7 +132,7 @@ export function useUploadPricelist() {
       valid_from?: Date;
       valid_to?: Date;
       options?: Record<string, unknown>;
-    }): Promise<string> => {
+    }): Promise<{ upload_id: string; validation?: any }> => {
       const formData = new FormData();
       formData.append('file', request.file);
       formData.append('supplier_id', request.supplier_id);
@@ -142,7 +142,9 @@ export function useUploadPricelist() {
       if (request.valid_to) formData.append('valid_to', request.valid_to.toISOString());
       if (request.options) formData.append('options', JSON.stringify(request.options));
 
-      const response = await fetch('/api/spp/upload', {
+      // Route upload through AI agent orchestrator
+      formData.append('action', 'upload_and_validate');
+      const response = await fetch('/api/spp/agent', {
         method: 'POST',
         body: formData,
         headers: { Accept: 'application/json' },
@@ -166,12 +168,13 @@ export function useUploadPricelist() {
         const text = await response.text();
         throw new Error('Upload failed');
       }
-      // Support both { upload_id } and { data: { upload_id } } shapes
-      return (
+      const upload_id: string = (
         data.upload_id ||
         data?.data?.upload_id ||
         data?.upload?.upload_id
       );
+      const validation = data?.data?.validation || undefined;
+      return { upload_id, validation };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sppKeys.uploads() });

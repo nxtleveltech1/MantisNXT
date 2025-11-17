@@ -10,15 +10,14 @@ export interface ToastOptions {
   duration?: number
 }
 
+import { toast as sonnerToast } from 'sonner'
+
 export function useToast() {
   const toast = (options: ToastOptions) => {
-    // For now, use console logging and alert for critical errors
-    // In production, this would integrate with a proper toast UI library like sonner or react-hot-toast
     if (options.variant === 'destructive') {
-      console.error(`${options.title}: ${options.description}`)
-      // Could show a browser notification or integrate with a toast library
+      sonnerToast.error(options.title, { description: options.description, duration: options.duration ?? 5000 })
     } else {
-      console.log(`${options.title}: ${options.description}`)
+      sonnerToast(options.title, { description: options.description, duration: options.duration ?? 3500 })
     }
   }
 
