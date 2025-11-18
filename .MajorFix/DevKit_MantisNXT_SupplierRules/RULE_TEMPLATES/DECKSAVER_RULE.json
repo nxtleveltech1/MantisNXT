@@ -1,0 +1,44 @@
+{
+  "supplier_id": "<SUPPLIER-UUID>",
+  "rule_name": "Decksaver join sheets",
+  "rule_type": "transformation",
+  "trigger_event": "pricelist_upload",
+  "execution_order": 1,
+  "is_blocking": false,
+  "rule_config": {
+    "join_sheets": {
+      "left_sheet": "Decksaver product list",
+      "right_sheet": "Decksaver price list",
+      "join_on": {
+        "left": "Product Title",
+        "right": "Description"
+      },
+      "sheet_matcher": {
+        "type": "includes",
+        "threshold": 0.6
+      },
+      "drop_right": [
+        "sku"
+      ],
+      "output_map": {
+        "sku": { "sheet": "left", "column": "Part#" },
+        "description": { "sheet": "left", "column": "Product Title" },
+        "priceExVat": { "sheet": "right", "column": "NETT EXCL" },
+        "brand": { "source": "sheet_name" },
+        "category": { "sheet": "left", "column": "Materials" }
+      }
+    },
+    "vat_policy": {
+      "rate": 0.15,
+      "mode": "ex"
+    },
+    "hard_requirements": [
+      "sku",
+      "description",
+      "priceExVat"
+    ],
+    "warnings": [
+      "category"
+    ]
+  }
+}

@@ -1,0 +1,1486 @@
+[
+  {
+    "file": "Tuerk Tech General Price List JULY 2025.xls",
+    "sheet": "(error)",
+    "supplier_guess": "Tuerk Tech General Price Li t JULY 2025",
+    "error": "Missing optional dependency 'xlrd'. Install xlrd >= 1.0.0 for Excel support Use pip or conda to install xlrd."
+  },
+  {
+    "file": "ACTIVE MUSIC DISTRIBUTION PRICELIST - AUGUST 2025.xlsx",
+    "sheet": "August Pricelist v3",
+    "supplier_guess": "ACTIVE MUSIC DISTRIBUTION PRICELIST - AUGUST 2025",
+    "header_row_index": 1,
+    "columns": [
+      "Item No.",
+      "Item Description",
+      "Retail Ex VAT",
+      "Links"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Item Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Retail Ex VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "MD External Stock 2025-08-25.xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "MD External Stock 2025-08-25",
+    "header_row_index": 1,
+    "columns": [
+      "Brand",
+      "Item Code",
+      "Description",
+      "List Price"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Item Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "List Price",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Audiosure StockFile 30072025.xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "Audio ure StockFile 30072025",
+    "header_row_index": 0,
+    "columns": [
+      "Category",
+      "ItemNumber",
+      "ItemDescription",
+      "ItemStatus",
+      "Retail Incl."
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "ItemDescription",
+        "confidence": 0.9
+      },
+      "category": {
+        "column": "Category",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "ApexPro Distribution pricelist 25-04-2025 (1).xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "ApexPro Di tribution priceli t 25-04-2025 (1)",
+    "header_row_index": 0,
+    "columns": [
+      "Brand",
+      "SKU",
+      "Description",
+      "Dealer Cost inc VAT",
+      "Dealer Selling Price Inc VAT",
+      "Stock Status",
+      "ETA"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SKU",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "Stock Status",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Dealer Cost inc VAT",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "Dealer Selling Price Inc VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 46
+  },
+  {
+    "file": "Stage Audio Works SOH info_20250826_0247.xlsx",
+    "sheet": "Data",
+    "supplier_guess": "Stage Audio Work  SOH info 20250826 0247",
+    "header_row_index": 0,
+    "columns": [
+      "Product No.",
+      "Manufacturer Product No.",
+      "Product Description",
+      "Total SOH",
+      "Price Before Discount Ex Vat"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Product Description",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "Total SOH",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Price Before Discount Ex Vat",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Rolling Thunder July 2025 Pricelist .xlsx",
+    "sheet": "Odyssey",
+    "supplier_guess": "Rolling Thunder July 2025 Priceli t",
+    "header_row_index": 0,
+    "columns": [
+      "Item Name",
+      "Item Description",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Number of Units ",
+      "Dealer Excluding VAT",
+      "Dealer Including Vat",
+      "Retail Excluding VAT",
+      "Retail Incl"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Item Name",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "Dealer Excluding VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 18
+  },
+  {
+    "file": "Rolling Thunder July 2025 Pricelist .xlsx",
+    "sheet": "UDG",
+    "supplier_guess": "Rolling Thunder July 2025 Priceli t",
+    "header_row_index": 0,
+    "columns": [
+      "Item Name",
+      "Item Description",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Number of Units",
+      "Dealer Excluding VAT",
+      "Dealer Including Vat",
+      "Retail Excluding VAT",
+      "Retail Incl"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Item Name",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "Dealer Excluding VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 44
+  },
+  {
+    "file": "Rolling Thunder July 2025 Pricelist .xlsx",
+    "sheet": "Ortofon",
+    "supplier_guess": "Rolling Thunder July 2025 Priceli t",
+    "header_row_index": 0,
+    "columns": [
+      "Item Name",
+      "Item Description",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Number of Units ",
+      "Dealer Excluding VAT",
+      "Dealer Including Vat",
+      "6579999999999989656846336",
+      "Retail Incl"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Item Name",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "Dealer Excluding VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 53
+  },
+  {
+    "file": "Rolling Thunder July 2025 Pricelist .xlsx",
+    "sheet": "Hercules DJ ",
+    "supplier_guess": "Rolling Thunder July 2025 Priceli t",
+    "header_row_index": 0,
+    "columns": [
+      "Item Name",
+      "Item Description",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Number of units ",
+      "Dealer Excluding VAT",
+      "Dealer Including Vat",
+      "Retail Excluding VAT",
+      "Retail Incl"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Item Name",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "Dealer Excluding VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 17
+  },
+  {
+    "file": "GLOBAL MUSIC SUGGESTED ONLINE ADVERTISED PRICELIST NOVEMBER 2024 SKU LIST FORMAT .xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "GLOBAL MUSIC SUGGESTED ONLINE ADVERTISED PRICELIST NOVEMBER 2024 SKU LIST FORMAT",
+    "header_row_index": 2,
+    "columns": [
+      "SKU CODE ",
+      "MODEL",
+      "   SUGGESTED ONLINE ADVERTISED PRICE INCL. VAT"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "MODEL",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "   SUGGESTED ONLINE ADVERTISED PRICE INCL. VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Sennheiser 2025 (2).xlsx",
+    "sheet": "17th June Full Run Out",
+    "supplier_guess": "Sennhei er 2025 (2)",
+    "header_row_index": 0,
+    "columns": [
+      "Item No.",
+      "Item Description",
+      "Retail Ex Vat",
+      "Recommended Retail Price"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Item Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Retail Ex Vat",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Sennheiser 2025 (2).xlsx",
+    "sheet": "Product Breakdown Best Sellers",
+    "supplier_guess": "Sennhei er 2025 (2)",
+    "header_row_index": 0,
+    "columns": [
+      "Item No.",
+      "Item Description",
+      "Retail Ex Vat",
+      "Retail Inc Vat"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Item Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Retail Ex Vat",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "Retail Inc Vat",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Planetworld SOH 20 June.xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "Planetworld SOH 20 June",
+    "header_row_index": 0,
+    "columns": [
+      "Item No.",
+      "Item Description",
+      "Group Name",
+      "Product Division",
+      "SOH",
+      "Retail (Incl)"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Item Description",
+        "confidence": 0.9
+      },
+      "category": {
+        "column": "Group Name",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "SOH",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Rockit Price_List_25.08.2025.01.xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "Rockit Price Li t 25.08.2025.01",
+    "header_row_index": 4,
+    "columns": [
+      "Novation",
+      "Non-Dealer: 25%                                                                                                                                                                                                                   Authorised Dealer: 35%",
+      "Unnamed: 2",
+      "Novation Dealer"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 2",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "Novation",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+    "sheet": "ABLETON ",
+    "supplier_guess": "Tuerk Multimedia  Studio Price Li t  JULY 2025",
+    "header_row_index": 11,
+    "columns": [
+      "Music Creation Software:",
+      "Unnamed: 1",
+      "RRSP INCL VAT:",
+      "request "
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 1",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "RRSP INCL VAT:",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 18
+  },
+  {
+    "file": "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+    "sheet": "AUDIENT",
+    "supplier_guess": "Tuerk Multimedia  Studio Price Li t  JULY 2025",
+    "header_row_index": 11,
+    "columns": [
+      "Unnamed: 0",
+      "AUDIENT AUTH DEALER STOCK RECON ",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Unnamed: 5"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 0",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "AUDIENT AUTH DEALER STOCK RECON ",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 21
+  },
+  {
+    "file": "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "Tuerk Multimedia  Studio Price Li t  JULY 2025",
+    "header_row_index": 0,
+    "columns": [],
+    "mapped": {},
+    "row_sample_count": 0
+  },
+  {
+    "file": "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+    "sheet": "Avid_ SIBELIUS",
+    "supplier_guess": "Tuerk Multimedia  Studio Price Li t  JULY 2025",
+    "header_row_index": 3,
+    "columns": [
+      "AVI99383001120",
+      "Sibelius Ultimate Perpetual - Education"
+    ],
+    "mapped": {
+      "category": {
+        "column": "Sibelius Ultimate Perpetual - Education",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 24
+  },
+  {
+    "file": "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+    "sheet": "Avid_PRO TOOLS",
+    "supplier_guess": "Tuerk Multimedia  Studio Price Li t  JULY 2025",
+    "header_row_index": 9,
+    "columns": [
+      "AVI99383000700",
+      "Pro Tools Ultimate Perpetual License Electronic Code"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Pro Tools Ultimate Perpetual License Electronic Code",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 25
+  },
+  {
+    "file": "Tuerk Multimedia  Studio Price List_ JULY 2025.xlsx",
+    "sheet": "Avid- SIBELIUS  Teams& Multi Ed",
+    "supplier_guess": "Tuerk Multimedia  Studio Price Li t  JULY 2025",
+    "header_row_index": 0,
+    "columns": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "Unnamed: 2"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 0",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 43
+  },
+  {
+    "file": "Stage one FullPL-DP (7).xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "Stage one FullPL-DP (7)",
+    "header_row_index": 1,
+    "columns": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "BRAND",
+      "QTY ON HAND",
+      "DEALER PRICE",
+      "QTY ON ORDER",
+      "NEXT DUE IN"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 0",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "QTY ON HAND",
+        "confidence": 0.9
+      },
+      "stock_on_order": {
+        "column": "QTY ON ORDER",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "DEALER PRICE",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "SonicInformed_20250808_I.xlsx",
+    "sheet": "MENU",
+    "supplier_guess": "SonicInformed 20250808 I",
+    "header_row_index": 0,
+    "columns": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "Unnamed: 2"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 0",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 63
+  },
+  {
+    "file": "SonicInformed_20250808_I.xlsx",
+    "sheet": "ADVANTECH",
+    "supplier_guess": "SonicInformed 20250808 I",
+    "header_row_index": 0,
+    "columns": [
+      "PRICE LIST",
+      "ITEM NUMBER",
+      "PRODUCT DESCRIPTION",
+      "DEALER"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "PRODUCT DESCRIPTION",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "PRICE LIST",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 63
+  },
+  {
+    "file": "SonicInformed_20250808_I.xlsx",
+    "sheet": "ALL",
+    "supplier_guess": "SonicInformed 20250808 I",
+    "header_row_index": 0,
+    "columns": [
+      "PRICE LIST",
+      "ITEM NUMBER",
+      "BARCODE/EAN",
+      "PRODUCT DESCRIPTION",
+      "PRICE",
+      "STOCK",
+      "NOTE"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "BARCODE/EAN",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "PRODUCT DESCRIPTION",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "STOCK",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "PRICE",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "AV Distribution Pricelist - May 2025 (1).xlsx",
+    "sheet": "Disclaimer ",
+    "supplier_guess": "AV Di tribution Priceli t - May 2025 (1)",
+    "header_row_index": 3,
+    "columns": [
+      "Unnamed: 0",
+      "Prices are recommended selling excl.VAT  and the relevant dealer discount will apply.\nDue to volatility of the Rate of Exchange (ROE) please note that the prices published may change without notice.\nThe reseller is responsible for determining its own prices for the resale of the products. Suggested pricing is only a guide.\nPrices are ex works Kyalami Midrand. E&OE. Our standard terms and conditions apply.\nDelivery is on a case-by-case basis and will be discussed based on the order.\nWhen placing orders, we do recommend that you confirm stock and / or ETA for expected stock with our Sales Team"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 0",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "Prices are recommended selling excl.VAT  and the relevant dealer discount will apply.\nDue to volatility of the Rate of Exchange (ROE) please note that the prices published may change without notice.\nThe reseller is responsible for determining its own prices for the resale of the products. Suggested pricing is only a guide.\nPrices are ex works Kyalami Midrand. E&OE. Our standard terms and conditions apply.\nDelivery is on a case-by-case basis and will be discussed based on the order.\nWhen placing orders, we do recommend that you confirm stock and / or ETA for expected stock with our Sales Team",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 0
+  },
+  {
+    "file": "AV Distribution Pricelist - May 2025 (1).xlsx",
+    "sheet": "ATLONA",
+    "supplier_guess": "AV Di tribution Priceli t - May 2025 (1)",
+    "header_row_index": 1,
+    "columns": [
+      "Unnamed: 0",
+      "SAP Item Code",
+      "Description",
+      "Retail Price (Ex VAT)"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SAP Item Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Retail Price (Ex VAT)",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 152
+  },
+  {
+    "file": "AV Distribution Pricelist - May 2025 (1).xlsx",
+    "sheet": "AUDAC",
+    "supplier_guess": "AV Di tribution Priceli t - May 2025 (1)",
+    "header_row_index": 1,
+    "columns": [
+      "Unnamed: 0",
+      "SAP Item Code",
+      "Description",
+      "Retail Price (Ex VAT)"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SAP Item Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Retail Price (Ex VAT)",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "AV Distribution Pricelist - May 2025 (1).xlsx",
+    "sheet": "XILICA",
+    "supplier_guess": "AV Di tribution Priceli t - May 2025 (1)",
+    "header_row_index": 1,
+    "columns": [
+      "Unnamed: 0",
+      "SAP Item Code",
+      "Description",
+      "Retail Price (Ex VAT)"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SAP Item Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Retail Price (Ex VAT)",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 25
+  },
+  {
+    "file": "AV Distribution Pricelist - May 2025 (1).xlsx",
+    "sheet": "PROCAB",
+    "supplier_guess": "AV Di tribution Priceli t - May 2025 (1)",
+    "header_row_index": 1,
+    "columns": [
+      "Unnamed: 0",
+      "SAP Item Code",
+      "Description",
+      "Retail Price (Ex VAT)"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SAP Item Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Retail Price (Ex VAT)",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "AV Distribution Pricelist - May 2025 (1).xlsx",
+    "sheet": "SENNHEISER ",
+    "supplier_guess": "AV Di tribution Priceli t - May 2025 (1)",
+    "header_row_index": 1,
+    "columns": [
+      "Unnamed: 0",
+      "SAP Item Code",
+      "Description",
+      "Retail Price (Ex VAT)"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SAP Item Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Retail Price (Ex VAT)",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 64
+  },
+  {
+    "file": "YAMAHA RETAIL PRICELIST NOV 2024 (2).xlsx",
+    "sheet": "EL",
+    "supplier_guess": "YAMAHA RETAIL PRICELIST NOV 2024 (2)",
+    "header_row_index": 6,
+    "columns": [
+      "ELECTONE",
+      "Model",
+      "RETAIL PRICE  INCL. VAT "
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Model",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "RETAIL PRICE  INCL. VAT ",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 5
+  },
+  {
+    "file": "YAMAHA RETAIL PRICELIST NOV 2024 (2).xlsx",
+    "sheet": "Digital Piano",
+    "supplier_guess": "YAMAHA RETAIL PRICELIST NOV 2024 (2)",
+    "header_row_index": 6,
+    "columns": [
+      "HYBRID PIANO",
+      "Model",
+      "COLOUR",
+      "RETAIL PRICE  INCL. VAT "
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Model",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "RETAIL PRICE  INCL. VAT ",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 107
+  },
+  {
+    "file": "YAMAHA RETAIL PRICELIST NOV 2024 (2).xlsx",
+    "sheet": "Portable Keyboard",
+    "supplier_guess": "YAMAHA RETAIL PRICELIST NOV 2024 (2)",
+    "header_row_index": 6,
+    "columns": [
+      "PORTABLE KEYBOARDS",
+      "Model",
+      "COLOUR",
+      "RETAIL PRICE  INCL. VAT "
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Model",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "RETAIL PRICE  INCL. VAT ",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 44
+  },
+  {
+    "file": "YAMAHA RETAIL PRICELIST NOV 2024 (2).xlsx",
+    "sheet": "W&B",
+    "supplier_guess": "YAMAHA RETAIL PRICELIST NOV 2024 (2)",
+    "header_row_index": 6,
+    "columns": [
+      "PICCOLO",
+      "Model",
+      "RETAIL PRICE  INCL. VAT "
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Model",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "RETAIL PRICE  INCL. VAT ",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "YAMAHA RETAIL PRICELIST NOV 2024 (2).xlsx",
+    "sheet": "Education",
+    "supplier_guess": "YAMAHA RETAIL PRICELIST NOV 2024 (2)",
+    "header_row_index": 6,
+    "columns": [
+      "RECORDER SOPRANO",
+      "Model",
+      "RETAIL PRICE  INCL. VAT "
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Model",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "RETAIL PRICE  INCL. VAT ",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 74
+  },
+  {
+    "file": "YAMAHA RETAIL PRICELIST NOV 2024 (2).xlsx",
+    "sheet": "Percussion",
+    "supplier_guess": "YAMAHA RETAIL PRICELIST NOV 2024 (2)",
+    "header_row_index": 6,
+    "columns": [
+      "MARCHING DRUMS 4000 SERIES",
+      "Model",
+      "COLOUR",
+      "RETAIL PRICE  INCL. VAT"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Model",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "RETAIL PRICE  INCL. VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Viva Afrika Dealer Price List 07 May 2025.xlsx",
+    "sheet": "Table 1",
+    "supplier_guess": "Viva Afrika Dealer Price Li t 07 May 2025",
+    "header_row_index": 3,
+    "columns": [
+      "Code",
+      "Brand",
+      "Unnamed: 2",
+      "Model",
+      "Unnamed: 4",
+      "Unnamed: 5",
+      "Description / Image",
+      "Unnamed: 7",
+      "Unnamed: 8",
+      "Unnamed: 9",
+      "Unnamed: 10",
+      "Unnamed: 11",
+      "Unnamed: 12",
+      "SAP",
+      "SS",
+      "Dealer"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Unnamed: 2",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Audiolite PRICE LIST-WHOLESALE OUT.xlsx",
+    "sheet": "Sheet1",
+    "supplier_guess": "Audiolite PRICE LIST-WHOLESALE OUT",
+    "header_row_index": 2,
+    "columns": [
+      "Unnamed: 0",
+      "CODE",
+      "IMAGE",
+      "DESCRIPTION",
+      "QTY",
+      "RETAIL INC",
+      "DEALER INC"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "CODE",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "DESCRIPTION",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "QTY",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 137
+  },
+  {
+    "file": "Music Power Pricelist (August 2025).xlsx",
+    "sheet": "Index",
+    "supplier_guess": "Mu ic Power Priceli t (Augu t 2025)",
+    "header_row_index": 11,
+    "columns": [
+      "Unnamed: 0",
+      "Unnamed: 1",
+      "Nuova",
+      "Unnamed: 3",
+      "Omete",
+      "Unnamed: 5",
+      "Orange",
+      "Unnamed: 7",
+      "Warwick - Hitech",
+      "Unnamed: 9",
+      "Unnamed: 10"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 0",
+        "confidence": 0.9
+      },
+      "category": {
+        "column": "Orange",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 8
+  },
+  {
+    "file": "Music Power Pricelist (August 2025).xlsx",
+    "sheet": "Order Sheet",
+    "supplier_guess": "Mu ic Power Priceli t (Augu t 2025)",
+    "header_row_index": 1,
+    "columns": [
+      "Code",
+      "Description",
+      "RETAIL INCL VAT",
+      "SOH",
+      "Qty",
+      "Discount",
+      "Net Inc",
+      "Total",
+      "Consignment",
+      "Backorder"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "SOH",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "RETAIL INCL VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  },
+  {
+    "file": "Music Power Pricelist (August 2025).xlsx",
+    "sheet": "Aquarian",
+    "supplier_guess": "Mu ic Power Priceli t (Augu t 2025)",
+    "header_row_index": 1,
+    "columns": [
+      "Code",
+      "Description",
+      "RETAIL INCL VAT",
+      "QTY"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "QTY",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "RETAIL INCL VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 118
+  },
+  {
+    "file": "Music Power Pricelist (August 2025).xlsx",
+    "sheet": "Arturia",
+    "supplier_guess": "Mu ic Power Priceli t (Augu t 2025)",
+    "header_row_index": 2,
+    "columns": [
+      "Code",
+      "Description",
+      "RETAIL INCL VAT",
+      "Qty",
+      "Unnamed: 4"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "Qty",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "RETAIL INCL VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 49
+  },
+  {
+    "file": "Music Power Pricelist (August 2025).xlsx",
+    "sheet": "Saga",
+    "supplier_guess": "Mu ic Power Priceli t (Augu t 2025)",
+    "header_row_index": 1,
+    "columns": [
+      "Code",
+      "Description",
+      "RETAIL INCL VAT",
+      "QTY"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "QTY",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "RETAIL INCL VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 10
+  },
+  {
+    "file": "Music Power Pricelist (August 2025).xlsx",
+    "sheet": "Dixon Guitar",
+    "supplier_guess": "Mu ic Power Priceli t (Augu t 2025)",
+    "header_row_index": 1,
+    "columns": [
+      "Code",
+      "Description",
+      "RETAIL INCL VAT",
+      "QTY",
+      "Unnamed: 4"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "Code",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Description",
+        "confidence": 0.9
+      },
+      "stock_on_hand": {
+        "column": "QTY",
+        "confidence": 0.9
+      },
+      "vat_rate": {
+        "column": "RETAIL INCL VAT",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 6
+  },
+  {
+    "file": "Alpha-Technologies-Pricelist-August-2025- (2).xlsx",
+    "sheet": "Front Page",
+    "supplier_guess": "Alpha-Technologie -Priceli t-Augu t-2025- (2)",
+    "header_row_index": 5,
+    "columns": [
+      "Alfatron AV Cables & Connectors",
+      "HDMI, VGA, USB, CAT6 and power cables, pop ups and modular connection",
+      "1 - Prices are subject to change, it is the resonsibility of the purchaser  to confirm they are working from the latest price list."
+    ],
+    "mapped": {
+      "category": {
+        "column": "HDMI, VGA, USB, CAT6 and power cables, pop ups and modular connection",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "1 - Prices are subject to change, it is the resonsibility of the purchaser  to confirm they are working from the latest price list.",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 44
+  },
+  {
+    "file": "Alpha-Technologies-Pricelist-August-2025- (2).xlsx",
+    "sheet": "Alfatron Audio",
+    "supplier_guess": "Alpha-Technologie -Priceli t-Augu t-2025- (2)",
+    "header_row_index": 2,
+    "columns": [
+      "MODEL",
+      "DESCRIPTION",
+      "RETAIL",
+      "Unnamed: 3"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "MODEL",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "DESCRIPTION",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 63
+  },
+  {
+    "file": "Alpha-Technologies-Pricelist-August-2025- (2).xlsx",
+    "sheet": "Alfatron AV Cables & Connectors",
+    "supplier_guess": "Alpha-Technologie -Priceli t-Augu t-2025- (2)",
+    "header_row_index": 2,
+    "columns": [
+      "MODEL",
+      "DESCRIPTION",
+      "RETAIL",
+      "Unnamed: 3"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "MODEL",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "DESCRIPTION",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 74
+  },
+  {
+    "file": "Alpha-Technologies-Pricelist-August-2025- (2).xlsx",
+    "sheet": "Alfatron Display & UC ",
+    "supplier_guess": "Alpha-Technologie -Priceli t-Augu t-2025- (2)",
+    "header_row_index": 2,
+    "columns": [
+      "MODEL",
+      "DESCRIPTION",
+      "RETAIL",
+      "Unnamed: 3"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "MODEL",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "DESCRIPTION",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 30
+  },
+  {
+    "file": "Alpha-Technologies-Pricelist-August-2025- (2).xlsx",
+    "sheet": "Alfatron PTZ & Controllers",
+    "supplier_guess": "Alpha-Technologie -Priceli t-Augu t-2025- (2)",
+    "header_row_index": 2,
+    "columns": [
+      "MODEL",
+      "DESCRIPTION",
+      "RETAIL",
+      "Unnamed: 3"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "MODEL",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "DESCRIPTION",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 36
+  },
+  {
+    "file": "Alpha-Technologies-Pricelist-August-2025- (2).xlsx",
+    "sheet": "Alfatron Signal Management",
+    "supplier_guess": "Alpha-Technologie -Priceli t-Augu t-2025- (2)",
+    "header_row_index": 2,
+    "columns": [
+      "MODEL",
+      "DESCRIPTION",
+      "RETAIL",
+      "Unnamed: 3"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "MODEL",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "DESCRIPTION",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 62
+  },
+  {
+    "file": "Pro Audio platinum .xlsx",
+    "sheet": "CONTENT",
+    "supplier_guess": "Pro Audio platinum",
+    "header_row_index": 0,
+    "columns": [
+      "nan",
+      "Unnamed: 1",
+      "Unnamed: 2",
+      "Unnamed: 3",
+      "Unnamed: 4",
+      "Unnamed: 5",
+      "Unnamed: 6",
+      "Unnamed: 7",
+      "Unnamed: 8",
+      "Unnamed: 9",
+      "Unnamed: 10",
+      "Unnamed: 11"
+    ],
+    "mapped": {
+      "product_name": {
+        "column": "Unnamed: 1",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 39
+  },
+  {
+    "file": "Pro Audio platinum .xlsx",
+    "sheet": "AEROBAND",
+    "supplier_guess": "Pro Audio platinum",
+    "header_row_index": 5,
+    "columns": [
+      "Unnamed: 0",
+      "SKU",
+      "Product Name",
+      "Barcode",
+      "Product Description",
+      "Cost Excluding",
+      "Cost Including",
+      "Recommended Retail Price",
+      "Unnamed: 8",
+      "Unnamed: 9",
+      "Unnamed: 10",
+      "Unnamed: 11"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SKU",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Product Name",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Cost Excluding",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 63
+  },
+  {
+    "file": "Pro Audio platinum .xlsx",
+    "sheet": "ATIES & LDA & EVAC",
+    "supplier_guess": "Pro Audio platinum",
+    "header_row_index": 5,
+    "columns": [
+      "Unnamed: 0",
+      "SKU",
+      "Product Name",
+      "Barcode",
+      "Product Description",
+      "Cost Excluding",
+      "Cost Including",
+      "Recommended Retail Price",
+      "Unnamed: 8",
+      "Unnamed: 9",
+      "Unnamed: 10",
+      "Unnamed: 11"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SKU",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Product Name",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Cost Excluding",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 125
+  },
+  {
+    "file": "Pro Audio platinum .xlsx",
+    "sheet": "ATIES & PENTON",
+    "supplier_guess": "Pro Audio platinum",
+    "header_row_index": 5,
+    "columns": [
+      "Unnamed: 0",
+      "SKU",
+      "Product Name",
+      "Barcode",
+      "Product Description",
+      "Cost Excluding",
+      "Cost Including",
+      "Recommended Retail Price",
+      "Unnamed: 8",
+      "Unnamed: 9",
+      "Unnamed: 10",
+      "Unnamed: 11"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SKU",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Product Name",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Cost Excluding",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 119
+  },
+  {
+    "file": "Pro Audio platinum .xlsx",
+    "sheet": "AUDIO TECHNICA CONSUMER",
+    "supplier_guess": "Pro Audio platinum",
+    "header_row_index": 5,
+    "columns": [
+      "Unnamed: 0",
+      "SKU",
+      "Product Name",
+      "Barcode",
+      "Product Description",
+      "Cost Excluding",
+      "Cost Including",
+      "Recommended Retail Price"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SKU",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Product Name",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Cost Excluding",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 130
+  },
+  {
+    "file": "Pro Audio platinum .xlsx",
+    "sheet": "AUDIO TECHNICA PRO",
+    "supplier_guess": "Pro Audio platinum",
+    "header_row_index": 5,
+    "columns": [
+      "Unnamed: 0",
+      "SKU",
+      "Product Name",
+      "Barcode",
+      "Product Description",
+      "Cost Excluding",
+      "Cost Including",
+      "Recommended Retail Price"
+    ],
+    "mapped": {
+      "sku": {
+        "column": "SKU",
+        "confidence": 0.9
+      },
+      "product_name": {
+        "column": "Product Name",
+        "confidence": 0.9
+      },
+      "cost_price": {
+        "column": "Cost Excluding",
+        "confidence": 0.9
+      }
+    },
+    "row_sample_count": 200
+  }
+]
