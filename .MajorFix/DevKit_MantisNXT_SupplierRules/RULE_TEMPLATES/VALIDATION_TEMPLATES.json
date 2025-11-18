@@ -1,0 +1,68 @@
+[
+  {
+    "supplier_id": "<SUPPLIER-UUID>",
+    "rule_name": "SKU required",
+    "rule_type": "validation",
+    "trigger_event": "pricelist_upload",
+    "execution_order": 10,
+    "is_blocking": true,
+    "rule_config": {
+      "field": "supplier_sku",
+      "required": true,
+      "pattern": "^[A-Za-z0-9\\-_/\\.\\s]+$",
+      "error_message": "Missing or invalid Supplier SKU."
+    }
+  },
+  {
+    "supplier_id": "<SUPPLIER-UUID>",
+    "rule_name": "Name required",
+    "rule_type": "validation",
+    "trigger_event": "pricelist_upload",
+    "execution_order": 11,
+    "is_blocking": true,
+    "rule_config": {
+      "field": "name",
+      "required": true,
+      "min_length": 3
+    }
+  },
+  {
+    "supplier_id": "<SUPPLIER-UUID>",
+    "rule_name": "Cost EX VAT must be positive",
+    "rule_type": "validation",
+    "trigger_event": "pricelist_upload",
+    "execution_order": 12,
+    "is_blocking": true,
+    "rule_config": {
+      "field": "cost_price_ex_vat",
+      "min": 0.01,
+      "require_number": true
+    }
+  },
+  {
+    "supplier_id": "<SUPPLIER-UUID>",
+    "rule_name": "Category optional (warning)",
+    "rule_type": "validation",
+    "trigger_event": "pricelist_upload",
+    "execution_order": 20,
+    "is_blocking": false,
+    "rule_config": {
+      "field": "category_raw",
+      "required": false,
+      "warning_message": "Category missing; will run downstream classifier."
+    }
+  },
+  {
+    "supplier_id": "<SUPPLIER-UUID>",
+    "rule_name": "Stock fields optional (warning)",
+    "rule_type": "validation",
+    "trigger_event": "pricelist_upload",
+    "execution_order": 21,
+    "is_blocking": false,
+    "rule_config": {
+      "field": "stock_on_hand",
+      "required": false,
+      "warning_message": "Stock on hand missing; treated as null."
+    }
+  }
+]

@@ -1,0 +1,83 @@
+{
+  "sku": [
+    "SKU",
+    "Stock Code",
+    "Item Code",
+    "Product Code",
+    "Model",
+    "Part#",
+    "SAP Item Code",
+    "Code",
+    "Reference"
+  ],
+  "product_name": [
+    "Product Name",
+    "Product",
+    "Description",
+    "Item",
+    "Item Description",
+    "Product Title",
+    "Name"
+  ],
+  "category": [
+    "Category",
+    "Materials",
+    "Group",
+    "Group Name",
+    "Class",
+    "Family",
+    "Range",
+    "Type"
+  ],
+  "stock_on_hand": [
+    "SUPPLIER SOH",
+    "SOH",
+    "Stock",
+    "Stock Count",
+    "Stock On Hand",
+    "Qty",
+    "Quantity",
+    "QTY ON HAND",
+    "Inventory"
+  ],
+  "stock_on_order": [
+    "QTY ON ORDER",
+    "On Order",
+    "Incoming",
+    "In Transit",
+    "ETA Qty",
+    "PO Qty",
+    "Qty Due"
+  ],
+  "cost_price_ex_vat": [
+    "COST EX VAT",
+    "Cost EX VAT",
+    "NETT EXCL",
+    "Dealer Excluding VAT",
+    "Dealer EX",
+    "Cost",
+    "Trade EX"
+  ],
+  "price_incl_vat": [
+    "RETAIL INCL VAT",
+    "Retail Inc Vat",
+    "RSP INCL VAT",
+    "Selling Incl.",
+    "STREET INCL",
+    "Price Incl VAT"
+  ],
+  "vat": [
+    "VAT",
+    "VAT %",
+    "VAT%",
+    "VAT RATE",
+    "Tax",
+    "TAX %",
+    "VAT 15%"
+  ],
+  "currency": [
+    "Currency",
+    "CUR",
+    "Curr"
+  ]
+}

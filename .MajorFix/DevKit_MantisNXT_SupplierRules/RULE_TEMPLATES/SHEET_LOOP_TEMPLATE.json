@@ -1,0 +1,37 @@
+{
+  "supplier_id": "<SUPPLIER-UUID>",
+  "rule_name": "Brand tabs to canonical rows",
+  "rule_type": "transformation",
+  "trigger_event": "pricelist_upload",
+  "execution_order": 1,
+  "is_blocking": false,
+  "rule_config": {
+    "sheet_loop": {
+      "include": ["*"],
+      "exclude": ["Sheet1", "Sheet2", "Cover"],
+      "brand_source": "sheet_name",
+      "tab_strategy": "per_tab_brand",
+      "column_aliases": {
+        "sku": ["SKU", "Stock Code", "Part#", "Model", "Item Code"],
+        "name": ["Product Name", "Description", "Item", "Product Title"],
+        "category": ["Category", "Materials", "Group", "Class", "Type"],
+        "price_ex_vat": ["NETT EXCL", "Cost Ex VAT", "Dealer Excluding VAT", "Trade EX"],
+        "price_inc_vat": ["Retail Incl VAT", "RSP INCL VAT", "Selling Incl.", "Street Incl"],
+        "stock_on_hand": ["SOH", "Stock", "Qty", "Stock On Hand", "Stock Count"],
+        "stock_on_order": ["On Order", "Incoming", "ETA Qty", "Qty On Order"]
+      },
+      "section_headers_as_category": true,
+      "uom_default": "EA"
+    },
+    "vat_policy": {
+      "rate": 0.15,
+      "mode": "detect",
+      "detect_keywords": ["ex", "excl", "incl", "nett"],
+      "ratio_tolerance": 0.02
+    },
+    "warnings": [
+      "stock_on_order",
+      "category"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "supplier_id": "<SUPPLIER-UUID>",
+  "rule_name": "VAT & price normalization",
+  "rule_type": "transformation",
+  "trigger_event": "pricelist_upload",
+  "execution_order": 2,
+  "is_blocking": false,
+  "rule_config": {
+    "vat_policy": {
+      "currency": "ZAR",
+      "rate": 0.15,
+      "mode": "detect",
+      "detect_keywords": ["EX VAT", "NETT", "INCL VAT", "RETAIL INCL"],
+      "ratio_tolerance": 0.02,
+      "fallback_to_supplier_profile": true
+    },
+    "price_fields": {
+      "prefer_ex_vat": true,
+      "store_price_incl": true,
+      "invalid_values": ["request", "tbc", "special order"]
+    }
+  }
+}
