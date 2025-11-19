@@ -7,8 +7,19 @@ import { generateCustomerData, generateDeltaData } from '../fixtures/sync-test-d
 /**
  * Mock database query function
  */
+interface Customer {
+  id: string;
+  email: string;
+  name: string;
+}
+
+interface QueueItem {
+  id: string;
+  [key: string]: unknown;
+}
+
 export const createMockDatabase = () => {
-  const data: Record<string, unknown[]> = {
+  const data: Record<string, any[]> = {
     customer: [],
     woo_customer_sync_queue: [],
     woo_customer_sync_queue_line: [],
@@ -31,16 +42,16 @@ export const createMockDatabase = () => {
 
       // Simulate SELECT operations
       if (sql.includes('SELECT * FROM customer WHERE email')) {
-        const email = params?.[0];
+        const email = params?.[0] as string;
         return {
-          rows: data.customer.filter((c) => c.email === email) as T[],
+          rows: data.customer.filter((c: Customer) => c.email === email) as T[],
         };
       }
 
       if (sql.includes('SELECT * FROM woo_customer_sync_queue WHERE id')) {
-        const id = params?.[0];
+        const id = params?.[0] as string;
         return {
-          rows: data.woo_customer_sync_queue.filter((q) => q.id === id) as T[],
+          rows: data.woo_customer_sync_queue.filter((q: QueueItem) => q.id === id) as T[],
         };
       }
 
@@ -65,7 +76,7 @@ export const createMockDatabase = () => {
 
     async update(table: string, id: string, values: Record<string, unknown>) {
       if (!data[table]) return null;
-      const idx = data[table].findIndex((r) => r.id === id);
+      const idx = data[table].findIndex((r: any) => r.id === id);
       if (idx >= 0) {
         data[table][idx] = { ...data[table][idx], ...values, updated_at: new Date() };
         return data[table][idx];
@@ -75,7 +86,7 @@ export const createMockDatabase = () => {
 
     async delete(table: string, id: string) {
       if (!data[table]) return;
-      data[table] = data[table].filter((r) => r.id !== id);
+      data[table] = data[table].filter((r: any) => r.id !== id);
     },
 
     get(table: string) {
@@ -95,7 +106,7 @@ export const createMockDatabase = () => {
  */
 export const createMockWooCommerceService = (overrides: Record<string, unknown> = {}) => {
   return {
-    async getCustomers(params: unknown = {}) {
+    async getCustomers(params: { per_page?: number } = {}) {
       return {
         data: generateCustomerData(params.per_page || 10),
       };
@@ -108,7 +119,7 @@ export const createMockWooCommerceService = (overrides: Record<string, unknown> 
       };
     },
 
-    async getOrders(params: unknown = {}) {
+    async getOrders(params: { customer?: string | number } = {}) {
       return {
         data: [
           {
@@ -132,7 +143,7 @@ export const createMockWooCommerceService = (overrides: Record<string, unknown> 
     async fetchAllPages(
       callback: (page: number, options: Record<string, unknown>) => Promise<unknown> | unknown,
       params: Record<string, unknown> = {}
-    ) {
+    ): Promise<unknown> {
       await callback(1, params);
       return generateCustomerData(100);
     },
@@ -146,7 +157,7 @@ export const createMockWooCommerceService = (overrides: Record<string, unknown> 
  */
 export const createMockOdooService = (overrides: Record<string, unknown> = {}) => {
   return {
-    async getPartners(params: unknown = {}) {
+    async getPartners(params: { limit?: number } = {}) {
       return generateCustomerData(params.limit || 10);
     },
 
@@ -227,17 +238,22 @@ export const createMockSyncProgressTracker = () => {
 /**
  * Create mock conflict resolver
  */
+interface Conflict {
+  id: string;
+  [key: string]: unknown;
+}
+
 export const createMockConflictResolver = () => {
-  const conflicts: Record<string, unknown> = {};
-  const resolutions: Record<string, unknown> = {};
+  const conflicts: Record<string, Conflict> = {};
+  const resolutions: Record<string, Conflict> = {};
 
   return {
-    async registerConflict(conflict: unknown) {
+    async registerConflict(conflict: Conflict) {
       conflicts[conflict.id] = conflict;
       return conflict.id;
     },
 
-    async resolveConflict(conflictId: string, strategy: 'auto-retry' | 'manual' | 'skip', resolution: unknown = {}) {
+    async resolveConflict(conflictId: string, strategy: 'auto-retry' | 'manual' | 'skip', resolution: Record<string, unknown> = {}) {
       if (!conflicts[conflictId]) throw new Error(`Conflict not found: ${conflictId}`);
 
       const resolved = {
@@ -276,7 +292,7 @@ export const createMockConflictResolver = () => {
  * Create mock delta detection service
  */
 export const createMockDeltaDetectionService = () => {
-  const cache = new Map<string, unknown>();
+  const cache = new Map<string, any>();
 
   return {
     async detectDelta(externalIds: string[], _localData: unknown) {
@@ -292,8 +308,8 @@ export const createMockDeltaDetectionService = () => {
       return delta;
     },
 
-    async compareRecords(external: unknown, local: unknown) {
-      const changes: Record<string, unknown> = {};
+    async compareRecords(external: Record<string, unknown>, local: Record<string, unknown> | null) {
+      const changes: Record<string, { old: unknown; new: unknown }> = {};
 
       Object.keys(external).forEach((key) => {
         if (JSON.stringify(external[key]) !== JSON.stringify(local?.[key])) {
@@ -413,16 +429,22 @@ export const waitForMs = (ms: number) => new Promise((resolve) => setTimeout(res
  * Assertion helpers
  */
 export const expectToBeValidUUID = (value: string) => {
-  expect(value).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  if (!value.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+    throw new Error(`Invalid UUID format: ${value}`);
+  }
 };
 
 export const expectValidTimestamp = (value: string) => {
-  expect(() => new Date(value)).not.toThrow();
-  expect(new Date(value).getTime()).toBeGreaterThan(0);
+  const date = new Date(value);
+  if (isNaN(date.getTime()) || date.getTime() <= 0) {
+    throw new Error(`Invalid timestamp: ${value}`);
+  }
 };
 
 export const expectValidEmail = (email: string) => {
-  expect(email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    throw new Error(`Invalid email format: ${email}`);
+  }
 };
 
 /**

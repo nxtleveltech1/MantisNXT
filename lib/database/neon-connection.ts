@@ -39,12 +39,12 @@ async function runQuery<T = unknown>(queryText: string, params?: unknown[]): Pro
     }
     call += '`';
     const fn = new Function('sql', ...valueNames, `return ${call};`);
-    const res = await (fn as unknown)(sql, ...values);
+    const res = await (fn as any)(sql, ...values);
     const rows = Array.isArray(res) ? res : [res];
     return { rows: rows.filter(Boolean) as T[], rowCount: rows.length };
   } else {
     // No params; run as raw
-    const res = await sql.unsafe(queryText);
+    const res = await (sql as any).unsafe(queryText);
     const rows = Array.isArray(res) ? res : [res];
     return { rows: rows.filter(Boolean) as T[], rowCount: rows.length };
   }
@@ -52,20 +52,20 @@ async function runQuery<T = unknown>(queryText: string, params?: unknown[]): Pro
 
 async function withTransaction<T>(
   fn: (client: {
-    query: <U = unknown>(queryText: string, params?: unknown[]) => Promise<QueryResult<U>>;
+    query: <U = any>(queryText: string, params?: any[]) => Promise<QueryResult<U>>;
   }) => Promise<T>
 ): Promise<T> {
-  await sql.unsafe('BEGIN');
+  await (sql as any).unsafe('BEGIN');
   try {
     const client = {
       query: runQuery,
     };
     const result = await fn(client);
-    await sql.unsafe('COMMIT');
+    await (sql as any).unsafe('COMMIT');
     return result;
   } catch (err) {
     try {
-      await sql.unsafe('ROLLBACK');
+      await (sql as any).unsafe('ROLLBACK');
     } catch {}
     throw err;
   }

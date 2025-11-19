@@ -207,6 +207,7 @@ export function EnhancedPricelistUpload({
         supplier_id: supplierId,
         filename: file.name,
         currency: currency,
+        allow_ai_fallback: aiInfo?.enableFallback ?? true,
       })
       const newUploadId = uploadRes.upload_id
       setUploadId(newUploadId)

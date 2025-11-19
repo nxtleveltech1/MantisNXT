@@ -65,7 +65,7 @@ class CriticalFixesVerifier {
   }
 
   private addResult(test: string, passed: boolean, details?: string, warning = false) {
-    this.results.push({ test, passed, details, warning });
+    this.results.push({ test, passed, details: details || '', warning });
 
     const status = passed ? '✓' : (warning ? '⚠' : '✗');
     const statusColor = passed ? 'green' : (warning ? 'yellow' : 'red');
@@ -188,7 +188,7 @@ class CriticalFixesVerifier {
     }
   }
 
-  private async testAutoIncrement(client: unknown): Promise<void> {
+  private async testAutoIncrement(client: { query: (sql: string, params?: any[]) => Promise<{ rows: any[] }> }): Promise<void> {
     this.log('\n→ Testing auto-increment functionality...', 'blue');
 
     // Test analytics_anomalies
@@ -201,7 +201,7 @@ class CriticalFixesVerifier {
         ) RETURNING anomaly_id
       `);
 
-      const anomalyId = anomalyResult.rows[0].anomaly_id;
+      const anomalyId = anomalyResult.rows[0]?.anomaly_id;
 
       await client.query(`
         DELETE FROM core.analytics_anomalies WHERE anomaly_id = $1
@@ -230,7 +230,7 @@ class CriticalFixesVerifier {
         ) RETURNING prediction_id
       `);
 
-      const predictionId = predictionResult.rows[0].prediction_id;
+      const predictionId = predictionResult.rows[0]?.prediction_id;
 
       await client.query(`
         DELETE FROM core.analytics_predictions WHERE prediction_id = $1
@@ -341,7 +341,7 @@ class CriticalFixesVerifier {
     }
   }
 
-  private async testJSONBOperations(client: unknown): Promise<void> {
+  private async testJSONBOperations(client: { query: (sql: string, params?: any[]) => Promise<{ rows: any[] }> }): Promise<void> {
     this.log('\n→ Testing JSONB operations...', 'blue');
 
     try {
@@ -368,7 +368,7 @@ class CriticalFixesVerifier {
         ) RETURNING supplier_id
       `, [JSON.stringify(testData)]);
 
-      const supplierId = insertResult.rows[0].supplier_id;
+      const supplierId = insertResult.rows[0]?.supplier_id;
 
       // Query JSONB field
       const queryResult = await client.query(`
@@ -382,7 +382,7 @@ class CriticalFixesVerifier {
 
       // Verify data
       const retrieved = queryResult.rows[0];
-      const dataMatches =
+      const dataMatches = retrieved &&
         retrieved.contact_name === testData.name &&
         retrieved.contact_email === testData.email;
 
