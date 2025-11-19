@@ -34,7 +34,6 @@ import { getSupplierById, getSuppliers } from '@/lib/api/suppliers-client'
 import type { SupplierProfile, SupplierRule } from '@/lib/cmm/supplier-rules-engine'
 import type { Supplier } from '@/types/supplier'
 
-// Snake case version of SupplierRule for API responses
 interface SupplierRuleSnake {
   id: number
   supplier_id: string
@@ -47,7 +46,6 @@ interface SupplierRuleSnake {
   is_blocking: boolean
 }
 
-// Normalized rule that handles both camelCase and snake_case
 type NormalizedRule = SupplierRule & {
   ruleName: string
   ruleType: string
@@ -112,7 +110,6 @@ interface ProfileData {
   }
 }
 
-// Normalize rule from API response (handles both camelCase and snake_case)
 function normalizeRule(rule: SupplierRule | SupplierRuleSnake): NormalizedRule {
   return {
     id: rule.id,
