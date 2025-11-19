@@ -26,6 +26,11 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
+
+// Extended PricelistUpload that includes supplier_name from the API
+interface PricelistUploadWithSupplier extends PricelistUpload {
+  supplier_name?: string;
+}
 import { useDashboardMetrics, usePricelistUploads } from '@/hooks/useNeonSpp';
 import { MetricsDashboard } from './MetricsDashboard';
 import { SkeletonDashboard } from './LoadingStates';
@@ -42,8 +47,8 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
   const { data: metrics, isLoading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useDashboardMetrics();
   const { data: uploadsData, isLoading: uploadsLoading, error: uploadsError, refetch: refetchUploads } = usePricelistUploads({ limit: 10 });
 
-  // Ensure uploads is always an array
-  const uploads = Array.isArray(uploadsData) ? uploadsData : [];
+  // Ensure uploads is always an array and properly typed
+  const uploads: PricelistUploadWithSupplier[] = Array.isArray(uploadsData) ? uploadsData : [];
 
   const loading = metricsLoading || uploadsLoading;
 

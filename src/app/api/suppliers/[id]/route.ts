@@ -9,10 +9,10 @@ import { PostgreSQLSupplierRepository } from '@/lib/suppliers/core/SupplierRepos
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    const { id } = await context.params
     const supplier = await ssotGet(id)
 
     if (!supplier) {
@@ -44,10 +44,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    const { id } = await context.params
     const body = await request.json()
 
     const supplier = await ssotUpsert({ id, name: body?.name, status: body?.status })
@@ -75,10 +75,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    const { id } = await context.params
 
     // Get supplier name before deletion (for cache invalidation)
     const supplier = await ssotGet(id)

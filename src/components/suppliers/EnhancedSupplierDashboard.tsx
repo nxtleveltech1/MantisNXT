@@ -61,7 +61,9 @@ import {
   MoreHorizontal,
   ShoppingCart,
   Target,
-  Award
+  Award,
+  Brain,
+  Sparkles
 } from "lucide-react"
 import NextJsXlsxConverter from "@/components/inventory/NextJsXlsxConverter"
 import type { DataValidationResult } from "@/components/inventory/NextJsXlsxConverter"
@@ -344,8 +346,7 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
   const [tierFilter, setTierFilter] = useState<string>("")
   const [statusFilter, setStatusFilter] = useState<string>("")
   const [activeTab, setActiveTab] = useState("overview")
-  const [showPerformanceDialog, setShowPerformanceDialog] = useState(false)
-  const [showPricelistDialog, setShowPricelistDialog] = useState(false)
+  const [showPricelistDialog] = useState(false)
 
   // Update suppliers when real data is loaded
   useEffect(() => {
@@ -354,24 +355,24 @@ const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
       const enhancedSuppliers = realSuppliers.map(supplier => ({
         ...sampleSuppliers[0], // Use sample as template
         id: supplier.id,
-        code: supplier.code,
+        code: supplier.supplier_code || '',
         name: supplier.name,
-        legalName: supplier.businessInfo?.legalName || supplier.name,
-        website: supplier.businessInfo?.website || '',
-        industry: supplier.category,
-        tier: supplier.tier as unknown,
+        legalName: supplier.company_name || supplier.name,
+        website: supplier.website || '',
+        industry: supplier.primary_category || '',
+        tier: supplier.performance_tier as unknown,
         status: supplier.status as unknown,
         primaryContact: {
           ...sampleSuppliers[0].primaryContact,
-          name: supplier.contacts[0]?.name || '',
-          email: supplier.contacts[0]?.email || '',
-          phone: supplier.contacts[0]?.phone || '',
-          role: supplier.contacts[0]?.title || '',
+          name: supplier.contact_person || '',
+          email: supplier.email || '',
+          phone: supplier.phone || '',
+          role: '',
         },
-        taxNumber: supplier.businessInfo?.taxId || '',
-        registrationNumber: supplier.businessInfo?.registrationNumber || '',
-        paymentTerms: supplier.financial?.paymentTerms || 'Net 30',
-        currency: supplier.financial?.currency || 'ZAR',
+        taxNumber: supplier.tax_id || '',
+        registrationNumber: '',
+        paymentTerms: supplier.payment_terms || 'Net 30',
+        currency: 'ZAR',
         tags: supplier.tags || [],
         notes: supplier.notes || '',
         createdAt: supplier.createdAt,

@@ -122,16 +122,19 @@ export async function GET(request: NextRequest) {
     const filters: SupplierFilters = {}
 
     if (searchParams.get('search')) {
-      filters.search = searchParams.get('search')!
+      filters.search = searchParams.get('search') || ''
     }
     if (searchParams.get('status')) {
-      filters.status = searchParams.get('status')!.split(',') as unknown
+      const statusParam = searchParams.get('status')
+      filters.status = statusParam ? statusParam.split(',') as unknown : []
     }
     if (searchParams.get('tier')) {
-      filters.tier = searchParams.get('tier')!.split(',') as unknown
+      const tierParam = searchParams.get('tier')
+      filters.tier = tierParam ? tierParam.split(',') as unknown : []
     }
     if (searchParams.get('category')) {
-      filters.category = searchParams.get('category')!.split(',')
+      const categoryParam = searchParams.get('category')
+      filters.category = categoryParam ? categoryParam.split(',') : []
     }
 
     const exportRequest: ExportRequest = {

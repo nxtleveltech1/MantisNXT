@@ -10,7 +10,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Info, Package, Upload, RefreshCw, Keyboard, LayoutDashboard, Table, FileUp } from 'lucide-react';
+import { Info, Package, Upload, RefreshCw, Keyboard, LayoutDashboard, Table, FileUp, Building2, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/components/layout/AppLayout';
@@ -142,8 +142,9 @@ function NxtSppContent() {
                     const url = `/nxt-spp/rules${currentSupplierId ? `?supplier_id=${currentSupplierId}` : ''}`
                     router.push(url)
                   }}
-                  className="h-11 px-4"
+                  className="h-11 px-4 gap-2"
                 >
+                  <Settings className="h-4 w-4" />
                   Rules Engine
                 </Button>
                 <Button
@@ -152,8 +153,9 @@ function NxtSppContent() {
                     const url = `/nxt-spp/profiles${currentSupplierId ? `?supplier_id=${currentSupplierId}` : ''}`
                     router.push(url)
                   }}
-                  className="h-11 px-4"
+                  className="h-11 px-4 gap-2"
                 >
+                  <Building2 className="h-4 w-4" />
                   Supplier Profiles
                 </Button>
               </div>

@@ -9,7 +9,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
     const validated = SupplierRulePayloadSchema.partial().parse(body)
 
-    const existing = await query('SELECT * FROM public.supplier_rules WHERE id = $1 LIMIT 1', [id])
+    const existing = await query('SELECT * FROM spp.supplier_rules WHERE id = $1 LIMIT 1', [id])
     if (existing.rowCount === 0) {
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
     }
@@ -27,7 +27,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     fields.push(`updated_at = NOW()`)
     values.push(id)
 
-    const sql = `UPDATE public.supplier_rules SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`
+    const sql = `UPDATE spp.supplier_rules SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`
     const res = await query(sql, values)
 
     try {
@@ -35,7 +35,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (auditCheck.rows?.[0]?.rel) {
         await query(
           `INSERT INTO public.audit_log (user_id, action, table_name, record_id, old_data, new_data, timestamp)
-           VALUES (NULL, 'update', 'supplier_rules', $1, $2::jsonb, $3::jsonb, NOW())`,
+           VALUES (NULL, 'update', 'spp.supplier_rules', $1, $2::jsonb, $3::jsonb, NOW())`,
           [id, JSON.stringify(existing.rows[0]), JSON.stringify(res.rows[0])]
         )
       }
