@@ -132,6 +132,7 @@ export function useUploadPricelist() {
       valid_from?: Date;
       valid_to?: Date;
       options?: Record<string, unknown>;
+      allow_ai_fallback?: boolean;
     }): Promise<{ upload_id: string; validation?: any }> => {
       const formData = new FormData();
       formData.append('file', request.file);
@@ -141,6 +142,9 @@ export function useUploadPricelist() {
       if (request.valid_from) formData.append('valid_from', request.valid_from.toISOString());
       if (request.valid_to) formData.append('valid_to', request.valid_to.toISOString());
       if (request.options) formData.append('options', JSON.stringify(request.options));
+      if (typeof request.allow_ai_fallback === 'boolean') {
+        formData.append('allow_ai_fallback', request.allow_ai_fallback ? 'true' : 'false');
+      }
 
       // Route upload through AI agent orchestrator
       formData.append('action', 'upload_and_validate');

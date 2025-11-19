@@ -719,7 +719,7 @@ class EnterpriseConnectionManager {
 
       if (this.queryLogConfig.logQueryText) {
 
-        logData.sql = text.substring(0, 500);
+        (logData as any).sql = text.substring(0, 500);
 
       }
 
@@ -727,7 +727,7 @@ class EnterpriseConnectionManager {
 
       if (this.queryLogConfig.logParameters && params.length > 0) {
 
-        logData.params = this.sanitizeParameters(params);
+        (logData as any).params = this.sanitizeParameters(params);
 
       }
 
@@ -735,7 +735,7 @@ class EnterpriseConnectionManager {
 
       if (error) {
 
-        logData.error = error.message;
+        (logData as any).error = error.message;
 
       }
 
@@ -781,13 +781,13 @@ class EnterpriseConnectionManager {
 
 
 
-    const executionTime = plan[0]?.['Execution Time'];
+    const executionTime = (plan as any)[0]?.['Execution Time'];
 
-    const planningTime = plan[0]?.['Planning Time'];
+    const planningTime = (plan as any)[0]?.['Planning Time'];
 
-    const totalCost = plan[0]?.Plan?.['Total Cost'];
+    const totalCost = (plan as any)[0]?.Plan?.['Total Cost'];
 
-    const actualRows = plan[0]?.Plan?.['Actual Rows'];
+    const actualRows = (plan as any)[0]?.Plan?.['Actual Rows'];
 
 
 
@@ -843,7 +843,7 @@ class EnterpriseConnectionManager {
 
 
 
-  async query<T extends QueryResultRow = unknown>(
+  async query<T extends QueryResultRow = any>(
 
     text: string,
 
@@ -1515,7 +1515,7 @@ export const dbManager = new EnterpriseConnectionManager();
 
 
 
-export const query = <T extends QueryResultRow = unknown>(
+export const query = <T extends QueryResultRow = any>(
 
   text: string,
 
