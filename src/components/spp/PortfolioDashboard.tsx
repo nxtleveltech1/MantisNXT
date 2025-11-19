@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 
-// Extended PricelistUpload that includes supplier_name from the API
 interface PricelistUploadWithSupplier extends PricelistUpload {
   supplier_name?: string;
 }
@@ -178,7 +177,6 @@ export function PortfolioDashboard({ onNavigateToTab }: PortfolioDashboardProps)
                         className="border-b border-gray-100 hover:bg-gray-50/50"
                       >
                         <TableCell className="font-medium text-gray-900">
-                          {/* @ts-ignore - supplier_name added by view */}
                           {upload.supplier_name || 'Unknown'}
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate text-gray-700">

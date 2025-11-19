@@ -1,6 +1,5 @@
 "use client"
-
-import React, { useState, useMemo, useCallback, useEffect } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSuppliers, useDashboardMetrics } from "@/hooks/useSuppliers"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -48,6 +47,7 @@ import {
   DollarSign,
   Phone,
   Mail,
+  User,
   Star,
   BarChart3,
   Globe,
@@ -335,9 +335,9 @@ interface EnhancedSupplierDashboardProps {
   onSupplierSelect?: (supplier: EnhancedSupplier) => void
 }
 
-const EnhancedSupplierDashboard: React.FC<EnhancedSupplierDashboardProps> = ({
+const EnhancedSupplierDashboard = ({
   onSupplierSelect
-}) => {
+}: EnhancedSupplierDashboardProps) => {
   const { suppliers: realSuppliers, loading: suppliersLoading, error: suppliersError, fetchSuppliers } = useSuppliers()
   const { metrics, loading: metricsLoading, error: metricsError } = useDashboardMetrics()
   const [suppliers, setSuppliers] = useState<EnhancedSupplier[]>(sampleSuppliers)
