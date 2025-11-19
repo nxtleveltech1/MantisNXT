@@ -273,7 +273,12 @@ export function EnhancedPricelistUpload({
       const response = await fetch('/api/spp/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'validate', upload_id: idToUse, supplier_id: supplierId }),
+        body: JSON.stringify({ 
+          action: 'validate', 
+          upload_id: idToUse, 
+          supplier_id: supplierId,
+          allow_ai_fallback: aiInfo?.enableFallback ?? true 
+        }),
       })
 
       clearInterval(progressInterval)
@@ -450,6 +455,21 @@ export function EnhancedPricelistUpload({
               <Label htmlFor="apply-rules">Apply active supplier rules during processing</Label>
             </div>
 
+            {aiInfo && (
+              <div className="flex items-center gap-2">
+                <input 
+                  id="ai-fallback" 
+                  type="checkbox" 
+                  checked={aiInfo.enableFallback} 
+                  onChange={e => {
+                    const newAiInfo = { ...aiInfo, enableFallback: e.target.checked };
+                    setAiInfo(newAiInfo);
+                  }} 
+                />
+                <Label htmlFor="ai-fallback">Allow AI fallback when no rules configured</Label>
+              </div>
+            )}
+
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => setRuleDialogOpen(true)}>Create Rule</Button>
             </div>
@@ -619,7 +639,12 @@ export function EnhancedPricelistUpload({
                           const res = await fetch('/api/spp/agent', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'apply_rules_and_validate', upload_id: uploadId, supplier_id: supplierId })
+                            body: JSON.stringify({ 
+                              action: 'apply_rules_and_validate', 
+                              upload_id: uploadId, 
+                              supplier_id: supplierId,
+                              allow_ai_fallback: aiInfo?.enableFallback ?? true 
+                            })
                           })
                           if (!res.ok) throw new Error('Failed to queue rule processing')
                           toast({ title: 'Queued', description: 'Rule-based processing queued' })
@@ -945,7 +970,7 @@ export function EnhancedPricelistUpload({
               setRuleError(null)
               if (!supplierId) { throw new Error('Select supplier first') }
               if (!nlInstruction || nlInstruction.length < 10) { throw new Error('Enter natural-language instruction') }
-              const res = await fetch('/api/supplier-rulesets/nlp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ supplier_id: supplierId, instruction: nlInstruction }) })
+              const res = await fetch('/api/suppliers/nlp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ supplier_id: supplierId, instruction: nlInstruction }) })
               const data = await res.json()
               if (!data.success) throw new Error(data.error || 'Failed to synthesize rule')
               setRuleJson(JSON.stringify(data.data, null, 2))
@@ -957,7 +982,7 @@ export function EnhancedPricelistUpload({
               if (!supplierId) { throw new Error('Select supplier first') }
               const parsed = JSON.parse(ruleJson)
               const body = { supplier_id: supplierId, rule_name: ruleName || 'Generated Rule', rule_type: ruleType, trigger_event: 'pricelist_upload', execution_order: ruleOrder, rule_config: parsed, is_blocking: ruleBlocking }
-              const res = await fetch('/api/supplier-rulesets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+              const res = await fetch(`/api/suppliers/${supplierId}/rules`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
               if (!res.ok) { const t = await res.json(); throw new Error(t.error || 'Failed to save rule') }
               setRuleDialogOpen(false)
             } catch (e) { setRuleError(e instanceof Error ? e.message : 'Failed to save rule') }

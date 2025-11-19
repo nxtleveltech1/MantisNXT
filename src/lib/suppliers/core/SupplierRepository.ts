@@ -368,6 +368,22 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         [newSupplierId]
       )
 
+      // Create default supplier profile for inventory portfolio and rules engine
+      await client.query(
+        `INSERT INTO public.supplier_profiles (
+          supplier_id, profile_name, guidelines, processing_config, 
+          quality_standards, compliance_rules, is_active, created_at, updated_at
+        ) VALUES (
+          $1, 'default', 
+          '{"inventory_management": {"auto_approve": false, "validation_required": true}, "pricing": {"currency": "' || $2 || '", "tax_inclusive": false}}'::jsonb,
+          '{"upload_validation": {"required_fields": ["sku", "name", "price"], "price_range": {"min": 0, "max": 100000}}, "transformation_rules": {"auto_format": true}}'::jsonb,
+          '{"quality_checks": {"duplicate_detection": true, "price_validation": true, "data_completeness": 0.8}, "approval_workflow": {"tier_1_required": true, "tier_2_required": false}}'::jsonb,
+          '{"business_rules": {"minimum_order_value": 100, "payment_terms": "' || $3 || '", "delivery_timeframe": "7-14 days"}}'::jsonb,
+          true, NOW(), NOW()
+        ) ON CONFLICT (supplier_id, profile_name) DO NOTHING`,
+        [newSupplierId, businessInfo.currency || 'ZAR', businessInfo.paymentTerms || 'Net 30']
+      )
+
       return newSupplierId
     })
 

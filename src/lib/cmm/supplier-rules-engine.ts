@@ -196,26 +196,21 @@ export async function applyPricelistRulesToExcel(
 
 export async function createDecksaverJoinRule(supplierId: string): Promise<void> {
   const cfg = {
-    join_sheets: {
+    type: 'join_sheets',
+    config: {
       left_sheet: 'Decksaver product list',
       right_sheet: 'Decksaver price list',
-      join_on: { left: 'Product Title', right: 'Description' },
-      drop_right: ['sku'],
-      output_map: {
-        sku: { sheet: 'left', column: 'Part#' },
-        description: { sheet: 'left', column: 'Product Title' },
-        priceExVat: { sheet: 'right', column: 'NETT EXCL' },
-        brand: { source: 'sheet_name' },
-        category: { sheet: 'left', column: 'Materials' }
-      }
+      left_key: 'Product Title',
+      right_key: 'Description',
+      right_columns: ['NETT EXCL']
     }
   }
   await query(
-    `INSERT INTO public.supplier_rules (
-      supplier_id, rule_name, rule_type, trigger_event, execution_order, rule_config, is_blocking, is_active
-    ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)
+    `INSERT INTO spp.supplier_rules (
+      supplier_id, rule_name, rule_type, trigger_event, execution_order, rule_config, is_blocking
+    ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)
     ON CONFLICT DO NOTHING`,
-    [supplierId, 'Decksaver join sheets', 'transformation', 'pricelist_upload', 1, JSON.stringify(cfg), false, true]
+    [supplierId, 'Decksaver join sheets', 'transformation', 'pricelist_upload', 1, JSON.stringify(cfg), false]
   )
 }
 
@@ -237,7 +232,7 @@ export async function getSupplierRules(
       rule_config as "ruleConfig",
       error_message_template as "errorMessageTemplate",
       is_blocking as "isBlocking"
-    FROM supplier_rules
+    FROM spp.supplier_rules
     WHERE supplier_id = $1
       AND (trigger_event = $2 OR trigger_event = 'all')
       AND is_active = true
@@ -275,6 +270,36 @@ export async function getSupplierProfile(
     LIMIT 1
   `, [supplierId, profileName])
   return result.rows[0] || null
+}
+
+/**
+ * Update supplier profile
+ */
+export async function updateSupplierProfile(
+  profile: SupplierProfile
+): Promise<void> {
+  await query(`
+    INSERT INTO supplier_profiles (
+      supplier_id, profile_name, guidelines, processing_config, 
+      quality_standards, compliance_rules, updated_at
+    ) VALUES (
+      $1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, NOW()
+    )
+    ON CONFLICT (supplier_id, profile_name) 
+    DO UPDATE SET
+      guidelines = EXCLUDED.guidelines,
+      processing_config = EXCLUDED.processing_config,
+      quality_standards = EXCLUDED.quality_standards,
+      compliance_rules = EXCLUDED.compliance_rules,
+      updated_at = NOW()
+  `, [
+    profile.supplierId,
+    profile.profileName,
+    JSON.stringify(profile.guidelines),
+    JSON.stringify(profile.processingConfig),
+    JSON.stringify(profile.qualityStandards),
+    JSON.stringify(profile.complianceRules)
+  ])
 }
 
 /**

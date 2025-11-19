@@ -386,8 +386,7 @@ class EnterpriseConnectionManager {
         const idleTxTimeout = this.parseIntEnv('ENTERPRISE_DB_IDLE_TX_TIMEOUT_MS', 60000);
         void client
           .query(
-            'SET search_path TO public, core, "$user"; SET statement_timeout = $1; SET idle_in_transaction_session_timeout = $2;',
-            [stmtTimeout, idleTxTimeout]
+            `SET search_path TO public, core, "$user"; SET statement_timeout = ${stmtTimeout}; SET idle_in_transaction_session_timeout = ${idleTxTimeout};`
           )
           .catch(err => console.error('⚠️ Failed to initialize session parameters', err));
       });

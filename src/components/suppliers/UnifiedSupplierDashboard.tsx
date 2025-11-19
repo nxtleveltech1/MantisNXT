@@ -81,8 +81,11 @@ import {
   X,
   Trash2,
   SlidersHorizontal,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
+
 
 // Types
 interface SupplierMetrics {
@@ -410,10 +413,25 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
     fetchActivities()
   }, [])
 
-  // Convert API suppliers to component format
+  const [selectedSupplier, setSelectedSupplier] = useState<SupplierData | null>(null)
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [activeTab, setActiveTab] = useState(initialTab)
+  const [showFilters, setShowFilters] = useState(false)
+  const [, setIsExporting] = useState(false)
+  const uploadSectionRef = useRef<HTMLDivElement | null>(null)
+  const [supplierActivities, setSupplierActivities] = useState<unknown[]>([])
+  const [activitiesLoading, setActivitiesLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(20)
+
+  // Convert API suppliers to component format with pagination
   const suppliers = useMemo(() => {
-    return apiSuppliers.map((supplier: unknown) => transformDatabaseSupplierToSupplierData(supplier))
-  }, [apiSuppliers])
+    const transformed = apiSuppliers.map((supplier: unknown) => transformDatabaseSupplierToSupplierData(supplier))
+    // Apply pagination to reduce initial data load
+    const startIndex = (currentPage - 1) * pageSize
+    return transformed.slice(startIndex, startIndex + pageSize)
+  }, [apiSuppliers, currentPage, pageSize])
 
   // Legacy code (remove after confirming new transformation works)
   const _legacyTransform = useMemo(() => {
@@ -479,16 +497,6 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
       updatedAt: new Date(supplier.updated_at)
     }))
   }, [apiSuppliers])
-
-  const [selectedSupplier, setSelectedSupplier] = useState<SupplierData | null>(null)
-  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState(initialTab)
-  const [showFilters, setShowFilters] = useState(false)
-  const [, setIsExporting] = useState(false)
-  const uploadSectionRef = useRef<HTMLDivElement | null>(null)
-  const [supplierActivities, setSupplierActivities] = useState<unknown[]>([])
-  const [activitiesLoading, setActivitiesLoading] = useState(true)
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("")
@@ -561,6 +569,13 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
     })
   }, [suppliers, searchQuery, statusFilter, tierFilter, categoryFilter, riskFilter])
 
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const totalPages = Math.ceil(apiSuppliers.length / pageSize)
+
   // Handle export
   const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
     setIsExporting(true)
@@ -625,6 +640,15 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   // Utility functions
 
   const getRiskColor = (risk: string) => {
+    const colors = {
+      low: "text-green-600",
+      medium: "text-yellow-600",
+      high: "text-orange-600",
+      critical: "text-red-600"
+    }
+    return colors[risk as keyof typeof colors] || colors.low
+  }
+
   const scrollToUploadSection = () => {
     setActiveTab("overview")
     if (typeof window === "undefined") return
@@ -639,15 +663,6 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   const handlePricelistUploadComplete = (pricelist: unknown) => {
     console.log("Pricelist uploaded:", pricelist)
     refresh()
-  }
-
-    const colors = {
-      low: "text-green-600",
-      medium: "text-yellow-600",
-      high: "text-orange-600",
-      critical: "text-red-600"
-    }
-    return colors[risk as keyof typeof colors] || colors.low
   }
 
   // Handle loading and error states
@@ -1330,6 +1345,62 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                   </TableBody>
                 </Table>
               </CardContent>
+              
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between p-4 border-t border-border">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredSuppliers.length)} of {filteredSuppliers.length} suppliers
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, Math.ceil(filteredSuppliers.length / pageSize)) }, (_, i) => {
+                      const pageNum = i + 1
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="min-w-[32px]"
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                    {Math.ceil(filteredSuppliers.length / pageSize) > 5 && (
+                      <>
+                        <span className="text-muted-foreground px-1">...</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(Math.ceil(filteredSuppliers.length / pageSize))}
+                          className="min-w-[32px]"
+                        >
+                          {Math.ceil(filteredSuppliers.length / pageSize)}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(Math.ceil(filteredSuppliers.length / pageSize), currentPage + 1))}
+                    disabled={currentPage >= Math.ceil(filteredSuppliers.length / pageSize)}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </Card>
           </TabsContent>
 

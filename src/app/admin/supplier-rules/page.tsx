@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useMemo, useState } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { FileCog, Plus, Save } from 'lucide-react'
+import { FileCog, Plus, Save, Trash2 } from 'lucide-react'
 import { useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
@@ -30,10 +30,14 @@ type RuleRow = {
 
 export default function SupplierRulesPage() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const crumbs = pathname.startsWith('/nxt-spp')
     ? [{ label: 'Supplier Inventory Portfolio', href: '/nxt-spp' }, { label: 'Supplier Rules' }]
     : [{ label: 'Administration', href: '/admin/settings/general' }, { label: 'Supplier Rules' }]
-  const [supplierId, setSupplierId] = useState<string>("")
+  
+  // Extract supplier_id from URL parameter
+  const urlSupplierId = searchParams.get('supplier_id')
+  const [supplierId, setSupplierId] = useState<string>(urlSupplierId || "")
   const [rules, setRules] = useState<RuleRow[]>([])
   const [selected, setSelected] = useState<RuleRow | null>(null)
   const [jsonText, setJsonText] = useState<string>("{}")
@@ -53,21 +57,23 @@ export default function SupplierRulesPage() {
     }
   }, [jsonText])
 
-  const { data: suppliersData } = useQuery({
-    queryKey: ['suppliers','active'],
+  // Fetch current supplier info if supplierId is available
+  const { data: currentSupplier } = useQuery({
+    queryKey: ['supplier', supplierId],
     queryFn: async () => {
-      const res = await fetch('/api/suppliers?status=active&limit=1000')
+      if (!supplierId) return null
+      const res = await fetch(`/api/suppliers/${supplierId}`)
       const json = await res.json()
-      const list = json.success && json.data ? json.data : Array.isArray(json) ? json : []
-      return list.map((s: any) => ({ id: s.id || s.supplier_id, name: s.name, code: s.code || s.supplier_code })) as {id:string;name:string;code?:string}[]
+      return json.success && json.data ? json.data : null
     },
+    enabled: !!supplierId,
     staleTime: 5 * 60 * 1000
   })
-  const suppliers = suppliersData || []
 
   useEffect(() => {
     if (!supplierId) return
-    fetch(`/api/supplier-rulesets?supplier_id=${supplierId}`).then(r => r.json()).then(res => {
+    // Use the correct API endpoint for supplier rules
+    fetch(`/api/suppliers/${supplierId}/rules`).then(r => r.json()).then(res => {
       setRules(res.data || [])
     }).catch(() => setRules([]))
   }, [supplierId])
@@ -87,39 +93,59 @@ export default function SupplierRulesPage() {
     if (!name) { setError('rule_name required'); return }
     if (!validConfig) { setError('rule_config invalid'); return }
     const body = {
-      supplier_id: supplierId,
       rule_name: name,
       rule_type: type,
       trigger_event: 'pricelist_upload',
       execution_order: order,
       rule_config: validConfig,
+      error_message_template: '',
       is_blocking: blocking,
     }
-    const res = await fetch('/api/supplier-rulesets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const res = await fetch(`/api/suppliers/${supplierId}/rules`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (!res.ok) { const t = await res.json(); setError(t.error || 'Failed'); return }
     setSelected(null)
     setName("")
     setJsonText("{}")
     // refresh
-    const list = await fetch(`/api/supplier-rulesets?supplier_id=${supplierId}`).then(r => r.json())
+    const list = await fetch(`/api/suppliers/${supplierId}/rules`).then(r => r.json())
     setRules(list.data || [])
   }
 
   const onUpdate = async () => {
     if (!selected) return
+    if (!supplierId) { setError('supplier_id required'); return }
     const body: any = {}
+    body.rule_id = selected.id
     body.rule_name = name
     body.rule_type = type
     body.execution_order = order
     body.is_blocking = blocking
     body.rule_config = validConfig
-    const res = await fetch(`/api/supplier-rulesets/${selected.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const res = await fetch(`/api/suppliers/${supplierId}/rules`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (!res.ok) { const t = await res.json(); setError(t.error || 'Failed'); return }
     const updated = await res.json()
     setSelected(updated.data)
     // refresh list
-    const list = await fetch(`/api/supplier-rulesets?supplier_id=${supplierId}`).then(r => r.json())
+    const list = await fetch(`/api/suppliers/${supplierId}/rules`).then(r => r.json())
     setRules(list.data || [])
+  }
+
+  const onDelete = async (rule: RuleRow) => {
+    if (!supplierId) { setError('supplier_id required'); return }
+    if (!confirm(`Delete rule "${rule.rule_name}"?`)) return
+    const res = await fetch(`/api/suppliers/${supplierId}/rules?rule_id=${rule.id}`, { method: 'DELETE' })
+    if (!res.ok) { const t = await res.json(); setError(t.error || 'Failed'); return }
+    // refresh list
+    const list = await fetch(`/api/suppliers/${supplierId}/rules`).then(r => r.json())
+    setRules(list.data || [])
+    if (selected && selected.id === rule.id) {
+      setSelected(null)
+      setName('')
+      setType('transformation')
+      setOrder(0)
+      setBlocking(false)
+      setJsonText('{}')
+    }
   }
 
   return (
@@ -137,17 +163,18 @@ export default function SupplierRulesPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-[360px]">
-                <Label>Supplier</Label>
-                <Select value={supplierId || undefined} onValueChange={(val) => setSupplierId(val)}>
-                  <SelectTrigger><SelectValue placeholder="Select supplier" /></SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name} {s.code && `(${s.code})`}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {currentSupplier ? (
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">Supplier:</Label>
+                  <Badge variant="outline" className="text-sm">
+                    {currentSupplier.name} {currentSupplier.code && `(${currentSupplier.code})`}
+                  </Badge>
+                </div>
+              ) : supplierId ? (
+                <div className="text-sm text-muted-foreground">Loading supplier...</div>
+              ) : (
+                <div className="text-sm text-destructive">No supplier selected</div>
+              )}
               <Badge variant="secondary">Active Rules: {rules.length}</Badge>
             </div>
           </CardContent>
@@ -162,13 +189,25 @@ export default function SupplierRulesPage() {
               <ScrollArea className="h-[520px]">
                 <div className="divide-y">
                   {rules.map(r => (
-                    <button key={r.id} onClick={() => onSelect(r)} className="w-full text-left p-4 hover:bg-muted/50">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium">{r.rule_name}</div>
-                        <Badge variant="outline">{r.rule_type}</Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground">order {r.execution_order} • updated {new Date(r.updated_at).toLocaleString()}</div>
-                    </button>
+                    <div key={r.id} className="flex items-center group">
+                      <button onClick={() => onSelect(r)} className="flex-1 text-left p-4 hover:bg-muted/50">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{r.rule_name}</div>
+                          <Badge variant="outline">{r.rule_type}</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground">order {r.execution_order} • updated {new Date(r.updated_at).toLocaleString()}</div>
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDelete(r)
+                        }}
+                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity mr-2"
+                        title="Delete rule"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   ))}
                   {rules.length === 0 && (
                     <div className="p-6 text-sm text-muted-foreground">No rules found for supplier</div>
@@ -231,10 +270,10 @@ export default function SupplierRulesPage() {
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={async () => {
                     try {
-                      if (!supplierId) { setError('Select supplier first'); return }
+                      if (!supplierId) { setError('No supplier context available'); return }
                       const instruction = nlTextRef.current || ''
                       if (!instruction || instruction.length < 10) { setError('Enter natural-language instruction'); return }
-                      const res = await fetch('/api/supplier-rulesets/nlp', {
+                      const res = await fetch('/api/suppliers/nlp', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ supplier_id: supplierId, instruction })
                       })

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import * as XLSX from 'xlsx'
 import { pricelistService } from '@/lib/services/PricelistService'
-import { applyJoinSheetsConfigFromBuffer } from '@/lib/cmm/supplier-rules-engine'
+import { applyPricelistRulesToExcel, getSupplierRules, logRuleExecution } from '@/lib/cmm/supplier-rules-engine-enhanced'
 import { AIService, isAIEnabled } from '@/lib/ai'
+import { applyVatPolicyToRows } from '@/lib/cmm/vat-utils'
 
 async function auditStart(supplier_id: string | null, upload_id: string | null, action: string) {
   const res = await query(
@@ -57,6 +58,82 @@ async function aiExtractRows(buffer: Buffer, filename: string): Promise<any[]> {
   }
 }
 
+/**
+ * Validate rows according to supplier rules and canonical schema
+ */
+async function validateRows(
+  rows: any[],
+  supplierId: string,
+  uploadId: string
+): Promise<{ valid: any[]; errors: any[]; warnings: any[] }> {
+  const rules = await getSupplierRules(supplierId, 'pricelist_upload')
+  const validationRules = rules.filter(r => r.ruleType === 'validation')
+  
+  const valid: any[] = []
+  const errors: any[] = []
+  const warnings: any[] = []
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    const rowErrors: string[] = []
+    const rowWarnings: string[] = []
+
+    // Check hard requirements (canonical schema)
+    if (!row.supplier_sku || !row.supplier_sku.trim()) {
+      rowErrors.push('Missing supplier_sku')
+    }
+    if (!row.name || !row.name.trim()) {
+      rowErrors.push('Missing name')
+    }
+    if (!row.cost_price_ex_vat || row.cost_price_ex_vat <= 0) {
+      rowErrors.push('Missing or invalid cost_price_ex_vat')
+    }
+
+    // Check validation rules
+    for (const rule of validationRules) {
+      const config = rule.ruleConfig as any
+      if (config.field && config.required) {
+        const value = row[config.field]
+        if (value === null || value === undefined || value === '') {
+          if (rule.isBlocking) {
+            rowErrors.push(config.warning_message || `${config.field} is required`)
+          } else {
+            rowWarnings.push(config.warning_message || `${config.field} is missing`)
+          }
+        }
+      }
+    }
+
+    // Check for missing optional fields (warnings)
+    if (!row.category_raw || !row.category_raw.trim()) {
+      rowWarnings.push('Missing category_raw')
+    }
+    if (!row.stock_on_hand && row.stock_on_hand !== 0) {
+      rowWarnings.push('Missing stock_on_hand')
+    }
+    if (!row.vat_rate && row.vat_rate !== 0) {
+      rowWarnings.push('Missing vat_rate')
+    }
+
+    if (rowErrors.length > 0) {
+      errors.push({
+        row_num: i + 1,
+        field: 'multiple',
+        reason: rowErrors.join('; '),
+        proposed_fix: 'Check required fields'
+      })
+    } else {
+      valid.push(row)
+    }
+
+    if (rowWarnings.length > 0) {
+      warnings.push(...rowWarnings.map(w => ({ row_num: i + 1, message: w })))
+    }
+  }
+
+  return { valid, errors, warnings }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const ct = request.headers.get('content-type') || ''
@@ -68,6 +145,7 @@ export async function POST(request: NextRequest) {
     let valid_from: string | null = null
     let auto_validate = false
     let auto_merge = false
+    let allow_ai_fallback = false
 
     if (ct.includes('multipart/form-data')) {
       const form = await request.formData()
@@ -78,11 +156,13 @@ export async function POST(request: NextRequest) {
       valid_from = (form.get('valid_from') as string) || null
       auto_validate = form.get('auto_validate') === 'true'
       auto_merge = form.get('auto_merge') === 'true'
+      allow_ai_fallback = form.get('allow_ai_fallback') === 'true'
     } else {
       const body = await request.json()
       action = body?.action
       upload_id = body?.upload_id ?? null
       supplier_id = body?.supplier_id ?? null
+      allow_ai_fallback = body?.allow_ai_fallback ?? false
     }
 
     if (!action) {
@@ -92,6 +172,7 @@ export async function POST(request: NextRequest) {
     const auditId = await auditStart(supplier_id, upload_id, action)
 
     let result: any = null
+
     if (action === 'validate') {
       if (!upload_id) {
         await auditFinish(auditId, 'failed', { step: 'validate', error: 'upload_id required' })
@@ -111,13 +192,77 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: message }, { status: 500 })
       }
     }
+
     if (action === 'apply_rules_and_validate') {
-      const rerun = await fetch(new URL('/api/process/rerun', request.url).toString(), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ upload_id })
-      })
-      const rerunJson = await rerun.json()
-      await auditFinish(auditId, rerun.ok ? 'queued' : 'failed', { step: 'apply_rules', result: rerunJson })
-      return NextResponse.json({ success: true, data: rerunJson }, { status: rerun.ok ? 202 : rerun.status })
+      if (!upload_id) {
+        await auditFinish(auditId, 'failed', { step: 'apply_rules', error: 'upload_id required' })
+        return NextResponse.json({ success: false, error: 'upload_id required' }, { status: 400 })
+      }
+
+      try {
+        // Get upload details
+        const uploadResult = await query(`
+          SELECT * FROM spp.pricelist_upload WHERE upload_id = $1
+        `, [upload_id])
+        
+        if (uploadResult.rows.length === 0) {
+          await auditFinish(auditId, 'failed', { step: 'apply_rules', error: 'Upload not found' })
+          return NextResponse.json({ success: false, error: 'Upload not found' }, { status: 404 })
+        }
+
+        const upload = uploadResult.rows[0]
+        
+        // Apply supplier rules
+        const rulesResult = await applyPricelistRulesToExcel(
+          Buffer.from(upload.storage_path, 'base64'),
+          upload.supplier_id
+        )
+
+        // Log rule executions
+        for (const execution of rulesResult.executionLog) {
+          await logRuleExecution(upload.supplier_id, upload_id, 
+            { id: execution.ruleId, ruleName: execution.ruleName, ruleType: execution.ruleType, executionOrder: execution.ruleId, supplierId: upload.supplier_id, triggerEvent: 'pricelist_upload', ruleConfig: {}, isBlocking: execution.blocked },
+            execution
+          )
+        }
+
+        // Validate the processed rows
+        const validation = await validateRows(rulesResult.rows, upload.supplier_id, upload_id)
+
+        await auditFinish(auditId, 'completed', {
+          step: 'apply_rules_and_validate',
+          rows_processed: rulesResult.rows.length,
+          rules_executed: rulesResult.executionLog.length,
+          validation: validation
+        })
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            upload_id,
+            validation: {
+              totals: {
+                rows: rulesResult.rows.length,
+                valid: validation.valid.length,
+                errors: validation.errors.length,
+                warnings: validation.warnings.length
+              },
+              errors: validation.errors.slice(0, 10), // First 10 errors
+              warnings: validation.warnings
+            }
+          }
+        })
+
+      } catch (error) {
+        await auditFinish(auditId, 'failed', { 
+          step: 'apply_rules', 
+          error: error instanceof Error ? error.message : String(error) 
+        })
+        return NextResponse.json({ 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Rule application failed' 
+        }, { status: 500 })
+      }
     }
 
     if (action === 'upload_and_validate') {
@@ -139,9 +284,91 @@ export async function POST(request: NextRequest) {
       const sessionId = await auditStart(supplier_id, upload_id, 'session_started')
       await auditFinish(sessionId, 'started', { filename: file.name, size: (file as any).size, mime: (file as any).type })
 
+      // Load supplier rules first - rules execute before heuristics/AI
+      const rulesAuditId = await auditStart(supplier_id, upload_id, 'rules_check')
+      const supplierRules = await getSupplierRules(supplier_id, 'pricelist_upload')
+      
+      if (supplierRules.length > 0) {
+        await auditFinish(rulesAuditId, 'completed', { 
+          rules_found: supplierRules.length,
+          rule_types: supplierRules.map(r => r.ruleType)
+        })
+        
+        // Apply supplier rules to the uploaded file
+        const rulesAuditId2 = await auditStart(supplier_id, upload_id, 'rules_execution')
+        
+        try {
+          const buf = Buffer.from(await file.arrayBuffer())
+          const rulesResult = await applyPricelistRulesToExcel(buf, supplier_id)
+          
+          // Log rule executions
+          for (const execution of rulesResult.executionLog) {
+            await logRuleExecution(supplier_id, upload_id, 
+              { id: execution.ruleId, ruleName: execution.ruleName, ruleType: execution.ruleType, executionOrder: execution.ruleId, supplierId: supplier_id, triggerEvent: 'pricelist_upload', ruleConfig: {}, isBlocking: execution.blocked },
+              execution
+            )
+          }
+          
+          await auditFinish(rulesAuditId2, 'completed', {
+            rows_processed: rulesResult.rows.length,
+            rules_executed: rulesResult.executionLog.length,
+            processing_method: 'supplier_rules',
+            ai_fallback_used: false
+          })
+
+          // Apply VAT policy to normalize prices
+          const vatAuditId = await auditStart(supplier_id, upload_id, 'vat_normalization')
+          const vatResult = await applyVatPolicyToRows(rulesResult.rows, supplier_id)
+          await auditFinish(vatAuditId, 'completed', {
+            rows_processed: vatResult.rows.length,
+            warnings: vatResult.warnings.length,
+            price_sources: vatResult.priceSources
+          })
+
+          // Validate the processed rows
+          const validation = await validateRows(vatResult.rows, supplier_id, upload_id)
+          
+          // Insert validated rows
+          if (validation.valid.length > 0) {
+            await pricelistService.insertRows(upload_id, validation.valid)
+          }
+
+          return NextResponse.json({
+            success: true,
+            data: {
+              upload_id,
+              processing_method: 'supplier_rules',
+              ai_fallback_used: false,
+              validation: {
+                totals: {
+                  rows: vatResult.rows.length,
+                  valid: validation.valid.length,
+                  errors: validation.errors.length,
+                  warnings: validation.warnings.length + vatResult.warnings.length
+                },
+                errors: validation.errors.slice(0, 10), // First 10 errors
+                warnings: [...validation.warnings, ...vatResult.warnings]
+              }
+            }
+          })
+
+        } catch (error) {
+          await auditFinish(rulesAuditId2, 'failed', { 
+            error: error instanceof Error ? error.message : String(error) 
+          })
+          // Fall back to AI extraction if rules fail
+        }
+      } else {
+        await auditFinish(rulesAuditId, 'completed', { rules_found: 0 })
+      }
+
+      // Fallback to AI extraction if no rules or rules failed
       let aiSummary: any = null
+      let aiDataInserted = false
+      
       try {
-        if (isAIEnabled()) {
+        if (isAIEnabled() && allow_ai_fallback) {
+          // AI extraction allowed - proceed with fallback
           const ai = new AIService()
           const isExcel = file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')
           let prompt = 'Analyze supplier pricelist structure and propose robust extraction plan. File: ' + file.name
@@ -164,18 +391,50 @@ export async function POST(request: NextRequest) {
           aiSummary = res?.text || null
           const reviewId = await auditStart(supplier_id, upload_id, 'ai_review')
           await auditFinish(reviewId, 'completed', { summary: aiSummary })
+        } else if (!allow_ai_fallback) {
+          // AI fallback not allowed - return error
+          await auditFinish(auditId, 'failed', { 
+            error: 'No supplier rules found and AI fallback not allowed',
+            rules_found: 0,
+            ai_fallback_allowed: false
+          })
+          return NextResponse.json({ 
+            success: false, 
+            error: 'No supplier rules configured for this supplier and AI fallback is disabled. Please configure supplier rules or enable AI fallback.' 
+          }, { status: 400 })
+        } else {
+          // AI not enabled and no rules - return error
+          await auditFinish(auditId, 'failed', { 
+            error: 'No supplier rules found and AI not enabled',
+            rules_found: 0,
+            ai_enabled: false
+          })
+          return NextResponse.json({ 
+            success: false, 
+            error: 'No supplier rules configured for this supplier and AI is not enabled. Please configure supplier rules or enable AI.' 
+          }, { status: 400 })
         }
       } catch (e) {
         const reviewFailId = await auditStart(supplier_id, upload_id, 'ai_review')
         await auditFinish(reviewFailId, 'failed', { error: e instanceof Error ? e.message : String(e) })
       }
 
+      // Continue with existing AI extraction logic as fallback
       try {
         const buf = Buffer.from(await file.arrayBuffer())
         // AI-first structured extraction
         const aiRowsImmediate = await aiExtractRows(buf, file.name)
         if (aiRowsImmediate.length) {
-          const mappedAiImmediate = aiRowsImmediate.map((row: any, idx: number) => ({
+          // Apply VAT policy to AI extracted rows
+          const vatAuditId = await auditStart(supplier_id, upload_id, 'vat_normalization_ai')
+          const vatResult = await applyVatPolicyToRows(aiRowsImmediate, supplier_id)
+          await auditFinish(vatAuditId, 'completed', {
+            rows_processed: vatResult.rows.length,
+            warnings: vatResult.warnings.length,
+            price_sources: vatResult.priceSources
+          })
+
+          const mappedAiImmediate = vatResult.rows.map((row: any, idx: number) => ({
             upload_id,
             row_num: idx + 1,
             supplier_sku: row.supplier_sku || row.sku || '',
@@ -183,21 +442,44 @@ export async function POST(request: NextRequest) {
             brand: row.brand || undefined,
             uom: row.uom || 'EA',
             pack_size: row.pack_size || undefined,
-            price: typeof row.price === 'number' ? Math.max(0, row.price) : 0,
+            cost_price_ex_vat: row.cost_price_ex_vat || 0,
+            price_incl_vat: row.price_incl_vat || undefined,
+            vat_rate: row.vat_rate || 0.15,
             currency: row.currency || currency || 'ZAR',
             category_raw: row.category_raw || row.category || undefined,
-            vat_code: row.vat_code || undefined,
+            stock_on_hand: row.stock_on_hand || 0,
+            stock_on_order: row.stock_on_order || 0,
             barcode: row.barcode || undefined,
             attrs_json: {},
           }))
           const aiExtractionId = await auditStart(supplier_id, upload_id, 'ai_extraction')
           const aiInserted = await pricelistService.insertRows(upload_id!, mappedAiImmediate)
-          await auditFinish(aiExtractionId, 'completed', { rows_inserted: aiInserted })
+          await auditFinish(aiExtractionId, 'completed', { 
+            rows_inserted: aiInserted,
+            processing_method: 'ai_fallback',
+            ai_fallback_used: true,
+            ai_summary: aiSummary
+          })
           const aiValidationId = await auditStart(supplier_id, upload_id, 'validation')
           const aiValidation = await pricelistService.validateUpload(upload_id!)
-          await auditFinish(aiValidationId, 'completed', { status: aiValidation.status, errors: aiValidation.errors?.length || 0, warnings: aiValidation.warnings?.length || 0 })
-          return NextResponse.json({ success: true, data: { upload_id, validation: aiValidation } })
+          await auditFinish(aiValidationId, 'completed', { 
+            status: aiValidation.status, 
+            errors: aiValidation.errors?.length || 0, 
+            warnings: aiValidation.warnings?.length || 0,
+            processing_method: 'ai_fallback',
+            ai_fallback_used: true
+          })
+          return NextResponse.json({ 
+            success: true, 
+            data: { 
+              upload_id, 
+              validation: aiValidation,
+              ai_fallback_used: true,
+              ai_rows_inserted: aiInserted
+            } 
+          })
         }
+        
         let rows: any[] = []
         let usedJoin = false
         if (typeof aiSummary === 'string') {
@@ -246,6 +528,15 @@ export async function POST(request: NextRequest) {
           rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
         }
 
+        // Apply VAT policy to extracted rows
+        const vatAuditId2 = await auditStart(supplier_id, upload_id, 'vat_normalization_fallback')
+        const vatResult2 = await applyVatPolicyToRows(rows, supplier_id)
+        await auditFinish(vatAuditId2, 'completed', {
+          rows_processed: vatResult2.rows.length,
+          warnings: vatResult2.warnings.length,
+          price_sources: vatResult2.priceSources
+        })
+
         const parsePrice = (value: unknown): number => {
           if (!value && value !== 0) return 0
           if (typeof value === 'number') return Math.max(0, value)
@@ -264,9 +555,8 @@ export async function POST(request: NextRequest) {
           }
           return undefined
         }
-        const mapped = rows.map((row: any, idx: number) => {
+        const mapped = vatResult2.rows.map((row: any, idx: number) => {
           if (usedJoin) {
-            const priceValue = row['priceExVat'] ?? row['price_ex_vat']
             return {
               upload_id,
               row_num: idx + 1,
@@ -275,10 +565,13 @@ export async function POST(request: NextRequest) {
               brand: row['brand'] || undefined,
               uom: 'EA',
               pack_size: undefined,
-              price: parsePrice(priceValue),
+              cost_price_ex_vat: row['cost_price_ex_vat'] || parsePrice(row['priceExVat'] ?? row['price_ex_vat']),
+              price_incl_vat: row['price_incl_vat'] || undefined,
+              vat_rate: row['vat_rate'] || 0.15,
               currency: currency || 'ZAR',
               category_raw: row['category'] || undefined,
-              vat_code: undefined,
+              stock_on_hand: row['stock_on_hand'] || 0,
+              stock_on_order: row['stock_on_order'] || 0,
               barcode: undefined,
               attrs_json: {},
             }
@@ -307,10 +600,13 @@ export async function POST(request: NextRequest) {
               brand: brand || undefined,
               uom: uom || 'EA',
               pack_size: packSize || undefined,
-              price: parsePrice(priceValue),
+              cost_price_ex_vat: row['cost_price_ex_vat'] || parsePrice(priceValue),
+              price_incl_vat: row['price_incl_vat'] || undefined,
+              vat_rate: row['vat_rate'] || 0.15,
               currency: currency || 'ZAR',
               category_raw: category || undefined,
-              vat_code: undefined,
+              stock_on_hand: row['stock_on_hand'] || attrs.stock_qty || 0,
+              stock_on_order: row['stock_on_order'] || attrs.qty_on_order || 0,
               barcode: barcode || undefined,
               attrs_json: attrs,
             }
@@ -328,7 +624,16 @@ export async function POST(request: NextRequest) {
         if (validation.status !== 'ok') {
           const aiRows = await aiExtractRows(buf, file.name)
           if (aiRows.length) {
-            const mappedAi = aiRows.map((row: any, idx: number) => ({
+            // Apply VAT policy to AI extracted rows
+            const vatAuditId3 = await auditStart(supplier_id, upload_id, 'vat_normalization_ai_fallback')
+            const vatResult3 = await applyVatPolicyToRows(aiRows, supplier_id)
+            await auditFinish(vatAuditId3, 'completed', {
+              rows_processed: vatResult3.rows.length,
+              warnings: vatResult3.warnings.length,
+              price_sources: vatResult3.priceSources
+            })
+
+            const mappedAi = vatResult3.rows.map((row: any, idx: number) => ({
               upload_id,
               row_num: idx + 1,
               supplier_sku: row.supplier_sku || row.sku || '',
@@ -336,10 +641,13 @@ export async function POST(request: NextRequest) {
               brand: row.brand || undefined,
               uom: row.uom || 'EA',
               pack_size: row.pack_size || undefined,
-              price: typeof row.price === 'number' ? Math.max(0, row.price) : 0,
+              cost_price_ex_vat: row.cost_price_ex_vat || 0,
+              price_incl_vat: row.price_incl_vat || undefined,
+              vat_rate: row.vat_rate || 0.15,
               currency: row.currency || currency || 'ZAR',
               category_raw: row.category_raw || row.category || undefined,
-              vat_code: row.vat_code || undefined,
+              stock_on_hand: row.stock_on_hand || 0,
+              stock_on_order: row.stock_on_order || 0,
               barcode: row.barcode || undefined,
               attrs_json: {},
             }))
@@ -352,6 +660,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        await auditFinish(auditId, 'completed', { step: 'upload_and_validate', upload_id })
         return NextResponse.json({ success: true, data: { upload_id, validation } })
       } catch (e) {
         await auditFinish(auditId, 'failed', { error: e instanceof Error ? e.message : String(e) })
@@ -359,9 +668,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await auditFinish(auditId, 'ignored', { reason: 'unknown action' })
+    await auditFinish(auditId, 'failed', { error: 'unknown action' })
     return NextResponse.json({ success: false, error: 'unknown action' }, { status: 400 })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message || 'Agent error' }, { status: 500 })
+  } catch (error) {
+    console.error('Agent route error:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Internal server error' 
+    }, { status: 500 })
   }
 }
