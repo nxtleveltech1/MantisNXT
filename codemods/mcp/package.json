@@ -1,0 +1,19 @@
+{
+  "name": "unified-mcp-tools",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/mcp-server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/mcp-server.js"
+  },
+  "dependencies": {
+    "zod": "^3.22.4",
+    "@octokit/rest": "^21.0.0",
+    "pg": "^8.12.0",
+    "puppeteer": "^23.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

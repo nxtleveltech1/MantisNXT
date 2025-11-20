@@ -68,10 +68,7 @@ ProgramFiles = "C:\\Program Files"
 [mcpservers.github]
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-github"]
-
-[mcpservers.github.env]
-# GitHub PAT stored directly (not recommended — use env vars if possible)
-GITHUB_PERSONAL_ACCESS_TOKEN = "<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>"
+# Requires GITHUB_PERSONAL_ACCESS_TOKEN in the process environment.
 
 [mcpservers.git-mcp]
 command = "npx"
@@ -85,19 +82,12 @@ args = ["chrome-devtools-mcp@latest"]
 [mcpservers.TestSprite]
 command = "npx"
 args = ["@testsprite/testsprite-mcp@latest"]
-
-[mcpservers.TestSprite.env]
-API_KEY = "sk-user-l5J_riQhHqgXxnhPdew4b_bP5YLduU8c0B1p386zMtgy9TJEA9jW7QpsTPYGGKO0Mt3_TW4fAS0R3wzaOcqQado6_T0HO8K7B7v08h1ySVmbutJKZZqPScTeI_S3i5o3K8A"
+# Set TESTSPRITE_API_KEY in your environment before running this server.
 
 # =============================================================================
 # NEON MCP SERVER CONFIGURATION
 # =============================================================================
 [mcpservers.neon]
 command = "npx"
-args = ["-y", "@neondatabase/mcp-server-neon", "start", "<key>"]
-
-[mcpservers.neon.env]
-NEON_API_KEY = "napi_6j94pe91xfup3ptznvom72svpnpd5v0luo452h6ljk0yt73xciprtt1qys4a9gvo"
-NEON_PROJECT_ID = "proud-mud-50346856"
-NEON_BRANCH_ID = "br-spring-field-a9v3cjvz"
-NEON_DATABASE = "mantis_issoh"
+args = ["-y", "@neondatabase/mcp-server-neon", "start"]
+# Expects NEON_API_KEY, NEON_PROJECT_ID, NEON_BRANCH_ID, and NEON_DATABASE in the environment.

@@ -105,6 +105,59 @@ export function EnhancedPricelistUpload({
   const [nlInstruction, setNlInstruction] = useState("")
   // Selection integration removed from NXT-SPP workflow
 
+  // Normalize validation result to ensure errors and warnings are always arrays
+  const normalizeValidationResult = (validation: any): PricelistValidationResult | null => {
+    try {
+      if (!validation) return null
+      
+      // Handle nested structure from agent route
+      if (validation.totals) {
+        const errorsCount = typeof validation.totals.errors === 'number' 
+          ? validation.totals.errors 
+          : (Array.isArray(validation.totals.errors) ? validation.totals.errors.length : 0)
+        const warningsCount = typeof validation.totals.warnings === 'number'
+          ? validation.totals.warnings
+          : (Array.isArray(validation.totals.warnings) ? validation.totals.warnings.length : 0)
+        
+        return {
+          upload_id: validation.upload_id || uploadId || '',
+          status: validation.status || (errorsCount > 0 ? 'invalid' : warningsCount > 0 ? 'warning' : 'valid'),
+          total_rows: validation.totals.rows || validation.totals.total_rows || 0,
+          valid_rows: validation.totals.valid || validation.totals.valid_rows || 0,
+          invalid_rows: errorsCount,
+          errors: Array.isArray(validation.errors) ? validation.errors : [],
+          warnings: Array.isArray(validation.warnings) ? validation.warnings : [],
+          summary: validation.summary || {
+            new_products: 0,
+            updated_prices: 0,
+            discontinued_products: 0,
+            unmapped_categories: 0,
+          },
+        }
+      }
+      
+      // Handle direct validation result
+      return {
+        upload_id: validation.upload_id || uploadId || '',
+        status: validation.status || 'valid',
+        total_rows: validation.total_rows || 0,
+        valid_rows: validation.valid_rows || 0,
+        invalid_rows: validation.invalid_rows || 0,
+        errors: Array.isArray(validation.errors) ? validation.errors : [],
+        warnings: Array.isArray(validation.warnings) ? validation.warnings : [],
+        summary: validation.summary || {
+          new_products: 0,
+          updated_prices: 0,
+          discontinued_products: 0,
+          unmapped_categories: 0,
+        },
+      }
+    } catch (e) {
+      console.error('Error normalizing validation result:', e, validation)
+      return null
+    }
+  }
+
   // Load suppliers query
   const { data: suppliersData } = useQuery({
     queryKey: ['suppliers', 'active'],
@@ -137,7 +190,7 @@ export function EnhancedPricelistUpload({
     staleTime: 5 * 60 * 1000,
   })
 
-  const suppliers = suppliersData || []
+  const suppliers = Array.isArray(suppliersData) ? suppliersData : []
   const loading = uploadMutation.isPending || mergeMutation.isPending
 
   // Selections list no longer needed here
@@ -209,11 +262,19 @@ export function EnhancedPricelistUpload({
         currency: currency,
         allow_ai_fallback: aiInfo?.enableFallback ?? true,
       })
-      const newUploadId = uploadRes.upload_id
+      const newUploadId = uploadRes?.upload_id
+      if (!newUploadId) {
+        throw new Error('Upload failed: No upload ID returned')
+      }
       setUploadId(newUploadId)
-      if (uploadRes.validation) {
-        setValidationResult(uploadRes.validation as PricelistValidationResult)
-        setCurrentStep(3)
+      if (uploadRes?.validation) {
+        const normalized = normalizeValidationResult(uploadRes.validation)
+        if (normalized) {
+          setValidationResult(normalized)
+          setCurrentStep(3)
+        } else {
+          setCurrentStep(2)
+        }
       } else {
         setCurrentStep(2)
       }
@@ -247,7 +308,19 @@ export function EnhancedPricelistUpload({
         await handleValidate(newUploadId)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed'
+      let message = 'Upload failed'
+      try {
+        if (err instanceof Error) {
+          message = err.message || 'Upload failed'
+        } else if (typeof err === 'string') {
+          message = err
+        } else if (err && typeof err === 'object' && 'message' in err) {
+          message = String(err.message) || 'Upload failed'
+        }
+      } catch (e) {
+        console.error('Error parsing error message:', e, err)
+        message = 'Upload failed'
+      }
       setError(message)
       toast({
         title: 'Upload failed',
@@ -290,20 +363,33 @@ export function EnhancedPricelistUpload({
       }
 
       const result = await response.json()
-      setValidationResult(result.data)
+      const normalized = normalizeValidationResult(result?.data)
+      setValidationResult(normalized)
       setCurrentStep(3)
 
       toast({
         title: 'Validation complete',
-        description: `Validated ${result.data.valid_rows} of ${result.data.total_rows} rows`,
+        description: `Validated ${result?.data?.valid_rows || 0} of ${result?.data?.total_rows || 0} rows`,
       })
 
       // Auto-merge if enabled and validation passed
-      if (autoMerge && result.data.status === 'valid') {
+      if (autoMerge && result?.data?.status === 'valid') {
         await handleMerge()
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Validation failed'
+      let message = 'Validation failed'
+      try {
+        if (err instanceof Error) {
+          message = err.message || 'Validation failed'
+        } else if (typeof err === 'string') {
+          message = err
+        } else if (err && typeof err === 'object' && 'message' in err) {
+          message = String(err.message) || 'Validation failed'
+        }
+      } catch (e) {
+        console.error('Error parsing error message:', e, err)
+        message = 'Validation failed'
+      }
       setError(message)
       toast({
         title: 'Validation failed',
@@ -346,7 +432,19 @@ export function EnhancedPricelistUpload({
         description: `Created ${result.products_created} products, updated ${result.products_updated} products`,
       })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Merge failed'
+      let message = 'Merge failed'
+      try {
+        if (err instanceof Error) {
+          message = err.message || 'Merge failed'
+        } else if (typeof err === 'string') {
+          message = err
+        } else if (err && typeof err === 'object' && 'message' in err) {
+          message = String(err.message) || 'Merge failed'
+        }
+      } catch (e) {
+        console.error('Error parsing error message:', e, err)
+        message = 'Merge failed'
+      }
       setError(message)
       setCurrentStep(3) // Go back to review step
       toast({
@@ -625,8 +723,8 @@ export function EnhancedPricelistUpload({
                   {validationResult.status === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-600" />}
                   <AlertDescription>
                     {validationResult.status === 'valid' && 'All data validated successfully. Ready to merge.'}
-                    {validationResult.status === 'invalid' && `Found ${validationResult.errors.length} errors that must be fixed before merging.`}
-                    {validationResult.status === 'warning' && `Validation passed with ${validationResult.warnings.length} warnings.`}
+                    {validationResult.status === 'invalid' && `Found ${(validationResult.errors || []).length} errors that must be fixed before merging.`}
+                    {validationResult.status === 'warning' && `Validation passed with ${(validationResult.warnings || []).length} warnings.`}
                   </AlertDescription>
                 </Alert>
 
@@ -668,39 +766,39 @@ export function EnhancedPricelistUpload({
                     <Sparkles className="h-5 w-5 text-blue-600" />
                     <div>
                       <div className="text-sm text-muted-foreground">New Products</div>
-                      <div className="font-medium">{validationResult.summary.new_products}</div>
+                      <div className="font-medium">{validationResult.summary?.new_products || 0}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 p-3 border rounded-lg">
                     <TrendingUp className="h-5 w-5 text-green-600" />
                     <div>
                       <div className="text-sm text-muted-foreground">Price Updates</div>
-                      <div className="font-medium">{validationResult.summary.updated_prices}</div>
+                      <div className="font-medium">{validationResult.summary?.updated_prices || 0}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Errors */}
-                {validationResult.errors.length > 0 && (
+                {(validationResult.errors || []).length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <AlertCircle className="h-5 w-5 text-red-600" />
-                        Validation Errors ({validationResult.errors.length})
+                        Validation Errors ({(validationResult.errors || []).length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ScrollArea className="h-48">
                         <div className="space-y-2">
-                          {validationResult.errors.slice(0, 10).map((error, idx) => (
+                          {(validationResult.errors || []).slice(0, 10).map((error, idx) => (
                             <div key={idx} className="text-sm p-2 bg-red-50 border border-red-200 rounded">
                               <span className="font-medium">Row {error.row_num}:</span> {error.message}
                               {error.field && <span className="text-muted-foreground"> (field: {error.field})</span>}
                             </div>
                           ))}
-                          {validationResult.errors.length > 10 && (
+                          {(validationResult.errors || []).length > 10 && (
                             <div className="text-sm text-muted-foreground text-center py-2">
-                              + {validationResult.errors.length - 10} more errors
+                              + {(validationResult.errors || []).length - 10} more errors
                             </div>
                           )}
                         </div>
@@ -714,18 +812,18 @@ export function EnhancedPricelistUpload({
                 )}
 
                 {/* Warnings */}
-                {validationResult.warnings.length > 0 && (
+                {(validationResult.warnings || []).length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                        Warnings ({validationResult.warnings.length})
+                        Warnings ({(validationResult.warnings || []).length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ScrollArea className="h-32">
                         <div className="space-y-2">
-                          {validationResult.warnings.slice(0, 5).map((warning, idx) => (
+                          {(validationResult.warnings || []).slice(0, 5).map((warning, idx) => (
                             <div key={idx} className="text-sm p-2 bg-yellow-50 border border-yellow-200 rounded">
                               <span className="font-medium">Row {warning.row_num}:</span> {warning.message}
                             </div>

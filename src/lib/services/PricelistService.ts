@@ -126,6 +126,8 @@ export class PricelistService {
             `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
             `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`
           );
+          // Ensure price is never null - use cost_price_ex_vat as fallback, default to 0
+          const price = row.price ?? row.cost_price_ex_vat ?? 0;
           values.push(
             uploadId,
             rowNum,
@@ -134,7 +136,7 @@ export class PricelistService {
             row.brand || null,
             row.uom,
             row.pack_size || null,
-            row.price,
+            price, // Guaranteed to be a number, never null
             row.currency,
             row.category_raw || null,
             row.vat_code || null,
