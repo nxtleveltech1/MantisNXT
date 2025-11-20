@@ -32,8 +32,7 @@
       "args": [
         "-y",
         "@neondatabase/mcp-server-neon",
-        "start",
-        "napi_6j94pe91xfup3ptznvom72svpnpd5v0luo452h6ljk0yt73xciprtt1qys4a9gvo"
+        "start"
       ]
     },
     "github": {
@@ -41,10 +40,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-github"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<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>"
-      }
+      ]
     },
     "git-mcp": {
       "command": "npx",
@@ -61,10 +57,7 @@
     },
     "TestSprite": {
       "command": "npx @testsprite/testsprite-mcp@latest",
-      "args": [],
-      "env": {
-        "API_KEY": "sk-user-l5J_riQhHqgXxnhPdew4b_bP5YLduU8c0B1p386zMtgy9TJEA9jW7QpsTPYGGKO0Mt3_TW4fAS0R3wzaOcqQado6_T0HO8K7B7v08h1ySVmbutJKZZqPScTeI_S3i5o3K8A"
-      }
+      "args": []
     }
   }
 }

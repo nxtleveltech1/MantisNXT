@@ -144,10 +144,35 @@ function detectPriceColumns(row: Record<string, any>, keywords: string[]): { ex?
  */
 export function applyVatPolicyToRows(
   rows: Record<string, any>[],
-  vatPolicy: VatPolicy
-): Array<Record<string, any> & { _vat_normalization: PriceNormalizationResult }> {
-  return rows.map(row => {
+  vatPolicyOrSupplierId: VatPolicy | string
+): {
+  rows: Array<Record<string, any> & { _vat_normalization: PriceNormalizationResult }>;
+  warnings: Array<{ row_num?: number; message: string }>;
+  priceSources: string[];
+} {
+  // Handle supplier_id string by using default VAT policy
+  const vatPolicy: VatPolicy = typeof vatPolicyOrSupplierId === 'string'
+    ? { rate: 0.15, mode: 'detect', detect_keywords: ['ex', 'inc', 'excl', 'incl', 'nett', 'retail'] }
+    : vatPolicyOrSupplierId;
+
+  const warnings: Array<{ row_num?: number; message: string }> = [];
+  const priceSources: string[] = [];
+
+  const processedRows = rows.map((row, idx) => {
     const normalization = normalizePriceAndVat(row, vatPolicy);
+    
+    // Collect warnings
+    if (normalization.warnings.length > 0) {
+      warnings.push(...normalization.warnings.map(w => ({
+        row_num: idx + 1,
+        message: w
+      })));
+    }
+
+    // Track price sources
+    if (normalization.price_source && !priceSources.includes(normalization.price_source)) {
+      priceSources.push(normalization.price_source);
+    }
     
     return {
       ...row,
@@ -162,4 +187,10 @@ export function applyVatPolicyToRows(
       _vat_normalization: normalization
     };
   });
+
+  return {
+    rows: processedRows,
+    warnings,
+    priceSources
+  };
 }
