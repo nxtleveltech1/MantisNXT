@@ -1,14 +1,14 @@
-import { ToolMap, runToolHandler } from "./types";
-import fsTools from "./tools/filesystem";
-import githubTools from "./tools/github";
-import neonTools from "./tools/neon";
-import memoryTools from "./tools/memory";
-import sequentialTools from "./tools/sequential";
-import chromeTools from "./tools/chrome";
-import testspriteTools from "./tools/testsprite";
-import taskmanagerTools from "./tools/taskmanager";
-import context7Tools from "./tools/context7";
-import dartTools from "./tools/dart";
+import { ToolMap, runToolHandler } from "./types.js";
+import fsTools from "./tools/filesystem.js";
+import githubTools from "./tools/github.js";
+import neonTools from "./tools/neon.js";
+import memoryTools from "./tools/memory.js";
+import sequentialTools from "./tools/sequential.js";
+import chromeTools from "./tools/chrome.js";
+import testspriteTools from "./tools/testsprite.js";
+import taskmanagerTools from "./tools/taskmanager.js";
+import context7Tools from "./tools/context7.js";
+import dartTools from "./tools/dart.js";
 
 const tools: ToolMap = {
   ...fsTools,

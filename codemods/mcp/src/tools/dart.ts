@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MCPTool } from "../types";
+import { MCPTool } from "../types.js";
 
 /**
  * Prepare an authenticated Dart API request payload.

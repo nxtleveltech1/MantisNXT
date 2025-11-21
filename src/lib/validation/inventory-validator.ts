@@ -13,6 +13,7 @@ export interface InventoryItem {
   unit_of_measure: string
   base_cost?: number
   sale_price?: number
+  rsp?: number
   weight_kg?: number
   dimensions_cm?: string
   barcode?: string
@@ -112,6 +113,11 @@ export const InventoryItemValidationSchema = z.object({
   sale_price: z.number()
     .min(0, 'Sale price must be non-negative')
     .multipleOf(0.01, 'Sale price must have at most 2 decimal places')
+    .optional(),
+
+  rsp: z.number()
+    .min(0, 'RSP must be non-negative')
+    .multipleOf(0.01, 'RSP must have at most 2 decimal places')
     .optional(),
 
   weight_kg: z.number()
@@ -566,6 +572,17 @@ export class InventoryValidator {
         message: 'Sale price is lower than base cost',
         suggestion: 'Verify pricing to ensure profitability',
         code: 'NEGATIVE_MARGIN'
+      })
+    }
+
+    if (data.base_cost && data.rsp && data.base_cost > data.rsp) {
+      issues.push({
+        field: 'rsp',
+        value: data.rsp,
+        severity: 'warning',
+        message: 'RSP is lower than base cost',
+        suggestion: 'Recommended selling price should exceed cost price',
+        code: 'RSP_BELOW_COST'
       })
     }
 

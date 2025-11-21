@@ -29,6 +29,7 @@ interface PricelistItem {
   name: string
   description?: string
   unitPrice: number
+  rsp?: number
   minimumQuantity?: number
   maximumQuantity?: number
   leadTimeDays?: number
@@ -62,6 +63,7 @@ const SupplierPricelistUpload: React.FC<PricelistUploadProps> = ({
     sku: '',
     name: '',
     unitPrice: 0,
+    rsp: undefined,
     isActive: true
   })
 
@@ -133,6 +135,7 @@ const SupplierPricelistUpload: React.FC<PricelistUploadProps> = ({
       name: newItem.name,
       description: newItem.description,
       unitPrice: newItem.unitPrice,
+      rsp: newItem.rsp,
       minimumQuantity: newItem.minimumQuantity,
       maximumQuantity: newItem.maximumQuantity,
       leadTimeDays: newItem.leadTimeDays,
@@ -146,6 +149,7 @@ const SupplierPricelistUpload: React.FC<PricelistUploadProps> = ({
       sku: '',
       name: '',
       unitPrice: 0,
+      rsp: undefined,
       isActive: true
     })
     setErrors([])
@@ -304,6 +308,22 @@ const SupplierPricelistUpload: React.FC<PricelistUploadProps> = ({
                   />
                 </div>
                 <div>
+                  <Label htmlFor="rsp">RSP (Recommended Selling Price)</Label>
+                  <Input
+                    id="rsp"
+                    type="number"
+                    step="0.01"
+                    value={newItem.rsp ?? ''}
+                    onChange={(e) =>
+                      setNewItem(prev => ({
+                        ...prev,
+                        rsp: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0
+                      }))
+                    }
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
                   <Label htmlFor="category">Category</Label>
                   <Input
                     id="category"
@@ -358,6 +378,9 @@ const SupplierPricelistUpload: React.FC<PricelistUploadProps> = ({
                           <div className="font-medium">{item.name}</div>
                           <div className="text-sm text-muted-foreground">
                             SKU: {item.sku} | Price: ${item.unitPrice}
+                            {item.rsp !== undefined && (
+                              <> | RSP: ${item.rsp}</>
+                            )}
                           </div>
                         </div>
                         <Button

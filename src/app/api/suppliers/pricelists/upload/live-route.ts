@@ -39,6 +39,7 @@ const FieldMappingSchema = z.object({
   supplier_sku: z.string().optional(),
   cost_price: z.string().min(1, 'Cost price mapping is required'),
   sale_price: z.string().optional(),
+  rsp: z.string().optional(),
   currency: z.string().optional(),
   stock_qty: z.string().min(1, 'Stock quantity mapping is required'),
   reorder_point: z.string().optional(),
@@ -498,6 +499,7 @@ function generateAutoMappings(headers: string[]): Record<string, string> {
     supplier_sku: ['supplier_sku', 'vendor_sku', 'supplier_code', 'vendor_code'],
     cost_price: ['cost', 'price', 'cost_price', 'unit_price', 'wholesale_price'],
     sale_price: ['sale_price', 'retail_price', 'selling_price', 'list_price'],
+    rsp: ['rsp', 'recommended_selling_price', 'recommended_retail_price', 'rrp', 'rrsp'],
     stock_qty: ['stock', 'quantity', 'qty', 'inventory', 'on_hand'],
     reorder_point: ['reorder', 'min_stock', 'minimum', 'reorder_point'],
     max_stock: ['max_stock', 'maximum', 'max_quantity', 'max_qty'],
@@ -698,7 +700,8 @@ function transformAndValidateField(
     }
 
     case 'cost_price':
-    case 'sale_price': {
+    case 'sale_price':
+    case 'rsp': {
       const price = parseFloat(value.toString().replace(/[^\d.-]/g, ''))
       if (isNaN(price) || price < 0) {
         issues.push({
@@ -807,6 +810,125 @@ async function createBackup(client: unknown, sessionId: string, processedRows: P
   return backupId
 }
 
+function normalizeTags(input: unknown): string[] {
+  if (Array.isArray(input)) {
+    return input
+      .map(tag => (typeof tag === 'string' ? tag.trim() : String(tag ?? '')).toLowerCase())
+      .filter(tag => tag.length > 0)
+  }
+
+  if (typeof input === 'string') {
+    return input
+      .split(/[;,]/)
+      .map(tag => tag.trim().toLowerCase())
+      .filter(Boolean)
+  }
+
+  return []
+}
+
+async function upsertInventoryRecord(
+  client: unknown,
+  row: ProcessedRow,
+  supplierId: string
+): Promise<void> {
+  const stockQty = Number(row.mappedData.stock_qty || 0)
+  const reservedQty = Number(row.mappedData.reserved_qty || 0)
+  const availableQty = Math.max(0, stockQty - reservedQty)
+  const tags = normalizeTags(row.mappedData.tags)
+
+  const currency = (row.mappedData.currency || 'ZAR').toString().toUpperCase()
+  const supplierSku = (row.mappedData.supplier_sku || row.mappedData.sku) as string
+  const rsp = row.mappedData.rsp ?? null
+
+  await (client as any).query(
+    `
+      INSERT INTO public.inventory_items (
+        sku,
+        name,
+        description,
+        category,
+        brand,
+        supplier_id,
+        supplier_sku,
+        cost_price,
+        sale_price,
+        rsp,
+        currency,
+        stock_qty,
+        reserved_qty,
+        available_qty,
+        reorder_point,
+        max_stock,
+        unit,
+        weight,
+        barcode,
+        location,
+        status,
+        tags,
+        updated_at
+      )
+      VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15,
+        $16, $17, $18, $19, $20,
+        $21, $22, NOW()
+      )
+      ON CONFLICT (sku) DO UPDATE SET
+        name = EXCLUDED.name,
+        description = COALESCE(EXCLUDED.description, public.inventory_items.description),
+        category = COALESCE(EXCLUDED.category, public.inventory_items.category),
+        brand = COALESCE(EXCLUDED.brand, public.inventory_items.brand),
+        supplier_id = COALESCE(EXCLUDED.supplier_id, public.inventory_items.supplier_id),
+        supplier_sku = COALESCE(EXCLUDED.supplier_sku, public.inventory_items.supplier_sku),
+        cost_price = COALESCE(EXCLUDED.cost_price, public.inventory_items.cost_price),
+        sale_price = COALESCE(EXCLUDED.sale_price, public.inventory_items.sale_price),
+        rsp = COALESCE(EXCLUDED.rsp, public.inventory_items.rsp),
+        currency = COALESCE(EXCLUDED.currency, public.inventory_items.currency),
+        stock_qty = EXCLUDED.stock_qty,
+        reserved_qty = EXCLUDED.reserved_qty,
+        available_qty = EXCLUDED.available_qty,
+        reorder_point = COALESCE(EXCLUDED.reorder_point, public.inventory_items.reorder_point),
+        max_stock = COALESCE(EXCLUDED.max_stock, public.inventory_items.max_stock),
+        unit = COALESCE(EXCLUDED.unit, public.inventory_items.unit),
+        weight = COALESCE(EXCLUDED.weight, public.inventory_items.weight),
+        barcode = COALESCE(EXCLUDED.barcode, public.inventory_items.barcode),
+        location = COALESCE(EXCLUDED.location, public.inventory_items.location),
+        status = EXCLUDED.status,
+        tags = CASE
+          WHEN array_length(EXCLUDED.tags, 1) > 0 THEN EXCLUDED.tags
+          ELSE public.inventory_items.tags
+        END,
+        updated_at = NOW();
+    `,
+    [
+      row.mappedData.sku,
+      row.mappedData.name,
+      row.mappedData.description ?? null,
+      row.mappedData.category ?? null,
+      row.mappedData.brand ?? null,
+      supplierId,
+      supplierSku,
+      row.mappedData.cost_price ?? null,
+      row.mappedData.sale_price ?? null,
+      rsp,
+      currency,
+      stockQty,
+      reservedQty,
+      availableQty,
+      row.mappedData.reorder_point ?? 0,
+      row.mappedData.max_stock ?? null,
+      row.mappedData.unit ?? null,
+      row.mappedData.weight ?? null,
+      row.mappedData.barcode ?? null,
+      row.mappedData.location ?? null,
+      row.mappedData.status ?? 'active',
+      tags
+    ]
+  )
+}
+
 async function importToInventory(
   client: unknown,
   processedRows: ProcessedRow[],
@@ -856,6 +978,7 @@ async function importToInventory(
             reason: `Upload session: ${row.id}`
           })
 
+          await upsertInventoryRecord(client, row, supplierId)
           created++
           totalValue += (row.mappedData.cost_price || 0) * (row.mappedData.stock_qty || 0)
 
@@ -879,6 +1002,7 @@ async function importToInventory(
               reason: `Upload session update: ${row.id}`
             })
           }
+          await upsertInventoryRecord(client, row, supplierId)
           updated++
           break
 
