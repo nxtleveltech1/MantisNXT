@@ -83,6 +83,7 @@ export interface InventoryItem {
   supplier_sku?: string;
   cost_price: number;
   sale_price?: number;
+  rsp?: number;
   currency: string;
   stock_qty: number;
   reserved_qty: number;

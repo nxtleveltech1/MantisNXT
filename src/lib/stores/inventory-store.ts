@@ -8,6 +8,7 @@ export type InventoryItem = {
   availableStock: number;
   costPrice: number | null;
   salePrice: number | null;
+  rsp?: number | null;
   supplierId: string | null;
   brandId?: string | null;
 };
@@ -188,6 +189,8 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
         const unitCost = Number(
           r.cost_per_unit_zar ?? r.costPerUnitZar ?? r.unit_cost_zar ?? r.unit_cost ?? r.cost_price ?? 0
         );
+        const rspSource = r.rsp ?? r.recommended_selling_price ?? r.rrp ?? r.recommendedRetailPrice ?? null;
+        const rsp = rspSource === null || rspSource === undefined ? null : Number(rspSource);
         const totalValue = Number(r.total_value_zar ?? unitCost * currentStock);
         const stockStatus =
           r.stock_status ?? r.stockStatus ?? (currentStock <= 0
@@ -242,6 +245,8 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           supplier_status: supplierStatus,
           stock_status: stockStatus,
           currency,
+          sale_price: r.sale_price ?? null,
+          rsp,
           // Add product reference for compatibility
           product: {
             id: productId,
@@ -254,6 +259,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
             unit_of_measure: r.unit_of_measure ?? r.unit ?? r.uom ?? 'each',
             supplier_id: supplierId,
             unit_cost_zar: unitCost,
+            rsp,
             status: r.product?.status ?? (stockStatus === 'out_of_stock' ? 'inactive' : 'active')
           },
           supplier: {

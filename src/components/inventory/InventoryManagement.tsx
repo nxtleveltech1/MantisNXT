@@ -83,6 +83,7 @@ type ColumnVisibility = {
   category: boolean
   location: boolean
   stock: boolean
+  rsp: boolean
   value: boolean
   status: boolean
 }
@@ -130,6 +131,7 @@ export default function InventoryManagement() {
     category: true,
     location: true,
     stock: true,
+    rsp: true,
     value: true,
     status: true,
   })
@@ -224,6 +226,7 @@ export default function InventoryManagement() {
   // Enhanced data enrichment - FIX #1 & #2
   const enrichedItems = useMemo(() => {
     return items.map((item) => {
+      const normalizedRsp = Number(item.rsp ?? item.sale_price ?? 0)
       const matchedProduct = products.find((p) => p.id === item.product_id)
       const baseProduct = matchedProduct || item.product || {
         id: item.product_id || item.id,
@@ -235,7 +238,7 @@ export default function InventoryManagement() {
         unit_of_measure: item.product?.unit_of_measure || item.unit || 'each',
         status: item.status || 'active',
         unit_cost_zar: Number(item.cost_per_unit_zar ?? item.cost_price ?? 0),
-        unit_price_zar: Number(item.sale_price ?? 0),
+        unit_price_zar: normalizedRsp,
       } as Product
 
       const matchedSupplier = suppliers.find((s) => s.id === baseProduct.supplier_id)
@@ -276,6 +279,7 @@ export default function InventoryManagement() {
         supplier_status: baseSupplier?.status || item.supplier_status || 'inactive',
         stock_status: item.stock_status || deriveStockStatus(normalizedStock, Number(item.reorder_point || 0), Number(item.max_stock_level || 0)),
         currency: item.currency || 'ZAR',
+        rsp: normalizedRsp,
       }
     })
   }, [items, products, suppliers])
@@ -407,6 +411,7 @@ export default function InventoryManagement() {
       'Unit of Measure': item.product?.unit_of_measure || 'each',
       'Reorder Point': item.reorder_point || 0,
       'Unit Cost': item.cost_per_unit_zar || 0,
+      RSP: item.rsp ?? item.product?.rsp ?? item.sale_price ?? 0,
       'Total Value': item.total_value_zar || 0,
       Status: item.stock_status || '-',
       Currency: item.currency || 'ZAR',
@@ -473,6 +478,7 @@ export default function InventoryManagement() {
       Location: item.location || '-',
       'Current Stock': item.current_stock || 0,
       'Unit Cost': item.cost_per_unit_zar || 0,
+      RSP: item.rsp ?? item.product?.rsp ?? item.sale_price ?? 0,
       'Total Value': item.total_value_zar || 0,
       Status: item.stock_status || '-',
     }))
@@ -994,6 +1000,7 @@ export default function InventoryManagement() {
                         {columnVisibility.category && <TableHead>Category</TableHead>}
                         {columnVisibility.location && <TableHead>Location</TableHead>}
                         {columnVisibility.stock && <TableHead className="text-right">Current Stock</TableHead>}
+                        {columnVisibility.rsp && <TableHead className="text-right">RSP</TableHead>}
                         {columnVisibility.value && <TableHead className="text-right">Value</TableHead>}
                         {columnVisibility.status && <TableHead>Status</TableHead>}
                         <TableHead className="text-center">Actions</TableHead>
@@ -1138,6 +1145,14 @@ export default function InventoryManagement() {
                                     </p>
                                   )}
                                 </div>
+                              </TableCell>
+                            )}
+                            {columnVisibility.rsp && (
+                              <TableCell className="text-right">
+                                <p className="font-medium">
+                                  {formatCurrency(item.rsp ?? item.product?.rsp ?? 0)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">Rec. sell</p>
                               </TableCell>
                             )}
                             {columnVisibility.value && (

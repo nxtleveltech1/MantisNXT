@@ -1,7 +1,7 @@
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
-import { MCPTool } from "../types";
+import { MCPTool } from "../types.js";
 
 function memoryPath() {
   const p = process.env.MEMORY_FILE_PATH || "memory.json";

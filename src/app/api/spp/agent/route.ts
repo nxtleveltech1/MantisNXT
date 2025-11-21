@@ -3,6 +3,7 @@ import { query } from '@/lib/database'
 import * as XLSX from 'xlsx'
 import { pricelistService } from '@/lib/services/PricelistService'
 import { applyPricelistRulesToExcel, getSupplierRules, logRuleExecution } from '@/lib/cmm/supplier-rules-engine-enhanced'
+import { applyJoinSheetsConfigFromBuffer } from '@/lib/cmm/supplier-rules-engine'
 import { AIService, isAIEnabled } from '@/lib/ai'
 import { applyVatPolicyToRows } from '@/lib/cmm/vat-utils'
 
@@ -25,7 +26,7 @@ async function auditFinish(id: number, status: string, details: unknown) {
   )
 }
 
-async function aiExtractRows(buffer: Buffer, filename: string): Promise<any[]> {
+async function aiExtractRows(buffer: Buffer, filename: string, timeoutMs?: number): Promise<any[]> {
   if (!isAIEnabled()) {
     console.warn('⚠️ AI extraction skipped: AI not enabled')
     return []
@@ -52,7 +53,13 @@ async function aiExtractRows(buffer: Buffer, filename: string): Promise<any[]> {
       prompt += '\nText sample: ' + JSON.stringify(lines)
     }
     prompt += '\nReturn ONLY JSON array, no commentary. Ensure all price fields are numeric.'
-    const res = await ai.generateText(prompt, { temperature: 0 })
+    // Use extended timeout for large files (120s default, configurable)
+    const extractionTimeout = timeoutMs ?? parseInt(process.env.AI_EXTRACTION_TIMEOUT_MS || '120000')
+    const res = await ai.generateText(prompt, { 
+      temperature: 0,
+      // Pass timeout via metadata if supported, otherwise rely on provider config
+      metadata: { timeoutMs: extractionTimeout }
+    } as any)
     const txt = (res?.text || '').trim()
     const m = txt.match(/\[([\s\S]*)\]$/)
     const jsonStr = m ? m[0] : txt
@@ -66,6 +73,113 @@ async function aiExtractRows(buffer: Buffer, filename: string): Promise<any[]> {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       filename
+    })
+    return []
+  }
+}
+
+/**
+ * Use AI to correct validation errors by extracting missing fields from original file
+ */
+async function aiCorrectErrors(
+  buffer: Buffer,
+  filename: string,
+  validationErrors: any[],
+  existingRows: any[],
+  supplierId: string
+): Promise<any[]> {
+  if (!isAIEnabled() || validationErrors.length === 0) {
+    return []
+  }
+  try {
+    console.log(`🤖 Starting AI error correction for ${filename} (${validationErrors.length} errors)`)
+    const ai = new AIService()
+    
+    // Group errors by row number
+    const errorsByRow = new Map<number, any[]>()
+    validationErrors.forEach(err => {
+      const rowNum = err.row_num || err.row || 1
+      if (!errorsByRow.has(rowNum)) {
+        errorsByRow.set(rowNum, [])
+      }
+      errorsByRow.get(rowNum)!.push(err)
+    })
+    
+    // Get original file data for rows with errors
+    const isExcel = filename.toLowerCase().endsWith('.xlsx') || filename.toLowerCase().endsWith('.xls')
+    let originalData: any = null
+    
+    if (isExcel) {
+      const wb = XLSX.read(buffer, { type: 'buffer' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null }) as unknown[][]
+      const headers = (allRows[0] || []) as string[]
+      originalData = {
+        headers,
+        rows: allRows.slice(1).map((row, idx) => ({
+          row_num: idx + 2, // +2 because header is row 1, data starts at row 2
+          data: row
+        })).filter(r => errorsByRow.has(r.row_num))
+      }
+    } else {
+      const text = buffer.toString('utf-8')
+      const lines = text.split(/\r?\n/).filter(l => l.trim())
+      const headers = (lines[0] || '').split(/[,;]/).map(h => h.trim().replace(/^"|"$/g, ''))
+      originalData = {
+        headers,
+        rows: lines.slice(1).map((line, idx) => {
+          const values = line.split(/[,;]/).map(v => v.trim().replace(/^"|"$/g, ''))
+          return {
+            row_num: idx + 2,
+            data: values
+          }
+        }).filter(r => errorsByRow.has(r.row_num))
+      }
+    }
+    
+    const prompt = `Fix validation errors in pricelist rows by extracting missing required fields from the original file data.
+
+Filename: ${filename}
+Supplier ID: ${supplierId}
+
+Validation Errors:
+${JSON.stringify(Array.from(errorsByRow.entries()).slice(0, 50), null, 2)}
+
+Original File Data (rows with errors):
+${JSON.stringify(originalData, null, 2)}
+
+Existing Row Data (partial):
+${JSON.stringify(existingRows.slice(0, 10), null, 2)}
+
+Required fields: supplier_sku, name, cost_price_ex_vat (or price), uom, currency
+Optional fields: brand, pack_size, price_incl_vat, vat_rate, category_raw, stock_on_hand, barcode
+
+For each row with errors, extract the missing fields from the original file data. Return a JSON array of corrected row objects with ALL required fields filled.
+Each object must have: supplier_sku (string), name (string), cost_price_ex_vat (number > 0), uom (string, default "EA"), currency (string, default "ZAR"), price (number, same as cost_price_ex_vat).
+
+Return ONLY the JSON array, no commentary.`
+    
+    const correctionTimeout = parseInt(process.env.AI_EXTRACTION_TIMEOUT_MS || '120000')
+    const res = await ai.generateText(prompt, { 
+      temperature: 0,
+      metadata: { timeoutMs: correctionTimeout }
+    } as any)
+    
+    const txt = (res?.text || '').trim()
+    const m = txt.match(/\[([\s\S]*)\]$/)
+    const jsonStr = m ? m[0] : txt
+    const json = JSON.parse(jsonStr)
+    const correctedRows = Array.isArray(json) ? json : []
+    
+    console.log(`✅ AI error correction completed: ${correctedRows.length} rows corrected`)
+    return correctedRows
+  } catch (error) {
+    console.error('❌ AI error correction failed:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      filename,
+      errorCount: validationErrors.length
     })
     return []
   }
@@ -382,135 +496,9 @@ export async function POST(request: NextRequest) {
         await auditFinish(rulesAuditId, 'completed', { rules_found: 0 })
       }
 
-      // Fallback to AI extraction if no rules or rules failed
-      let aiSummary: any = null
-      let aiDataInserted = false
-      
-      try {
-        if (isAIEnabled() && allow_ai_fallback) {
-          // AI extraction allowed - proceed with fallback
-          const ai = new AIService()
-          const isExcel = file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')
-          let prompt = 'Analyze supplier pricelist structure and propose robust extraction plan. File: ' + file.name
-          const buf = Buffer.from(await file.arrayBuffer())
-          if (isExcel) {
-            const wb = XLSX.read(buf, { type: 'buffer' })
-            const sheetInfo = wb.SheetNames.slice(0, 8).map(n => {
-              const ws = wb.Sheets[n]
-              const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null }) as unknown[][]
-              const headers = (rows[0] || []).slice(0, 12)
-              return { name: n, headers }
-            })
-            prompt += '\nSheets: ' + JSON.stringify(sheetInfo)
-          } else {
-            const textSample = buf.toString('utf-8').split(/\r?\n/).slice(0, 5)
-            prompt += '\nSample: ' + JSON.stringify(textSample)
-          }
-          prompt += '\nOutput JSON only with fields: join_sheets?, aliases?, conditions?, notes.'
-          const res = await ai.generateText(prompt, { temperature: 0.1 })
-          aiSummary = res?.text || null
-          const reviewId = await auditStart(supplier_id, upload_id, 'ai_review')
-          await auditFinish(reviewId, 'completed', { summary: aiSummary })
-        } else if (!allow_ai_fallback) {
-          // AI fallback not allowed - return error
-          await auditFinish(auditId, 'failed', { 
-            error: 'No supplier rules found and AI fallback not allowed',
-            rules_found: 0,
-            ai_fallback_allowed: false
-          })
-          return NextResponse.json({ 
-            success: false, 
-            error: 'No supplier rules configured for this supplier and AI fallback is disabled. Please configure supplier rules or enable AI fallback.' 
-          }, { status: 400 })
-        } else {
-          // AI not enabled and no rules - return error
-          await auditFinish(auditId, 'failed', { 
-            error: 'No supplier rules found and AI not enabled',
-            rules_found: 0,
-            ai_enabled: false
-          })
-          return NextResponse.json({ 
-            success: false, 
-            error: 'No supplier rules configured for this supplier and AI is not enabled. Please configure supplier rules or enable AI.' 
-          }, { status: 400 })
-        }
-      } catch (e) {
-        const reviewFailId = await auditStart(supplier_id, upload_id, 'ai_review')
-        await auditFinish(reviewFailId, 'failed', { error: e instanceof Error ? e.message : String(e) })
-      }
-
-      // AI-first extraction (primary method when AI is enabled)
+      // Heuristic extraction (primary method when no rules)
       try {
         const buf = Buffer.from(await file.arrayBuffer())
-        console.log(`🤖 Attempting AI extraction for ${file.name} (${buf.length} bytes)`)
-        // AI-first structured extraction
-        const aiRowsImmediate = await aiExtractRows(buf, file.name)
-        console.log(`📊 AI extraction returned ${aiRowsImmediate.length} rows`)
-        if (aiRowsImmediate.length > 0) {
-          // Apply VAT policy to AI extracted rows
-          const vatAuditId = await auditStart(supplier_id, upload_id, 'vat_normalization_ai')
-          const safeAiRows = Array.isArray(aiRowsImmediate) ? aiRowsImmediate : []
-          const vatResult = applyVatPolicyToRows(safeAiRows, supplier_id)
-          await auditFinish(vatAuditId, 'completed', {
-            rows_processed: (vatResult?.rows || []).length,
-            warnings: (vatResult?.warnings || []).length,
-            price_sources: vatResult?.priceSources || []
-          })
-
-          const mappedAiImmediate = (vatResult?.rows || []).map((row: any, idx: number) => {
-            const costPrice = row.cost_price_ex_vat || 0
-            return {
-              upload_id,
-              row_num: idx + 1,
-              supplier_sku: row.supplier_sku || row.sku || '',
-              name: row.name || row.description || '',
-              brand: row.brand || undefined,
-              uom: row.uom || 'EA',
-              pack_size: row.pack_size || undefined,
-              price: costPrice, // Required by database schema
-              cost_price_ex_vat: costPrice,
-              price_incl_vat: row.price_incl_vat || undefined,
-              vat_rate: row.vat_rate || 0.15,
-              currency: row.currency || currency || 'ZAR',
-              category_raw: row.category_raw || row.category || undefined,
-              stock_on_hand: row.stock_on_hand || 0,
-              stock_on_order: row.stock_on_order || 0,
-              barcode: row.barcode || undefined,
-              attrs_json: {},
-            }
-          })
-          const aiExtractionId = await auditStart(supplier_id, upload_id, 'ai_extraction')
-          const aiInserted = await pricelistService.insertRows(upload_id!, mappedAiImmediate)
-          await auditFinish(aiExtractionId, 'completed', { 
-            rows_inserted: aiInserted,
-            processing_method: 'ai_fallback',
-            ai_fallback_used: true,
-            ai_summary: aiSummary
-          })
-          const aiValidationId = await auditStart(supplier_id, upload_id, 'validation')
-          const aiValidation = await pricelistService.validateUpload(upload_id!)
-          await auditFinish(aiValidationId, 'completed', { 
-            status: aiValidation.status, 
-            errors: aiValidation.errors?.length || 0, 
-            warnings: aiValidation.warnings?.length || 0,
-            processing_method: 'ai_fallback',
-            ai_fallback_used: true
-          })
-          return NextResponse.json({ 
-            success: true, 
-            data: { 
-              upload_id, 
-              validation: aiValidation,
-              ai_fallback_used: true,
-              ai_rows_inserted: aiInserted,
-              processing_method: 'ai_extraction'
-            } 
-          })
-        } else {
-          console.warn(`⚠️ AI extraction returned 0 rows for ${file.name}, falling back to heuristic extraction`)
-        }
-        
-        // Fallback to heuristic extraction if AI returned no rows
         let rows: any[] = []
         let usedJoin = false
         if (typeof aiSummary === 'string') {
@@ -653,55 +641,114 @@ export async function POST(request: NextRequest) {
         const extractionId = await auditStart(supplier_id, upload_id, 'extraction')
         await auditFinish(extractionId, 'completed', { rows_inserted: inserted })
 
+        // Validate extracted rows
         let validation = await pricelistService.validateUpload(upload_id!)
         const validationId = await auditStart(supplier_id, upload_id, 'validation')
-        await auditFinish(validationId, 'completed', { status: validation.status, errors: validation.errors?.length || 0, warnings: validation.warnings?.length || 0 })
+        await auditFinish(validationId, 'completed', { 
+          status: validation.status, 
+          errors: validation.errors?.length || 0, 
+          warnings: validation.warnings?.length || 0 
+        })
 
-        // If validation failed, try AI extraction as last resort
-        if (validation.status !== 'valid' && validation.status !== 'warning') {
-          console.log(`🔄 Validation status: ${validation.status}, attempting AI extraction as last resort`)
-          const aiRows = await aiExtractRows(buf, file.name)
-          console.log(`📊 Last-resort AI extraction returned ${aiRows.length} rows`)
-          if (aiRows.length > 0) {
-            // Apply VAT policy to AI extracted rows
-            const vatAuditId3 = await auditStart(supplier_id, upload_id, 'vat_normalization_ai_fallback')
-            const safeAiRowsFallback = Array.isArray(aiRows) ? aiRows : []
-            const vatResult3 = applyVatPolicyToRows(safeAiRowsFallback, supplier_id)
-            await auditFinish(vatAuditId3, 'completed', {
-              rows_processed: (vatResult3?.rows || []).length,
-              warnings: (vatResult3?.warnings || []).length,
-              price_sources: vatResult3?.priceSources || []
-            })
-
-            const mappedAi = (vatResult3?.rows || []).map((row: any, idx: number) => {
-              const costPrice = row.cost_price_ex_vat || 0
-              return {
-                upload_id,
-                row_num: idx + 1,
-                supplier_sku: row.supplier_sku || row.sku || '',
-                name: row.name || row.description || '',
-                brand: row.brand || undefined,
-                uom: row.uom || 'EA',
-                pack_size: row.pack_size || undefined,
-                price: costPrice, // Required by database schema
-                cost_price_ex_vat: costPrice,
-                price_incl_vat: row.price_incl_vat || undefined,
-                vat_rate: row.vat_rate || 0.15,
-                currency: row.currency || currency || 'ZAR',
-                category_raw: row.category_raw || row.category || undefined,
-                stock_on_hand: row.stock_on_hand || 0,
-                stock_on_order: row.stock_on_order || 0,
-                barcode: row.barcode || undefined,
-                attrs_json: {},
+        // If validation has errors and AI is enabled, use AI to correct them
+        if (validation.status !== 'valid' && validation.status !== 'warning' && isAIEnabled() && allow_ai_fallback) {
+          const errorCount = validation.errors?.length || 0
+          if (errorCount > 0) {
+            console.log(`🔄 Validation found ${errorCount} errors, attempting AI error correction`)
+            const correctionAuditId = await auditStart(supplier_id, upload_id, 'ai_error_correction')
+            
+            try {
+              // Get existing rows from DB to understand what we have
+              const existingRowsResult = await query(`
+                SELECT row_num, supplier_sku, name, uom, price, currency, brand, pack_size, 
+                       cost_price_ex_vat, price_incl_vat, vat_rate, category_raw, stock_on_hand, barcode
+                FROM spp.pricelist_row
+                WHERE upload_id = $1
+                ORDER BY row_num
+              `, [upload_id])
+              
+              const correctedRows = await aiCorrectErrors(
+                buf,
+                file.name,
+                validation.errors || [],
+                existingRowsResult.rows,
+                supplier_id
+              )
+              
+              if (correctedRows.length > 0) {
+                // Apply VAT policy to corrected rows
+                const vatAuditId3 = await auditStart(supplier_id, upload_id, 'vat_normalization_corrected')
+                const safeCorrectedRows = Array.isArray(correctedRows) ? correctedRows : []
+                const vatResult3 = applyVatPolicyToRows(safeCorrectedRows, supplier_id)
+                await auditFinish(vatAuditId3, 'completed', {
+                  rows_processed: (vatResult3?.rows || []).length,
+                  warnings: (vatResult3?.warnings || []).length,
+                  price_sources: vatResult3?.priceSources || []
+                })
+                
+                // Delete old invalid rows and insert corrected ones
+                const errorRowNums = [...new Set((validation.errors || []).map((e: any) => e.row_num))]
+                if (errorRowNums.length > 0) {
+                  await query(`
+                    DELETE FROM spp.pricelist_row 
+                    WHERE upload_id = $1 AND row_num = ANY($2::int[])
+                  `, [upload_id, errorRowNums])
+                }
+                
+                const mappedCorrected = (vatResult3?.rows || []).map((row: any, idx: number) => {
+                  const costPrice = row.cost_price_ex_vat || row.price || 0
+                  return {
+                    upload_id,
+                    row_num: row.row_num || idx + 1,
+                    supplier_sku: row.supplier_sku || row.sku || '',
+                    name: row.name || row.description || '',
+                    brand: row.brand || undefined,
+                    uom: row.uom || 'EA',
+                    pack_size: row.pack_size || undefined,
+                    price: costPrice,
+                    cost_price_ex_vat: costPrice,
+                    price_incl_vat: row.price_incl_vat || undefined,
+                    vat_rate: row.vat_rate || 0.15,
+                    currency: row.currency || currency || 'ZAR',
+                    category_raw: row.category_raw || row.category || undefined,
+                    stock_on_hand: row.stock_on_hand || 0,
+                    stock_on_order: row.stock_on_order || 0,
+                    barcode: row.barcode || undefined,
+                    attrs_json: {},
+                  }
+                })
+                
+                const correctedInserted = await pricelistService.insertRows(upload_id!, mappedCorrected)
+                await auditFinish(correctionAuditId, 'completed', { 
+                  rows_corrected: correctedInserted,
+                  errors_fixed: errorCount,
+                  ai_correction_used: true
+                })
+                
+                // Re-validate after correction
+                validation = await pricelistService.validateUpload(upload_id!)
+                const revalidationId = await auditStart(supplier_id, upload_id, 'revalidation_after_correction')
+                await auditFinish(revalidationId, 'completed', { 
+                  status: validation.status, 
+                  errors: validation.errors?.length || 0, 
+                  warnings: validation.warnings?.length || 0 
+                })
+              } else {
+                await auditFinish(correctionAuditId, 'failed', { 
+                  error: 'AI correction returned no rows',
+                  errors_attempted: errorCount
+                })
               }
-            })
-            const aiExtractionId = await auditStart(supplier_id, upload_id, 'ai_extraction')
-            const aiInserted = await pricelistService.insertRows(upload_id!, mappedAi)
-            await auditFinish(aiExtractionId, 'completed', { rows_inserted: aiInserted })
-            const aiValidationId = await auditStart(supplier_id, upload_id, 'validation')
-            validation = await pricelistService.validateUpload(upload_id!)
-            await auditFinish(aiValidationId, 'completed', { status: validation.status, errors: validation.errors?.length || 0, warnings: validation.warnings?.length || 0 })
+            } catch (correctionError) {
+              await auditFinish(correctionAuditId, 'failed', { 
+                error: correctionError instanceof Error ? correctionError.message : String(correctionError)
+              })
+              console.error('❌ AI error correction failed:', correctionError)
+            }
           }
+        } else if (validation.status !== 'valid' && validation.status !== 'warning' && !allow_ai_fallback) {
+          // Validation failed but AI fallback not allowed
+          console.warn(`⚠️ Validation failed with ${validation.errors?.length || 0} errors, but AI fallback is disabled`)
         }
 
         await auditFinish(auditId, 'completed', { step: 'upload_and_validate', upload_id })

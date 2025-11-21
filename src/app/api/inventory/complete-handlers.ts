@@ -22,6 +22,7 @@ const inventoryItemSchema = z.object({
   supplier_sku: z.string().max(100).optional(),
   cost_price: z.number().min(0, 'Cost price must be positive'),
   sale_price: z.number().min(0, 'Sale price must be positive').optional(),
+  rsp: z.number().min(0, 'RSP must be positive').optional(),
   currency: z.string().max(3).default('ZAR'),
   stock_qty: z.number().int().min(0, 'Stock quantity must be non-negative'),
   reserved_qty: z.number().int().min(0).default(0),
@@ -112,11 +113,16 @@ export async function getCompleteInventory(request: NextRequest) {
           WHEN i.stock_qty <= COALESCE(i.reorder_point, 0) THEN 'low'
           ELSE 'normal'
         END as stock_status,
-        COALESCE(ph.price, 0) as cost_per_unit_zar,
-        COALESCE(ph.price, 0) * i.stock_qty as total_value_zar,
+        COALESCE(ph.price, i.cost_price, 0) as cost_per_unit_zar,
+        COALESCE(ph.price, i.cost_price, 0) * i.stock_qty as total_value_zar,
         COALESCE(cat.category_raw, i.category, 'Unknown') as category,
-        0::numeric as margin,
-        0::numeric as margin_percentage
+        (COALESCE(i.rsp, i.sale_price, 0) - COALESCE(ph.price, i.cost_price, 0)) as margin,
+        CASE
+          WHEN COALESCE(ph.price, i.cost_price, 0) > 0 THEN
+            (COALESCE(i.rsp, i.sale_price, 0) - COALESCE(ph.price, i.cost_price, 0))
+            / COALESCE(NULLIF(ph.price, 0), NULLIF(i.cost_price, 0), 1)
+          ELSE 0
+        END as margin_percentage
       FROM public.inventory_items i
       LEFT JOIN public.suppliers s ON i.supplier_id::text = s.id
       LEFT JOIN core.supplier_product sp ON sp.supplier_sku = i.sku AND sp.supplier_id::text = i.supplier_id
@@ -215,13 +221,13 @@ export async function getCompleteInventory(request: NextRequest) {
 
     // Apply price filters
     if (minPrice) {
-      baseQuery += ` AND i.sale_price >= $${paramIndex}`
+      baseQuery += ` AND COALESCE(i.rsp, i.sale_price) >= $${paramIndex}`
       queryParams.push(parseFloat(minPrice))
       paramIndex++
     }
 
     if (maxPrice) {
-      baseQuery += ` AND i.sale_price <= $${paramIndex}`
+      baseQuery += ` AND COALESCE(i.rsp, i.sale_price) <= $${paramIndex}`
       queryParams.push(parseFloat(maxPrice))
       paramIndex++
     }
@@ -241,7 +247,7 @@ export async function getCompleteInventory(request: NextRequest) {
     }
 
     // Apply sorting
-    const validSortFields = ['name', 'sku', 'category', 'brand', 'cost_price', 'sale_price', 'stock_qty', 'created_at', 'updated_at']
+    const validSortFields = ['name', 'sku', 'category', 'brand', 'cost_price', 'sale_price', 'rsp', 'stock_qty', 'created_at', 'updated_at']
     const validSortOrders = ['asc', 'desc']
 
     const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'name'
@@ -334,13 +340,13 @@ export async function getCompleteInventory(request: NextRequest) {
     }
 
     if (minPrice) {
-      countQuery += ` AND i.sale_price >= $${countParamIndex}`
+      countQuery += ` AND COALESCE(i.rsp, i.sale_price) >= $${countParamIndex}`
       countParams.push(parseFloat(minPrice))
       countParamIndex++
     }
 
     if (maxPrice) {
-      countQuery += ` AND i.sale_price <= $${countParamIndex}`
+      countQuery += ` AND COALESCE(i.rsp, i.sale_price) <= $${countParamIndex}`
       countParams.push(parseFloat(maxPrice))
       countParamIndex++
     }
