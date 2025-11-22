@@ -28,6 +28,12 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
   const params: unknown[] = []
   let i = 1
 
+  // Filter by active status by default (unless explicitly requesting inactive)
+  if (!status || status.length === 0 || !status.includes('inactive')) {
+    // Only show active suppliers by default
+    where.push(`(status = 'active' OR active = true)`)
+  }
+
   if (search && search.trim().length > 0) {
     where.push(`(name ILIKE $${i})`)
     params.push(`%${search}%`)

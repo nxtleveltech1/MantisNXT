@@ -15,7 +15,61 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { EnhancedPricelistUpload } from '@/components/supplier-portfolio/EnhancedPricelistUpload'
 import { FileUp, Settings, FileCog, TrendingUp, History, CheckCircle2, Edit3, Trash2 } from 'lucide-react'
 
-type Supplier = { id: string; name: string; code?: string; status?: string; tags?: string[]; orgId?: string }
+type Supplier = { 
+  id: string; 
+  name: string; 
+  code?: string; 
+  status?: string; 
+  tags?: string[]; 
+  orgId?: string;
+  tier?: string;
+  category?: string;
+  subcategory?: string;
+  businessInfo?: {
+    legalName?: string;
+    tradingName?: string;
+    taxId?: string;
+    registrationNumber?: string;
+    website?: string;
+    foundedYear?: number;
+    employeeCount?: number;
+    annualRevenue?: number;
+    currency?: string;
+  };
+  contacts?: Array<{
+    id?: string;
+    type?: string;
+    name?: string;
+    title?: string;
+    email?: string;
+    phone?: string;
+    mobile?: string;
+    department?: string;
+    isPrimary?: boolean;
+    isActive?: boolean;
+  }>;
+  addresses?: Array<{
+    id?: string;
+    type?: string;
+    name?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    isPrimary?: boolean;
+    isActive?: boolean;
+  }>;
+  capabilities?: {
+    products?: string[];
+    services?: string[];
+    leadTime?: number;
+    minimumOrderValue?: number;
+    paymentTerms?: string;
+  };
+  notes?: string;
+}
 type RuleRow = { id: number; rule_name: string; rule_type: string; execution_order: number; rule_config: unknown; is_blocking: boolean; updated_at: string }
 type ProfileRow = { id: number; profile_name: string; guidelines?: unknown; processing_config?: unknown; quality_standards?: unknown; compliance_rules?: unknown; is_active: boolean; updated_at: string }
 type UploadRow = { upload_id: string; filename: string; status: string; row_count: number; received_at: string }
@@ -47,7 +101,7 @@ export default function SupplierProfilePage() {
         const res = await fetch(`/api/suppliers/v3/${supplierId}`)
         const data = await res.json()
         if (data.success) {
-          setSupplier({ id: data.data.id, name: data.data.name, code: data.data.code, status: data.data.status, tags: data.data.tags, orgId: data.data.orgId })
+          setSupplier(data.data)
         }
       } catch {}
     }
