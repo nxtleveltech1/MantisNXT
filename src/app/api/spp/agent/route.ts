@@ -578,6 +578,38 @@ export async function POST(request: NextRequest) {
         const mapped = (vatResult2?.rows || []).map((row: any, idx: number) => {
           if (usedJoin) {
             const costPrice = row['cost_price_ex_vat'] || parsePrice(row['priceExVat'] ?? row['price_ex_vat']) || 0
+            const attrs: any = {}
+            
+            // Extract cost_excluding, cost_including, and rsp from raw_data if available
+            if (row['_cost_excluding'] !== undefined) {
+              attrs.cost_excluding = typeof row['_cost_excluding'] === 'number' ? row['_cost_excluding'] : parsePrice(row['_cost_excluding'])
+            }
+            if (row['_cost_including'] !== undefined) {
+              attrs.cost_including = typeof row['_cost_including'] === 'number' ? row['_cost_including'] : parsePrice(row['_cost_including'])
+            }
+            if (row['_rsp'] !== undefined) {
+              attrs.rsp = typeof row['_rsp'] === 'number' ? row['_rsp'] : parsePrice(row['_rsp'])
+            }
+            
+            // Also check for direct column mappings
+            if (row['Cost Excluding'] && !attrs.cost_excluding) {
+              attrs.cost_excluding = parsePrice(row['Cost Excluding'])
+            }
+            if (row['Cost Including'] && !attrs.cost_including) {
+              attrs.cost_including = parsePrice(row['Cost Including'])
+            }
+            if (row['Recommended Retail Price'] && !attrs.rsp) {
+              attrs.rsp = parsePrice(row['Recommended Retail Price'])
+            }
+            
+            // Calculate missing values if we have one but not the other
+            const vatRate = row['vat_rate'] || 0.15
+            if (attrs.cost_excluding && !attrs.cost_including) {
+              attrs.cost_including = attrs.cost_excluding * (1 + vatRate)
+            } else if (attrs.cost_including && !attrs.cost_excluding) {
+              attrs.cost_excluding = attrs.cost_including / (1 + vatRate)
+            }
+            
             return {
               upload_id,
               row_num: idx + 1,
@@ -595,7 +627,7 @@ export async function POST(request: NextRequest) {
               stock_on_hand: row['stock_on_hand'] || 0,
               stock_on_order: row['stock_on_order'] || 0,
               barcode: undefined,
-              attrs_json: {},
+              attrs_json: attrs,
             }
           } else {
             const supplierSku = getColumn(row, ['SKU / MODEL','SKU/MODEL','SKU','MODEL','Code','Item Code','Product Code']) || ''
@@ -614,7 +646,42 @@ export async function POST(request: NextRequest) {
             if (getColumn(row, ['Tags'])) attrs.tags = getColumn(row, ['Tags'])
             if (getColumn(row, ['Links'])) attrs.links = getColumn(row, ['Links'])
             if (getColumn(row, ['Brand Sub Tag'])) attrs.brand_sub_tag = getColumn(row, ['Brand Sub Tag'])
-            const costPrice = row['cost_price_ex_vat'] || parsePrice(priceValue) || 0
+            
+            // Extract cost_excluding, cost_including, and rsp from raw_data if available (from ExtractionWorker)
+            if (row['_cost_excluding'] !== undefined) {
+              attrs.cost_excluding = typeof row['_cost_excluding'] === 'number' ? row['_cost_excluding'] : parsePrice(row['_cost_excluding'])
+            }
+            if (row['_cost_including'] !== undefined) {
+              attrs.cost_including = typeof row['_cost_including'] === 'number' ? row['_cost_including'] : parsePrice(row['_cost_including'])
+            }
+            if (row['_rsp'] !== undefined) {
+              attrs.rsp = typeof row['_rsp'] === 'number' ? row['_rsp'] : parsePrice(row['_rsp'])
+            }
+            
+            // Also check for direct column mappings (Cost Excluding, Cost Including, Recommended Retail Price)
+            const costExcludingValue = getColumn(row, ['Cost Excluding', 'COST EXCLUDING', 'Cost Ex VAT', 'COST EX VAT'])
+            const costIncludingValue = getColumn(row, ['Cost Including', 'COST INCLUDING', 'Cost Inc VAT', 'COST INC VAT'])
+            const rspValue = getColumn(row, ['Recommended Retail Price', 'RECOMMENDED RETAIL PRICE', 'Recommended Selling Price', 'RSP', 'RRP'])
+            
+            if (costExcludingValue && !attrs.cost_excluding) {
+              attrs.cost_excluding = parsePrice(costExcludingValue)
+            }
+            if (costIncludingValue && !attrs.cost_including) {
+              attrs.cost_including = parsePrice(costIncludingValue)
+            }
+            if (rspValue && !attrs.rsp) {
+              attrs.rsp = parsePrice(rspValue)
+            }
+            
+            // Calculate missing values if we have one but not the other
+            const vatRate = row['vat_rate'] || 0.15
+            if (attrs.cost_excluding && !attrs.cost_including) {
+              attrs.cost_including = attrs.cost_excluding * (1 + vatRate)
+            } else if (attrs.cost_including && !attrs.cost_excluding) {
+              attrs.cost_excluding = attrs.cost_including / (1 + vatRate)
+            }
+            
+            const costPrice = row['cost_price_ex_vat'] || attrs.cost_excluding || parsePrice(priceValue) || 0
             return {
               upload_id,
               row_num: idx + 1,

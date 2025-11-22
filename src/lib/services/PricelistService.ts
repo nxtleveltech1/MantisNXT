@@ -436,8 +436,8 @@ export class PricelistService {
       )`;
       // Step 1: Upsert supplier products
       const upsertColumns = hasBrandColumn
-        ? `supplier_id, supplier_sku, name_from_supplier, brand_from_supplier, uom, pack_size, barcode, is_new, is_active, first_seen_at, last_seen_at`
-        : `supplier_id, supplier_sku, name_from_supplier, uom, pack_size, barcode, is_new, is_active, first_seen_at, last_seen_at`
+        ? `supplier_id, supplier_sku, name_from_supplier, brand_from_supplier, uom, pack_size, barcode, attrs_json, is_new, is_active, first_seen_at, last_seen_at`
+        : `supplier_id, supplier_sku, name_from_supplier, uom, pack_size, barcode, attrs_json, is_new, is_active, first_seen_at, last_seen_at`
 
       const upsertSelect = hasBrandColumn
         ? `
@@ -448,6 +448,7 @@ export class PricelistService {
           r.uom,
           r.pack_size,
           r.barcode,
+          r.attrs_json,
           true as is_new,
           true as is_active,
           NOW() as first_seen_at,
@@ -460,6 +461,7 @@ export class PricelistService {
           r.uom,
           r.pack_size,
           r.barcode,
+          r.attrs_json,
           true as is_new,
           true as is_active,
           NOW() as first_seen_at,
@@ -486,6 +488,7 @@ export class PricelistService {
           uom = EXCLUDED.uom,
           pack_size = EXCLUDED.pack_size,
           barcode = EXCLUDED.barcode,
+          attrs_json = EXCLUDED.attrs_json,
           last_seen_at = NOW(),
           is_active = true,
           updated_at = NOW()

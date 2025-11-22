@@ -115,12 +115,13 @@ type ColumnId =
   | 'brand'
   | 'category'
   | 'price'
-  | 'cost_inc_vat'
+  | 'cost_ex_vat'
   | 'rsp'
   | 'price_change'
   | 'status'
   | 'stock'
   | 'first_seen'
+  | 'cost_inc_vat'
   | 'actions'
 
 interface ColumnConfig {
@@ -139,13 +140,13 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'supplier', label: 'Supplier', visible: true, sortable: true, width: 'w-40' },
   { id: 'brand', label: 'Brand', visible: true, sortable: true, width: 'w-32' },
   { id: 'category', label: 'Category', visible: true, sortable: true, width: 'w-32' },
-  { id: 'price', label: 'Cost Price', visible: true, sortable: true, width: 'w-32' },
-  { id: 'cost_inc_vat', label: 'Total Cost Inc VAT', visible: true, sortable: true, width: 'w-40' },
-  { id: 'rsp', label: 'RSP (Recommended Selling Price)', visible: true, sortable: true, width: 'w-48' },
+  { id: 'cost_ex_vat', label: 'Cost ExVAT', visible: true, sortable: true, width: 'w-32' },
+  { id: 'rsp', label: 'RSP', visible: true, sortable: true, width: 'w-32' },
   { id: 'price_change', label: 'Price Change', visible: false, sortable: true, width: 'w-32' },
   { id: 'status', label: 'Status', visible: true, sortable: false, width: 'w-40' },
   { id: 'stock', label: 'Stock', visible: false, sortable: true, width: 'w-24' },
   { id: 'first_seen', label: 'First Seen', visible: false, sortable: true, width: 'w-32' },
+  { id: 'cost_inc_vat', label: 'Cost IncVAT', visible: true, sortable: true, width: 'w-32' },
   { id: 'actions', label: '', visible: true, sortable: false, width: 'w-16' },
 ]
 
@@ -838,13 +839,13 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                         )
                       }
 
-                      if (col.id === 'cost_inc_vat') {
-                        const costIncVat = product.attrs_json?.cost_including
+                      if (col.id === 'cost_ex_vat') {
+                        const costExVat = product.attrs_json?.cost_excluding
                         return (
                           <TableCell key={col.id}>
-                            {costIncVat !== undefined && costIncVat !== null ? (
+                            {costExVat !== undefined && costExVat !== null ? (
                               <div className="font-medium">
-                                {formatCostAmount(typeof costIncVat === 'number' ? costIncVat : parseFloat(String(costIncVat)) || 0)}
+                                {formatCostAmount(typeof costExVat === 'number' ? costExVat : parseFloat(String(costExVat)) || 0)}
                               </div>
                             ) : (
                               <span className="text-muted-foreground text-sm">-</span>
@@ -930,6 +931,21 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                         return (
                           <TableCell key={col.id} className="text-sm text-muted-foreground">
                             {product.first_seen_at ? formatDate(product.first_seen_at) : '-'}
+                          </TableCell>
+                        )
+                      }
+
+                      if (col.id === 'cost_inc_vat') {
+                        const costIncVat = product.attrs_json?.cost_including
+                        return (
+                          <TableCell key={col.id}>
+                            {costIncVat !== undefined && costIncVat !== null ? (
+                              <div className="font-medium">
+                                {formatCostAmount(typeof costIncVat === 'number' ? costIncVat : parseFloat(String(costIncVat)) || 0)}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
                           </TableCell>
                         )
                       }

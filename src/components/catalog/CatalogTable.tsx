@@ -63,7 +63,7 @@ export function CatalogTable() {
   const [isActive, setIsActive] = useState<'all' | 'active' | 'inactive'>('all')
   const [priceMin, setPriceMin] = useState<string>('')
   const [priceMax, setPriceMax] = useState<string>('')
-  const [sortBy, setSortBy] = useState<'supplier_name' | 'supplier_sku' | 'product_name' | 'category_name' | 'current_price' | 'last_seen_at'>('supplier_name')
+  const [sortBy, setSortBy] = useState<'supplier_name' | 'supplier_sku' | 'product_name' | 'category_name' | 'last_seen_at'>('supplier_name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>({
     supplier: true,
@@ -78,10 +78,10 @@ export function CatalogTable() {
     category: true,
     soh: true,
     on_order: true,
-    price: true,
-    cost_inc_vat: true,
-    rsp: true,
+    cost_ex_vat: true,
     vat: true,
+    rsp: true,
+    cost_inc_vat: true,
     currency: false,
     first_seen: false,
     last_seen: false,
@@ -215,7 +215,7 @@ export function CatalogTable() {
                 { key: 'supplier_code', label: 'Supplier Code' },
                 { key: 'sku', label: 'SKU' },
                 { key: 'name', label: 'Product Name' },
-                { key: 'description', label: 'Description (Product Description)' },
+                { key: 'description', label: 'Product Description' },
                 { key: 'brand', label: 'Brand' },
                 { key: 'uom', label: 'UOM' },
                 { key: 'pack_size', label: 'Pack Size' },
@@ -223,10 +223,10 @@ export function CatalogTable() {
                 { key: 'category', label: 'Category' },
                 { key: 'soh', label: 'Stock on Hand' },
                 { key: 'on_order', label: 'Stock on Order' },
-                { key: 'price', label: 'Cost Price' },
-                { key: 'cost_inc_vat', label: 'Total Cost Inc VAT' },
-                { key: 'rsp', label: 'RSP (Recommended Selling Price)' },
+                { key: 'cost_ex_vat', label: 'Cost ExVAT' },
                 { key: 'vat', label: 'VAT (15%)' },
+                { key: 'rsp', label: 'RSP' },
+                { key: 'cost_inc_vat', label: 'Cost IncVAT' },
                 { key: 'currency', label: 'Currency' },
                 { key: 'first_seen', label: 'First Seen' },
                 { key: 'last_seen', label: 'Last Seen' },
@@ -259,7 +259,7 @@ export function CatalogTable() {
                   <TableHead className="cursor-pointer" onClick={() => { setSortBy('product_name'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Product Name</TableHead>
                 )}
                 {visibleCols.description && (
-                  <TableHead>Description (Product Description)</TableHead>
+                  <TableHead>Product Description</TableHead>
                 )}
                 {visibleCols.brand && (
                   <TableHead>Brand</TableHead>
@@ -282,17 +282,14 @@ export function CatalogTable() {
                 {visibleCols.on_order && (
                   <TableHead className="text-right">Stock on Order</TableHead>
                 )}
-                {visibleCols.price && (
-                  <TableHead className="text-right cursor-pointer" onClick={() => { setSortBy('current_price'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Cost Price</TableHead>
-                )}
-                {visibleCols.cost_inc_vat && (
-                  <TableHead className="text-right">Total Cost Inc VAT</TableHead>
-                )}
-                {visibleCols.rsp && (
-                  <TableHead className="text-right">RSP (Recommended Selling Price)</TableHead>
+                {visibleCols.cost_ex_vat && (
+                  <TableHead className="text-right">Cost ExVAT</TableHead>
                 )}
                 {visibleCols.vat && (
                   <TableHead className="text-right">VAT (15%)</TableHead>
+                )}
+                {visibleCols.rsp && (
+                  <TableHead className="text-right">RSP</TableHead>
                 )}
                 {visibleCols.currency && (
                   <TableHead className="text-right">Currency</TableHead>
@@ -305,6 +302,9 @@ export function CatalogTable() {
                 )}
                 {visibleCols.active && (
                   <TableHead>Active</TableHead>
+                )}
+                {visibleCols.cost_inc_vat && (
+                  <TableHead className="text-right">Cost IncVAT</TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -358,14 +358,16 @@ export function CatalogTable() {
                   {visibleCols.on_order && (
                     <TableCell className="text-right">{(r as unknown).qty_on_order ?? 0}</TableCell>
                   )}
-                  {visibleCols.price && (
-                    <TableCell className="text-right">{formatCost(r.current_price)}</TableCell>
-                  )}
-                  {visibleCols.cost_inc_vat && (
+                  {visibleCols.cost_ex_vat && (
                     <TableCell className="text-right">
-                      {r.cost_inc_vat !== undefined ? formatCost(r.cost_inc_vat) : 
-                       r.attrs_json?.cost_including !== undefined ? formatCost(Number(r.attrs_json.cost_including)) : 
-                       '-'}
+                      {(r as unknown).cost_ex_vat !== undefined ? formatCost((r as unknown).cost_ex_vat as number) : 
+                       r.attrs_json?.cost_excluding !== undefined ? formatCost(Number(r.attrs_json.cost_excluding)) : 
+                       r.current_price !== undefined ? formatCost(r.current_price) : '-'}
+                    </TableCell>
+                  )}
+                  {visibleCols.vat && (
+                    <TableCell className="text-right">
+                      {formatCost(((r as unknown).cost_ex_vat ?? r.current_price ?? 0) as number * 0.15)}
                     </TableCell>
                   )}
                   {visibleCols.rsp && (
@@ -374,9 +376,6 @@ export function CatalogTable() {
                        r.attrs_json?.rsp !== undefined ? formatCost(Number(r.attrs_json.rsp)) : 
                        '-'}
                     </TableCell>
-                  )}
-                  {visibleCols.vat && (
-                    <TableCell className="text-right">{formatCost(((r.current_price ?? 0) as number) * 0.15)}</TableCell>
                   )}
                   {visibleCols.currency && (
                     <TableCell className="text-right">{r.currency || 'ZAR'}</TableCell>
@@ -389,6 +388,13 @@ export function CatalogTable() {
                   )}
                   {visibleCols.active && (
                     <TableCell className="text-muted-foreground">{r.is_active ? 'Yes' : 'No'}</TableCell>
+                  )}
+                  {visibleCols.cost_inc_vat && (
+                    <TableCell className="text-right">
+                      {r.cost_inc_vat !== undefined ? formatCost(r.cost_inc_vat) : 
+                       r.attrs_json?.cost_including !== undefined ? formatCost(Number(r.attrs_json.cost_including)) : 
+                       '-'}
+                    </TableCell>
                   )}
                 </TableRow>
               ))}
@@ -466,7 +472,7 @@ function ProductDetailBody({ id, detail, setDetail, history, setHistory }: { id:
           <div><span className="text-muted-foreground">SKU</span><div className="font-medium">{detail.supplier_sku}</div></div>
           <div className="col-span-2"><span className="text-muted-foreground">Product Name</span><div className="font-medium">{detail.name_from_supplier}</div></div>
           <div><span className="text-muted-foreground">Category</span><div className="font-medium">{detail.category_name || '-'}</div></div>
-          <div><span className="text-muted-foreground">Cost Price</span><div className="font-medium">{formatCost(detail.current_price)}</div></div>
+          <div><span className="text-muted-foreground">Cost ExVAT</span><div className="font-medium">{formatCost((detail as any).cost_ex_vat ?? (detail.attrs_json as any)?.cost_excluding ?? detail.current_price)}</div></div>
         </div>
       ) : (
         <div className="text-sm text-muted-foreground">Loading details…</div>

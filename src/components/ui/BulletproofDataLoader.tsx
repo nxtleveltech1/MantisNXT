@@ -377,7 +377,7 @@ export function BulletproofDataLoader<T>({
     try {
       // Check cache first
       if (enableCaching && cacheKey && !bypassCache) {
-        const cachedData = DataCache.get<T>(cacheKey)
+        const cachedData = DataCache.get(cacheKey) as T | null
         if (cachedData) {
           setData(cachedData)
           setIsLoading(false)
