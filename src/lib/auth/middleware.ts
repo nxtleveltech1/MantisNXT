@@ -15,10 +15,16 @@ import * as jwt from 'jsonwebtoken';
 const FALLBACK_ORG_ID = '00000000-0000-0000-0000-000000000000';
 const DEFAULT_ORG_ID = process.env.DEFAULT_ORG_ID ?? FALLBACK_ORG_ID;
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
+/**
+ * Lazy getter for JWT secret - validates only when first accessed at runtime
+ * This prevents build-time errors when JWT_SECRET is not available during static generation
+ */
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
 }
 
 export interface AuthUser {
@@ -75,7 +81,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthUse
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthUser;
+    const decoded = jwt.verify(token, getJwtSecret()) as AuthUser;
     return decoded;
   } catch (error) {
     throw new AuthError('Invalid or expired token', 401, 'INVALID_TOKEN');
