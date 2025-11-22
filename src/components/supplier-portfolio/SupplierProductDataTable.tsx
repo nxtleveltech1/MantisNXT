@@ -114,7 +114,6 @@ type ColumnId =
   | 'supplier'
   | 'brand'
   | 'category'
-  | 'price'
   | 'cost_ex_vat'
   | 'rsp'
   | 'price_change'
@@ -829,18 +828,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                         )
                       }
 
-                      if (col.id === 'price') {
-                        return (
-                          <TableCell key={col.id}>
-                            <div className="font-medium">
-                              {formatCostAmount(product.current_price || 0)}
-                            </div>
-                          </TableCell>
-                        )
-                      }
-
                       if (col.id === 'cost_ex_vat') {
-                        const costExVat = product.attrs_json?.cost_excluding
+                        const costExVat = product.attrs_json?.cost_excluding ?? product.current_price
                         return (
                           <TableCell key={col.id}>
                             {costExVat !== undefined && costExVat !== null ? (
@@ -1067,8 +1056,8 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                   <div className="mt-1">{detailsProduct.category_name || '-'}</div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Cost Price</p>
-                  <div className="mt-1 font-medium">{formatCostAmount(detailsProduct.current_price || 0)}</div>
+                  <p className="text-sm font-medium text-muted-foreground">Cost ExVAT</p>
+                  <div className="mt-1 font-medium">{formatCostAmount(detailsProduct.attrs_json?.cost_excluding ?? detailsProduct.current_price || 0)}</div>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Stock Quantity</p>
