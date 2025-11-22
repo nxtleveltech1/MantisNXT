@@ -37,12 +37,14 @@ type CatalogRow = {
   first_seen_at?: string
   last_seen_at?: string
   current_price?: number
+  cost_ex_vat?: number
   cost_inc_vat?: number
   rsp?: number
   currency?: string
   attrs_json?: {
     description?: string
     cost_including?: number
+    cost_excluding?: number
     rsp?: number
     brand?: string
     [key: string]: unknown

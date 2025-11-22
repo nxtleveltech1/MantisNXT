@@ -136,6 +136,7 @@ export async function GET(request: NextRequest) {
         sp.name_from_supplier AS product_name,
         COALESCE(br.brand, sp.attrs_json->>'brand') AS brand,
         sp.attrs_json->>'description' AS description,
+        COALESCE((sp.attrs_json->>'cost_excluding')::numeric, cp.price, NULL) AS cost_ex_vat,
         COALESCE((sp.attrs_json->>'cost_including')::numeric, NULL) AS cost_inc_vat,
         COALESCE((sp.attrs_json->>'rsp')::numeric, NULL) AS rsp,
         sp.attrs_json,
