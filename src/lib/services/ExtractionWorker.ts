@@ -96,9 +96,10 @@ const COLUMN_ALIASES = {
     'price',
     'cost',
   ],
-  priceEx: ['priceex', 'exvat', 'exclusive', 'priceexc', 'excl'],
-  priceInc: ['priceinc', 'inclvat', 'inclusive', 'grossprice', 'incl'],
+  priceEx: ['priceex', 'exvat', 'exclusive', 'priceexc', 'excl', 'costexcluding', 'cost excluding'],
+  priceInc: ['priceinc', 'inclvat', 'inclusive', 'grossprice', 'incl', 'costincluding', 'cost including'],
   vatAmount: ['vatamount', 'taxvalue', 'vat', 'tax'],
+  rsp: ['rsp', 'recommendedretailprice', 'recommended retail price', 'recommendedsellingprice', 'recommended selling price', 'rrp', 'rrsp'],
   stockQty: [
     'quantity',
     'qty',
@@ -573,6 +574,12 @@ export class ExtractionWorker extends EventEmitter {
         return;
       }
 
+      // RSP (Recommended Retail/Selling Price)
+      if (this.columnMatches(normalized, COLUMN_ALIASES.rsp)) {
+        this.addColumnMapping(map, 'rsp', index, header);
+        return;
+      }
+
       // UOM
       if (this.columnMatches(normalized, COLUMN_ALIASES.uom)) {
         this.addColumnMapping(map, 'uom', index, header);
@@ -717,12 +724,18 @@ export class ExtractionWorker extends EventEmitter {
       is_new: boolean;
     } = {
       row_number: rowNumber,
-      raw_data: row,
+      raw_data: { ...row }, // Copy row to preserve original data
       validation_status: 'valid' as ValidationStatus,
       validation_issues: [],
       is_duplicate: false,
       is_new: true,
     };
+
+    // Track extracted pricing values for attrs_json
+    let costExcluding: number | undefined;
+    let costIncluding: number | undefined;
+    let rsp: number | undefined;
+    const vatRate = config.vat_rate || 0.15;
 
     // Extract fields using column map
     columnMap.forEach(({ field, header }) => {
@@ -749,17 +762,35 @@ export class ExtractionWorker extends EventEmitter {
           break;
         case 'priceExVat': {
           const priceEx = this.parseNumber(value);
-          if (priceEx !== undefined && !mappedData.price) {
-            mappedData.price = priceEx;
+          if (priceEx !== undefined) {
+            costExcluding = priceEx;
+            // Store in raw_data for later attrs_json population
+            mappedData.raw_data._cost_excluding = priceEx;
+            if (!mappedData.price) {
+              mappedData.price = priceEx;
+            }
           }
           break;
         }
         case 'priceIncVat': {
           const priceInc = this.parseNumber(value);
-          if (priceInc !== undefined && !mappedData.price) {
-            // Calculate price ex-VAT from price inc-VAT
-            const vatRate = config.vat_rate || 0.15;
-            mappedData.price = priceInc / (1 + vatRate);
+          if (priceInc !== undefined) {
+            costIncluding = priceInc;
+            // Store in raw_data for later attrs_json population
+            mappedData.raw_data._cost_including = priceInc;
+            if (!mappedData.price) {
+              // Calculate price ex-VAT from price inc-VAT
+              mappedData.price = priceInc / (1 + vatRate);
+            }
+          }
+          break;
+        }
+        case 'rsp': {
+          const rspValue = this.parseNumber(value);
+          if (rspValue !== undefined) {
+            rsp = rspValue;
+            // Store in raw_data for later attrs_json population
+            mappedData.raw_data._rsp = rspValue;
           }
           break;
         }
@@ -779,6 +810,28 @@ export class ExtractionWorker extends EventEmitter {
       }
     });
 
+    // Calculate missing cost values when possible
+    if (costExcluding !== undefined && costIncluding === undefined) {
+      // Calculate cost including from cost excluding
+      costIncluding = costExcluding * (1 + vatRate);
+      mappedData.raw_data._cost_including = costIncluding;
+    } else if (costIncluding !== undefined && costExcluding === undefined) {
+      // Calculate cost excluding from cost including
+      costExcluding = costIncluding / (1 + vatRate);
+      mappedData.raw_data._cost_excluding = costExcluding;
+    }
+
+    // Store calculated/extracted values in raw_data for attrs_json population
+    if (costExcluding !== undefined) {
+      mappedData.raw_data._cost_excluding = costExcluding;
+    }
+    if (costIncluding !== undefined) {
+      mappedData.raw_data._cost_including = costIncluding;
+    }
+    if (rsp !== undefined) {
+      mappedData.raw_data._rsp = rsp;
+    }
+
     // Set defaults
     if (!mappedData.uom) {
       mappedData.uom = 'EA'; // Default unit
@@ -788,9 +841,29 @@ export class ExtractionWorker extends EventEmitter {
       mappedData.currency = config.currency_default || 'ZAR';
     }
 
-    // Validate required fields
-    if (!mappedData.supplier_sku || !mappedData.name || !mappedData.price) {
-      return null; // Skip invalid rows
+    // Validate required fields - SKU is critical, price can be calculated
+    // Missing name is a warning but not fatal if we have SKU
+    if (!mappedData.supplier_sku) {
+      // SKU is required - skip this product
+      this.emit('warning', `Row ${rowNumber}: Missing SKU, skipping product`);
+      return null;
+    }
+
+    // If no name, use SKU as fallback
+    if (!mappedData.name) {
+      mappedData.name = mappedData.supplier_sku;
+      mappedData.validation_issues.push({
+        field: 'name',
+        severity: 'warning',
+        message: 'Product name missing, using SKU as fallback',
+        value: mappedData.supplier_sku,
+      });
+    }
+
+    // If no price at all (neither extracted nor calculated), skip with warning
+    if (!mappedData.price) {
+      this.emit('warning', `Row ${rowNumber}: Missing price for SKU ${mappedData.supplier_sku}, skipping product`);
+      return null;
     }
 
     // Parse as ExtractedProduct
