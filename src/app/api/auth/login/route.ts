@@ -53,8 +53,9 @@ const mockUsers = [
   },
 ];
 
-// JWT secret - abort immediately if not provided to avoid insecure fallbacks
-const rawJwtSecret = process.env.JWT_SECRET;
+// JWT secret - allow a harmless placeholder only during static build so Vercel can compile
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+const rawJwtSecret = process.env.JWT_SECRET || (isBuildPhase ? 'build-placeholder-secret' : undefined);
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 if (!rawJwtSecret) {
