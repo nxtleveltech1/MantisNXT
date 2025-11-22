@@ -71,6 +71,13 @@ interface SelectionProduct {
   supplier_sku: string
   name_from_supplier: string
   brand?: string
+  attrs_json?: {
+    description?: string
+    cost_including?: number
+    cost_excluding?: number
+    rsp?: number
+    [key: string]: unknown
+  }
   category_id?: string
   category_name?: string
   current_price: number
@@ -103,10 +110,13 @@ type ColumnId =
   | 'select'
   | 'sku'
   | 'name'
+  | 'description'
   | 'supplier'
   | 'brand'
   | 'category'
   | 'price'
+  | 'cost_inc_vat'
+  | 'rsp'
   | 'price_change'
   | 'status'
   | 'stock'
@@ -125,10 +135,13 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'select', label: 'Select', visible: true, sortable: false, width: 'w-12' },
   { id: 'sku', label: 'SKU', visible: true, sortable: true, width: 'w-32' },
   { id: 'name', label: 'Product Name', visible: true, sortable: true },
+  { id: 'description', label: 'Product Description', visible: true, sortable: false, width: 'w-64' },
   { id: 'supplier', label: 'Supplier', visible: true, sortable: true, width: 'w-40' },
   { id: 'brand', label: 'Brand', visible: true, sortable: true, width: 'w-32' },
   { id: 'category', label: 'Category', visible: true, sortable: true, width: 'w-32' },
   { id: 'price', label: 'Cost Price', visible: true, sortable: true, width: 'w-32' },
+  { id: 'cost_inc_vat', label: 'Total Cost Inc VAT', visible: true, sortable: true, width: 'w-40' },
+  { id: 'rsp', label: 'RSP (Recommended Selling Price)', visible: true, sortable: true, width: 'w-48' },
   { id: 'price_change', label: 'Price Change', visible: false, sortable: true, width: 'w-32' },
   { id: 'status', label: 'Status', visible: true, sortable: false, width: 'w-40' },
   { id: 'stock', label: 'Stock', visible: false, sortable: true, width: 'w-24' },
@@ -703,6 +716,23 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                         )
                       }
 
+                      if (col.id === 'description') {
+                        const description = product.attrs_json?.description
+                        return (
+                          <TableCell key={col.id}>
+                            {description ? (
+                              <div className="max-w-md text-sm text-muted-foreground">
+                                {String(description).length > 100
+                                  ? `${String(description).substring(0, 100)}...`
+                                  : String(description)}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                        )
+                      }
+
                       if (col.id === 'supplier') {
                         return (
                           <TableCell key={col.id}>
@@ -804,6 +834,36 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                             <div className="font-medium">
                               {formatCostAmount(product.current_price || 0)}
                             </div>
+                          </TableCell>
+                        )
+                      }
+
+                      if (col.id === 'cost_inc_vat') {
+                        const costIncVat = product.attrs_json?.cost_including
+                        return (
+                          <TableCell key={col.id}>
+                            {costIncVat !== undefined && costIncVat !== null ? (
+                              <div className="font-medium">
+                                {formatCostAmount(typeof costIncVat === 'number' ? costIncVat : parseFloat(String(costIncVat)) || 0)}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                        )
+                      }
+
+                      if (col.id === 'rsp') {
+                        const rsp = product.attrs_json?.rsp
+                        return (
+                          <TableCell key={col.id}>
+                            {rsp !== undefined && rsp !== null ? (
+                              <div className="font-medium">
+                                {formatCostAmount(typeof rsp === 'number' ? rsp : parseFloat(String(rsp)) || 0)}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
                           </TableCell>
                         )
                       }
