@@ -8,7 +8,7 @@
  * @date 2025-11-02
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import * as jwt from 'jsonwebtoken';
 
@@ -91,16 +91,9 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthUse
 /**
  * Check if user has required permission
  */
-export async function authorizeUser(
-  user: AuthUser,
-  requiredPermission: string
-): Promise<void> {
+export async function authorizeUser(user: AuthUser, requiredPermission: string): Promise<void> {
   if (!user.permissions.includes(requiredPermission) && !user.permissions.includes('admin')) {
-    throw new AuthError(
-      `Missing required permission: ${requiredPermission}`,
-      403,
-      'FORBIDDEN'
-    );
+    throw new AuthError(`Missing required permission: ${requiredPermission}`, 403, 'FORBIDDEN');
   }
 }
 
@@ -116,10 +109,7 @@ export async function requireAdmin(user: AuthUser): Promise<void> {
 /**
  * Check if user can access customer data
  */
-export async function authorizeCustomerAccess(
-  user: AuthUser,
-  customerId: string
-): Promise<void> {
+export async function authorizeCustomerAccess(user: AuthUser, customerId: string): Promise<void> {
   // In a real implementation, this would check if the customer belongs to the user's organization
   // For now, we'll just verify the user is authenticated
   if (!user.organizationId) {
@@ -183,12 +173,7 @@ export function getPaginationParams(searchParams: URLSearchParams): {
 /**
  * Format pagination response
  */
-export function formatPaginatedResponse<T>(
-  data: T[],
-  total: number,
-  page: number,
-  limit: number
-) {
+export function formatPaginatedResponse<T>(data: T[], total: number, page: number, limit: number) {
   return {
     success: true,
     data,
