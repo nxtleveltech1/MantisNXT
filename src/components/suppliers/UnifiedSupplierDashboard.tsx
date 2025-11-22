@@ -1234,6 +1234,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                         />
                       </TableHead>
                       <TableHead>Supplier</TableHead>
+                      <TableHead>Organization ID</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Tier</TableHead>
                       <TableHead>Performance</TableHead>
@@ -1267,6 +1268,11 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                               <p className="font-medium">{supplier.name}</p>
                               <p className="text-sm text-muted-foreground">{supplier.code}</p>
                             </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs font-mono text-muted-foreground">
+                            {supplier.orgId || '—'}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1554,6 +1560,10 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                     <div>
                       <h4 className="font-medium mb-2">Contact Information</h4>
                       <div className="space-y-2 text-sm">
+                        <div className="pb-2 mb-2 border-b">
+                          <div className="text-xs text-muted-foreground mb-1">Organization ID</div>
+                          <div className="font-mono text-xs">{selectedSupplier.orgId || '—'}</div>
+                        </div>
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
                           <span>{selectedSupplier.primaryContact.email}</span>
@@ -1588,6 +1598,10 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                     <div>
                       <h4 className="font-medium mb-2">Business Details</h4>
                       <div className="space-y-2 text-sm">
+                        <div className="pb-2 mb-2 border-b">
+                          <div className="text-xs text-muted-foreground mb-1">Organization ID</div>
+                          <div className="font-mono text-xs">{selectedSupplier.orgId || '—'}</div>
+                        </div>
                         <div>Legal Name: {selectedSupplier.legalName}</div>
                         <div>Category: {selectedSupplier.category}</div>
                         {selectedSupplier.subcategory && (

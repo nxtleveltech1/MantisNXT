@@ -44,6 +44,7 @@ export { InventorySelectionService } from './InventorySelectionService';
 // ============================================================================
 
 export { SupplierProductService } from './SupplierProductService';
+export { AIPriceExtractionService } from './supplier/AIPriceExtractionService';
 
 // ============================================================================
 // CUSTOMER SERVICES

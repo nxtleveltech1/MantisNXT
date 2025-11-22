@@ -511,6 +511,7 @@ export default function SupplierManagement() {
                         />
                       </TableHead>
                       <TableHead>Supplier</TableHead>
+                      <TableHead>Organization ID</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Performance</TableHead>
                       <TableHead>Spend (12M)</TableHead>
@@ -552,6 +553,11 @@ export default function SupplierManagement() {
                                 </Badge>
                               )}
                             </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs font-mono text-muted-foreground">
+                            {supplier.orgId || (supplier as unknown as { org_id?: string }).org_id || '—'}
                           </div>
                         </TableCell>
                         <TableCell>
