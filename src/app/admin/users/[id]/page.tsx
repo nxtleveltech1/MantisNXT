@@ -74,31 +74,67 @@ export default function UserProfilePage() {
   const loadUser = useCallback(async () => {
     try {
       setIsLoading(true)
-      const currentUser = await authProvider.getCurrentUser()
-      if (!currentUser) {
-        router.push('/auth/login')
-        return
+      const response = await fetch(`/api/v1/admin/users/${userId}`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/auth/login')
+          return
+        }
+        if (response.status === 404) {
+          setError('User not found')
+          return
+        }
+        throw new Error(result.message || 'Failed to load user')
       }
 
-      const users = await authProvider.getUsersByOrganization(currentUser.org_id)
-      const foundUser = users.find((u) => u.id === userId)
-
-      if (!foundUser) {
-        setError('User not found')
-        return
-      }
-
-      setUser(foundUser)
-      reset({
-        name: foundUser.name,
+      const foundUser = result.data
+      // Transform API response to match User type
+      const userData: User = {
+        id: foundUser.id,
         email: foundUser.email,
-        role: foundUser.role,
-        department: foundUser.department,
-        phone: foundUser.phone,
-        is_active: foundUser.is_active,
-        permissions: foundUser.permissions.map((p) => p.id),
-        id_number: foundUser.id_number,
-        employment_equity: foundUser.employment_equity,
+        name: foundUser.displayName || `${foundUser.firstName} ${foundUser.lastName}`.trim(),
+        role: foundUser.roles?.[0]?.slug || 'user',
+        org_id: foundUser.orgId,
+        department: foundUser.department || '',
+        permissions: [],
+        created_at: foundUser.createdAt,
+        last_login: foundUser.lastLoginAt,
+        is_active: foundUser.isActive,
+        profile_image: foundUser.avatarUrl,
+        phone: foundUser.phone || '',
+        mobile: foundUser.mobile,
+        preferences: {
+          language: 'en',
+          timezone: 'Africa/Johannesburg',
+          date_format: 'dd/mm/yyyy',
+          currency: 'ZAR',
+          notifications: {
+            email_notifications: true,
+            sms_notifications: false,
+            push_notifications: true,
+            digest_frequency: 'daily',
+          },
+        },
+        two_factor_enabled: foundUser.twoFactorEnabled || false,
+        email_verified: foundUser.emailVerified || false,
+        password_changed_at: new Date(),
+        id_number: '',
+        employment_equity: undefined,
+      }
+
+      setUser(userData)
+      reset({
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        department: userData.department,
+        phone: userData.phone,
+        is_active: userData.is_active,
+        permissions: userData.permissions.map((p) => p.id),
+        id_number: userData.id_number || '',
+        employment_equity: userData.employment_equity,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load user')
@@ -119,12 +155,27 @@ export default function UserProfilePage() {
       setError(null)
       setSuccess(null)
 
-      // Extract permissions from data and pass the rest
-      const { permissions, ...updateData } = data
-      await authProvider.updateUser(userId, {
-        ...updateData,
-        role: data.role as unknown,
-      } as Partial<User>)
+      const response = await fetch(`/api/v1/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: data.name.split(' ')[0],
+          lastName: data.name.split(' ').slice(1).join(' '),
+          displayName: data.name,
+          phone: data.phone,
+          department: data.department,
+          isActive: data.is_active,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to update user')
+      }
+
       setSuccess('User updated successfully')
       setIsEditing(false)
       await loadUser()
@@ -147,7 +198,16 @@ export default function UserProfilePage() {
     }
 
     try {
-      await authProvider.deleteUser(userId)
+      const response = await fetch(`/api/v1/admin/users/${userId}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to delete user')
+      }
+
       router.push('/admin/users')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete user')
@@ -158,7 +218,22 @@ export default function UserProfilePage() {
     if (!user) return
 
     try {
-      await authProvider.updateUser(userId, { is_active: !user.is_active })
+      const response = await fetch(`/api/v1/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isActive: !user.is_active,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to update user status')
+      }
+
       await loadUser()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update user status')

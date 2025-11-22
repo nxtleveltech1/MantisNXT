@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Users,
   Settings as SettingsIcon,
+  Shield,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -222,6 +223,14 @@ const data = {
       url: "/admin/settings/general",
       icon: SettingsIcon,
       items: [
+        {
+          title: "Users & Accounts",
+          url: "/admin/users",
+        },
+        {
+          title: "Roles & Permissions",
+          url: "/admin/roles",
+        },
         {
           title: "General Settings",
           url: "/admin/settings/general",
