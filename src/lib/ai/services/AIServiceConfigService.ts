@@ -18,7 +18,8 @@ export type AIServiceType =
   | 'sentiment_analysis'
   | 'recommendation_engine'
   | 'chatbot'
-  | 'document_analysis';
+  | 'document_analysis'
+  | 'price_extraction';
 
 export type AIProvider = 'openai' | 'anthropic' | 'azure_openai' | 'bedrock';
 
@@ -80,6 +81,108 @@ export interface RateLimitStatus {
 export class AIServiceConfigService extends AIServiceBase<AIServiceRequestOptions> {
   constructor(options?: AIServiceBaseOptions) {
     super('AIServiceConfigService', options);
+  }
+
+  /**
+   * Fetch a config by explicit service_id (preferred when UI passes a known AI service entry).
+   */
+  async getConfigByServiceId(
+    orgId: string,
+    serviceId: string,
+    options?: AIServiceRequestOptions,
+  ): Promise<AIServiceResponse<AIServiceConfig | null>> {
+    return this.executeOperation(
+      'config.getByServiceId',
+      async () => {
+        const result = await db.query(
+          `
+          SELECT * FROM ai_service_config
+          WHERE org_id = $1 AND service_id = $2
+          LIMIT 1
+          `,
+          [orgId, serviceId],
+        );
+
+        if (result.rows.length === 0) {
+          return null;
+        }
+
+        return this.mapConfigRow(result.rows[0]);
+      },
+      options,
+      { orgId, serviceId },
+    );
+  }
+
+  /**
+   * Fetch a config by human-readable service name/label (as shown in /admin/ai/config).
+   */
+  async getConfigByServiceName(
+    orgId: string,
+    serviceLabel: string,
+    options?: AIServiceRequestOptions,
+  ): Promise<AIServiceResponse<AIServiceConfig | null>> {
+    const label = (serviceLabel || '').trim();
+    return this.executeOperation(
+      'config.getByServiceName',
+      async () => {
+        // Prefer match scoped to org
+        const result = await db.query(
+          `
+          SELECT c.*
+          FROM ai_service_config c
+          JOIN ai_service s ON c.service_id = s.id
+          WHERE LOWER(s.service_label) = LOWER($1)
+            AND (s.org_id = $2 OR c.org_id = $2)
+          ORDER BY c.updated_at DESC
+          LIMIT 1
+          `,
+          [label, orgId],
+        );
+
+        if (result.rows.length > 0) {
+          return this.mapConfigRow(result.rows[0]);
+        }
+
+        // Fallback: any org, latest config for this service label
+        const fallback = await db.query(
+          `
+          SELECT c.*
+          FROM ai_service_config c
+          JOIN ai_service s ON c.service_id = s.id
+          WHERE LOWER(s.service_label) = LOWER($1)
+          ORDER BY c.updated_at DESC
+          LIMIT 1
+          `,
+          [label],
+        );
+
+        if (fallback.rows.length > 0) {
+          return this.mapConfigRow(fallback.rows[0]);
+        }
+
+        // Fuzzy fallback (partial match) across orgs
+        const fuzzy = await db.query(
+          `
+          SELECT c.*
+          FROM ai_service_config c
+          JOIN ai_service s ON c.service_id = s.id
+          WHERE s.service_label ILIKE '%' || $1 || '%'
+          ORDER BY c.updated_at DESC
+          LIMIT 1
+          `,
+          [label],
+        );
+
+        if (fuzzy.rows.length === 0) {
+          return null;
+        }
+
+        return this.mapConfigRow(fuzzy.rows[0]);
+      },
+      options,
+      { orgId, serviceLabel: label },
+    );
   }
 
   /**

@@ -10,13 +10,14 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Info, Package, Upload, RefreshCw, Keyboard, LayoutDashboard, Table, FileUp, Building2, Settings } from 'lucide-react';
+import { Info, Package, Upload, RefreshCw, Keyboard, LayoutDashboard, Table, FileUp, Building2, Settings, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/components/layout/AppLayout';
 import { PortfolioDashboard } from '@/components/spp/PortfolioDashboard';
 import { EnhancedPricelistUpload } from '@/components/supplier-portfolio/EnhancedPricelistUpload';
 import { CatalogTable } from '@/components/catalog/CatalogTable';
+import { AIPriceExtractionPanel } from '@/components/supplier-portfolio/AIPriceExtractionPanel';
 // Selections UI removed from NXT-SPP surface to simplify workflow
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import type { MergeResult } from '@/types/nxt-spp';
@@ -225,6 +226,15 @@ function NxtSppContent() {
                 <span>Upload</span>
                 <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 transition-opacity group-data-[state=active]:opacity-100" />
               </TabsTrigger>
+
+              <TabsTrigger
+                value="ai-price-extraction"
+                className="group relative inline-flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium transition-all hover:border-border hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
+              >
+                <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
+                <span>AI Price Extraction</span>
+                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 transition-opacity group-data-[state=active]:opacity-100" />
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -264,6 +274,10 @@ function NxtSppContent() {
               onComplete={handleUploadComplete}
               autoValidate={true}
             />
+          </TabsContent>
+
+          <TabsContent value="ai-price-extraction" className="space-y-6">
+            <AIPriceExtractionPanel />
           </TabsContent>
 
           {/* Selections and Stock Reports removed from NXT-SPP surface */}

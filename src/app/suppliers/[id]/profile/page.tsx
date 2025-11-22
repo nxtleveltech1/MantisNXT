@@ -15,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { EnhancedPricelistUpload } from '@/components/supplier-portfolio/EnhancedPricelistUpload'
 import { FileUp, Settings, FileCog, TrendingUp, History, CheckCircle2, Edit3, Trash2 } from 'lucide-react'
 
-type Supplier = { id: string; name: string; code?: string; status?: string; tags?: string[] }
+type Supplier = { id: string; name: string; code?: string; status?: string; tags?: string[]; orgId?: string }
 type RuleRow = { id: number; rule_name: string; rule_type: string; execution_order: number; rule_config: unknown; is_blocking: boolean; updated_at: string }
 type ProfileRow = { id: number; profile_name: string; guidelines?: unknown; processing_config?: unknown; quality_standards?: unknown; compliance_rules?: unknown; is_active: boolean; updated_at: string }
 type UploadRow = { upload_id: string; filename: string; status: string; row_count: number; received_at: string }
@@ -47,7 +47,7 @@ export default function SupplierProfilePage() {
         const res = await fetch(`/api/suppliers/v3/${supplierId}`)
         const data = await res.json()
         if (data.success) {
-          setSupplier({ id: data.data.id, name: data.data.name, code: data.data.code, status: data.data.status, tags: data.data.tags })
+          setSupplier({ id: data.data.id, name: data.data.name, code: data.data.code, status: data.data.status, tags: data.data.tags, orgId: data.data.orgId })
         }
       } catch {}
     }
@@ -211,10 +211,11 @@ export default function SupplierProfilePage() {
             <Card className="border-0 shadow-sm">
               <CardHeader><CardTitle className="text-sm">Profile</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div><Label>Name</Label><div className="text-sm font-medium">{supplier?.name}</div></div>
                   <div><Label>Code</Label><div className="text-sm font-medium">{supplier?.code || '—'}</div></div>
                   <div><Label>Status</Label><Badge variant="outline">{supplier?.status || '—'}</Badge></div>
+                  <div><Label>Organization ID</Label><div className="text-sm font-mono text-muted-foreground">{supplier?.orgId || '—'}</div></div>
                 </div>
               </CardContent>
             </Card>

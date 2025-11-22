@@ -15,6 +15,7 @@ export interface Supplier {
   categories?: string[];
   tags: string[];
   brands: string[]; // Supplier brands/line of products
+  orgId?: string; // Organization ID - required for all suppliers
 
   // Business Information
   businessInfo: SupplierBusinessInfo;

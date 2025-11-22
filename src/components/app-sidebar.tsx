@@ -69,6 +69,10 @@ const data = {
           url: "/nxt-spp",
         },
         {
+          title: "AI Price Extraction",
+          url: "/nxt-spp?tab=ai-price-extraction",
+        },
+        {
           title: "Supplier Rules Engine",
           url: "/nxt-spp/rules",
         },

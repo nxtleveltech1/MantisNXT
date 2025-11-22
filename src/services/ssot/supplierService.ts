@@ -58,6 +58,7 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
     name: r.name,
     status: (r.status ?? (r.active ? 'active' : 'inactive')) as Supplier['status'],
     code: r.code ?? undefined,
+    orgId: r.org_id ? String(r.org_id) : undefined,
     createdAt: new Date(r.created_at ?? r.createdAt ?? Date.now()).toISOString(),
     updatedAt: new Date(r.updated_at ?? r.updatedAt ?? Date.now()).toISOString(),
   }))
@@ -80,6 +81,7 @@ export async function getSupplierById(id: string): Promise<Supplier | null> {
     name: row.name,
     status: (row.status ?? (row.active ? 'active' : 'inactive')) as Supplier['status'],
     code: row.code ?? undefined,
+    orgId: row.org_id ? String(row.org_id) : undefined,
     createdAt: new Date(row.created_at ?? row.createdAt ?? Date.now()).toISOString(),
     updatedAt: new Date(row.updated_at ?? row.updatedAt ?? Date.now()).toISOString(),
   }
@@ -93,11 +95,45 @@ export interface UpsertSupplierInput {
   currency?: string;
   paymentTerms?: string;
   contact?: { email?: string; phone?: string; website?: string };
+  orgId?: string; // Organization ID - required for new suppliers
+}
+
+/**
+ * Get default organization ID from database or environment
+ */
+async function getDefaultOrgId(): Promise<string> {
+  // Try environment variable first
+  const envOrgId = process.env.DEFAULT_ORG_ID;
+  if (envOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)) {
+    return envOrgId;
+  }
+
+  // Try to get from database
+  try {
+    const result = await query<{ id: string }>(
+      'SELECT id FROM public.organization ORDER BY created_at LIMIT 1'
+    );
+    if (result.rows && result.rows.length > 0) {
+      return result.rows[0].id;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch organization from database:', error);
+  }
+
+  // Fallback to known default
+  return 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 }
 
 export async function upsertSupplier(input: UpsertSupplierInput): Promise<Supplier> {
-  const { id, name, code, status = 'active', currency = 'ZAR', paymentTerms, contact } = input
+  const { id, name, code, status = 'active', currency = 'ZAR', paymentTerms, contact, orgId } = input
+  
   return withTransaction(async (client) => {
+    // Resolve org_id - use provided, or get default
+    let resolvedOrgId = orgId;
+    if (!resolvedOrgId) {
+      resolvedOrgId = await getDefaultOrgId();
+    }
+
     if (id) {
       await client.query(
         `UPDATE core.supplier
@@ -107,8 +143,9 @@ export async function upsertSupplier(input: UpsertSupplierInput): Promise<Suppli
              default_currency = COALESCE($4, default_currency),
              payment_terms = COALESCE($5, payment_terms),
              contact_info = COALESCE($6, contact_info),
+             org_id = COALESCE($7, org_id),
              updated_at = NOW()
-         WHERE supplier_id = $7`,
+         WHERE supplier_id = $8`,
         [
           name,
           code ?? null,
@@ -116,13 +153,15 @@ export async function upsertSupplier(input: UpsertSupplierInput): Promise<Suppli
           currency,
           paymentTerms ?? null,
           contact ? JSON.stringify(contact) : null,
+          resolvedOrgId,
           id,
         ]
       )
     } else {
+      // For new suppliers, org_id is required
       const ins = await client.query(
-        `INSERT INTO core.supplier (name, code, active, default_currency, payment_terms, contact_info)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO core.supplier (name, code, active, default_currency, payment_terms, contact_info, org_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING supplier_id`,
         [
           name,
@@ -131,13 +170,14 @@ export async function upsertSupplier(input: UpsertSupplierInput): Promise<Suppli
           currency,
           paymentTerms ?? null,
           contact ? JSON.stringify(contact) : null,
+          resolvedOrgId,
         ]
       )
       input.id = String(ins.rows[0].supplier_id)
     }
 
     const sup = await client.query(
-      `SELECT supplier_id as id, name, code, active, created_at, updated_at
+      `SELECT supplier_id as id, name, code, active, org_id, created_at, updated_at
        FROM core.supplier
        WHERE supplier_id = $1`,
       [input.id]
@@ -148,6 +188,7 @@ export async function upsertSupplier(input: UpsertSupplierInput): Promise<Suppli
       name: row.name,
       status: (row.active ? 'active' : 'inactive'),
       code: row.code ?? undefined,
+      orgId: row.org_id ? String(row.org_id) : undefined,
       createdAt: new Date(row.created_at ?? Date.now()).toISOString(),
       updatedAt: new Date(row.updated_at ?? Date.now()).toISOString(),
     }

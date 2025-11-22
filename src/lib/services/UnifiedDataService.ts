@@ -399,6 +399,32 @@ export class SupplierService {
         );
       }
 
+      // Resolve org_id - required for supplier creation
+      let orgId = (data as unknown as { orgId?: string }).orgId;
+      if (!orgId) {
+        // Try environment variable
+        const envOrgId = process.env.DEFAULT_ORG_ID;
+        if (envOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)) {
+          orgId = envOrgId;
+        } else {
+          // Try database
+          try {
+            const orgResult = await pool.query(
+              'SELECT id FROM public.organization ORDER BY created_at LIMIT 1'
+            );
+            if (orgResult.rows && orgResult.rows.length > 0) {
+              orgId = orgResult.rows[0].id;
+            }
+          } catch (error) {
+            console.warn('Failed to fetch organization from database:', error);
+          }
+          // Fallback to known default
+          if (!orgId) {
+            orgId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+          }
+        }
+      }
+
       // Build contact_info JSONB
       const contactInfo = {
         email: data.email || '',
@@ -424,10 +450,11 @@ export class SupplierService {
           default_currency,
           payment_terms,
           tax_number,
+          org_id,
           created_at,
           updated_at
         ) VALUES (
-          $1, $2, $3::jsonb, $4, $5, $6, $7, NOW(), NOW()
+          $1, $2, $3::jsonb, $4, $5, $6, $7, $8, NOW(), NOW()
         ) RETURNING supplier_id as id, *
       `;
 
@@ -439,6 +466,7 @@ export class SupplierService {
         data.currency || 'ZAR',
         data.paymentTerms || '30 days',
         data.taxNumber,
+        orgId,
       ]);
 
       const supplier = mapDatabaseRowToSupplier(insertResult.rows[0]);

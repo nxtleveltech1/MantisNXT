@@ -6,6 +6,7 @@ export interface Supplier {
   name: string;
   status: 'active' | 'inactive' | 'pending' | 'suspended' | 'deleted';
   code?: string;
+  orgId?: string; // Organization ID - required for all suppliers
   externalRefs?: { [system: string]: string };
   createdAt: string;
   updatedAt: string;

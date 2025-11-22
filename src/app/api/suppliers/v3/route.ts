@@ -236,6 +236,61 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Get organization ID from request context
+ * Tries: request body -> auth context -> env var -> database -> fallback
+ */
+async function getOrgIdFromRequest(
+  request: NextRequest,
+  body?: Record<string, unknown>
+): Promise<string> {
+  // 1. Check request body
+  if (body) {
+    const bodyOrgId =
+      typeof body.orgId === 'string'
+        ? body.orgId
+        : typeof body.org_id === 'string'
+          ? body.org_id
+          : null;
+    if (bodyOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bodyOrgId)) {
+      return bodyOrgId;
+    }
+  }
+
+  // 2. Try to get from auth context (if available)
+  try {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader) {
+      // TODO: Parse JWT and extract orgId from token
+      // For now, skip auth-based extraction
+    }
+  } catch (error) {
+    // Continue to next method
+  }
+
+  // 3. Check environment variable
+  const envOrgId = process.env.DEFAULT_ORG_ID;
+  if (envOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)) {
+    return envOrgId;
+  }
+
+  // 4. Try database
+  try {
+    const { query } = await import('@/lib/database');
+    const result = await query<{ id: string }>(
+      'SELECT id FROM public.organization ORDER BY created_at LIMIT 1'
+    );
+    if (result.rows && result.rows.length > 0) {
+      return result.rows[0].id;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch organization from database:', error);
+  }
+
+  // 5. Fallback to known default
+  return 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+}
+
 // POST /api/suppliers/v3 - Create new supplier
 export async function POST(request: NextRequest) {
   try {
@@ -246,11 +301,15 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Validation failed', 400, validationResult.error.issues);
     }
 
+    // Get org_id from request context
+    const orgId = await getOrgIdFromRequest(request, body);
+
     const created = await upsertSupplier({
       name: validationResult.data.name || 'Unnamed Supplier',
       code: validationResult.data.code || 'TEMP-' + Date.now(),
       status: validationResult.data.status || 'pending',
       currency: validationResult.data.businessInfo?.currency || 'ZAR',
+      orgId, // Pass org_id to supplier creation
       contact:
         validationResult.data.contacts?.[0] && validationResult.data.contacts[0].email
           ? {

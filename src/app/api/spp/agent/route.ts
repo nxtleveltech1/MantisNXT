@@ -651,7 +651,9 @@ export async function POST(request: NextRequest) {
         })
 
         // If validation has errors and AI is enabled, use AI to correct them
-        if (validation.status !== 'valid' && validation.status !== 'warning' && isAIEnabled() && allow_ai_fallback) {
+        // Note: AI error correction should run even if allow_ai_fallback was false initially,
+        // because error correction is different from initial extraction - it's fixing existing data
+        if (validation.status !== 'valid' && validation.status !== 'warning' && isAIEnabled()) {
           const errorCount = validation.errors?.length || 0
           if (errorCount > 0) {
             console.log(`🔄 Validation found ${errorCount} errors, attempting AI error correction`)
@@ -746,9 +748,9 @@ export async function POST(request: NextRequest) {
               console.error('❌ AI error correction failed:', correctionError)
             }
           }
-        } else if (validation.status !== 'valid' && validation.status !== 'warning' && !allow_ai_fallback) {
-          // Validation failed but AI fallback not allowed
-          console.warn(`⚠️ Validation failed with ${validation.errors?.length || 0} errors, but AI fallback is disabled`)
+        } else if (validation.status !== 'valid' && validation.status !== 'warning' && !isAIEnabled()) {
+          // Validation failed but AI is not enabled
+          console.warn(`⚠️ Validation failed with ${validation.errors?.length || 0} errors, but AI is not enabled`)
         }
 
         await auditFinish(auditId, 'completed', { step: 'upload_and_validate', upload_id })

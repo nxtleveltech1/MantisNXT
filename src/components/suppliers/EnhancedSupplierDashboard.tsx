@@ -802,6 +802,7 @@ const EnhancedSupplierDashboard = ({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Supplier</TableHead>
+                    <TableHead>Organization ID</TableHead>
                     <TableHead>Tier</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Rating</TableHead>
@@ -824,6 +825,11 @@ const EnhancedSupplierDashboard = ({
                             <div className="font-medium">{supplier.name}</div>
                             <div className="text-sm text-muted-foreground">{supplier.code}</div>
                           </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs font-mono text-muted-foreground">
+                          {supplier.orgId || '—'}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1149,6 +1155,10 @@ const EnhancedSupplierDashboard = ({
                 <div>
                   <h4 className="font-medium mb-2">Business Details</h4>
                   <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Organization ID:</span>
+                      <span className="ml-2 font-mono text-xs">{selectedSupplier.orgId || '—'}</span>
+                    </div>
                     <div>Industry: {selectedSupplier.industry}</div>
                     <div>Payment Terms: {selectedSupplier.paymentTerms}</div>
                     <div>Credit Limit: {formatCurrency(selectedSupplier.creditLimit)}</div>
