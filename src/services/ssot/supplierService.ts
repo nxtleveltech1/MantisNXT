@@ -29,29 +29,49 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
   let i = 1
 
   // Filter by active status by default (unless explicitly requesting inactive)
-  if (!status || status.length === 0 || !status.includes('inactive')) {
-    // Only show active suppliers by default
-    where.push(`(status = 'active' OR active = true)`)
+  const hasStatusFilter = status && status.length > 0
+  const hasActiveStatus = hasStatusFilter && status.includes('active')
+  const hasInactiveStatus = hasStatusFilter && status.includes('inactive')
+  
+  if (!hasStatusFilter || (!hasInactiveStatus && hasActiveStatus)) {
+    // Only show active suppliers by default, or if explicitly requesting active
+    where.push(`active = true`)
+  } else if (hasInactiveStatus && !hasActiveStatus) {
+    // Only show inactive if explicitly requested and active not requested
+    where.push(`active = false`)
   }
+  // If both active and inactive are requested, no filter needed (show all)
 
   if (search && search.trim().length > 0) {
-    where.push(`(name ILIKE $${i})`)
+    where.push(`(name ILIKE $${i} OR code ILIKE $${i})`)
     params.push(`%${search}%`)
     i++
   }
 
-  if (status && status.length > 0) {
-    where.push(`status = ANY($${i})`)
-    params.push(status)
-    i++
+  // Map sortBy to actual column names in core.supplier table
+  const sortByColumnMap: Record<string, string> = {
+    name: 'name',
+    code: 'code',
+    status: 'active', // Map to active column, we'll convert to status in SELECT
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   }
+  const sortColumn = sortByColumnMap[sortBy] || 'name'
 
-  // Read from canonical public view which maps to core.supplier
+  // Read directly from core.supplier table
   const sql = `
-    SELECT *, COUNT(*) OVER() as __total
-    FROM public.suppliers
+    SELECT 
+      supplier_id::text as id,
+      name,
+      code,
+      active,
+      org_id,
+      created_at,
+      updated_at,
+      COUNT(*) OVER() as __total
+    FROM core.supplier
     WHERE ${where.join(' AND ')}
-    ORDER BY ${sortBy} ${sortOrder.toUpperCase()}
+    ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}
     LIMIT $${i} OFFSET $${i + 1}
   `
   params.push(limit, offset)
@@ -62,11 +82,11 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
   const data: Supplier[] = res.rows.map((r: unknown) => ({
     id: String(r.id),
     name: r.name,
-    status: (r.status ?? (r.active ? 'active' : 'inactive')) as Supplier['status'],
+    status: (r.active ? 'active' : 'inactive') as Supplier['status'],
     code: r.code ?? undefined,
     orgId: r.org_id ? String(r.org_id) : undefined,
-    createdAt: new Date(r.created_at ?? r.createdAt ?? Date.now()).toISOString(),
-    updatedAt: new Date(r.updated_at ?? r.updatedAt ?? Date.now()).toISOString(),
+    createdAt: new Date(r.created_at ?? Date.now()).toISOString(),
+    updatedAt: new Date(r.updated_at ?? Date.now()).toISOString(),
   }))
 
   return { data, total, page, limit }
