@@ -1,10 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { AuthProvider } from '@/lib/auth/auth-context'
-import { QueryProvider } from '@/lib/query-provider'
-import AsyncBoundary from '@/components/ui/AsyncBoundary'
-import { ThemeProvider } from '@/components/theme-provider'
+import { Providers } from './providers'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -41,20 +38,12 @@ export default function RootLayout({
                   root.classList.add(theme);
                 }
               })();
-            `
+            `,
           }}
         />
       </head>
       <body className="font-inter antialiased theme-transition">
-        <ThemeProvider defaultTheme="system" storageKey="theme">
-          <QueryProvider>
-            <AuthProvider>
-              <AsyncBoundary>
-                {children}
-              </AsyncBoundary>
-            </AuthProvider>
-          </QueryProvider>
-        </ThemeProvider>
+        <Providers>{children}</Providers>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -62,7 +51,7 @@ export default function RootLayout({
               if (typeof window !== 'undefined') {
                 window.__AUTH_INITIALIZED__ = true;
               }
-            `
+            `,
           }}
         />
       </body>

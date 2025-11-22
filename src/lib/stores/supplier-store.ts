@@ -157,6 +157,12 @@ export const useSupplierStore = create<SupplierStore>()(
 
           // Refresh analytics
           get().fetchAnalytics();
+          
+          // Dispatch event to notify other components (e.g., directory page)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('supplier:deleted', { detail: { id } }))
+            window.dispatchEvent(new CustomEvent('supplier:updated'))
+          }
         } catch (error) {
           set({
             error: error instanceof Error ? error.message : 'Unknown error occurred',
