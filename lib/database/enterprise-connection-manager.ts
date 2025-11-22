@@ -205,57 +205,42 @@ class EnterpriseConnectionManager {
 
 
   private buildConfigFromEnv(): PoolConfig {
-
     const connectionString = process.env.ENTERPRISE_DATABASE_URL || process.env.DATABASE_URL;
-
-
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
     if (!connectionString) {
+      if (isBuildPhase) {
+        // Allow static builds to proceed without a real database connection.
+        return {
+          connectionString: 'postgres://placeholder:placeholder@localhost:5432/placeholder',
+          max: 1,
+          idleTimeoutMillis: DEFAULT_IDLE_TIMEOUT,
+          connectionTimeoutMillis: DEFAULT_CONNECTION_TIMEOUT,
+        };
+      }
 
       throw new Error(
-
         'ENTERPRISE_DATABASE_URL or DATABASE_URL must be set for EnterpriseConnectionManager'
-
       );
-
     }
 
-
-
     // Determine if SSL is required from connection string or environment
-
     const requiresSsl =
-
       connectionString.includes('sslmode=require') ||
-
       process.env.DB_SSL === 'true' ||
-
       process.env.NODE_ENV === 'production';
 
-
-
     return {
-
       connectionString,
-
       max: this.parseIntEnv('ENTERPRISE_DB_POOL_MAX', DEFAULT_MAX_POOL),
-
       idleTimeoutMillis: this.parseIntEnv('ENTERPRISE_DB_IDLE_TIMEOUT', DEFAULT_IDLE_TIMEOUT),
-
       connectionTimeoutMillis: this.parseIntEnv(
-
         'ENTERPRISE_DB_CONNECTION_TIMEOUT',
-
         DEFAULT_CONNECTION_TIMEOUT
-
       ),
-
       // SSL configuration for secure connections (required for Neon/AWS RDS, etc.)
-
       ssl: requiresSsl ? { rejectUnauthorized: false } : undefined,
-
     };
-
   }
 
 
