@@ -245,6 +245,7 @@ export default function SupplierProfilePage() {
             </div>
             <div className="flex items-center gap-2">
               {(supplier?.tags || []).slice(0,3).map((t, i) => (<Badge key={i} variant="secondary">{t}</Badge>))}
+              <Button variant="outline" onClick={() => router.push(`/suppliers/${supplierId}/edit`)}><Edit3 className="h-4 w-4 mr-2" />Edit Profile</Button>
               <Button variant="outline" onClick={() => router.push(`/admin/supplier-rules?supplier_id=${supplierId}`)}><Settings className="h-4 w-4 mr-2" />Manage Rules</Button>
             </div>
           </CardContent>
@@ -262,17 +263,139 @@ export default function SupplierProfilePage() {
           </div>
 
           <TabsContent value="overview" className="space-y-4">
+            {/* Basic Information */}
             <Card className="border-0 shadow-sm">
-              <CardHeader><CardTitle className="text-sm">Profile</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">Basic Information</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div><Label>Name</Label><div className="text-sm font-medium">{supplier?.name}</div></div>
                   <div><Label>Code</Label><div className="text-sm font-medium">{supplier?.code || '—'}</div></div>
                   <div><Label>Status</Label><Badge variant="outline">{supplier?.status || '—'}</Badge></div>
+                  <div><Label>Tier</Label><Badge variant="outline">{supplier?.tier || '—'}</Badge></div>
+                  <div><Label>Category</Label><div className="text-sm font-medium">{supplier?.category || '—'}</div></div>
+                  <div><Label>Subcategory</Label><div className="text-sm font-medium">{supplier?.subcategory || '—'}</div></div>
                   <div><Label>Organization ID</Label><div className="text-sm font-mono text-muted-foreground">{supplier?.orgId || '—'}</div></div>
+                  {supplier?.tags && supplier.tags.length > 0 && (
+                    <div><Label>Tags</Label><div className="flex flex-wrap gap-1">{supplier.tags.map((t, i) => (<Badge key={i} variant="secondary">{t}</Badge>))}</div></div>
+                  )}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Business Information */}
+            {supplier?.businessInfo && (
+              <Card className="border-0 shadow-sm">
+                <CardHeader><CardTitle className="text-sm">Business Information</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><Label>Legal Name</Label><div className="text-sm font-medium">{supplier.businessInfo.legalName || '—'}</div></div>
+                    <div><Label>Trading Name</Label><div className="text-sm font-medium">{supplier.businessInfo.tradingName || '—'}</div></div>
+                    <div><Label>Website</Label><div className="text-sm font-medium">{supplier.businessInfo.website ? <a href={supplier.businessInfo.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{supplier.businessInfo.website}</a> : '—'}</div></div>
+                    <div><Label>Tax ID</Label><div className="text-sm font-medium">{supplier.businessInfo.taxId || '—'}</div></div>
+                    <div><Label>Registration Number</Label><div className="text-sm font-medium">{supplier.businessInfo.registrationNumber || '—'}</div></div>
+                    <div><Label>Founded Year</Label><div className="text-sm font-medium">{supplier.businessInfo.foundedYear || '—'}</div></div>
+                    <div><Label>Employee Count</Label><div className="text-sm font-medium">{supplier.businessInfo.employeeCount?.toLocaleString() || '—'}</div></div>
+                    <div><Label>Annual Revenue</Label><div className="text-sm font-medium">{supplier.businessInfo.annualRevenue ? `${supplier.businessInfo.currency || 'ZAR'} ${supplier.businessInfo.annualRevenue.toLocaleString()}` : '—'}</div></div>
+                    <div><Label>Currency</Label><div className="text-sm font-medium">{supplier.businessInfo.currency || '—'}</div></div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Contacts */}
+            {supplier?.contacts && supplier.contacts.length > 0 && (
+              <Card className="border-0 shadow-sm">
+                <CardHeader><CardTitle className="text-sm">Contacts</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {supplier.contacts.map((contact, i) => (
+                      <div key={contact.id || i} className="p-3 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium">{contact.name || '—'}</div>
+                              {contact.isPrimary && <Badge variant="secondary" className="text-xs">Primary</Badge>}
+                              <Badge variant="outline" className="text-xs">{contact.type || '—'}</Badge>
+                              {!contact.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Inactive</Badge>}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">{contact.title || '—'}</div>
+                            <div className="text-sm text-muted-foreground">{contact.department || ''}</div>
+                            <div className="flex gap-4 mt-2 text-sm">
+                              {contact.email && <div><span className="text-muted-foreground">Email: </span>{contact.email}</div>}
+                              {contact.phone && <div><span className="text-muted-foreground">Phone: </span>{contact.phone}</div>}
+                              {contact.mobile && <div><span className="text-muted-foreground">Mobile: </span>{contact.mobile}</div>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Addresses */}
+            {supplier?.addresses && supplier.addresses.length > 0 && (
+              <Card className="border-0 shadow-sm">
+                <CardHeader><CardTitle className="text-sm">Addresses</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {supplier.addresses.map((address, i) => (
+                      <div key={address.id || i} className="p-3 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium">{address.name || address.type || 'Address'}</div>
+                              {address.isPrimary && <Badge variant="secondary" className="text-xs">Primary</Badge>}
+                              <Badge variant="outline" className="text-xs">{address.type || '—'}</Badge>
+                              {!address.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Inactive</Badge>}
+                            </div>
+                            <div className="text-sm mt-1">
+                              {address.addressLine1}
+                              {address.addressLine2 && <>, {address.addressLine2}</>}
+                              <br />
+                              {address.city}, {address.state} {address.postalCode}
+                              <br />
+                              {address.country}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Capabilities */}
+            {supplier?.capabilities && (
+              <Card className="border-0 shadow-sm">
+                <CardHeader><CardTitle className="text-sm">Capabilities</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><Label>Payment Terms</Label><div className="text-sm font-medium">{supplier.capabilities.paymentTerms || '—'}</div></div>
+                    <div><Label>Lead Time (days)</Label><div className="text-sm font-medium">{supplier.capabilities.leadTime || '—'}</div></div>
+                    <div><Label>Minimum Order Value</Label><div className="text-sm font-medium">{supplier.capabilities.minimumOrderValue ? `${supplier.businessInfo?.currency || 'ZAR'} ${supplier.capabilities.minimumOrderValue.toLocaleString()}` : '—'}</div></div>
+                    {supplier.capabilities.products && supplier.capabilities.products.length > 0 && (
+                      <div className="md:col-span-3"><Label>Products</Label><div className="flex flex-wrap gap-1 mt-1">{supplier.capabilities.products.map((p, i) => (<Badge key={i} variant="outline">{p}</Badge>))}</div></div>
+                    )}
+                    {supplier.capabilities.services && supplier.capabilities.services.length > 0 && (
+                      <div className="md:col-span-3"><Label>Services</Label><div className="flex flex-wrap gap-1 mt-1">{supplier.capabilities.services.map((s, i) => (<Badge key={i} variant="outline">{s}</Badge>))}</div></div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Notes */}
+            {supplier?.notes && (
+              <Card className="border-0 shadow-sm">
+                <CardHeader><CardTitle className="text-sm">Notes</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="text-sm whitespace-pre-wrap">{supplier.notes}</div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-4">

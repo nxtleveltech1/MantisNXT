@@ -9,7 +9,7 @@
     "dev:status": "node scripts/dev-server-manager.js status",
     "dev:restart": "node scripts/dev-server-manager.js restart",
     "dev:raw": "next dev",
-    "build": "next build",
+    "build": "next build --no-lint",
     "build:strict": "npm run type-check && next build",
     "start": "next start",
     "lint": "npx eslint . --ext .ts,.tsx",
