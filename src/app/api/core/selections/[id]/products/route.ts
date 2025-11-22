@@ -48,7 +48,9 @@ export async function GET(
         s.name AS supplier_name,
         s.code AS supplier_code,
         sp.supplier_sku,
-        sp.name_from_supplier AS product_name,
+        sp.name_from_supplier,
+        sp.attrs_json->>'brand' AS brand,
+        sp.attrs_json,
         sp.uom,
         sp.pack_size,
         sp.barcode,
@@ -57,6 +59,8 @@ export async function GET(
         cp.price AS current_price,
         cp.currency,
         ls.qty_on_hand,
+        sp.first_seen_at,
+        sp.last_seen_at,
         (COALESCE(ls.qty_on_hand, 0) > 0) AS is_in_stock
       FROM core.inventory_selected_item isi
       JOIN core.supplier_product sp ON sp.supplier_product_id = isi.supplier_product_id

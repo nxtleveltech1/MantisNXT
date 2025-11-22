@@ -27,6 +27,7 @@ type CatalogRow = {
   supplier_code?: string
   supplier_sku: string
   product_name: string
+  description?: string
   uom?: string
   pack_size?: string
   barcode?: string
@@ -36,7 +37,16 @@ type CatalogRow = {
   first_seen_at?: string
   last_seen_at?: string
   current_price?: number
+  cost_inc_vat?: number
+  rsp?: number
   currency?: string
+  attrs_json?: {
+    description?: string
+    cost_including?: number
+    rsp?: number
+    brand?: string
+    [key: string]: unknown
+  }
 }
 
 export function CatalogTable() {
@@ -60,7 +70,8 @@ export function CatalogTable() {
     supplier_code: false,
     sku: true,
     name: true,
-    brand: false,
+    description: true,
+    brand: true,
     uom: false,
     pack_size: false,
     barcode: false,
@@ -68,6 +79,8 @@ export function CatalogTable() {
     soh: true,
     on_order: true,
     price: true,
+    cost_inc_vat: true,
+    rsp: true,
     vat: true,
     currency: false,
     first_seen: false,
@@ -202,6 +215,7 @@ export function CatalogTable() {
                 { key: 'supplier_code', label: 'Supplier Code' },
                 { key: 'sku', label: 'SKU' },
                 { key: 'name', label: 'Product Name' },
+                { key: 'description', label: 'Description (Product Description)' },
                 { key: 'brand', label: 'Brand' },
                 { key: 'uom', label: 'UOM' },
                 { key: 'pack_size', label: 'Pack Size' },
@@ -210,6 +224,8 @@ export function CatalogTable() {
                 { key: 'soh', label: 'Stock on Hand' },
                 { key: 'on_order', label: 'Stock on Order' },
                 { key: 'price', label: 'Cost Price' },
+                { key: 'cost_inc_vat', label: 'Total Cost Inc VAT' },
+                { key: 'rsp', label: 'RSP (Recommended Selling Price)' },
                 { key: 'vat', label: 'VAT (15%)' },
                 { key: 'currency', label: 'Currency' },
                 { key: 'first_seen', label: 'First Seen' },
@@ -242,6 +258,9 @@ export function CatalogTable() {
                 {visibleCols.name && (
                   <TableHead className="cursor-pointer" onClick={() => { setSortBy('product_name'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Product Name</TableHead>
                 )}
+                {visibleCols.description && (
+                  <TableHead>Description (Product Description)</TableHead>
+                )}
                 {visibleCols.brand && (
                   <TableHead>Brand</TableHead>
                 )}
@@ -265,6 +284,12 @@ export function CatalogTable() {
                 )}
                 {visibleCols.price && (
                   <TableHead className="text-right cursor-pointer" onClick={() => { setSortBy('current_price'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Cost Price</TableHead>
+                )}
+                {visibleCols.cost_inc_vat && (
+                  <TableHead className="text-right">Total Cost Inc VAT</TableHead>
+                )}
+                {visibleCols.rsp && (
+                  <TableHead className="text-right">RSP (Recommended Selling Price)</TableHead>
                 )}
                 {visibleCols.vat && (
                   <TableHead className="text-right">VAT (15%)</TableHead>
@@ -303,8 +328,17 @@ export function CatalogTable() {
                   {visibleCols.name && (
                     <TableCell>{r.product_name || 'Product Details Unavailable'}</TableCell>
                   )}
+                  {visibleCols.description && (
+                    <TableCell className="max-w-md">
+                      <div className="text-sm text-muted-foreground truncate">
+                        {r.description || r.attrs_json?.description || '-'}
+                      </div>
+                    </TableCell>
+                  )}
                   {visibleCols.brand && (
-                    <TableCell className="text-muted-foreground">{(r as unknown).brand || '-'}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {(r as unknown).brand || r.attrs_json?.brand || '-'}
+                    </TableCell>
                   )}
                   {visibleCols.uom && (
                     <TableCell className="text-muted-foreground">{r.uom || '-'}</TableCell>
@@ -326,6 +360,20 @@ export function CatalogTable() {
                   )}
                   {visibleCols.price && (
                     <TableCell className="text-right">{formatCost(r.current_price)}</TableCell>
+                  )}
+                  {visibleCols.cost_inc_vat && (
+                    <TableCell className="text-right">
+                      {r.cost_inc_vat !== undefined ? formatCost(r.cost_inc_vat) : 
+                       r.attrs_json?.cost_including !== undefined ? formatCost(Number(r.attrs_json.cost_including)) : 
+                       '-'}
+                    </TableCell>
+                  )}
+                  {visibleCols.rsp && (
+                    <TableCell className="text-right">
+                      {r.rsp !== undefined ? formatCost(r.rsp) : 
+                       r.attrs_json?.rsp !== undefined ? formatCost(Number(r.attrs_json.rsp)) : 
+                       '-'}
+                    </TableCell>
                   )}
                   {visibleCols.vat && (
                     <TableCell className="text-right">{formatCost(((r.current_price ?? 0) as number) * 0.15)}</TableCell>

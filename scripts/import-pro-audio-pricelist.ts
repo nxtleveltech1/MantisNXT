@@ -23,15 +23,16 @@ import { Client } from 'pg';
 const EXCEL_FILE_PATH = 'C:\\Users\\garet\\Downloads\\drive-download-20251103T124908Z-1-001\\Pro Audio platinum .xlsx';
 const NEON_PROJECT_ID = 'proud-mud-50346856';
 
-// Column mappings based on the Excel structure shown in the image
+// Column mappings - EXACT match to Excel file structure
+// Columns in order: SKU, Product Name, Barcode, Product Description, Cost Excluding, Cost Including, Recommended Retail Price
 const COLUMN_MAPPINGS = {
-  SKU: ['sku', 'item_sku', 'product_sku', 'code'],
-  ProductName: ['product name', 'name', 'product_name', 'item_name'],
-  Barcode: ['barcode', 'ean', 'upc'],
-  Description: ['product description', 'description', 'desc', 'details'],
-  CostExcluding: ['cost excluding', 'cost_excluding', 'cost exc', 'price_excl'],
-  CostIncluding: ['cost including', 'cost_including', 'cost inc', 'price_incl'],
-  RecommendedRetailPrice: ['recommended retail price', 'rsp', 'rrp', 'recommended_retail_price', 'recommended_price'],
+  SKU: ['sku'],
+  ProductName: ['product name'],
+  Barcode: ['barcode'],
+  Description: ['product description'],
+  CostExcluding: ['cost excluding'],
+  CostIncluding: ['cost including'],
+  RecommendedRetailPrice: ['recommended retail price'],
 } as const;
 
 interface ProductRow {
@@ -52,9 +53,23 @@ interface ProductRow {
  */
 function findColumnIndex(headers: string[], patterns: readonly string[]): number {
   for (let i = 0; i < headers.length; i++) {
-    const header = String(headers[i] || '').toLowerCase().trim();
+    const header = String(headers[i] || '').trim();
+    if (!header) continue;
+    
+    const lowerHeader = header.toLowerCase();
     for (const pattern of patterns) {
-      if (header.includes(pattern.toLowerCase())) {
+      const lowerPattern = pattern.toLowerCase();
+      // Try exact match first
+      if (lowerHeader === lowerPattern) {
+        return i;
+      }
+      // Try contains match
+      if (lowerHeader.includes(lowerPattern) || lowerPattern.includes(lowerHeader)) {
+        return i;
+      }
+      // Try word boundary match for common patterns
+      const patternRegex = new RegExp(`\\b${lowerPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (patternRegex.test(lowerHeader)) {
         return i;
       }
     }
@@ -79,11 +94,21 @@ function normalizePrice(value: unknown): number | null {
  * Extract brand name from sheet name
  */
 function extractBrandName(sheetName: string): string {
+  // Normalize sheet name to brand
+  let brand = sheetName.trim();
+  
+  // POWERWORKS LINE ARRAY and POWERWORKS are the same brand
+  if (/^POWERWORKS/i.test(brand)) {
+    return 'POWERWORKS';
+  }
+  
   // Remove common prefixes/suffixes and clean up
-  return sheetName
-    .replace(/^(AUDIO TECHNICA|AT)\s*/i, '')
+  brand = brand
+    .replace(/^(AUDIO TECHNICA|AT)\s*/i, 'Audio Technica')
     .replace(/\s*(PRO|CONSUMER)$/i, '')
-    .trim() || sheetName;
+    .trim();
+  
+  return brand || sheetName;
 }
 
 /**
@@ -104,17 +129,112 @@ function readExcelFile(filePath: string): { workbook: XLSX.WorkBook; sheets: Map
     console.log(`\n📋 Processing sheet: "${sheetName}"`);
     
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as unknown[][];
+    
+    // Try multiple parsing strategies
+    // First, try with default settings
+    let jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 1, 
+      defval: '',
+      raw: false,
+      blankrows: false
+    }) as unknown[][];
+    
+    // If that doesn't work, try with raw values
+    if (!jsonData || jsonData.length === 0 || !jsonData[0] || jsonData[0].every((c: unknown) => !c)) {
+      jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1, 
+        defval: null,
+        raw: true,
+        blankrows: false
+      }) as unknown[][];
+    }
+    
+    // Get cell range to check for merged cells or special formatting
+    const range = worksheet['!ref'] ? XLSX.utils.decode_range(worksheet['!ref']) : null;
+    if (range) {
+      // Check for merged cells (these might contain headers)
+      const mergedCells = worksheet['!merges'] || [];
+      if (mergedCells.length > 0 && (sheetName === 'AUDIO TECHNICA CONSUMER' || sheetName === workbook.SheetNames[0])) {
+        console.log(`   📋 Sheet has ${mergedCells.length} merged cell ranges`);
+      }
+    }
     
     if (jsonData.length < 2) {
       console.log(`⚠️  Sheet "${sheetName}" has no data rows, skipping`);
       continue;
     }
     
-    // First row is headers
-    const headers = (jsonData[0] || []).map(h => String(h || '').trim());
+    // Find header row - check first 10 rows for actual headers
+    // Excel files often have title rows, merged cells, or headers not in row 0
+    let headerRowIndex = -1;
+    let headers: string[] = [];
     
-    // Find column indices
+    // Look for header row in first 10 rows
+    for (let rowIdx = 0; rowIdx < Math.min(10, jsonData.length); rowIdx++) {
+      const row = jsonData[rowIdx] || [];
+      const rowHeaders = row.map(h => {
+        const val = String(h || '').trim();
+        return val;
+      }).filter(h => h.length > 0); // Remove empty cells
+      
+      // Check if this row looks like headers (contains common column names)
+      const rowText = rowHeaders.join(' ').toLowerCase();
+      const hasSku = /sku|product.*code|item.*code|part.*no|^code$/i.test(rowText);
+      const hasPrice = /price|cost|excluding|including|retail|rsp|rrp/i.test(rowText);
+      const hasName = /product.*name|name|description|item.*name/i.test(rowText);
+      
+      // Must have SKU and at least one other field
+      if (hasSku && (hasPrice || hasName) && rowHeaders.length >= 3) {
+        headerRowIndex = rowIdx;
+        // Use full row length, not just non-empty cells
+        headers = row.map(h => String(h || '').trim());
+        
+        // Debug for first sheet
+        if (sheetName === workbook.SheetNames[0]) {
+          console.log(`   🔍 Found headers in row ${rowIdx + 1}: ${rowHeaders.slice(0, 7).join(', ')}`);
+        }
+        break;
+      }
+    }
+    
+    // Fallback: try to find headers by looking for common patterns even if not perfect match
+    if (headerRowIndex === -1) {
+      for (let rowIdx = 0; rowIdx < Math.min(15, jsonData.length); rowIdx++) {
+        const row = jsonData[rowIdx] || [];
+        const rowText = row.map(h => String(h || '').toLowerCase()).join(' ');
+        
+        // Look for any indication of product data (SKU-like patterns, prices, etc.)
+        if (/\b(sku|code|price|cost|name|product)\b/i.test(rowText) && row.filter(c => c).length >= 3) {
+          headerRowIndex = rowIdx;
+          headers = row.map(h => String(h || '').trim());
+          console.log(`   ⚠️  Using row ${rowIdx + 1} as headers (best guess): ${headers.slice(0, 5).filter(h => h).join(', ')}`);
+          break;
+        }
+      }
+    }
+    
+    // Last resort: use first row
+    if (headerRowIndex === -1) {
+      headerRowIndex = 0;
+      headers = (jsonData[0] || []).map(h => String(h || '').trim());
+    }
+    
+    // Debug: show actual headers for debugging
+    if (sheetName === 'AUDIO TECHNICA CONSUMER' || sheetName === workbook.SheetNames[0]) {
+      console.log(`   📝 Headers from row ${headerRowIndex + 1}:`);
+      headers.forEach((h, idx) => {
+        if (h) console.log(`      [${idx}] "${h}"`);
+      });
+      if (jsonData.length > headerRowIndex + 1) {
+        const firstDataRow = jsonData[headerRowIndex + 1] || [];
+        console.log(`   📊 First data row (${headerRowIndex + 2}):`);
+        firstDataRow.slice(0, 7).forEach((v, idx) => {
+          if (v) console.log(`      [${idx}] "${String(v).substring(0, 30)}"`);
+        });
+      }
+    }
+    
+    // Find column indices with more flexible matching
     const skuIndex = findColumnIndex(headers, COLUMN_MAPPINGS.SKU);
     const nameIndex = findColumnIndex(headers, COLUMN_MAPPINGS.ProductName);
     const barcodeIndex = findColumnIndex(headers, COLUMN_MAPPINGS.Barcode);
@@ -125,28 +245,62 @@ function readExcelFile(filePath: string): { workbook: XLSX.WorkBook; sheets: Map
     
     console.log(`   Columns found: SKU=${skuIndex !== -1 ? '✓' : '✗'}, Name=${nameIndex !== -1 ? '✓' : '✗'}, Cost Excl=${costExclIndex !== -1 ? '✓' : '✗'}, Cost Incl=${costInclIndex !== -1 ? '✓' : '✗'}, RSP=${rspIndex !== -1 ? '✓' : '✗'}`);
     
-    if (skuIndex === -1 || nameIndex === -1) {
-      console.log(`⚠️  Sheet "${sheetName}" missing required columns (SKU or Name), skipping`);
+    // Try alternative column names based on actual headers found
+    const actualSkuIndex = skuIndex !== -1 ? skuIndex : 
+      headers.findIndex(h => /^sku$/i.test(String(h).trim()));
+    const actualNameIndex = nameIndex !== -1 ? nameIndex :
+      headers.findIndex(h => /product.*name/i.test(String(h).trim()));
+    const actualCostExclIndex = costExclIndex !== -1 ? costExclIndex :
+      headers.findIndex(h => /cost.*excluding/i.test(String(h).trim()));
+    const actualCostInclIndex = costInclIndex !== -1 ? costInclIndex :
+      headers.findIndex(h => /cost.*including/i.test(String(h).trim()));
+    const actualRspIndex = rspIndex !== -1 ? rspIndex :
+      headers.findIndex(h => /recommended.*retail.*price/i.test(String(h).trim()));
+    
+    if (actualSkuIndex === -1 || actualNameIndex === -1) {
+      console.log(`⚠️  Sheet "${sheetName}" missing required columns (SKU or Product Name), skipping`);
+      if (headers.length > 0 && headers.some(h => h)) {
+        console.log(`   Available headers: ${headers.filter(h => h).join(', ')}`);
+      }
       continue;
+    }
+    
+    // Use actual indices found
+    const finalSkuIndex = actualSkuIndex;
+    const finalNameIndex = actualNameIndex;
+    const finalBarcodeIndex = barcodeIndex !== -1 ? barcodeIndex : headers.findIndex(h => /^barcode$/i.test(String(h).trim()));
+    const finalDescIndex = descIndex !== -1 ? descIndex : headers.findIndex(h => /product.*description|description/i.test(String(h).trim()));
+    const finalCostExclIndex = actualCostExclIndex;
+    const finalCostInclIndex = actualCostInclIndex;
+    const finalRspIndex = actualRspIndex;
+    
+    // Update status message with found indices
+    if (finalSkuIndex !== -1 && finalNameIndex !== -1) {
+      console.log(`   ✅ Columns mapped: SKU[${finalSkuIndex}], Name[${finalNameIndex}], Cost Excl[${finalCostExclIndex}], Cost Incl[${finalCostInclIndex}], RSP[${finalRspIndex}]`);
     }
     
     const brandName = extractBrandName(sheetName);
     const products: ProductRow[] = [];
     
-    // Process data rows (skip header)
-    for (let i = 1; i < jsonData.length; i++) {
+    // Process data rows (skip header row + any title rows)
+    const dataStartRow = headerRowIndex + 1;
+    for (let i = dataStartRow; i < jsonData.length; i++) {
       const row = jsonData[i] || [];
-      const sku = String(row[skuIndex] || '').trim();
-      const productName = String(row[nameIndex] || '').trim();
+      const sku = String(row[finalSkuIndex] || '').trim();
+      const productName = String(row[finalNameIndex] || '').trim();
       
       // Skip empty rows
       if (!sku && !productName) {
         continue;
       }
       
-      // Skip if missing required fields
+      // Skip if missing required fields (but don't log every skip - too noisy)
       if (!sku || !productName) {
-        console.log(`⚠️  Row ${i + 1}: Missing SKU or Product Name, skipping`);
+        // Only log if it's clearly a data row (has some content) not just empty
+        const hasContent = row.some((cell: unknown) => cell && String(cell).trim().length > 0);
+        if (hasContent && process.env.DEBUG) {
+          console.log(`⚠️  Row ${i + 1}: Missing SKU or Product Name (has content but missing fields), skipping`);
+        }
         continue;
       }
       
@@ -156,11 +310,11 @@ function readExcelFile(filePath: string): { workbook: XLSX.WorkBook; sheets: Map
         brand: brandName,
         sheetName,
         rowNumber: i + 1,
-        barcode: barcodeIndex !== -1 ? String(row[barcodeIndex] || '').trim() || undefined : undefined,
-        description: descIndex !== -1 ? String(row[descIndex] || '').trim() || undefined : undefined,
-        costExcluding: costExclIndex !== -1 ? normalizePrice(row[costExclIndex]) : null,
-        costIncluding: costInclIndex !== -1 ? normalizePrice(row[costInclIndex]) : null,
-        recommendedRetailPrice: rspIndex !== -1 ? normalizePrice(row[rspIndex]) : null,
+        barcode: finalBarcodeIndex !== -1 ? String(row[finalBarcodeIndex] || '').trim() || undefined : undefined,
+        description: finalDescIndex !== -1 ? String(row[finalDescIndex] || '').trim() || undefined : undefined,
+        costExcluding: finalCostExclIndex !== -1 ? normalizePrice(row[finalCostExclIndex]) : null,
+        costIncluding: finalCostInclIndex !== -1 ? normalizePrice(row[finalCostInclIndex]) : null,
+        recommendedRetailPrice: finalRspIndex !== -1 ? normalizePrice(row[finalRspIndex]) : null,
       };
       
       products.push(product);
@@ -195,6 +349,9 @@ function generateInsertSQL(products: ProductRow[], supplierId: string): string[]
       rowNumber: product.rowNumber,
     };
     
+    if (product.description) {
+      attrsJson.description = product.description;
+    }
     if (product.costExcluding !== null) {
       attrsJson.cost_excluding = product.costExcluding;
     }

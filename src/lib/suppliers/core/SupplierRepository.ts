@@ -1002,42 +1002,43 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   }
 
   private buildFilterQuery(filters: SupplierFilters): { query: string, countQuery: string, params: unknown[] } {
+    // Query from core.supplier directly since public.suppliers view doesn't have all columns
     let query = `
       SELECT
-        s.id,
+        s.supplier_id::text as id,
         s.name,
         s.code,
-        s.status,
-        s.tier,
-        s.category,
-        s.subcategory,
-        s.tags,
-        s.legal_name,
-        s.website,
-        s.industry,
-        s.tax_id,
-        s.registration_number,
-        s.founded_year,
-        s.employee_count,
-        s.annual_revenue,
-        s.currency,
+        CASE WHEN s.active THEN 'active' ELSE 'inactive' END as status,
+        COALESCE(s.contact_info->>'tier', 'approved') as tier,
+        COALESCE(s.contact_info->>'category', NULL) as category,
+        COALESCE(s.contact_info->>'subcategory', NULL) as subcategory,
+        COALESCE((s.contact_info->>'tags')::jsonb, '[]'::jsonb) as tags,
+        s.contact_info->>'legalName' as legal_name,
+        s.contact_info->>'website' as website,
+        s.contact_info->>'industry' as industry,
+        s.contact_info->>'taxId' as tax_id,
+        s.contact_info->>'registrationNumber' as registration_number,
+        (s.contact_info->>'foundedYear')::integer as founded_year,
+        (s.contact_info->>'employeeCount')::integer as employee_count,
+        (s.contact_info->>'annualRevenue')::numeric as annual_revenue,
+        COALESCE(s.default_currency, 'ZAR') as currency,
         s.created_at,
         s.updated_at,
         json_agg(DISTINCT sc.*) FILTER (WHERE sc.id IS NOT NULL) as contacts,
         json_agg(DISTINCT sa.*) FILTER (WHERE sa.id IS NOT NULL) as addresses,
         json_agg(DISTINCT sp.*) FILTER (WHERE sp.id IS NOT NULL) as performance_data
-      FROM public.suppliers s
-      LEFT JOIN supplier_contacts sc ON s.id = sc.supplier_id AND sc.is_active = true
-      LEFT JOIN supplier_addresses sa ON s.id = sa.supplier_id AND sa.is_active = true
-      LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
+      FROM core.supplier s
+      LEFT JOIN supplier_contacts sc ON s.supplier_id = sc.supplier_id AND sc.is_active = true
+      LEFT JOIN supplier_addresses sa ON s.supplier_id = sa.supplier_id AND sa.is_active = true
+      LEFT JOIN supplier_performance sp ON s.supplier_id = sp.supplier_id
       WHERE 1=1
     `
 
     let countQuery = `
-      SELECT COUNT(DISTINCT s.id) as count
-      FROM public.suppliers s
-      LEFT JOIN supplier_contacts sc ON s.id = sc.supplier_id AND sc.is_active = true
-      LEFT JOIN supplier_addresses sa ON s.id = sa.supplier_id AND sa.is_active = true
+      SELECT COUNT(DISTINCT s.supplier_id) as count
+      FROM core.supplier s
+      LEFT JOIN supplier_contacts sc ON s.supplier_id = sc.supplier_id AND sc.is_active = true
+      LEFT JOIN supplier_addresses sa ON s.supplier_id = sa.supplier_id AND sa.is_active = true
       WHERE 1=1
     `
 
@@ -1045,30 +1046,42 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     let paramIndex = 1
 
     if (filters.search) {
-      const searchCondition = ` AND (s.name ILIKE $${paramIndex} OR s.legal_name ILIKE $${paramIndex} OR s.code ILIKE $${paramIndex})`
+      const searchCondition = ` AND (s.name ILIKE $${paramIndex} OR s.code ILIKE $${paramIndex} OR s.contact_info->>'legalName' ILIKE $${paramIndex})`
       query += searchCondition
       countQuery += searchCondition
       params.push(`%${filters.search}%`)
       paramIndex++
     }
 
-    // Status & tier are text, category is text
+    // Status filter - use active boolean
     if (filters.status && filters.status.length > 0) {
-      const statusCondition = ` AND s.status = ANY($${paramIndex}::text[])`;
-      query += statusCondition;
-      countQuery += statusCondition;
-      params.push(filters.status);
-      paramIndex++;
+      const hasActive = filters.status.includes('active')
+      const hasInactive = filters.status.includes('inactive')
+      if (hasActive && !hasInactive) {
+        const statusCondition = ` AND s.active = true`;
+        query += statusCondition;
+        countQuery += statusCondition;
+      } else if (hasInactive && !hasActive) {
+        const statusCondition = ` AND s.active = false`;
+        query += statusCondition;
+        countQuery += statusCondition;
+      }
+      // If both, no filter (show all)
+    } else {
+      // Default: only active suppliers
+      query += ` AND s.active = true`;
+      countQuery += ` AND s.active = true`;
     }
+    
     if (filters.tier && filters.tier.length > 0) {
-      const tierCondition = ` AND s.tier = ANY($${paramIndex}::text[])`;
+      const tierCondition = ` AND s.contact_info->>'tier' = ANY($${paramIndex}::text[])`;
       query += tierCondition;
       countQuery += tierCondition;
       params.push(filters.tier);
       paramIndex++;
     }
     if (filters.category && filters.category.length > 0) {
-      const categoryCondition = ` AND s.primary_category = ANY($${paramIndex}::text[])`;
+      const categoryCondition = ` AND s.contact_info->>'category' = ANY($${paramIndex}::text[])`;
       query += categoryCondition;
       countQuery += categoryCondition;
       params.push(filters.category);
@@ -1076,9 +1089,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     }
 
     query += ` GROUP BY
-      s.id, s.name, s.code, s.status, s.tier, s.category, s.subcategory, s.tags,
-      s.legal_name, s.website, s.industry, s.tax_id, s.registration_number,
-      s.founded_year, s.employee_count, s.annual_revenue, s.currency,
+      s.supplier_id, s.name, s.code, s.active, s.contact_info, s.default_currency,
       s.created_at, s.updated_at
     ORDER BY s.name ASC`
 
