@@ -533,6 +533,13 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
   // Filter suppliers
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter(supplier => {
+      // Filter out inactive suppliers by default (unless explicitly filtering for inactive)
+      if (!statusFilter || statusFilter === 'all') {
+        if (supplier.status === 'inactive') {
+          return false
+        }
+      }
+
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
@@ -1246,8 +1253,19 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                   </TableHeader>
                   <TableBody>
                     {filteredSuppliers.map((supplier) => (
-                      <TableRow key={supplier.id}>
-                        <TableCell>
+                      <TableRow 
+                        key={supplier.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={(e) => {
+                          // Don't navigate if clicking on checkbox or dropdown
+                          const target = e.target as HTMLElement
+                          if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('[role="menuitem"]')) {
+                            return
+                          }
+                          router.push(`/suppliers/${supplier.id}/profile`)
+                        }}
+                      >
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selectedSuppliers.includes(supplier.id)}
                             onCheckedChange={(checked) => {
@@ -1310,7 +1328,7 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                             {supplier.riskLevel.toUpperCase()}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm">
@@ -1318,9 +1336,9 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setSelectedSupplier(supplier)}>
+                              <DropdownMenuItem onClick={() => router.push(`/suppliers/${supplier.id}/profile`)}>
                                 <Eye className="h-4 w-4 mr-2" />
-                                View Details
+                                View Profile
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => navigateToEditSupplier(supplier.id)}>
                                 <Edit className="h-4 w-4 mr-2" />
