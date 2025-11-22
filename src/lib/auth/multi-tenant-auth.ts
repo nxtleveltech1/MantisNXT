@@ -63,19 +63,28 @@ export interface AuthResult {
 }
 
 export class MultiTenantAuth extends EventEmitter {
-  private readonly jwtSecret: string;
+  private _jwtSecret: string | null = null;
   private readonly tokenExpiry: string;
   private readonly refreshTokenExpiry: string;
 
   constructor() {
     super();
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error('JWT_SECRET environment variable is required for authentication');
-    }
-    this.jwtSecret = secret;
     this.tokenExpiry = '1h';
     this.refreshTokenExpiry = '30d';
+  }
+
+  /**
+   * Lazy getter for JWT secret - validates only when first accessed at runtime
+   */
+  private get jwtSecret(): string {
+    if (this._jwtSecret === null) {
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new Error('JWT_SECRET environment variable is required for authentication');
+      }
+      this._jwtSecret = secret;
+    }
+    return this._jwtSecret;
   }
 
   /**
