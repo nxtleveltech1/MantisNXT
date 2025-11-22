@@ -1125,8 +1125,8 @@ const UnifiedSupplierDashboard: React.FC<UnifiedSupplierDashboardProps> = ({
                       <X className="h-4 w-4 mr-2" />
                       Clear
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                    <Button variant="outline" size="sm" onClick={() => refresh()}>
+                      <RefreshCw className={`h-4 w-4 mr-2 ${suppliersLoading ? 'animate-spin' : ''}`} />
                       Refresh
                     </Button>
                   </div>
