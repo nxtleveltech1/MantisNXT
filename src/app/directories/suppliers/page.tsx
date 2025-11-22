@@ -62,6 +62,7 @@ import {
   User,
   Save,
   Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import type { SupplierContact } from '@/types/supplier'
 
@@ -119,6 +120,31 @@ export default function SupplierContactsDirectoryPage() {
 
   useEffect(() => {
     fetchData()
+    
+    // Set up real-time refresh: poll every 5 seconds
+    const refreshInterval = setInterval(() => {
+      fetchData()
+    }, 5000)
+    
+    // Refresh on window focus (when user returns to tab)
+    const handleFocus = () => {
+      fetchData()
+    }
+    window.addEventListener('focus', handleFocus)
+    
+    // Listen for supplier deletion/update events from other parts of the app
+    const handleSupplierChange = () => {
+      fetchData()
+    }
+    window.addEventListener('supplier:updated', handleSupplierChange)
+    window.addEventListener('supplier:deleted', handleSupplierChange)
+    
+    return () => {
+      clearInterval(refreshInterval)
+      window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('supplier:updated', handleSupplierChange)
+      window.removeEventListener('supplier:deleted', handleSupplierChange)
+    }
   }, [])
 
   useEffect(() => {
@@ -446,6 +472,15 @@ export default function SupplierContactsDirectoryPage() {
                 </Select>
               </div>
               <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => fetchData()}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
                 <Button variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
                   Export

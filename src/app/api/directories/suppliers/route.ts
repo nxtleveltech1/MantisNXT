@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Use the simplest possible query - just get suppliers from core.supplier (the actual table)
+    // Only return active suppliers (exclude deleted/inactive)
     let suppliersQuery = `
       SELECT 
         supplier_id as id,
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at
       FROM core.supplier
-      WHERE 1=1
+      WHERE active = true
     `
     const params: unknown[] = []
     let paramIndex = 1
@@ -46,9 +47,14 @@ export async function GET(request: NextRequest) {
     // Get suppliers
     const suppliersResult = await query(suppliersQuery, params)
     const suppliers = suppliersResult.rows || []
+    
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Suppliers Directory] Fetched ${suppliers.length} active suppliers (filtered by active = true)`)
+    }
 
-    // Get count
-    let countQuery = `SELECT COUNT(*) as count FROM core.supplier WHERE 1=1`
+    // Get count (only active suppliers)
+    let countQuery = `SELECT COUNT(*) as count FROM core.supplier WHERE active = true`
     const countParams: unknown[] = []
     let countParamIndex = 1
 

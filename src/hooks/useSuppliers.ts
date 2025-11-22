@@ -185,6 +185,13 @@ export function useSuppliers(options: UseSupplierOptions = {}) {
         // Immediately remove from local state
         setSuppliers(prev => prev.filter(supplier => supplier.id !== id))
         console.log('✅ Supplier removed from local state:', id)
+        
+        // Dispatch event to notify other components (e.g., directory page)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('supplier:deleted', { detail: { id } }))
+          window.dispatchEvent(new CustomEvent('supplier:updated'))
+        }
+        
         return true
       } else {
         throw new Error(result.error || 'Failed to delete supplier')

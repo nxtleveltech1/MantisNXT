@@ -628,6 +628,12 @@ export const useSupplierMutations = () => {
       // Remove from individual cache
       queryClient.removeQueries({ queryKey: ['supplier', id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+      
+      // Dispatch event to notify other components (e.g., directory page)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('supplier:deleted', { detail: { id } }))
+        window.dispatchEvent(new CustomEvent('supplier:updated'))
+      }
     },
     onError: (error, id, context) => {
       console.error('❌ Supplier deletion failed:', error.message);
