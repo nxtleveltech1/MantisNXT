@@ -120,6 +120,16 @@ export async function GET(request: NextRequest) {
         WHERE is_current = true
         ORDER BY supplier_product_id, valid_from DESC
       ),
+      previous_prices AS (
+        SELECT DISTINCT ON (ph.supplier_product_id)
+          ph.supplier_product_id,
+          ph.price AS previous_price
+        FROM core.price_history ph
+        JOIN current_prices cp ON cp.supplier_product_id = ph.supplier_product_id
+        WHERE ph.is_current = false
+          AND ph.valid_to < cp.valid_from
+        ORDER BY ph.supplier_product_id, ph.valid_to DESC
+      ),
       latest_stock AS (
         SELECT DISTINCT ON (supplier_product_id)
           supplier_product_id,
@@ -151,11 +161,19 @@ export async function GET(request: NextRequest) {
         cp.price AS current_price,
         cp.currency,
         ls.qty_on_hand,
-        qty.qty_on_order
+        qty.qty_on_order,
+        pp.previous_price AS previous_cost,
+        CASE
+          WHEN pp.previous_price IS NOT NULL AND cp.price IS NOT NULL
+          THEN cp.price - pp.previous_price
+          ELSE NULL
+        END AS cost_diff,
+        sr.series_range
       FROM core.supplier_product sp
       JOIN core.supplier s ON s.supplier_id = sp.supplier_id
       LEFT JOIN core.category c ON c.category_id = sp.category_id
       LEFT JOIN current_prices cp ON cp.supplier_product_id = sp.supplier_product_id
+      LEFT JOIN previous_prices pp ON pp.supplier_product_id = sp.supplier_product_id
       LEFT JOIN latest_stock ls ON ls.supplier_product_id = sp.supplier_product_id
       LEFT JOIN LATERAL (
         SELECT r.brand
@@ -181,6 +199,25 @@ export async function GET(request: NextRequest) {
         ORDER BY u.received_at DESC, r.row_num DESC
         LIMIT 1
       ) qty ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          r.attrs_json->>'seriesRange',
+          r.attrs_json->>'series_range',
+          r.attrs_json->>'series',
+          r.attrs_json->>'range'
+        ) AS series_range
+        FROM spp.pricelist_row r
+        JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id AND u.supplier_id = sp.supplier_id
+        WHERE r.supplier_sku = sp.supplier_sku
+          AND (
+            r.attrs_json->>'seriesRange' IS NOT NULL OR
+            r.attrs_json->>'series_range' IS NOT NULL OR
+            r.attrs_json->>'series' IS NOT NULL OR
+            r.attrs_json->>'range' IS NOT NULL
+          )
+        ORDER BY u.received_at DESC, r.row_num DESC
+        LIMIT 1
+      ) sr ON TRUE
       WHERE ${whereSql}
       ORDER BY ${sortColumn} ${sortDir}
       LIMIT $${idx++} OFFSET $${idx}

@@ -158,6 +158,11 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
+  // CSS optimization
+  experimental: {
+    optimizeCss: true,
+  },
+
   // Configure redirects if needed
   async redirects() {
     return [];
