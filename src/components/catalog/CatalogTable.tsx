@@ -5,12 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { RefreshCw, Package } from 'lucide-react'
+import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { ColumnManagementDialog, type ColumnDef } from './ColumnManagementDialog'
 
 function formatCost(value: number | undefined | null): string {
   const n = Number(value ?? 0)
@@ -18,6 +18,71 @@ function formatCost(value: number | undefined | null): string {
   const [intPart, decPart] = fixed.split('.')
   const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
   return `${withSpaces}.${decPart}`
+}
+
+// Default column configuration
+const DEFAULT_COLUMNS: ColumnDef[] = [
+  { key: 'supplier', label: 'Supplier', visible: true, order: 1, align: 'left', sortable: true },
+  { key: 'supplier_code', label: 'Supplier Code', visible: false, order: 2, align: 'left', sortable: false },
+  { key: 'sku', label: 'SKU', visible: true, order: 3, align: 'left', sortable: true },
+  { key: 'name', label: 'Product Name', visible: true, order: 4, align: 'left', sortable: true },
+  { key: 'description', label: 'Product Description', visible: true, order: 5, align: 'left', sortable: false },
+  { key: 'brand', label: 'Brand', visible: true, order: 6, align: 'left', sortable: false },
+  { key: 'series_range', label: 'Series (Range)', visible: true, order: 7, align: 'left', sortable: false },
+  { key: 'uom', label: 'UOM', visible: false, order: 8, align: 'left', sortable: false },
+  { key: 'pack_size', label: 'Pack Size', visible: false, order: 9, align: 'left', sortable: false },
+  { key: 'barcode', label: 'Barcode', visible: false, order: 10, align: 'left', sortable: false },
+  { key: 'category', label: 'Category', visible: true, order: 11, align: 'left', sortable: true },
+  { key: 'soh', label: 'Stock on Hand', visible: true, order: 12, align: 'right', sortable: false },
+  { key: 'on_order', label: 'Stock on Order', visible: true, order: 13, align: 'right', sortable: false },
+  { key: 'cost_ex_vat', label: 'Cost ExVAT', visible: true, order: 14, align: 'right', sortable: false },
+  { key: 'vat', label: 'VAT (15%)', visible: true, order: 15, align: 'right', sortable: false },
+  { key: 'cost_diff', label: 'Cost Diff', visible: true, order: 16, align: 'right', sortable: false },
+  { key: 'previous_cost', label: 'Previous Cost', visible: true, order: 17, align: 'right', sortable: false },
+  { key: 'rsp', label: 'RSP', visible: true, order: 18, align: 'right', sortable: false },
+  { key: 'cost_inc_vat', label: 'Cost IncVAT', visible: true, order: 19, align: 'right', sortable: false },
+  { key: 'currency', label: 'Currency', visible: false, order: 20, align: 'right', sortable: false },
+  { key: 'first_seen', label: 'First Seen', visible: false, order: 21, align: 'left', sortable: true },
+  { key: 'last_seen', label: 'Last Seen', visible: false, order: 22, align: 'left', sortable: true },
+  { key: 'active', label: 'Active', visible: false, order: 23, align: 'left', sortable: false },
+]
+
+// Load columns from localStorage or return defaults
+function loadColumnsFromStorage(): ColumnDef[] {
+  if (typeof window === 'undefined') return DEFAULT_COLUMNS
+  
+  try {
+    const stored = localStorage.getItem('catalog_table_columns')
+    if (!stored) return DEFAULT_COLUMNS
+    
+    const parsed = JSON.parse(stored) as ColumnDef[]
+    // Merge with defaults to ensure all columns exist
+    const defaultMap = new Map(DEFAULT_COLUMNS.map((col) => [col.key, col]))
+    const storedMap = new Map(parsed.map((col) => [col.key, col]))
+    
+    // Merge, keeping stored values but ensuring all defaults exist
+    const merged = DEFAULT_COLUMNS.map((defaultCol) => {
+      const storedCol = storedMap.get(defaultCol.key)
+      return storedCol
+        ? { ...defaultCol, ...storedCol, order: storedCol.order ?? defaultCol.order }
+        : defaultCol
+    })
+    
+    // Sort by order
+    return merged.sort((a, b) => a.order - b.order)
+  } catch {
+    return DEFAULT_COLUMNS
+  }
+}
+
+// Save columns to localStorage
+function saveColumnsToStorage(columns: ColumnDef[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem('catalog_table_columns', JSON.stringify(columns))
+  } catch (error) {
+    console.error('Failed to save columns to localStorage:', error)
+  }
 }
 
 type CatalogRow = {
@@ -41,6 +106,9 @@ type CatalogRow = {
   cost_inc_vat?: number
   rsp?: number
   currency?: string
+  series_range?: string
+  previous_cost?: number
+  cost_diff?: number
   attrs_json?: {
     description?: string
     cost_including?: number
@@ -65,33 +133,35 @@ export function CatalogTable() {
   const [isActive, setIsActive] = useState<'all' | 'active' | 'inactive'>('all')
   const [priceMin, setPriceMin] = useState<string>('')
   const [priceMax, setPriceMax] = useState<string>('')
-  const [sortBy, setSortBy] = useState<'supplier_name' | 'supplier_sku' | 'product_name' | 'category_name' | 'last_seen_at'>('supplier_name')
+  const [sortBy, setSortBy] = useState<string>('supplier_name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>({
-    supplier: true,
-    supplier_code: false,
-    sku: true,
-    name: true,
-    description: true,
-    brand: true,
-    uom: false,
-    pack_size: false,
-    barcode: false,
-    category: true,
-    soh: true,
-    on_order: true,
-    cost_ex_vat: true,
-    vat: true,
-    rsp: true,
-    cost_inc_vat: true,
-    currency: false,
-    first_seen: false,
-    last_seen: false,
-    active: false,
-  })
+  const [columns, setColumns] = useState<ColumnDef[]>(() => loadColumnsFromStorage())
+  const [columnDialogOpen, setColumnDialogOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [detail, setDetail] = useState<unknown>(null)
   const [history, setHistory] = useState<unknown[]>([])
+  const [metrics, setMetrics] = useState({
+    totalSupplierProducts: 0,
+    totalProductsAllSuppliers: 0,
+    suppliers: 0,
+    brands: 0,
+  })
+  const [metricsLoading, setMetricsLoading] = useState(false)
+
+  // Save columns to localStorage whenever they change
+  useEffect(() => {
+    saveColumnsToStorage(columns)
+  }, [columns])
+
+  // Helper to get visible columns in order
+  const visibleColumns = useMemo(() => {
+    return columns.filter((col) => col.visible).sort((a, b) => a.order - b.order)
+  }, [columns])
+
+  // Helper to check if column is visible
+  const isColumnVisible = (key: string) => {
+    return columns.find((col) => col.key === key)?.visible ?? false
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -131,6 +201,34 @@ export function CatalogTable() {
     fetchData()
   }, [fetchData])
 
+  // Fetch metrics
+  const fetchMetrics = useCallback(async () => {
+    setMetricsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (supplierId && supplierId !== 'all') {
+        params.set('supplier_id', supplierId)
+      }
+      const res = await fetch(`/api/catalog/metrics?${params}`)
+      if (!res.ok) throw new Error('Failed to load metrics')
+      const data = await res.json()
+      setMetrics(data.data || {
+        totalSupplierProducts: 0,
+        totalProductsAllSuppliers: 0,
+        suppliers: 0,
+        brands: 0,
+      })
+    } catch (err) {
+      console.error('Metrics load error:', err)
+    } finally {
+      setMetricsLoading(false)
+    }
+  }, [supplierId])
+
+  useEffect(() => {
+    fetchMetrics()
+  }, [fetchMetrics])
+
   // Load filter data
   useEffect(() => {
     ;(async () => {
@@ -151,6 +249,219 @@ export function CatalogTable() {
 
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
 
+  // Helper to get sort key for a column
+  const getSortKey = (columnKey: string): string => {
+    const sortMap: Record<string, string> = {
+      supplier: 'supplier_name',
+      sku: 'supplier_sku',
+      name: 'product_name',
+      category: 'category_name',
+      first_seen: 'first_seen_at',
+      last_seen: 'last_seen_at',
+    }
+    return sortMap[columnKey] || columnKey
+  }
+
+  // Helper to render table header cell
+  const renderHeaderCell = (column: ColumnDef) => {
+    const className = cn(
+      column.align === 'right' && 'text-right',
+      column.align === 'center' && 'text-center',
+      column.sortable && 'cursor-pointer hover:bg-muted/50'
+    )
+
+    const handleSort = () => {
+      if (column.sortable) {
+        const sortKey = getSortKey(column.key)
+        setSortBy(sortKey)
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+      }
+    }
+
+    return (
+      <TableHead key={column.key} className={className} onClick={handleSort}>
+        {column.label}
+      </TableHead>
+    )
+  }
+
+  // Helper to render table body cell
+  const renderBodyCell = (column: ColumnDef, row: CatalogRow) => {
+    const className = cn(
+      column.align === 'right' && 'text-right',
+      column.align === 'center' && 'text-center',
+      column.key === 'description' && 'max-w-md'
+    )
+
+    switch (column.key) {
+      case 'supplier':
+        return (
+          <TableCell key={column.key} className={className}>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{row.supplier_name || 'Unknown Supplier'}</span>
+              {!row.is_active && <Badge variant="secondary">inactive</Badge>}
+            </div>
+          </TableCell>
+        )
+      case 'supplier_code':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.supplier_code || '-'}
+          </TableCell>
+        )
+      case 'sku':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.supplier_sku}
+          </TableCell>
+        )
+      case 'name':
+        return (
+          <TableCell key={column.key} className={className}>
+            {row.product_name || 'Product Details Unavailable'}
+          </TableCell>
+        )
+      case 'description':
+        return (
+          <TableCell key={column.key} className={className}>
+            <div className="text-sm text-muted-foreground truncate">
+              {row.description || row.attrs_json?.description || '-'}
+            </div>
+          </TableCell>
+        )
+      case 'brand':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {(row as unknown).brand || row.attrs_json?.brand || '-'}
+          </TableCell>
+        )
+      case 'series_range':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.series_range || '-'}
+          </TableCell>
+        )
+      case 'uom':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.uom || '-'}
+          </TableCell>
+        )
+      case 'pack_size':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.pack_size || '-'}
+          </TableCell>
+        )
+      case 'barcode':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.barcode || '-'}
+          </TableCell>
+        )
+      case 'category':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.category_name || '-'}
+          </TableCell>
+        )
+      case 'soh':
+        return (
+          <TableCell key={column.key} className={className}>
+            {(row as unknown).qty_on_hand ?? 0}
+          </TableCell>
+        )
+      case 'on_order':
+        return (
+          <TableCell key={column.key} className={className}>
+            {(row as unknown).qty_on_order ?? 0}
+          </TableCell>
+        )
+      case 'cost_ex_vat':
+        return (
+          <TableCell key={column.key} className={className}>
+            {(row as unknown).cost_ex_vat !== undefined
+              ? formatCost((row as unknown).cost_ex_vat as number)
+              : row.attrs_json?.cost_excluding !== undefined
+                ? formatCost(Number(row.attrs_json.cost_excluding))
+                : row.current_price !== undefined
+                  ? formatCost(row.current_price)
+                  : '-'}
+          </TableCell>
+        )
+      case 'vat':
+        return (
+          <TableCell key={column.key} className={className}>
+            {formatCost(
+              ((row as unknown).cost_ex_vat ?? row.current_price ?? 0) as number * 0.15
+            )}
+          </TableCell>
+        )
+      case 'cost_diff':
+        return (
+          <TableCell key={column.key} className={className}>
+            {row.cost_diff !== undefined && row.cost_diff !== null
+              ? `${row.cost_diff >= 0 ? '+' : ''}${formatCost(row.cost_diff)}`
+              : '-'}
+          </TableCell>
+        )
+      case 'previous_cost':
+        return (
+          <TableCell key={column.key} className={className}>
+            {row.previous_cost !== undefined && row.previous_cost !== null
+              ? formatCost(row.previous_cost)
+              : '-'}
+          </TableCell>
+        )
+      case 'rsp':
+        return (
+          <TableCell key={column.key} className={className}>
+            {row.rsp !== undefined
+              ? formatCost(row.rsp)
+              : row.attrs_json?.rsp !== undefined
+                ? formatCost(Number(row.attrs_json.rsp))
+                : '-'}
+          </TableCell>
+        )
+      case 'cost_inc_vat':
+        return (
+          <TableCell key={column.key} className={className}>
+            {row.cost_inc_vat !== undefined
+              ? formatCost(row.cost_inc_vat)
+              : row.attrs_json?.cost_including !== undefined
+                ? formatCost(Number(row.attrs_json.cost_including))
+                : '-'}
+          </TableCell>
+        )
+      case 'currency':
+        return (
+          <TableCell key={column.key} className={className}>
+            {row.currency || 'ZAR'}
+          </TableCell>
+        )
+      case 'first_seen':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.first_seen_at ? new Date(row.first_seen_at).toLocaleDateString() : '-'}
+          </TableCell>
+        )
+      case 'last_seen':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.last_seen_at ? new Date(row.last_seen_at).toLocaleDateString() : '-'}
+          </TableCell>
+        )
+      case 'active':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
+            {row.is_active ? 'Yes' : 'No'}
+          </TableCell>
+        )
+      default:
+        return <TableCell key={column.key} className={className}>-</TableCell>
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -160,6 +471,78 @@ export function CatalogTable() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">TOTAL SUPPLIER PRODUCTS</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {metricsLoading ? (
+                      <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                    ) : (
+                      metrics.totalSupplierProducts.toLocaleString()
+                    )}
+                  </p>
+                </div>
+                <Package className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">TOTAL PRODUCTS (ALL SUPPLIERS)</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {metricsLoading ? (
+                      <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                    ) : (
+                      metrics.totalProductsAllSuppliers.toLocaleString()
+                    )}
+                  </p>
+                </div>
+                <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">SUPPLIERS</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {metricsLoading ? (
+                      <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                    ) : (
+                      metrics.suppliers.toLocaleString()
+                    )}
+                  </p>
+                </div>
+                <Building2 className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">BRANDS</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {metricsLoading ? (
+                      <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                    ) : (
+                      metrics.brands.toLocaleString()
+                    )}
+                  </p>
+                </div>
+                <Tag className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <Input
             placeholder="Search by name or SKU"
@@ -205,204 +588,48 @@ export function CatalogTable() {
         </div>
 
         <div className="flex items-center justify-between mb-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">Columns</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {[
-                { key: 'supplier', label: 'Supplier' },
-                { key: 'supplier_code', label: 'Supplier Code' },
-                { key: 'sku', label: 'SKU' },
-                { key: 'name', label: 'Product Name' },
-                { key: 'description', label: 'Product Description' },
-                { key: 'brand', label: 'Brand' },
-                { key: 'uom', label: 'UOM' },
-                { key: 'pack_size', label: 'Pack Size' },
-                { key: 'barcode', label: 'Barcode' },
-                { key: 'category', label: 'Category' },
-                { key: 'soh', label: 'Stock on Hand' },
-                { key: 'on_order', label: 'Stock on Order' },
-                { key: 'cost_ex_vat', label: 'Cost ExVAT' },
-                { key: 'vat', label: 'VAT (15%)' },
-                { key: 'rsp', label: 'RSP' },
-                { key: 'cost_inc_vat', label: 'Cost IncVAT' },
-                { key: 'currency', label: 'Currency' },
-                { key: 'first_seen', label: 'First Seen' },
-                { key: 'last_seen', label: 'Last Seen' },
-                { key: 'active', label: 'Active' },
-              ].map(c => (
-                <DropdownMenuCheckboxItem
-                  key={c.key}
-                  checked={visibleCols[c.key]}
-                  onCheckedChange={(v) => setVisibleCols(s => ({ ...s, [c.key]: !!v }))}
-                >{c.label}</DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setColumnDialogOpen(true)}
+          >
+            <Settings2 className="h-4 w-4 mr-2" />
+            Manage Columns
+          </Button>
+          <ColumnManagementDialog
+            open={columnDialogOpen}
+            onOpenChange={setColumnDialogOpen}
+            columns={columns}
+            onColumnsChange={setColumns}
+            defaultColumns={DEFAULT_COLUMNS}
+          />
         </div>
 
         <div className="rounded-md border overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                {visibleCols.supplier && (
-                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('supplier_name'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Supplier</TableHead>
-                )}
-                {visibleCols.supplier_code && (
-                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('supplier_name'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Code</TableHead>
-                )}
-                {visibleCols.sku && (
-                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('supplier_sku'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>SKU</TableHead>
-                )}
-                {visibleCols.name && (
-                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('product_name'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Product Name</TableHead>
-                )}
-                {visibleCols.description && (
-                  <TableHead>Product Description</TableHead>
-                )}
-                {visibleCols.brand && (
-                  <TableHead>Brand</TableHead>
-                )}
-                {visibleCols.uom && (
-                  <TableHead>UOM</TableHead>
-                )}
-                {visibleCols.pack_size && (
-                  <TableHead>Pack Size</TableHead>
-                )}
-                {visibleCols.barcode && (
-                  <TableHead>Barcode</TableHead>
-                )}
-                {visibleCols.category && (
-                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('category_name'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Category</TableHead>
-                )}
-                {visibleCols.soh && (
-                  <TableHead className="text-right">Stock on Hand</TableHead>
-                )}
-                {visibleCols.on_order && (
-                  <TableHead className="text-right">Stock on Order</TableHead>
-                )}
-                {visibleCols.cost_ex_vat && (
-                  <TableHead className="text-right">Cost ExVAT</TableHead>
-                )}
-                {visibleCols.vat && (
-                  <TableHead className="text-right">VAT (15%)</TableHead>
-                )}
-                {visibleCols.rsp && (
-                  <TableHead className="text-right">RSP</TableHead>
-                )}
-                {visibleCols.currency && (
-                  <TableHead className="text-right">Currency</TableHead>
-                )}
-                {visibleCols.first_seen && (
-                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('first_seen_at' as unknown); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>First Seen</TableHead>
-                )}
-                {visibleCols.last_seen && (
-                  <TableHead className="cursor-pointer" onClick={() => { setSortBy('last_seen_at'); setSortDir(d => d === 'asc' ? 'desc' : 'asc') }}>Last Seen</TableHead>
-                )}
-                {visibleCols.active && (
-                  <TableHead>Active</TableHead>
-                )}
-                {visibleCols.cost_inc_vat && (
-                  <TableHead className="text-right">Cost IncVAT</TableHead>
-                )}
+                {visibleColumns.map((column) => renderHeaderCell(column))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((r) => (
-                <TableRow key={r.supplier_product_id} className="cursor-pointer" onClick={() => { setDetailId(r.supplier_product_id) }}>
-                  {visibleCols.supplier && (
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{r.supplier_name || 'Unknown Supplier'}</span>
-                        {!r.is_active && <Badge variant="secondary">inactive</Badge>}
-                      </div>
-                    </TableCell>
-                  )}
-                  {visibleCols.supplier_code && (
-                    <TableCell className="text-muted-foreground">{r.supplier_code || '-'}</TableCell>
-                  )}
-                  {visibleCols.sku && (
-                    <TableCell className="text-muted-foreground">{r.supplier_sku}</TableCell>
-                  )}
-                  {visibleCols.name && (
-                    <TableCell>{r.product_name || 'Product Details Unavailable'}</TableCell>
-                  )}
-                  {visibleCols.description && (
-                    <TableCell className="max-w-md">
-                      <div className="text-sm text-muted-foreground truncate">
-                        {r.description || r.attrs_json?.description || '-'}
-                      </div>
-                    </TableCell>
-                  )}
-                  {visibleCols.brand && (
-                    <TableCell className="text-muted-foreground">
-                      {(r as unknown).brand || r.attrs_json?.brand || '-'}
-                    </TableCell>
-                  )}
-                  {visibleCols.uom && (
-                    <TableCell className="text-muted-foreground">{r.uom || '-'}</TableCell>
-                  )}
-                  {visibleCols.pack_size && (
-                    <TableCell className="text-muted-foreground">{r.pack_size || '-'}</TableCell>
-                  )}
-                  {visibleCols.barcode && (
-                    <TableCell className="text-muted-foreground">{r.barcode || '-'}</TableCell>
-                  )}
-                  {visibleCols.category && (
-                    <TableCell className="text-muted-foreground">{r.category_name || '-'}</TableCell>
-                  )}
-                  {visibleCols.soh && (
-                    <TableCell className="text-right">{(r as unknown).qty_on_hand ?? 0}</TableCell>
-                  )}
-                  {visibleCols.on_order && (
-                    <TableCell className="text-right">{(r as unknown).qty_on_order ?? 0}</TableCell>
-                  )}
-                  {visibleCols.cost_ex_vat && (
-                    <TableCell className="text-right">
-                      {(r as unknown).cost_ex_vat !== undefined ? formatCost((r as unknown).cost_ex_vat as number) : 
-                       r.attrs_json?.cost_excluding !== undefined ? formatCost(Number(r.attrs_json.cost_excluding)) : 
-                       r.current_price !== undefined ? formatCost(r.current_price) : '-'}
-                    </TableCell>
-                  )}
-                  {visibleCols.vat && (
-                    <TableCell className="text-right">
-                      {formatCost(((r as unknown).cost_ex_vat ?? r.current_price ?? 0) as number * 0.15)}
-                    </TableCell>
-                  )}
-                  {visibleCols.rsp && (
-                    <TableCell className="text-right">
-                      {r.rsp !== undefined ? formatCost(r.rsp) : 
-                       r.attrs_json?.rsp !== undefined ? formatCost(Number(r.attrs_json.rsp)) : 
-                       '-'}
-                    </TableCell>
-                  )}
-                  {visibleCols.currency && (
-                    <TableCell className="text-right">{r.currency || 'ZAR'}</TableCell>
-                  )}
-                  {visibleCols.first_seen && (
-                    <TableCell className="text-muted-foreground">{r.first_seen_at ? new Date(r.first_seen_at).toLocaleDateString() : '-'}</TableCell>
-                  )}
-                  {visibleCols.last_seen && (
-                    <TableCell className="text-muted-foreground">{r.last_seen_at ? new Date(r.last_seen_at).toLocaleDateString() : '-'}</TableCell>
-                  )}
-                  {visibleCols.active && (
-                    <TableCell className="text-muted-foreground">{r.is_active ? 'Yes' : 'No'}</TableCell>
-                  )}
-                  {visibleCols.cost_inc_vat && (
-                    <TableCell className="text-right">
-                      {r.cost_inc_vat !== undefined ? formatCost(r.cost_inc_vat) : 
-                       r.attrs_json?.cost_including !== undefined ? formatCost(Number(r.attrs_json.cost_including)) : 
-                       '-'}
-                    </TableCell>
-                  )}
+                <TableRow
+                  key={r.supplier_product_id}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setDetailId(r.supplier_product_id)
+                  }}
+                >
+                  {visibleColumns.map((column) => renderBodyCell(column, r))}
                 </TableRow>
               ))}
               {rows.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell
+                    colSpan={visibleColumns.length}
+                    className="text-center text-sm text-muted-foreground py-8"
+                  >
                     No results
                   </TableCell>
                 </TableRow>

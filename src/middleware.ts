@@ -24,6 +24,27 @@ export function middleware(request: Request) {
     return NextResponse.next()
   }
 
+  // Public endpoints that don't require authentication
+  const publicEndpoints = [
+    '/api/health',
+    '/api/health/database',
+    '/api/health/database-enterprise',
+    '/api/core/selections',
+    '/api/dashboard_metrics', // Dashboard metrics for initial load
+    '/api/dashboard/inventory-by-category',
+    '/api/dashboard/stock-alerts',
+    '/api/dashboard/location-analytics',
+    '/api/activities/recent',
+    '/api/analytics/anomalies',
+    '/api/analytics/dashboard',
+    '/api/analytics/predictions',
+    '/api/analytics/recommendations',
+  ]
+
+  if (publicEndpoints.some((endpoint) => pathname.startsWith(endpoint))) {
+    return NextResponse.next()
+  }
+
   // Dev allowlist for public GETs (comma-separated prefixes)
   const allowList = parseAllowlist(process.env.ALLOW_PUBLIC_GET_ENDPOINTS)
   if (
