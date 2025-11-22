@@ -36,13 +36,49 @@ export default function UsersPage() {
       setIsLoading(true)
       setError(null)
 
-      const currentUser = await authProvider.getCurrentUser()
-      if (!currentUser) {
-        router.push('/auth/login')
-        return
+      const response = await fetch('/api/v1/admin/users')
+      const result = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/auth/login')
+          return
+        }
+        throw new Error(result.message || 'Failed to load users')
       }
 
-      const userList = await authProvider.getUsersByOrganization(currentUser.org_id)
+      // Transform API response to match User type
+      const userList = result.data.map((u: any) => ({
+        id: u.id,
+        email: u.email,
+        name: u.name || u.displayName,
+        role: u.roles?.[0]?.slug || 'user',
+        org_id: u.organizationId || '',
+        department: u.department || '',
+        permissions: [],
+        created_at: u.createdAt,
+        last_login: u.lastLoginAt,
+        is_active: u.isActive,
+        profile_image: undefined,
+        phone: u.phone || '',
+        mobile: u.mobile,
+        preferences: {
+          language: 'en',
+          timezone: 'Africa/Johannesburg',
+          date_format: 'dd/mm/yyyy',
+          currency: 'ZAR',
+          notifications: {
+            email_notifications: true,
+            sms_notifications: false,
+            push_notifications: true,
+            digest_frequency: 'daily',
+          },
+        },
+        two_factor_enabled: u.twoFactorEnabled || false,
+        email_verified: u.emailVerified || false,
+        password_changed_at: new Date(),
+      }))
+
       setUsers(userList)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users')
@@ -117,7 +153,16 @@ export default function UsersPage() {
     }
 
     try {
-      await authProvider.deleteUser(user.id)
+      const response = await fetch(`/api/v1/admin/users/${user.id}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to delete user')
+      }
+
       await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete user')
@@ -126,7 +171,22 @@ export default function UsersPage() {
 
   const toggleUserStatus = async (user: User) => {
     try {
-      await authProvider.updateUser(user.id, { is_active: !user.is_active })
+      const response = await fetch(`/api/v1/admin/users/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isActive: !user.is_active,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to update user status')
+      }
+
       await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update user status')
@@ -144,20 +204,36 @@ export default function UsersPage() {
         case 'activate':
           await Promise.all(
             selectedUsers.map((user) =>
-              authProvider.updateUser(user.id, { is_active: true })
+              fetch(`/api/v1/admin/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ isActive: true }),
+              })
             )
           )
           break
         case 'deactivate':
           await Promise.all(
             selectedUsers.map((user) =>
-              authProvider.updateUser(user.id, { is_active: false })
+              fetch(`/api/v1/admin/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ isActive: false }),
+              })
             )
           )
           break
         case 'delete':
           await Promise.all(
-            selectedUsers.map((user) => authProvider.deleteUser(user.id))
+            selectedUsers.map((user) =>
+              fetch(`/api/v1/admin/users/${user.id}`, {
+                method: 'DELETE',
+              })
+            )
           )
           break
         case 'assign-role':

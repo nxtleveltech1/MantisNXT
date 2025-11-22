@@ -39,6 +39,7 @@ export function middleware(request: Request) {
     '/api/analytics/dashboard',
     '/api/analytics/predictions',
     '/api/analytics/recommendations',
+    '/api/catalog/metrics',
   ]
 
   if (publicEndpoints.some((endpoint) => pathname.startsWith(endpoint))) {
