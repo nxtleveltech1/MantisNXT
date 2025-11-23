@@ -127,6 +127,7 @@
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "critters": "^0.0.20",
     "crypto-js": "^4.2.0",
     "csv-parse": "^5.6.0",
     "dart-tools": "^0.4.6",

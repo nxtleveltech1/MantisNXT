@@ -17,7 +17,7 @@ import type {
 const mockUsers: User[] = [
   {
     id: 'user-1',
-    email: 'admin@mantis.co.za',
+    email: 'gambew@gmail.com',
     name: 'John Smith',
     role: 'admin',
     org_id: 'org-1',
