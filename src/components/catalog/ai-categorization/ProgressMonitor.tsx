@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, memo, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -40,7 +40,7 @@ interface ProgressMonitorProps {
   onJobComplete?: () => void
 }
 
-export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) {
+export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) {
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -71,7 +71,7 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
     return () => clearInterval(interval)
   }, [fetchJobStatus])
 
-  const pauseJob = async () => {
+  const pauseJob = useCallback(async () => {
     try {
       const response = await fetch(`/api/category/ai-categorization/pause/${jobId}`, {
         method: "POST",
@@ -87,9 +87,9 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
     } catch (error) {
       toast.error("Failed to pause job")
     }
-  }
+  }, [jobId, fetchJobStatus])
 
-  const resumeJob = async () => {
+  const resumeJob = useCallback(async () => {
     try {
       const response = await fetch(`/api/category/ai-categorization/resume/${jobId}`, {
         method: "POST",
@@ -105,9 +105,9 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
     } catch (error) {
       toast.error("Failed to resume job")
     }
-  }
+  }, [jobId, fetchJobStatus])
 
-  const cancelJob = async () => {
+  const cancelJob = useCallback(async () => {
     if (!confirm("Are you sure you want to cancel this job?")) return
 
     try {
@@ -125,7 +125,7 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
     } catch (error) {
       toast.error("Failed to cancel job")
     }
-  }
+  }, [jobId, fetchJobStatus])
 
   if (loading || !jobStatus) {
     return (
@@ -137,11 +137,8 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
     )
   }
 
-  const job = jobStatus.job
-  const progress = Number(jobStatus.progress_percentage)
-  const eta = jobStatus.eta_seconds ? Number(jobStatus.eta_seconds) : null
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case "running":
         return <Badge variant="default" className="bg-blue-500">Running</Badge>
@@ -156,14 +153,18 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
       default:
         return <Badge variant="outline">{status}</Badge>
     }
-  }
+  }, [])
 
-  const formatETA = (seconds: number | null) => {
+  const formatETA = useCallback((seconds: number | null) => {
     if (!seconds) return "Calculating..."
     if (seconds < 60) return `${Math.round(seconds)}s`
     if (seconds < 3600) return `${Math.round(seconds / 60)}m`
     return `${Math.round(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`
-  }
+  }, [])
+
+  const progress = useMemo(() => Number(jobStatus?.progress_percentage ?? 0), [jobStatus?.progress_percentage])
+  const eta = useMemo(() => jobStatus?.eta_seconds ? Number(jobStatus.eta_seconds) : null, [jobStatus?.eta_seconds])
+  const job = useMemo(() => jobStatus?.job, [jobStatus?.job])
 
   return (
     <Card>
@@ -274,5 +275,5 @@ export function ProgressMonitor({ jobId, onJobComplete }: ProgressMonitorProps) 
       </CardContent>
     </Card>
   )
-}
+})
 

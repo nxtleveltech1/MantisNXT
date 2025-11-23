@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useMemo, memo } from "react"
 import AppLayout from "@/components/layout/AppLayout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,20 +22,74 @@ interface Job {
   created_at: string
 }
 
+const StatusBadge = memo(({ status }: { status: string }) => {
+  switch (status) {
+    case "running":
+      return <Badge variant="default" className="bg-blue-500">Running</Badge>
+    case "queued":
+      return <Badge variant="secondary">Queued</Badge>
+    case "paused":
+      return <Badge variant="outline">Paused</Badge>
+    case "completed":
+      return <Badge variant="default" className="bg-green-500">Completed</Badge>
+    case "failed":
+      return <Badge variant="destructive">Failed</Badge>
+    case "cancelled":
+      return <Badge variant="outline">Cancelled</Badge>
+    default:
+      return <Badge variant="outline">{status}</Badge>
+  }
+})
+StatusBadge.displayName = "StatusBadge"
+
+const JobHistoryItem = memo(({ job }: { job: Job }) => {
+  const getStatusBadge = useCallback((status: string) => {
+    switch (status) {
+      case "running":
+        return <Badge variant="default" className="bg-blue-500">Running</Badge>
+      case "queued":
+        return <Badge variant="secondary">Queued</Badge>
+      case "paused":
+        return <Badge variant="outline">Paused</Badge>
+      case "completed":
+        return <Badge variant="default" className="bg-green-500">Completed</Badge>
+      case "failed":
+        return <Badge variant="destructive">Failed</Badge>
+      case "cancelled":
+        return <Badge variant="outline">Cancelled</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }, [])
+
+  return (
+    <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-mono text-sm">{job.job_id}</span>
+          {getStatusBadge(job.status)}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {job.job_type} • {job.processed_products} / {job.total_products} products
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="text-xs text-muted-foreground">
+          {new Date(job.created_at).toLocaleString()}
+        </p>
+      </div>
+    </div>
+  )
+})
+JobHistoryItem.displayName = "JobHistoryItem"
+
 export default function AICategoryManagementPage() {
   const [activeJobs, setActiveJobs] = useState<Job[]>([])
   const [recentJobs, setRecentJobs] = useState<Job[]>([])
   const [activeTab, setActiveTab] = useState("overview")
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  useEffect(() => {
-    fetchJobs()
-    const interval = setInterval(fetchJobs, 5000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       const response = await fetch("/api/category/ai-categorization/jobs?limit=20")
       const data = await response.json()
@@ -54,41 +108,36 @@ export default function AICategoryManagementPage() {
     } catch (error) {
       console.error("Failed to fetch jobs:", error)
     }
-  }
+  }, [])
 
-  const handleJobStarted = () => {
+  useEffect(() => {
+    fetchJobs()
+    const interval = setInterval(fetchJobs, 5000)
+
+    return () => clearInterval(interval)
+  }, [fetchJobs])
+
+  const handleJobStarted = useCallback(() => {
     fetchJobs()
     setRefreshTrigger(prev => prev + 1)
-  }
+  }, [fetchJobs])
 
-  const handleJobComplete = () => {
+  const handleJobComplete = useCallback(() => {
     fetchJobs()
     setRefreshTrigger(prev => prev + 1)
-  }
+  }, [fetchJobs])
 
-  const refreshData = () => {
+  const refreshData = useCallback(() => {
     setRefreshTrigger(prev => prev + 1)
     fetchJobs()
-  }
+  }, [fetchJobs])
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "running":
-        return <Badge variant="default" className="bg-blue-500">Running</Badge>
-      case "queued":
-        return <Badge variant="secondary">Queued</Badge>
-      case "paused":
-        return <Badge variant="outline">Paused</Badge>
-      case "completed":
-        return <Badge variant="default" className="bg-green-500">Completed</Badge>
-      case "failed":
-        return <Badge variant="destructive">Failed</Badge>
-      case "cancelled":
-        return <Badge variant="outline">Cancelled</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
-    }
-  }
+  const activeJobsCount = useMemo(() => activeJobs.length, [activeJobs.length])
+
+  const getStatusBadge = useCallback((status: string) => {
+    return <StatusBadge status={status} />
+  }, [])
+
 
   return (
     <AppLayout
@@ -120,9 +169,9 @@ export default function AICategoryManagementPage() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="jobs">
               Jobs
-              {activeJobs.length > 0 && (
+              {activeJobsCount > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {activeJobs.length}
+                  {activeJobsCount}
                 </Badge>
               )}
             </TabsTrigger>
@@ -136,7 +185,7 @@ export default function AICategoryManagementPage() {
 
             <JobControlPanel onJobStarted={handleJobStarted} />
 
-            {activeJobs.length > 0 && (
+            {activeJobsCount > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Active Jobs</h2>
                 {activeJobs.map(job => (
@@ -151,7 +200,7 @@ export default function AICategoryManagementPage() {
           </TabsContent>
 
           <TabsContent value="jobs" className="space-y-6">
-            {activeJobs.length > 0 && (
+            {activeJobsCount > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
@@ -185,25 +234,7 @@ export default function AICategoryManagementPage() {
                   ) : (
                     <div className="space-y-3">
                       {recentJobs.map(job => (
-                        <div
-                          key={job.job_id}
-                          className="flex items-center justify-between p-4 border rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono text-sm">{job.job_id}</span>
-                              {getStatusBadge(job.status)}
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {job.job_type} • {job.processed_products} / {job.total_products} products
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(job.created_at).toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
+                        <JobHistoryItem key={job.job_id} job={job} />
                       ))}
                     </div>
                   )}

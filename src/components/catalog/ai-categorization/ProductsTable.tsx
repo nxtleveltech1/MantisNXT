@@ -1,17 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -20,7 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ChevronLeft, ChevronRight, Search, Download } from "lucide-react"
+import { Download, Settings2 } from "lucide-react"
+import { ColumnManagementDialog, type ColumnDef } from "@/components/catalog/ColumnManagementDialog"
+import { useColumnManagement } from "@/hooks/useColumnManagement"
+import { StandardFiltersBar } from "@/components/shared/StandardFiltersBar"
+import { StandardPagination } from "@/components/shared/StandardPagination"
+import { cn } from "@/lib/utils"
 
 interface Product {
   supplier_product_id: string
@@ -40,25 +37,45 @@ interface ProductsTableProps {
   refreshTrigger?: number
 }
 
+// Default column configuration
+const DEFAULT_COLUMNS: ColumnDef[] = [
+  { key: 'sku', label: 'SKU', visible: true, order: 1, align: 'left', sortable: false },
+  { key: 'name', label: 'Product Name', visible: true, order: 2, align: 'left', sortable: true },
+  { key: 'supplier', label: 'Supplier', visible: true, order: 3, align: 'left', sortable: true },
+  { key: 'category', label: 'Category', visible: true, order: 4, align: 'left', sortable: false },
+  { key: 'proposed', label: 'Proposed', visible: true, order: 5, align: 'left', sortable: false },
+  { key: 'status', label: 'Status', visible: true, order: 6, align: 'left', sortable: false },
+  { key: 'confidence', label: 'Confidence', visible: true, order: 7, align: 'left', sortable: true },
+  { key: 'provider', label: 'Provider', visible: true, order: 8, align: 'left', sortable: false },
+  { key: 'date', label: 'Date', visible: true, order: 9, align: 'left', sortable: true },
+]
+
 export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(0)
-  const [limit] = useState(50)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(50)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState("categorized_at")
-  const [sortOrder, setSortOrder] = useState("desc")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+  const [columnDialogOpen, setColumnDialogOpen] = useState(false)
+
+  // Column management
+  const { columns, setColumns, visibleColumns } = useColumnManagement(
+    'ai_categorization_products_table_columns',
+    DEFAULT_COLUMNS
+  )
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
         limit: limit.toString(),
-        offset: (page * limit).toString(),
+        offset: ((page - 1) * limit).toString(),
         sort_by: sortBy,
-        sort_order: sortOrder,
+        sort_order: sortDir,
       })
 
       if (search) params.set("search", search)
@@ -76,16 +93,11 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
     } finally {
       setLoading(false)
     }
-  }, [limit, page, search, sortBy, sortOrder, statusFilter])
+  }, [limit, page, search, sortBy, sortDir, statusFilter])
 
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts, refreshTrigger])
-
-  const handleSearch = () => {
-    setPage(0)
-    fetchProducts()
-  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -119,131 +131,218 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
     return <Badge variant="destructive">{percentage}%</Badge>
   }
 
-  const totalPages = Math.ceil(total / limit)
+  const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
+
+  // Helper to get sort key for a column
+  const getSortKey = (columnKey: string): string => {
+    const sortMap: Record<string, string> = {
+      name: 'name',
+      supplier: 'supplier',
+      confidence: 'confidence',
+      date: 'categorized_at',
+    }
+    return sortMap[columnKey] || columnKey
+  }
+
+  // Helper to render table header cell
+  const renderHeaderCell = (column: ColumnDef) => {
+    const className = cn(
+      column.align === 'right' && 'text-right',
+      column.align === 'center' && 'text-center',
+      column.sortable && 'cursor-pointer hover:bg-muted/50'
+    )
+
+    const handleSort = () => {
+      if (column.sortable) {
+        const sortKey = getSortKey(column.key)
+        setSortBy(sortKey)
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+      }
+    }
+
+    return (
+      <TableHead key={column.key} className={className} onClick={handleSort}>
+        {column.label}
+      </TableHead>
+    )
+  }
+
+  // Helper to render table body cell
+  const renderBodyCell = (column: ColumnDef, product: Product) => {
+    const className = cn(
+      column.align === 'right' && 'text-right',
+      column.align === 'center' && 'text-center'
+    )
+
+    switch (column.key) {
+      case 'sku':
+        return (
+          <TableCell key={column.key} className={cn(className, 'font-mono text-xs')}>
+            {product.supplier_sku}
+          </TableCell>
+        )
+      case 'name':
+        return (
+          <TableCell key={column.key} className={cn(className, 'max-w-xs truncate')}>
+            {product.name_from_supplier}
+          </TableCell>
+        )
+      case 'supplier':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-sm')}>
+            {product.supplier_name}
+          </TableCell>
+        )
+      case 'category':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-sm')}>
+            {product.category_name || (
+              <span className="text-muted-foreground">Uncategorized</span>
+            )}
+          </TableCell>
+        )
+      case 'proposed':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-sm')}>
+            {product.proposed_category_name ? (
+              <span className="italic text-amber-600 dark:text-amber-400">
+                {product.proposed_category_name}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </TableCell>
+        )
+      case 'status':
+        return (
+          <TableCell key={column.key} className={className}>
+            {getStatusBadge(product.ai_categorization_status)}
+          </TableCell>
+        )
+      case 'confidence':
+        return (
+          <TableCell key={column.key} className={className}>
+            {getConfidenceBadge(product.ai_confidence)}
+          </TableCell>
+        )
+      case 'provider':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-xs text-muted-foreground')}>
+            {product.ai_provider || "-"}
+          </TableCell>
+        )
+      case 'date':
+        return (
+          <TableCell key={column.key} className={cn(className, 'text-xs text-muted-foreground')}>
+            {product.ai_categorized_at
+              ? new Date(product.ai_categorized_at).toLocaleDateString()
+              : "-"}
+          </TableCell>
+        )
+      default:
+        return <TableCell key={column.key} className={className}>-</TableCell>
+    }
+  }
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Products</CardTitle>
-            <CardDescription>
-              {total.toLocaleString()} products • Page {page + 1} of {totalPages}
-            </CardDescription>
-          </div>
+          <CardTitle>Products</CardTitle>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Filters */}
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Search by name or SKU..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
-              <Button size="icon" variant="outline" onClick={handleSearch}>
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+      <CardContent>
+        {/* Filters Bar */}
+        <StandardFiltersBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by name or SKU..."
+          filters={[
+            {
+              key: 'status',
+              label: 'Status',
+              value: statusFilter,
+              options: [
+                { value: 'all', label: 'All Status' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'pending_review', label: 'Pending Review' },
+                { value: 'failed', label: 'Failed' },
+                { value: 'skipped', label: 'Skipped' },
+              ],
+              onValueChange: setStatusFilter,
+              className: 'w-[150px]',
+            },
+            {
+              key: 'sort',
+              label: 'Sort By',
+              value: sortBy,
+              options: [
+                { value: 'categorized_at', label: 'Date' },
+                { value: 'name', label: 'Name' },
+                { value: 'confidence', label: 'Confidence' },
+                { value: 'supplier', label: 'Supplier' },
+              ],
+              onValueChange: setSortBy,
+              className: 'w-[150px]',
+            },
+          ]}
+          onRefresh={fetchProducts}
+          loading={loading}
+          totalItems={total}
+        />
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="pending_review">Pending Review</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-              <SelectItem value="skipped">Skipped</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="categorized_at">Date</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="confidence">Confidence</SelectItem>
-              <SelectItem value="supplier">Supplier</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Column Management */}
+        <div className="flex items-center justify-between mb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setColumnDialogOpen(true)}
+          >
+            <Settings2 className="h-4 w-4 mr-2" />
+            Manage Columns
+          </Button>
+          <ColumnManagementDialog
+            open={columnDialogOpen}
+            onOpenChange={setColumnDialogOpen}
+            columns={columns}
+            onColumnsChange={setColumns}
+            defaultColumns={DEFAULT_COLUMNS}
+          />
         </div>
 
         {/* Table */}
-        <div className="border rounded-lg">
+        <div className="rounded-md border overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>SKU</TableHead>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Proposed</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Confidence</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead>Date</TableHead>
+                {visibleColumns.map((column) => renderHeaderCell(column))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={visibleColumns.length} className="text-center py-8">
                     Loading products...
                   </TableCell>
                 </TableRow>
               ) : products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={visibleColumns.length}
+                    className="text-center text-sm text-muted-foreground py-8"
+                  >
                     No products found
                   </TableCell>
                 </TableRow>
               ) : (
                 products.map((product) => (
                   <TableRow key={product.supplier_product_id}>
-                    <TableCell className="font-mono text-xs">
-                      {product.supplier_sku}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {product.name_from_supplier}
-                    </TableCell>
-                    <TableCell className="text-sm">{product.supplier_name}</TableCell>
-                    <TableCell className="text-sm">
-                      {product.category_name || (
-                        <span className="text-muted-foreground">Uncategorized</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {product.proposed_category_name ? (
-                        <span className="italic text-amber-600 dark:text-amber-400">
-                          {product.proposed_category_name}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(product.ai_categorization_status)}</TableCell>
-                    <TableCell>{getConfidenceBadge(product.ai_confidence)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {product.ai_provider || "-"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {product.ai_categorized_at
-                        ? new Date(product.ai_categorized_at).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
+                    {visibleColumns.map((column) => renderBodyCell(column, product))}
                   </TableRow>
                 ))
               )}
@@ -252,32 +351,13 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {page * limit + 1} to {Math.min((page + 1) * limit, total)} of{" "}
-            {total.toLocaleString()} products
-          </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setPage(p => Math.max(0, p - 1))}
-              disabled={page === 0}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <StandardPagination
+          page={page}
+          pageCount={pageCount}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+        />
       </CardContent>
     </Card>
   )

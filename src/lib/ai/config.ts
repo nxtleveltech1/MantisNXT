@@ -13,7 +13,7 @@ import type {
 import { z } from 'zod';
 import { resolveSecret, clearSecretCache } from './secrets';
 
-const PROVIDERS: AIProviderId[] = ['openai', 'anthropic', 'vercel', 'openai-compatible'];
+const PROVIDERS: AIProviderId[] = ['openai', 'anthropic', 'vercel', 'openai-compatible', 'google', 'firecrawl'];
 
 const DEFAULT_MODELS: Record<AIProviderId, AIProviderModels> = {
   openai: {
@@ -43,6 +43,19 @@ const DEFAULT_MODELS: Record<AIProviderId, AIProviderModels> = {
     embedding: 'text-embedding-ada-002',
     fallback: ['openai', 'vercel'],
   },
+  google: {
+    default: 'gemini-2.0-flash-exp',
+    chat: 'gemini-2.0-flash-exp',
+    streaming: 'gemini-1.5-flash',
+    embedding: 'text-embedding-004',
+    fallback: ['openai', 'anthropic'],
+  },
+  firecrawl: {
+    default: 'scrape',
+    chat: 'scrape',
+    streaming: 'scrape',
+    fallback: [],
+  },
 };
 
 const DEFAULT_LIMITS: Record<AIProviderId, AIProviderLimits> = {
@@ -50,16 +63,29 @@ const DEFAULT_LIMITS: Record<AIProviderId, AIProviderLimits> = {
   anthropic: { maxTokens: 4000, maxRequestsPerMinute: 200, concurrency: 4 },
   vercel: { maxTokens: 4000, maxRequestsPerMinute: 450, concurrency: 6 },
   'openai-compatible': { maxTokens: 4000, maxRequestsPerMinute: 120, concurrency: 4 },
+  google: { maxTokens: 8192, maxRequestsPerMinute: 300, concurrency: 6 },
+  firecrawl: { maxTokens: 0, maxRequestsPerMinute: 60, concurrency: 2 }, // Not an LLM provider
 };
 
-const ProviderIdSchema = z.enum(['openai', 'anthropic', 'vercel', 'openai-compatible']);
+const ProviderIdSchema = z.enum(['openai', 'anthropic', 'vercel', 'openai-compatible', 'google', 'firecrawl']);
 
 const ProviderCredentialsSchema = z.object({
   apiKey: z.string().min(1).optional(),
   baseUrl: z.string().min(1).optional(),
   organization: z.string().min(1).optional(),
   project: z.string().min(1).optional(),
+  location: z.string().min(1).optional(),
   authToken: z.string().min(1).optional(),
+  apiVersion: z.enum(['v1', 'v1alpha']).optional(),
+  useVertexAI: z.boolean().optional(),
+  credentials: z.string().min(1).optional(), // Path to service account JSON
+  // CLI-based execution options
+  useCLI: z.boolean().optional(),
+  cliCommand: z.string().min(1).optional(),
+  cliArgs: z.array(z.string()).optional(),
+  useOAuth: z.boolean().optional(),
+  useGCloudADC: z.boolean().optional(),
+  cliWorkingDirectory: z.string().min(1).optional(),
 });
 
 const ProviderModelsSchema = z.object({
@@ -71,7 +97,7 @@ const ProviderModelsSchema = z.object({
 });
 
 const ProviderLimitsSchema = z.object({
-  maxTokens: z.number().int().positive().optional(),
+  maxTokens: z.number().int().nonnegative().optional(), // Allow 0 for non-LLM providers like firecrawl
   maxRequestsPerMinute: z.number().int().nonnegative().optional(),
   concurrency: z.number().int().positive().optional(),
 });
@@ -135,6 +161,37 @@ const ProviderConfigSchema = z
             });
           }
           break;
+        case 'google':
+          // Google supports two modes: Developer API (apiKey) or Vertex AI (project + useVertexAI)
+          if (value.credentials.useVertexAI) {
+            // Vertex AI mode: requires project
+            if (!value.credentials.project) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['credentials', 'project'],
+                message: 'Google Vertex AI requires a project ID.',
+              });
+            }
+          } else {
+            // Developer API mode: requires apiKey
+            if (!value.credentials.apiKey) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['credentials', 'apiKey'],
+                message: 'Google AI (Developer API) requires an API key (GEMINI_API_KEY or GOOGLE_API_KEY).',
+              });
+            }
+          }
+          break;
+        case 'firecrawl':
+          if (!value.credentials.apiKey) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['credentials', 'apiKey'],
+              message: 'Firecrawl requires an API key.',
+            });
+          }
+          break;
       }
     }
 
@@ -144,6 +201,15 @@ const ProviderConfigSchema = z
         path: ['models', 'embedding'],
         message:
           'Anthropic provider does not support embeddings; remove the embedding model configuration.',
+      });
+    }
+
+    if (value.id === 'firecrawl' && value.models.embedding) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['models', 'embedding'],
+        message:
+          'Firecrawl is a web scraping service, not an LLM provider; remove embedding configuration.',
       });
     }
   });
@@ -167,6 +233,8 @@ const ProvidersSchema = z.object({
   anthropic: ProviderConfigSchema,
   vercel: ProviderConfigSchema,
   'openai-compatible': ProviderConfigSchema,
+  google: ProviderConfigSchema,
+  firecrawl: ProviderConfigSchema,
 });
 
 const AI_CONFIG_SCHEMA = z
@@ -240,13 +308,35 @@ const buildCredentials = (
   env: NodeJS.ProcessEnv
 ): AIProviderCredentials => {
   switch (provider) {
-    case 'openai':
-      return {
-        apiKey: resolveSecret(env, 'OPENAI_API_KEY'),
-        baseUrl: env.OPENAI_BASE_URL,
-        organization: env.OPENAI_ORGANIZATION,
-        project: env.OPENAI_PROJECT,
-      };
+    case 'openai': {
+      const useCLI = parseBoolean(env.OPENAI_USE_CLI, false);
+      const useOAuth = parseBoolean(env.OPENAI_USE_OAUTH, false);
+      
+      if (useCLI) {
+        // CLI mode - use OpenAI Codex CLI
+        const apiKey = resolveSecret(env, 'OPENAI_API_KEY');
+        
+        return {
+          apiKey: (!useOAuth) ? apiKey : undefined,
+          baseUrl: env.OPENAI_BASE_URL,
+          organization: env.OPENAI_ORGANIZATION,
+          project: env.OPENAI_PROJECT,
+          useCLI: true,
+          cliCommand: env.OPENAI_CLI_COMMAND || 'codex',
+          cliArgs: env.OPENAI_CLI_ARGS ? env.OPENAI_CLI_ARGS.split(',').map(s => s.trim()) : undefined,
+          useOAuth: useOAuth || !apiKey,
+          cliWorkingDirectory: env.OPENAI_CLI_WORKING_DIR,
+        };
+      } else {
+        // API mode
+        return {
+          apiKey: resolveSecret(env, 'OPENAI_API_KEY'),
+          baseUrl: env.OPENAI_BASE_URL,
+          organization: env.OPENAI_ORGANIZATION,
+          project: env.OPENAI_PROJECT,
+        };
+      }
+    }
     case 'anthropic':
       return {
         apiKey: resolveSecret(env, 'ANTHROPIC_API_KEY'),
@@ -263,6 +353,53 @@ const buildCredentials = (
         baseUrl: env.OPENAI_COMPATIBLE_BASE_URL,
         organization: env.OPENAI_COMPATIBLE_ORG,
       };
+    case 'google': {
+      const useCLI = parseBoolean(env.GOOGLE_GENAI_USE_CLI, false);
+      const useVertexAI = parseBoolean(env.GOOGLE_GENAI_USE_VERTEXAI, false);
+      const useGCloudADC = parseBoolean(env.GOOGLE_GENAI_USE_GCLOUD_ADC, false);
+      const useOAuth = parseBoolean(env.GOOGLE_GENAI_USE_OAUTH, false);
+      
+      if (useCLI) {
+        // CLI mode - use Gemini CLI
+        const apiKey = resolveSecret(env, 'GOOGLE_API_KEY') || resolveSecret(env, 'GEMINI_API_KEY');
+        const project = env.GOOGLE_CLOUD_PROJECT;
+        
+        return {
+          // Don't require API key if using OAuth or gcloud ADC
+          apiKey: (!useOAuth && !useGCloudADC) ? apiKey : undefined,
+          project: useGCloudADC || useOAuth ? project : undefined,
+          location: useGCloudADC ? (env.GOOGLE_CLOUD_LOCATION || 'us-central1') : undefined,
+          useCLI: true,
+          cliCommand: env.GOOGLE_GENAI_CLI_COMMAND || 'gemini',
+          cliArgs: env.GOOGLE_GENAI_CLI_ARGS ? env.GOOGLE_GENAI_CLI_ARGS.split(',').map(s => s.trim()) : undefined,
+          useOAuth: useOAuth || (!apiKey && !useGCloudADC && project),
+          useGCloudADC: useGCloudADC || (!apiKey && !useOAuth && project),
+          cliWorkingDirectory: env.GOOGLE_GENAI_CLI_WORKING_DIR,
+          apiVersion: (env.GEMINI_API_VERSION as 'v1' | 'v1alpha') || 'v1',
+        };
+      } else if (useVertexAI) {
+        // Vertex AI mode (API)
+        return {
+          project: env.GOOGLE_CLOUD_PROJECT,
+          location: env.GOOGLE_CLOUD_LOCATION || 'us-central1',
+          credentials: env.GOOGLE_APPLICATION_CREDENTIALS,
+          useVertexAI: true,
+        };
+      } else {
+        // Developer API mode - check both GEMINI_API_KEY and GOOGLE_API_KEY
+        const apiKey = resolveSecret(env, 'GOOGLE_API_KEY') || resolveSecret(env, 'GEMINI_API_KEY');
+        return {
+          apiKey,
+          apiVersion: (env.GEMINI_API_VERSION as 'v1' | 'v1alpha') || 'v1',
+          useVertexAI: false,
+        };
+      }
+    }
+    case 'firecrawl':
+      return {
+        apiKey: resolveSecret(env, 'FIRECRAWL_API_KEY'),
+        baseUrl: env.FIRECRAWL_BASE_URL || 'https://api.firecrawl.dev',
+      };
     default:
       return {};
   }
@@ -274,6 +411,12 @@ const isProviderConfigured = (
 ): boolean => {
   switch (provider) {
     case 'openai':
+      // CLI mode: check if CLI is available or has OAuth/API key configured
+      if (credentials.useCLI) {
+        // CLI mode can work with OAuth or API key
+        return Boolean(credentials.useOAuth || credentials.apiKey);
+      }
+      // API mode: check for API key
       return Boolean(credentials.apiKey);
     case 'openai-compatible':
       return Boolean(credentials.apiKey && credentials.baseUrl);
@@ -281,6 +424,25 @@ const isProviderConfigured = (
       return Boolean(credentials.apiKey);
     case 'vercel':
       return Boolean((credentials.authToken || credentials.apiKey) && credentials.baseUrl);
+    case 'google':
+      // CLI mode: check if CLI is available (checked separately) or has OAuth/ADC configured
+      if (credentials.useCLI) {
+        // CLI mode can work with OAuth, gcloud ADC, or API key
+        return Boolean(
+          credentials.useOAuth || 
+          credentials.useGCloudADC || 
+          credentials.apiKey ||
+          credentials.project // gcloud ADC uses project
+        );
+      }
+      // Vertex AI mode: check for project; Developer API mode: check for apiKey
+      if (credentials.useVertexAI) {
+        return Boolean(credentials.project);
+      } else {
+        return Boolean(credentials.apiKey);
+      }
+    case 'firecrawl':
+      return Boolean(credentials.apiKey);
     default:
       return false;
   }
@@ -457,6 +619,11 @@ const createConfig = (overrides?: Partial<AIConfig>): AIConfig => {
     vercelAIGatewayToken: providers.vercel.credentials.authToken,
     openaiCompatibleBaseUrl: providers['openai-compatible'].credentials.baseUrl,
     openaiCompatibleApiKey: providers['openai-compatible'].credentials.apiKey,
+    googleApiKey: providers.google.credentials.apiKey,
+    googleProject: providers.google.credentials.project,
+    googleLocation: providers.google.credentials.location,
+    firecrawlApiKey: providers.firecrawl.credentials.apiKey,
+    firecrawlBaseUrl: providers.firecrawl.credentials.baseUrl,
   };
 
   const merged = overrides ? deepMerge(base, overrides) : base;

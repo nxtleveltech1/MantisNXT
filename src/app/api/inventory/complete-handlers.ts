@@ -635,25 +635,19 @@ async function handleBulkCreate(items: unknown[]) {
             const existingStock = existing.rows[0].stock_qty || 0
             const newStock = existingStock + (item.stock_qty || 0)
 
-            await client.query(
-              `UPDATE public.inventory_items
-               SET stock_qty = $1,
-                   updated_at = NOW()
-               WHERE id = $2`,
-              [newStock, existingId]
-            )
-
             // SSOT: update supplier_product and add to stock
+            // Note: inventory_items is a view, so we update the underlying core tables via setStock
             if (item.supplier_id && spSku) {
               await upsertSupplierProduct({
                 supplierId: item.supplier_id,
                 sku: spSku,
                 name: item.name
               })
+              // setStock replaces quantity, so pass the new total
               await setStock({
                 supplierId: item.supplier_id,
                 sku: spSku,
-                quantity: item.stock_qty || 0,
+                quantity: newStock,
                 unitCost: item.cost_price,
                 reason: 'bulk_update_stock_in'
               })

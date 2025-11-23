@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, memo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, CheckCircle, AlertTriangle, TrendingUp, Activity } from "lucide-react"
 
@@ -26,15 +26,11 @@ interface StatisticsPanelProps {
   refreshTrigger?: number
 }
 
-export function StatisticsPanel({ refreshTrigger }: StatisticsPanelProps) {
+export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }: StatisticsPanelProps) {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchStats()
-  }, [refreshTrigger])
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await fetch("/api/category/ai-categorization/stats")
       const data = await response.json()
@@ -47,7 +43,11 @@ export function StatisticsPanel({ refreshTrigger }: StatisticsPanelProps) {
       console.error("Failed to fetch stats:", error)
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats, refreshTrigger])
 
   if (loading || !stats) {
     return (
@@ -209,5 +209,5 @@ export function StatisticsPanel({ refreshTrigger }: StatisticsPanelProps) {
       </Card>
     </div>
   )
-}
+})
 

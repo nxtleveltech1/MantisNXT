@@ -116,7 +116,7 @@ export default function LoginPage() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-md px-4 mt-96 -ml-5">
+        <div className="relative z-10 w-full max-w-md px-4 fixed bottom-8 left-1/2 -translate-x-1/2">
           <div className="space-y-6">
             {error && (
               <Alert variant="destructive" className="rounded-lg bg-red-900/90 border-red-700">
@@ -184,7 +184,7 @@ export default function LoginPage() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-md px-4 mt-96 -ml-5">
+      <div className="relative z-10 w-full max-w-md px-4 fixed bottom-8 left-1/2 -translate-x-1/2">
         {/* Login Form */}
         <div className="space-y-6">
           {error && (

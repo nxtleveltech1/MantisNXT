@@ -15,6 +15,10 @@ import {
 import { createConfigSchema } from '@/lib/ai/validation-schemas';
 import { listConfigs, upsertConfig } from './_store';
 
+// Force Node.js runtime for database access
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/v1/ai/config
  * List all AI service configurations for the organization
@@ -67,7 +71,7 @@ export async function POST(request: NextRequest) {
     const created = await upsertConfig(user.org_id, validated.serviceType, {
       config: validated.config,
       enabled: validated.enabled,
-    })
+    });
 
     return createdResponse(created);
   } catch (error) {

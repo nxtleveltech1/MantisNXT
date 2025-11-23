@@ -1,6 +1,6 @@
 // Shared AI types for provider orchestration, configuration management, and service integration.
 
-export type AIProvider = 'openai' | 'anthropic' | 'vercel' | 'openai-compatible';
+export type AIProvider = 'openai' | 'anthropic' | 'vercel' | 'openai-compatible' | 'google' | 'firecrawl';
 export type AIProviderId = AIProvider;
 
 export type AIProviderStatus = 'healthy' | 'degraded' | 'unhealthy';
@@ -72,7 +72,18 @@ export interface AIProviderCredentials {
   baseUrl?: string;
   organization?: string;
   project?: string;
+  location?: string;
   authToken?: string;
+  apiVersion?: 'v1' | 'v1alpha';
+  useVertexAI?: boolean;
+  credentials?: string; // Path to service account JSON for GCP
+  // CLI-based execution options
+  useCLI?: boolean; // Use CLI instead of API
+  cliCommand?: string; // Custom CLI command (e.g., 'gemini', 'claude')
+  cliArgs?: string[]; // Additional CLI arguments
+  useOAuth?: boolean; // Use OAuth for CLI (e.g., Gemini CLI)
+  useGCloudADC?: boolean; // Use gcloud Application Default Credentials
+  cliWorkingDirectory?: string; // Working directory for CLI execution
 }
 
 export interface AIProviderLimits {
@@ -163,6 +174,11 @@ export interface AIConfig {
   vercelAIGatewayToken?: string;
   openaiCompatibleBaseUrl?: string;
   openaiCompatibleApiKey?: string;
+  googleApiKey?: string;
+  googleProject?: string;
+  googleLocation?: string;
+  firecrawlApiKey?: string;
+  firecrawlBaseUrl?: string;
 }
 
 export interface AIUsageEvent extends AIUsageMetrics {

@@ -120,3 +120,128 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PUT(request: Request) {
+  try {
+    const { id, name, type, description, color, icon, parent_tag_id, metadata, is_active } = await request.json()
+
+    if (!id || typeof id !== "string") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Tag ID is required",
+        },
+        { status: 400 },
+      )
+    }
+
+    const schemaMode = await getSchemaMode()
+
+    if (schemaMode === "none") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Tag service unavailable (no schema detected).",
+        },
+        { status: 503 },
+      )
+    }
+
+    if (schemaMode === "core") {
+      await ensureCoreTagInfrastructure()
+      const { updateCoreTag } = await import("@/lib/cmm/tag-service-core")
+      const tag = await updateCoreTag(id, {
+        name,
+        type,
+        description,
+        color,
+        icon,
+        parent_tag_id,
+        metadata,
+        is_active,
+      })
+      return NextResponse.json({
+        success: true,
+        tag: {
+          id: tag.tag_id,
+          name: tag.name,
+          type: tag.type,
+        },
+      })
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Update not supported in legacy mode",
+      },
+      { status: 501 },
+    )
+  } catch (error) {
+    console.error("Tag update error:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to update tag",
+      },
+      { status: 500 },
+    )
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
+    const cascade = searchParams.get("cascade") === "true"
+
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Tag ID is required",
+        },
+        { status: 400 },
+      )
+    }
+
+    const schemaMode = await getSchemaMode()
+
+    if (schemaMode === "none") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Tag service unavailable (no schema detected).",
+        },
+        { status: 503 },
+      )
+    }
+
+    if (schemaMode === "core") {
+      await ensureCoreTagInfrastructure()
+      const { deleteCoreTag } = await import("@/lib/cmm/tag-service-core")
+      const result = await deleteCoreTag(id, cascade)
+      return NextResponse.json({
+        success: true,
+        message: `Tag deleted${result.assignmentsRemoved > 0 ? ` (${result.assignmentsRemoved} assignments removed)` : ""}`,
+      })
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Delete not supported in legacy mode",
+      },
+      { status: 501 },
+    )
+  } catch (error) {
+    console.error("Tag deletion error:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to delete tag",
+      },
+      { status: 500 },
+    )
+  }
+}
+

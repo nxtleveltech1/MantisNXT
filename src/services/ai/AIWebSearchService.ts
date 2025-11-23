@@ -32,25 +32,35 @@ export class AIWebSearchService {
   private tavilyApiKey?: string;
   private googleApiKey?: string;
   private googleCx?: string;
-  private searchProvider: 'serper' | 'tavily' | 'google' | 'duckduckgo' = 'serper';
+  private braveApiKey?: string;
+  private exaApiKey?: string;
+  private searchProvider: 'serper' | 'tavily' | 'google' | 'brave' | 'exa' | 'duckduckgo' = 'serper';
 
   constructor(config?: {
     serperApiKey?: string;
     tavilyApiKey?: string;
     googleSearchApiKey?: string;
     googleSearchEngineId?: string;
+    braveApiKey?: string;
+    exaApiKey?: string;
   }) {
     // Initialize with provided config or environment variables
     this.serperApiKey = config?.serperApiKey || process.env.SERPER_API_KEY;
     this.tavilyApiKey = config?.tavilyApiKey || process.env.TAVILY_API_KEY;
     this.googleApiKey = config?.googleSearchApiKey || process.env.GOOGLE_SEARCH_API_KEY;
     this.googleCx = config?.googleSearchEngineId || process.env.GOOGLE_SEARCH_ENGINE_ID;
+    this.braveApiKey = config?.braveApiKey || process.env.BRAVE_API_KEY;
+    this.exaApiKey = config?.exaApiKey || process.env.EXA_API_KEY;
 
-    // Determine which provider to use based on available API keys
+    // Determine which provider to use based on available API keys (priority order)
     if (this.serperApiKey) {
       this.searchProvider = 'serper';
     } else if (this.tavilyApiKey) {
       this.searchProvider = 'tavily';
+    } else if (this.braveApiKey) {
+      this.searchProvider = 'brave';
+    } else if (this.exaApiKey) {
+      this.searchProvider = 'exa';
     } else if (this.googleApiKey && this.googleCx) {
       this.searchProvider = 'google';
     } else {
@@ -77,6 +87,12 @@ export class AIWebSearchService {
           break;
         case 'tavily':
           results = await this.searchWithTavily(query, maxResults, location);
+          break;
+        case 'brave':
+          results = await this.searchWithBrave(query, maxResults, location);
+          break;
+        case 'exa':
+          results = await this.searchWithExa(query, maxResults);
           break;
         case 'google':
           results = await this.searchWithGoogle(query, maxResults, location, language);
@@ -231,6 +247,104 @@ export class AIWebSearchService {
       publishedDate: result.pagemap?.metatags?.[0]?.['article:published_time'],
       relevanceScore: this.calculateRelevanceScore(result, index),
       snippet: result.snippet,
+    }));
+  }
+
+  /**
+   * Search using Brave Search API
+   */
+  private async searchWithBrave(
+    query: string,
+    maxResults: number,
+    location?: string
+  ): Promise<WebSearchResult[]> {
+    if (!this.braveApiKey) {
+      throw new Error('BRAVE_API_KEY not configured');
+    }
+
+    const searchQuery = this.buildSupplierSearchQuery(query, location);
+    const params = new URLSearchParams({
+      q: searchQuery,
+      count: maxResults.toString(),
+      ...(location && { country: location }),
+    });
+
+    const response = await fetch(`https://api.search.brave.com/res/v1/web/search?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-Subscription-Token': this.braveApiKey,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Brave Search API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    return (data.web?.results || []).map((result: unknown, index: number) => ({
+      title: result.title || '',
+      description: result.description || '',
+      url: result.url || '',
+      source: 'brave',
+      publishedDate: result.age,
+      relevanceScore: this.calculateRelevanceScore(result, index),
+      snippet: result.description,
+    }));
+  }
+
+  /**
+   * Search using Exa (Semantic Search) API
+   */
+  private async searchWithExa(
+    query: string,
+    maxResults: number
+  ): Promise<WebSearchResult[]> {
+    if (!this.exaApiKey) {
+      throw new Error('EXA_API_KEY not configured');
+    }
+
+    const searchQuery = this.buildSupplierSearchQuery(query);
+
+    const response = await fetch('https://api.exa.ai/v1/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.exaApiKey,
+      },
+      body: JSON.stringify({
+        query: searchQuery,
+        num_results: maxResults,
+        use_autoprompt: true,
+        contents: {
+          text: {
+            max_characters: 500,
+          },
+        },
+        highlights: {
+          num_sentences: 3,
+          highlights_per_url: 1,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Exa API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    return (data.results || []).map((result: unknown, index: number) => ({
+      title: result.title || '',
+      description: result.text || result.highlights?.[0] || '',
+      url: result.url || '',
+      source: 'exa',
+      publishedDate: result.published_date,
+      relevanceScore: result.score || this.calculateRelevanceScore(result, index),
+      snippet: result.highlights?.[0] || result.text,
     }));
   }
 

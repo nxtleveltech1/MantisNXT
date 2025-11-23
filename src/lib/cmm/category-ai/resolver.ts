@@ -9,6 +9,13 @@ export type ProviderConfig = {
   baseUrl?: string;
   model?: string;
   enabled?: boolean;
+  // CLI configuration
+  useCLI?: boolean;
+  cliCommand?: string;
+  cliArgs?: string[];
+  useOAuth?: boolean;
+  useGCloudADC?: boolean;
+  cliWorkingDirectory?: string;
 };
 
 export type CategoryAIResolvedConfig = {
@@ -177,6 +184,19 @@ export async function loadCategoryAIConfig(
 function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
   const providers: ProviderConfig[] = [];
 
+  // Web search providers should NOT be used as LLM providers
+  const webSearchProviders = ['tavily', 'serper', 'brave', 'exa', 'google_search', 'firecrawl'];
+  
+  // Helper to clean model names (remove suffixes like "medium", "high", etc.)
+  const cleanModelName = (model: string | undefined): string | undefined => {
+    if (!model) return undefined;
+    const cleaned = String(model).trim()
+      .replace(/\s+(medium|high|low|fast|slow)$/i, '')
+      .replace(/\(medium\)|\(high\)|\(low\)/gi, '')
+      .trim();
+    return cleaned || undefined;
+  };
+
   // Priority 1: providerInstances array (used by AI Services UI)
   if (Array.isArray(config?.providerInstances)) {
     console.log(`[category-ai:resolver] Found ${config.providerInstances.length} providerInstances`);
@@ -185,29 +205,66 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
     const activeId = config.activeProviderInstanceId;
     if (activeId) {
       const activeInst = config.providerInstances.find((inst: unknown) => inst.id === activeId);
-      if (activeInst?.enabled && activeInst?.apiKey) {
-        console.log(`[category-ai:resolver] Using active provider instance: ${activeInst.id} (${activeInst.model})`);
-        providers.push({
-          provider: activeInst.providerType || activeInst.provider || 'openai',
-          apiKey: activeInst.apiKey,
-          baseUrl: activeInst.baseUrl,
-          model: activeInst.model ? String(activeInst.model).trim() : undefined,
-          enabled: true,
-        });
-        return providers;
+      if (!activeInst) {
+        console.warn(`[category-ai:resolver] Active provider instance ${activeId} not found`);
+      } else {
+        const providerType = activeInst.providerType || activeInst.provider || 'openai';
+        const providerKey = String(providerType).toLowerCase();
+        
+        // Skip web search providers - they should only be used for web research, not LLM
+        if (webSearchProviders.includes(providerKey)) {
+          console.warn(`[category-ai:resolver] Skipping web search provider ${providerKey} as LLM provider`);
+        } else if (activeInst?.enabled && (activeInst?.apiKey || activeInst?.useCLI)) {
+          console.log(`[category-ai:resolver] Using active provider instance: ${activeInst.id} (${cleanModelName(activeInst.model)})`);
+          providers.push({
+            provider: providerType,
+            apiKey: activeInst.apiKey || '', // Empty for CLI OAuth mode
+            baseUrl: activeInst.baseUrl,
+            model: cleanModelName(activeInst.model),
+            enabled: true,
+            // Include CLI config for the engine to use
+            ...(activeInst.useCLI ? {
+              useCLI: true,
+              cliCommand: activeInst.cliCommand,
+              cliArgs: activeInst.cliArgs,
+              useOAuth: activeInst.useOAuth,
+              useGCloudADC: activeInst.useGCloudADC,
+              cliWorkingDirectory: activeInst.cliWorkingDirectory,
+            } : {}),
+          });
+          return providers;
+        }
       }
     }
     
-    // Otherwise, use all enabled instances
+    // Otherwise, use all enabled instances (excluding web search providers)
     for (const inst of config.providerInstances) {
-      if (inst?.enabled && inst?.apiKey) {
-        console.log(`[category-ai:resolver] Adding provider instance: ${inst.id} (${inst.model})`);
+      const providerType = inst?.providerType || inst?.provider || 'openai';
+      const providerKey = String(providerType).toLowerCase();
+      
+      // Skip web search providers - they should only be used for web research, not LLM
+      if (webSearchProviders.includes(providerKey)) {
+        continue; // Skip web search providers
+      }
+      
+      // For CLI providers with OAuth, apiKey is optional
+      if (inst?.enabled && (inst?.apiKey || inst?.useCLI)) {
+        console.log(`[category-ai:resolver] Adding provider instance: ${inst.id} (${cleanModelName(inst.model)})`);
         providers.push({
-          provider: inst.providerType || inst.provider || 'openai',
-          apiKey: inst.apiKey,
+          provider: providerType,
+          apiKey: inst.apiKey || '', // Empty for CLI OAuth mode
           baseUrl: inst.baseUrl,
-          model: inst.model || config.model ? String(inst.model || config.model).trim() : undefined,
+          model: cleanModelName(inst.model || config.model),
           enabled: true,
+          // Include CLI config for the engine to use
+          ...(inst.useCLI ? {
+            useCLI: true,
+            cliCommand: inst.cliCommand,
+            cliArgs: inst.cliArgs,
+            useOAuth: inst.useOAuth,
+            useGCloudADC: inst.useGCloudADC,
+            cliWorkingDirectory: inst.cliWorkingDirectory,
+          } : {}),
         });
       }
     }

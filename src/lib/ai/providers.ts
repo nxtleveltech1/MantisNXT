@@ -3,6 +3,8 @@ import { generateText, streamText, embed, embedMany, type ModelMessage } from 'a
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGateway } from '@ai-sdk/gateway';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createVertex } from '@ai-sdk/google-vertex';
 import type {
   AIClient,
   AIProviderId,
@@ -26,6 +28,7 @@ import {
   getProviderFallbackChain,
   onAIConfigChange,
 } from './config';
+import { CLIProviderClient, CLIProviderExecutor } from './cli-provider';
 
 interface ProviderBinding {
   id: AIProviderId;
@@ -67,6 +70,14 @@ const getProviderEnablementHint = (config: AIProviderConfig): string => {
       return 'Set VERCEL_AI_GATEWAY_TOKEN (or _FILE) and VERCEL_AI_GATEWAY_URL to enable the Vercel AI Gateway provider.';
     case 'openai-compatible':
       return 'Set both OPENAI_COMPATIBLE_API_KEY (or _FILE) and OPENAI_COMPATIBLE_BASE_URL to enable the OpenAI compatible provider.';
+    case 'google':
+      if (config.credentials.useVertexAI) {
+        return 'Set GOOGLE_GENAI_USE_VERTEXAI=true, GOOGLE_CLOUD_PROJECT, and optionally GOOGLE_CLOUD_LOCATION to enable Google Vertex AI.';
+      } else {
+        return 'Set GEMINI_API_KEY or GOOGLE_API_KEY (or _FILE) to enable Google Gemini (Developer API).';
+      }
+    case 'firecrawl':
+      return 'Set FIRECRAWL_API_KEY (or _FILE) to enable the Firecrawl web scraping service. Note: Firecrawl is NOT an LLM provider - it is a web scraping service. Use FirecrawlService for scraping operations.';
     default:
       return 'Configure valid credentials for this provider.';
   }
@@ -212,6 +223,30 @@ const buildHealthCheckRequest = (config: AIProviderConfig): HealthCheckRequest |
         headers: { Authorization: `Bearer ${apiKey}` },
       };
     }
+    case 'google': {
+      if (config.credentials.useVertexAI) {
+        // Vertex AI health check
+        const project = config.credentials.project;
+        const location = config.credentials.location || 'us-central1';
+        if (!project) return null;
+        return {
+          url: `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/models`,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
+      } else {
+        // Developer API health check
+        const apiKey = config.credentials.apiKey;
+        if (!apiKey) return null;
+        return {
+          url: 'https://generativelanguage.googleapis.com/v1beta/models',
+          headers: {
+            'x-goog-api-key': apiKey,
+          },
+        };
+      }
+    }
     default:
       return null;
   }
@@ -310,6 +345,43 @@ const instantiateProviderBinding = (config: AIProviderConfig): ProviderBinding =
   switch (config.id) {
     case 'openai':
     case 'openai-compatible': {
+      // CLI mode - use OpenAI Codex CLI
+      if (config.credentials.useCLI && config.id === 'openai') {
+        const cliConfig = {
+          provider: config.id,
+          command: config.credentials.cliCommand || 'codex',
+          args: config.credentials.cliArgs,
+          env: {
+            ...(config.credentials.apiKey && { OPENAI_API_KEY: config.credentials.apiKey }),
+            ...(config.credentials.organization && { OPENAI_ORGANIZATION: config.credentials.organization }),
+          },
+          workingDirectory: config.credentials.cliWorkingDirectory,
+          timeout: 60000,
+        };
+        
+        const cliClient = new CLIProviderClient(cliConfig);
+        const capabilities = CLIProviderExecutor.getProviderCapabilities(config.id);
+
+        return {
+          id: config.id,
+          supportsStreaming: capabilities.supportsStreaming,
+          supportsEmbeddings: capabilities.supportsEmbeddings,
+          languageModel: (modelId: string) => {
+            // Return a wrapper that uses CLI for generation
+            return {
+              provider: 'openai-cli',
+              modelId,
+              execute: async (prompt: string) => {
+                const result = await cliClient.generateText(prompt, { model: modelId });
+                return { text: result };
+              },
+            };
+          },
+          raw: cliClient,
+        };
+      }
+      
+      // API mode
       const openai = createOpenAI({
         apiKey: config.credentials.apiKey,
         baseURL: config.credentials.baseUrl,
@@ -359,6 +431,54 @@ const instantiateProviderBinding = (config: AIProviderConfig): ProviderBinding =
         embeddingModel: (modelId: string) => gateway.textEmbeddingModel(modelId),
         raw: gateway,
       };
+    }
+    case 'google': {
+      if (config.credentials.useVertexAI) {
+        // Vertex AI mode
+        if (!config.credentials.project) {
+          throw new Error('Google Vertex AI requires a project ID.');
+        }
+
+        const vertex = createVertex({
+          project: config.credentials.project,
+          location: config.credentials.location || 'us-central1',
+        });
+
+        return {
+          id: config.id,
+          supportsStreaming: true,
+          supportsEmbeddings: true,
+          languageModel: (modelId: string) => vertex.languageModel(modelId),
+          embeddingModel: (modelId: string) => vertex.textEmbeddingModel(modelId),
+          raw: vertex,
+        };
+      } else {
+        // Developer API mode
+        if (!config.credentials.apiKey) {
+          throw new Error('Google AI (Developer API) requires an API key.');
+        }
+
+        const google = createGoogleGenerativeAI({
+          apiKey: config.credentials.apiKey,
+        });
+
+        return {
+          id: config.id,
+          supportsStreaming: true,
+          supportsEmbeddings: true,
+          languageModel: (modelId: string) => google.languageModel(modelId),
+          embeddingModel: (modelId: string) => google.textEmbeddingModel(modelId),
+          raw: google,
+        };
+      }
+    }
+    case 'firecrawl': {
+      // Firecrawl is NOT an LLM provider - it's a web scraping service
+      // This should not be instantiated as an AI provider
+      // Use FirecrawlService from '@/services/web-scraping/FirecrawlService' instead
+      throw new Error(
+        'Firecrawl is not an LLM provider. Use FirecrawlService from @/services/web-scraping/FirecrawlService for web scraping operations.'
+      );
     }
     default:
       throw new Error('Unsupported AI provider: ' + config.id);

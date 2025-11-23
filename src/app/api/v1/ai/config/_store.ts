@@ -204,7 +204,18 @@ function resolveModel(config: Record<string, unknown>, provider: string): string
   if (supported && supported.length > 0) {
     return supported[0];
   }
-  return 'gpt-4.1-mini';
+  // For CLI providers, use appropriate CLI models
+  if (fromInstance?.useCLI || config.useCLI) {
+    // Codex CLI uses gpt-5.1-codex-max as default medium model
+    if (provider === 'openai' || provider === 'openai_compatible') {
+      return 'gpt-5.1-codex-max';
+    }
+    // Gemini CLI would use appropriate model
+    if (provider === 'google') {
+      return 'gemini-2.0-flash-exp';
+    }
+  }
+  return 'gpt-4o-mini'; // Updated to actual model name
 }
 
 function resolveApiEndpoint(config: Record<string, unknown>, provider: string): string | null {

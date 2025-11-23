@@ -41,7 +41,7 @@ interface AIServiceConfig {
     apiKey?: string;
     baseUrl?: string;
     rateLimit?: number;
-    activeProvider?: 'openai' | 'anthropic' | 'openai_compatible';
+    activeProvider?: 'openai' | 'anthropic' | 'openai_compatible' | 'google' | 'serper' | 'tavily' | 'google_search' | 'firecrawl' | 'brave' | 'exa';
     enableMultipleProviders?: boolean;
     providers?: {
       openai?: { enabled?: boolean; apiKey?: string; baseUrl?: string; model?: string };
@@ -679,9 +679,19 @@ export default function AIServiceConfiguration() {
                         <SelectValue placeholder="Select provider" />
                       </SelectTrigger>
                       <SelectContent>
-                        {['openai', 'anthropic', 'openai_compatible'].map((p) => (
-                          <SelectItem key={p} value={p}>{p.replace('_',' ').replace(/\b\w/g, (c) => c.toUpperCase())}</SelectItem>
-                        ))}
+                        {/* LLM Providers */}
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                        <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
+                        <SelectItem value="google">Google Gemini</SelectItem>
+                        <SelectItem value="openai_compatible">OpenAI Compatible</SelectItem>
+                        {/* Web Search Providers */}
+                        <SelectItem value="serper">Serper (Google Search API)</SelectItem>
+                        <SelectItem value="tavily">Tavily (AI Search)</SelectItem>
+                        <SelectItem value="google_search">Google Custom Search</SelectItem>
+                        <SelectItem value="brave">Brave Search</SelectItem>
+                        <SelectItem value="exa">Exa (Semantic Search)</SelectItem>
+                        {/* Web Scraping */}
+                        <SelectItem value="firecrawl">Firecrawl (Web Scraping)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

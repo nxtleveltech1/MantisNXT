@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, memo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -14,7 +14,7 @@ interface JobControlPanelProps {
   onJobStarted: (jobId: string) => void
 }
 
-export function JobControlPanel({ onJobStarted }: JobControlPanelProps) {
+export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: JobControlPanelProps) {
   const [batchSize, setBatchSize] = useState(200)
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.7)
   const [supplierFilter, setSupplierFilter] = useState("")
