@@ -17,7 +17,7 @@ const LoginSchema = z.object({
 const mockUsers = [
   {
     id: 'user_001',
-    email: 'admin@company.com',
+    email: 'gambew@gmail.com',
     name: 'System Administrator',
     role: 'admin',
     password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password

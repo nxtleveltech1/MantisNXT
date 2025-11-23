@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form'
 import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
-import Image from 'next/image'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -103,23 +102,21 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen relative flex items-center justify-center">
         {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/login-background.jpg"
-            alt="Background"
-            fill
-            className="object-cover"
-            priority
+        <div className="absolute inset-0 z-0 bg-gradient-to-br from-red-950 via-black to-red-900">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: 'url(/images/login-background.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
           />
           <div className="absolute inset-0 bg-black/40" />
         </div>
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-md px-4">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white tracking-tight">NXT</h1>
-          </div>
-
+        <div className="relative z-10 w-full max-w-md px-4 mt-96 -ml-5">
           <div className="space-y-6">
             {error && (
               <Alert variant="destructive" className="rounded-lg bg-red-900/90 border-red-700">
@@ -173,24 +170,21 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen relative flex items-center justify-center">
       {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/images/login-background.jpg"
-          alt="Background"
-          fill
-          className="object-cover"
-          priority
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-red-950 via-black to-red-900">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'url(/images/login-background.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
         />
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-md px-4">
-        {/* NXT Logo */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-white tracking-tight">NXT</h1>
-        </div>
-
+      <div className="relative z-10 w-full max-w-md px-4 mt-96 -ml-5">
         {/* Login Form */}
         <div className="space-y-6">
           {error && (
