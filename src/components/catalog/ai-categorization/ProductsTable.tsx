@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, memo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -50,7 +50,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
   { key: 'date', label: 'Date', visible: true, order: 9, align: 'left', sortable: true },
 ]
 
-export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
+export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: ProductsTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -99,7 +99,7 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
     fetchProducts()
   }, [fetchProducts, refreshTrigger])
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case "completed":
         return <Badge variant="default" className="bg-green-500">Completed</Badge>
@@ -116,9 +116,9 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
       default:
         return <Badge variant="outline">{status}</Badge>
     }
-  }
+  }, [])
 
-  const getConfidenceBadge = (confidence: number | null) => {
+  const getConfidenceBadge = useCallback((confidence: number | null) => {
     if (!confidence) return <span className="text-muted-foreground">-</span>
 
     const percentage = (confidence * 100).toFixed(0)
@@ -129,7 +129,7 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
       return <Badge variant="secondary">{percentage}%</Badge>
     }
     return <Badge variant="destructive">{percentage}%</Badge>
-  }
+  }, [])
 
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
 
@@ -145,7 +145,7 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
   }
 
   // Helper to render table header cell
-  const renderHeaderCell = (column: ColumnDef) => {
+  const renderHeaderCell = useCallback((column: ColumnDef) => {
     const className = cn(
       column.align === 'right' && 'text-right',
       column.align === 'center' && 'text-center',
@@ -165,10 +165,10 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
         {column.label}
       </TableHead>
     )
-  }
+  }, [])
 
   // Helper to render table body cell
-  const renderBodyCell = (column: ColumnDef, product: Product) => {
+  const renderBodyCell = useCallback((column: ColumnDef, product: Product) => {
     const className = cn(
       column.align === 'right' && 'text-right',
       column.align === 'center' && 'text-center'
@@ -242,7 +242,7 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
       default:
         return <TableCell key={column.key} className={className}>-</TableCell>
     }
-  }
+  }, [getStatusBadge, getConfidenceBadge])
 
   return (
     <Card>
@@ -361,4 +361,4 @@ export function ProductsTable({ refreshTrigger }: ProductsTableProps) {
       </CardContent>
     </Card>
   )
-}
+})

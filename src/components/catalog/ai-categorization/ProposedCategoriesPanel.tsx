@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, memo } from "react";
 import {
   Card,
   CardContent,
@@ -34,7 +34,7 @@ interface ProposedCategory {
   linked_products: LinkedProduct[];
 }
 
-export function ProposedCategoriesPanel() {
+export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
   const [proposals, setProposals] = useState<ProposedCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState<string | null>(null);
@@ -211,5 +211,5 @@ export function ProposedCategoriesPanel() {
       </CardContent>
     </Card>
   );
-}
+})
 

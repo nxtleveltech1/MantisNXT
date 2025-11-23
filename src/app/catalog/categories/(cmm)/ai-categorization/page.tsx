@@ -43,31 +43,12 @@ const StatusBadge = memo(({ status }: { status: string }) => {
 StatusBadge.displayName = "StatusBadge"
 
 const JobHistoryItem = memo(({ job }: { job: Job }) => {
-  const getStatusBadge = useCallback((status: string) => {
-    switch (status) {
-      case "running":
-        return <Badge variant="default" className="bg-blue-500">Running</Badge>
-      case "queued":
-        return <Badge variant="secondary">Queued</Badge>
-      case "paused":
-        return <Badge variant="outline">Paused</Badge>
-      case "completed":
-        return <Badge variant="default" className="bg-green-500">Completed</Badge>
-      case "failed":
-        return <Badge variant="destructive">Failed</Badge>
-      case "cancelled":
-        return <Badge variant="outline">Cancelled</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
-    }
-  }, [])
-
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg">
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <span className="font-mono text-sm">{job.job_id}</span>
-          {getStatusBadge(job.status)}
+          <StatusBadge status={job.status} />
         </div>
         <p className="text-sm text-muted-foreground">
           {job.job_type} • {job.processed_products} / {job.total_products} products
@@ -133,10 +114,6 @@ export default function AICategoryManagementPage() {
   }, [fetchJobs])
 
   const activeJobsCount = useMemo(() => activeJobs.length, [activeJobs.length])
-
-  const getStatusBadge = useCallback((status: string) => {
-    return <StatusBadge status={status} />
-  }, [])
 
 
   return (

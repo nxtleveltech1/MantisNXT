@@ -127,17 +127,6 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
     }
   }, [jobId, fetchJobStatus])
 
-  if (loading || !jobStatus) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-center text-muted-foreground">Loading job status...</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
-
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case "running":
@@ -162,9 +151,19 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
     return `${Math.round(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`
   }, [])
 
-  const progress = useMemo(() => Number(jobStatus?.progress_percentage ?? 0), [jobStatus?.progress_percentage])
-  const eta = useMemo(() => jobStatus?.eta_seconds ? Number(jobStatus.eta_seconds) : null, [jobStatus?.eta_seconds])
-  const job = useMemo(() => jobStatus?.job, [jobStatus?.job])
+  if (loading || !jobStatus) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-center text-muted-foreground">Loading job status...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const progress = useMemo(() => Number(jobStatus.progress_percentage ?? 0), [jobStatus.progress_percentage])
+  const eta = useMemo(() => jobStatus.eta_seconds ? Number(jobStatus.eta_seconds) : null, [jobStatus.eta_seconds])
+  const job = jobStatus.job
 
   return (
     <Card>

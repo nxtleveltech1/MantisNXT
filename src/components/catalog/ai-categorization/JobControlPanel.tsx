@@ -21,7 +21,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
   const [forceOverride, setForceOverride] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
 
-  const startFullCategorization = async () => {
+  const startFullCategorization = useCallback(async () => {
     setIsStarting(true)
     try {
       const response = await fetch("/api/category/ai-categorization/start", {
@@ -55,9 +55,9 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
     } finally {
       setIsStarting(false)
     }
-  }
+  }, [supplierFilter, forceOverride, confidenceThreshold, batchSize, onJobStarted])
 
-  const startLowConfidenceRecategorization = async () => {
+  const startLowConfidenceRecategorization = useCallback(async () => {
     setIsStarting(true)
     try {
       const response = await fetch("/api/category/ai-categorization/start", {
@@ -90,9 +90,9 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
     } finally {
       setIsStarting(false)
     }
-  }
+  }, [supplierFilter, confidenceThreshold, batchSize, onJobStarted])
 
-  const startFailedRecategorization = async () => {
+  const startFailedRecategorization = useCallback(async () => {
     setIsStarting(true)
     try {
       const response = await fetch("/api/category/ai-categorization/start", {
@@ -125,7 +125,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
     } finally {
       setIsStarting(false)
     }
-  }
+  }, [supplierFilter, confidenceThreshold, batchSize, onJobStarted])
 
   return (
     <Card>
@@ -224,5 +224,5 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
       </CardContent>
     </Card>
   )
-}
+})
 
