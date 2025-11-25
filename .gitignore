@@ -260,3 +260,4 @@ fix_missing_tables.sql
 temp_*.sql
 *.backup
 *.old
+MantisNXT.zip
