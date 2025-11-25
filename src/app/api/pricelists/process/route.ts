@@ -98,7 +98,13 @@ export async function POST(request: NextRequest) {
 
     // Update supplier last import date
     await query(
-      'UPDATE public.suppliers SET last_import_date = NOW(), updated_at = NOW() WHERE id = $1',
+      `
+        UPDATE core.supplier
+        SET
+          contact_info = COALESCE(contact_info, '{}'::jsonb) || jsonb_build_object('lastImportDate', NOW()),
+          updated_at = NOW()
+        WHERE supplier_id::text = $1
+      `,
       [validatedData.supplierId]
     )
 

@@ -162,19 +162,36 @@ const ProviderConfigSchema = z
           }
           break;
         case 'google':
-          // Google supports two modes: Developer API (apiKey) or Vertex AI (project + useVertexAI)
-          if (value.credentials.useVertexAI) {
+          // Google supports Developer API, Vertex AI, and CLI modes (Gemini CLI).
+          const creds = value.credentials;
+          const isCli = Boolean(creds.useCLI);
+          const hasApiKey = Boolean(creds.apiKey);
+          const usesOAuth = Boolean(creds.useOAuth);
+          const usesADC = Boolean(creds.useGCloudADC || creds.project);
+          const usesVertex = Boolean(creds.useVertexAI);
+
+          if (usesVertex) {
             // Vertex AI mode: requires project
-            if (!value.credentials.project) {
+            if (!creds.project) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['credentials', 'project'],
                 message: 'Google Vertex AI requires a project ID.',
               });
             }
+          } else if (isCli) {
+            // Gemini CLI mode: allow OAuth or gcloud ADC without API key
+            if (!(hasApiKey || usesOAuth || usesADC)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['credentials', 'apiKey'],
+                message:
+                  'Google Gemini CLI requires an API key, OAuth, or gcloud ADC (set project and enable GOOGLE_GENAI_USE_GCLOUD_ADC).',
+              });
+            }
           } else {
             // Developer API mode: requires apiKey
-            if (!value.credentials.apiKey) {
+            if (!hasApiKey) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['credentials', 'apiKey'],

@@ -10,6 +10,10 @@ import { authenticateRequest, handleAIError, successResponse, noContentResponse 
 import { updateConfigSchema } from '@/lib/ai/validation-schemas';
 import { getConfigByServiceId, upsertConfigByServiceId, deleteConfigByServiceId } from '../../../config/_store';
 
+// Force Node.js runtime to avoid bundling issues
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;

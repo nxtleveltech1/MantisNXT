@@ -31,7 +31,7 @@ BEGIN
       LIMIT 1
     )
     WHERE cost_price IS NULL;
-
+x110
   ELSE
     -- View: recreate with all required columns
     DROP VIEW IF EXISTS public.inventory_items;
@@ -41,7 +41,7 @@ BEGIN
       soh.soh_id::text AS id,
       sp.supplier_sku AS sku,
       sp.name_from_supplier AS name,
-      COALESCE(cat.category_raw, 'Unknown')::text AS category,
+      COALESCE(pr.category_raw, 'Unknown')::text AS category,
       COALESCE(pr.brand, NULL)::text AS brand,
       soh.qty AS stock_qty,
       0 AS reserved_qty,
@@ -86,17 +86,7 @@ BEGIN
         AND is_current = true
       ORDER BY valid_from DESC
       LIMIT 1
-    ) ph ON TRUE
-    -- Get category from latest pricelist
-    LEFT JOIN LATERAL (
-      SELECT category_raw
-      FROM spp.pricelist_row r
-      JOIN spp.pricelist_upload u ON u.upload_id = r.upload_id
-      WHERE r.supplier_sku = sp.supplier_sku 
-        AND u.supplier_id = sp.supplier_id
-      ORDER BY u.received_at DESC
-      LIMIT 1
-    ) cat ON TRUE;
+    ) ph ON TRUE;
   END IF;
 END $$;
 

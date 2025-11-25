@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { query, withTransaction } from '@/lib/database/unified-connection'
 import type { Supplier } from '@/domain/supplier'
 
@@ -94,22 +92,43 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
 
 export async function getSupplierById(id: string): Promise<Supplier | null> {
   const res = await query(
-    `SELECT *
-     FROM public.suppliers
-     WHERE id = $1
+    `SELECT
+       supplier_id::text as id,
+       name,
+       code,
+       active,
+       org_id,
+       contact_info,
+       default_currency,
+       created_at,
+       updated_at
+     FROM core.supplier
+     WHERE supplier_id::text = $1
      LIMIT 1`,
     [id]
   )
   const row = res.rows[0]
   if (!row) return null
+
+  const contactInfo =
+    typeof row.contact_info === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(row.contact_info)
+          } catch {
+            return {}
+          }
+        })()
+      : row.contact_info || {}
+
   return {
     id: String(row.id),
     name: row.name,
-    status: (row.status ?? (row.active ? 'active' : 'inactive')) as Supplier['status'],
+    status: (contactInfo.status ?? (row.active ? 'active' : 'inactive')) as Supplier['status'],
     code: row.code ?? undefined,
     orgId: row.org_id ? String(row.org_id) : undefined,
-    createdAt: new Date(row.created_at ?? row.createdAt ?? Date.now()).toISOString(),
-    updatedAt: new Date(row.updated_at ?? row.updatedAt ?? Date.now()).toISOString(),
+    createdAt: new Date(row.created_at ?? Date.now()).toISOString(),
+    updatedAt: new Date(row.updated_at ?? Date.now()).toISOString(),
   }
 }
 

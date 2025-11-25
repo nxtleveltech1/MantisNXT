@@ -323,7 +323,7 @@ export async function POST(request: NextRequest) {
 
           // Check for duplicate - use index scan
           const existingSupplier = await client.query(
-            'SELECT id FROM public.suppliers WHERE LOWER(name) = LOWER($1)',
+            'SELECT supplier_id::text as id FROM core.supplier WHERE LOWER(name) = LOWER($1)',
             [validatedData.name]
           )
 
@@ -336,30 +336,59 @@ export async function POST(request: NextRequest) {
           }
 
           // Insert supplier
+          const contactInfo = {
+            primaryCategory: validatedData.primary_category,
+            geographicRegion: validatedData.geographic_region,
+            preferredSupplier: validatedData.preferred_supplier ?? false,
+            beeLevel: validatedData.bee_level ?? null,
+            localContentPercentage: validatedData.local_content_percentage ?? null,
+            address: validatedData.address ?? null,
+            status: 'active',
+          }
+
+          const contactPersonPayload = validatedData.contact_person
+            ? {
+                name: validatedData.contact_person,
+                email: validatedData.email ?? null,
+                phone: validatedData.phone ?? null,
+              }
+            : null
+
           const insertQuery = `
-            INSERT INTO public.suppliers (
-              name, email, phone, address, contact_person, website, tax_id,
-              payment_terms, primary_category, geographic_region, preferred_supplier,
-              bee_level, local_content_percentage, status, performance_tier
+            INSERT INTO core.supplier (
+              name,
+              code,
+              active,
+              default_currency,
+              payment_terms,
+              payment_terms_days,
+              contact_phone,
+              contact_email,
+              website,
+              tax_number,
+              contact_info,
+              contact_person,
+              created_at,
+              updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'active', 'unrated'
-            ) RETURNING *
+              $1, $2, true, $3, $4,
+              $5, $6, $7, $8, $9,
+              $10::jsonb, $11::jsonb, NOW(), NOW()
+            ) RETURNING supplier_id::text as id, name
           `
 
           const insertResult = await client.query(insertQuery, [
             validatedData.name,
-            validatedData.email,
-            validatedData.phone,
-            validatedData.address,
-            validatedData.contact_person,
-            validatedData.website,
-            validatedData.tax_id,
-            validatedData.payment_terms,
-            validatedData.primary_category,
-            validatedData.geographic_region,
-            validatedData.preferred_supplier,
-            validatedData.bee_level,
-            validatedData.local_content_percentage
+            validatedData.name,
+            'ZAR',
+            validatedData.payment_terms || 'Net 30',
+            30,
+            validatedData.phone ?? null,
+            validatedData.email ?? null,
+            validatedData.website ?? null,
+            validatedData.tax_id ?? null,
+            JSON.stringify(contactInfo),
+            contactPersonPayload ? JSON.stringify(contactPersonPayload) : null,
           ])
 
           results.push(insertResult.rows[0])

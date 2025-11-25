@@ -18,6 +18,7 @@ import { useColumnManagement } from "@/hooks/useColumnManagement"
 import { StandardFiltersBar } from "@/components/shared/StandardFiltersBar"
 import { StandardPagination } from "@/components/shared/StandardPagination"
 import { cn } from "@/lib/utils"
+import { buildApiUrl } from "@/lib/utils/api-url"
 
 interface Product {
   supplier_product_id: string
@@ -81,7 +82,7 @@ export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: Pro
       if (search) params.set("search", search)
       if (statusFilter !== "all") params.set("status", statusFilter)
 
-      const response = await fetch(`/api/category/ai-categorization/products?${params}`)
+      const response = await fetch(buildApiUrl(`/api/category/ai-categorization/products?${params}`))
       const data = await response.json()
 
       if (data.success) {

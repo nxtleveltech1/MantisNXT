@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      whereClauses.push(`s.status = $${paramIndex}`)
+      whereClauses.push(`COALESCE(s.contact_info->>'status', CASE WHEN s.active THEN 'active' ELSE 'inactive' END) = $${paramIndex}`)
       filterParams.push(status)
       paramIndex++
     }
@@ -52,18 +52,18 @@ export async function GET(request: NextRequest) {
 
     const suppliersQuery = `
       SELECT 
-        s.id,
+        s.supplier_id::text as id,
         s.name,
-        s.status,
+        COALESCE(s.contact_info->>'status', CASE WHEN s.active THEN 'active' ELSE 'inactive' END) as status,
         COUNT(DISTINCT p.id) as total_products,
         COALESCE(SUM(pi.price), 0) as total_value,
         COALESCE(AVG(pi.price), 0) as avg_price,
         COUNT(DISTINCT p.id) as active_contracts
-      FROM public.suppliers s
-      LEFT JOIN "Pricelist" p ON p."supplierId" = s.id AND p.active = true
+      FROM core.supplier s
+      LEFT JOIN "Pricelist" p ON p."supplierId" = s.supplier_id::text AND p.active = true
       LEFT JOIN "PricelistItem" pi ON pi."pricelistId" = p.id
       ${whereSql}
-      GROUP BY s.id, s.name, s.status
+      GROUP BY s.supplier_id, s.name, s.active, s.contact_info
       ORDER BY s.name
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
@@ -71,8 +71,8 @@ export async function GET(request: NextRequest) {
     const { rows } = await query<SupplierRow>(suppliersQuery, [...filterParams, limit, offset])
 
     const countQuery = `
-      SELECT COUNT(DISTINCT s.id) as total
-      FROM public.suppliers s
+      SELECT COUNT(DISTINCT s.supplier_id) as total
+      FROM core.supplier s
       ${whereSql}
     `
     const { rows: countRows } = await query<{ total: string }>(countQuery, filterParams)

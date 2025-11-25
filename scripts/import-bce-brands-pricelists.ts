@@ -27,6 +27,7 @@ function getConnectionString(): string | null {
 const JUNE_FILE_PATH = 'K:\\00Project\\MantisNXT - Uploads\\All files\\2025_BCE_Brands_Pricelist_June_Final.01.pdf';
 const SEPTEMBER_FILE_PATH = 'K:\\00Project\\MantisNXT - Uploads\\All files\\2025_BCE_Brands_Pricelist_September BC ELECTRONICS.pdf';
 const SUPPLIER_NAME = 'BCE Brands';
+const SUPPLIER_ID_OVERRIDE = process.env.BCE_SUPPLIER_ID || '550e3600-1d08-4870-9711-bb95b753c30d';
 const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 /**
@@ -143,11 +144,7 @@ async function main() {
     console.log('✅ Connected to database\n');
     
     // Find supplier
-    const supplierId = await findSupplier(client, SUPPLIER_NAME);
-    if (!supplierId) {
-      console.error('❌ Could not find supplier');
-      process.exit(1);
-    }
+    const supplierId = (await findSupplier(client, SUPPLIER_NAME)) || SUPPLIER_ID_OVERRIDE;
     
     // Process June pricelist first
     console.log('\n' + '='.repeat(60));

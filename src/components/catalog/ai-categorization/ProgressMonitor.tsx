@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Pause, Play, X, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
+import { buildApiUrl } from "@/lib/utils/api-url"
 
 interface Job {
   job_id: string
@@ -46,7 +47,7 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
 
   const fetchJobStatus = useCallback(async () => {
     try {
-      const response = await fetch(`/api/category/ai-categorization/status/${jobId}`)
+      const response = await fetch(buildApiUrl(`/api/category/ai-categorization/status/${jobId}`))
       const data = await response.json()
 
       if (data.success) {
@@ -73,7 +74,7 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
 
   const pauseJob = useCallback(async () => {
     try {
-      const response = await fetch(`/api/category/ai-categorization/pause/${jobId}`, {
+      const response = await fetch(buildApiUrl(`/api/category/ai-categorization/pause/${jobId}`), {
         method: "POST",
       })
       const data = await response.json()
@@ -91,7 +92,7 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
 
   const resumeJob = useCallback(async () => {
     try {
-      const response = await fetch(`/api/category/ai-categorization/resume/${jobId}`, {
+      const response = await fetch(buildApiUrl(`/api/category/ai-categorization/resume/${jobId}`), {
         method: "POST",
       })
       const data = await response.json()
@@ -111,7 +112,7 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
     if (!confirm("Are you sure you want to cancel this job?")) return
 
     try {
-      const response = await fetch(`/api/category/ai-categorization/cancel/${jobId}`, {
+      const response = await fetch(buildApiUrl(`/api/category/ai-categorization/cancel/${jobId}`), {
         method: "POST",
       })
       const data = await response.json()
@@ -151,6 +152,17 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
     return `${Math.round(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`
   }, [])
 
+  // Move useMemo hooks before early return to maintain hook order
+  const progress = useMemo(() => {
+    if (!jobStatus) return 0
+    return Number(jobStatus.progress_percentage ?? 0)
+  }, [jobStatus?.progress_percentage])
+
+  const eta = useMemo(() => {
+    if (!jobStatus) return null
+    return jobStatus.eta_seconds ? Number(jobStatus.eta_seconds) : null
+  }, [jobStatus?.eta_seconds])
+
   if (loading || !jobStatus) {
     return (
       <Card>
@@ -161,8 +173,6 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
     )
   }
 
-  const progress = useMemo(() => Number(jobStatus.progress_percentage ?? 0), [jobStatus.progress_percentage])
-  const eta = useMemo(() => jobStatus.eta_seconds ? Number(jobStatus.eta_seconds) : null, [jobStatus.eta_seconds])
   const job = jobStatus.job
 
   return (

@@ -12,6 +12,7 @@ import { ProgressMonitor } from "@/components/catalog/ai-categorization/Progress
 import { ProductsTable } from "@/components/catalog/ai-categorization/ProductsTable"
 import { StatisticsPanel } from "@/components/catalog/ai-categorization/StatisticsPanel"
 import { ProposedCategoriesPanel } from "@/components/catalog/ai-categorization/ProposedCategoriesPanel"
+import { buildApiUrl } from "@/lib/utils/api-url"
 
 interface Job {
   job_id: string
@@ -72,7 +73,7 @@ export default function AICategoryManagementPage() {
 
   const fetchJobs = useCallback(async () => {
     try {
-      const response = await fetch("/api/category/ai-categorization/jobs?limit=20")
+      const response = await fetch(buildApiUrl("/api/category/ai-categorization/jobs?limit=20"))
       const data = await response.json()
 
       if (data.success) {

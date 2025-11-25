@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { getSchemaMode } from "@/lib/cmm/db"
 import { TagAIService } from "@/lib/cmm/tag-ai-service"
+import { authenticateRequest } from "@/lib/ai/api-utils"
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Extract orgId from auth context
+    let orgId: string | undefined
+    try {
+      const user = await authenticateRequest(request)
+      orgId = user.org_id
+    } catch (authError) {
+      console.warn('[tag-enrich] Auth failed, using fallback orgId:', authError)
+      // Continue with undefined orgId - will use default fallback
+    }
+
     const body = await request.json()
     const { productIds, applyChanges = false, webResearchEnabled = true, batchSize, batchDelayMs } = body
 
@@ -44,6 +56,7 @@ export async function POST(request: Request) {
 
     const tagAIService = new TagAIService()
     const result = await tagAIService.enrichProductBatch(productIds, {
+      orgId,
       applyChanges,
       webResearchEnabled,
       batchSize,
@@ -51,12 +64,26 @@ export async function POST(request: Request) {
     })
 
     if (!result.success) {
+      // Check for quota errors and provide user-friendly messages
+      const errorMessage = result.error || "Failed to enrich products"
+      const isQuotaError = 
+        errorMessage.includes('quota') ||
+        errorMessage.includes('insufficient_quota') ||
+        errorMessage.includes('exceeded your current quota')
+      
+      const statusCode = isQuotaError ? 429 : 500
+      const userMessage = isQuotaError
+        ? "OpenAI API quota exceeded. Please check your billing and plan limits, or try again later."
+        : errorMessage
+
       return NextResponse.json(
         {
           success: false,
-          message: result.error || "Failed to enrich products",
+          message: userMessage,
+          error: errorMessage,
+          code: isQuotaError ? 'QUOTA_EXCEEDED' : 'ENRICHMENT_FAILED',
         },
-        { status: 500 },
+        { status: statusCode },
       )
     }
 

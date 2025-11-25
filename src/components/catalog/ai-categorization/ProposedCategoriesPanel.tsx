@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { buildApiUrl } from "@/lib/utils/api-url";
 
 interface LinkedProduct {
   supplier_product_id: string;
@@ -43,7 +44,7 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
   const fetchProposals = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/category/ai-categorization/proposals");
+      const res = await fetch(buildApiUrl("/api/category/ai-categorization/proposals"));
       const data = await res.json();
       if (data.success) {
         setProposals(data.proposals);
@@ -62,7 +63,7 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
   const handleApprove = async (proposalId: string) => {
     setSubmitting(proposalId);
     try {
-      const res = await fetch("/api/category/ai-categorization/proposals/approve", {
+      const res = await fetch(buildApiUrl("/api/category/ai-categorization/proposals/approve"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ proposed_category_id: proposalId }),
@@ -93,7 +94,7 @@ export const ProposedCategoriesPanel = memo(function ProposedCategoriesPanel() {
     if (!confirm) return;
     setSubmitting(proposalId);
     try {
-      const res = await fetch("/api/category/ai-categorization/proposals/reject", {
+      const res = await fetch(buildApiUrl("/api/category/ai-categorization/proposals/reject"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ proposed_category_id: proposalId }),

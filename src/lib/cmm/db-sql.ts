@@ -170,11 +170,34 @@ export async function upsertProductAttributes(
   if (existing.length === 0) {
     if (!p.supplierId) throw new Error("supplierId required for new product")
 
-    // ensure supplier exists
-    await query(`
-      insert into public.suppliers (id, name) values ($1, $2)
-      on conflict (id) do nothing
-    `, [p.supplierId, p.supplierId])
+    // ensure supplier exists in core schema
+    await query(
+      `
+        insert into core.supplier (
+          supplier_id,
+          name,
+          code,
+          active,
+          default_currency,
+          payment_terms,
+          contact_info,
+          created_at,
+          updated_at
+        ) values (
+          $1,
+          $2,
+          $2,
+          true,
+          'ZAR',
+          'Net 30',
+          '{}'::jsonb,
+          now(),
+          now()
+        )
+        on conflict (supplier_id) do nothing
+      `,
+      [p.supplierId, p.supplierId]
+    )
 
     await query(`
       insert into products (sku, supplier_id, category_id, description, brand, series_range, price, stock_type, image_url, attributes, updated_at)

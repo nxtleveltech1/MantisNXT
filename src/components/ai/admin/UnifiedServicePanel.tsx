@@ -264,23 +264,39 @@ export default function UnifiedServicePanel() {
     });
   };
 
-  const addProviderInstance = (serviceType: ServiceType, cfg: unknown) => {
-    const form = getForm(serviceType);
-    const isWebSearch = isWebSearchProvider(form.provider);
+  const addProviderInstance = async (serviceType: ServiceType, cfg: unknown) => {
+    try {
+      console.log('[addProviderInstance] Starting...', { serviceType, cfg });
+      const form = getForm(serviceType);
+      console.log('[addProviderInstance] Form state:', form);
+      const isWebSearch = isWebSearchProvider(form.provider);
+      
+      // Validation: provider is always required
+      if (!form.provider) {
+        console.error('[addProviderInstance] Validation failed: No provider selected');
+        toast.error('Please select a provider type');
+        return;
+      }
+
+    // Base URL is optional for CLI mode, but ensure it has a default for API mode
+    const isCLIMode = (form.provider === 'google' || form.provider === 'openai') && form.useCLI;
+    const effectiveBaseUrl = form.baseUrl || (!isCLIMode ? getDefaultBaseUrl(form.provider) : undefined);
     
-    // Validation: model is optional for web search providers
-    if (!form.provider || !form.baseUrl) {
-      toast.error('Please fill in provider type and endpoint URL');
+    if (!isCLIMode && !effectiveBaseUrl) {
+      toast.error('Please fill in endpoint URL');
       return;
     }
 
     // Google Gemini validation
     if (form.provider === 'google') {
       if (form.useCLI) {
-        // CLI mode validation
-        if (!form.useOAuth && !form.useGCloudADC && !form.apiKey) {
-          toast.error('API Key or OAuth/gcloud ADC is required for CLI mode');
-          return;
+        // CLI mode validation - OAuth doesn't require API key or baseUrl
+        if (!form.useOAuth && !form.useGCloudADC) {
+          // Only require API key if neither OAuth nor gcloud ADC is enabled
+          if (!form.apiKey) {
+            toast.error('API Key, OAuth, or gcloud ADC is required for CLI mode');
+            return;
+          }
         }
         if (form.useGCloudADC && !form.googleProject) {
           toast.error('GCP Project ID is required for gcloud ADC mode');
@@ -344,7 +360,7 @@ export default function UnifiedServicePanel() {
     const newInstance: ProviderInstance = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       provider: form.provider,
-      baseUrl: form.baseUrl,
+      baseUrl: effectiveBaseUrl || undefined,
       apiKey: form.apiKey || undefined, // Optional for Vertex AI mode or OAuth
       model: form.model || undefined, // Optional for web search
       enabled: true,
@@ -451,6 +467,10 @@ export default function UnifiedServicePanel() {
         },
       }
     );
+    } catch (error: unknown) {
+      console.error('[addProviderInstance] Unexpected error:', error);
+      toast.error(`Failed to add provider: ${error?.message || 'Unknown error'}`);
+    }
   };
 
   const deleteProviderInstance = (serviceType: ServiceType, cfg: unknown, instanceId: string) => {
@@ -557,8 +577,11 @@ export default function UnifiedServicePanel() {
   };
 
   const testInstanceConnection = async (serviceType: ServiceType, instance: ProviderInstance) => {
+    console.log('[testInstanceConnection] Starting test for:', { serviceType, instance });
     try {
-      const testConfig: any = {
+      toast.loading('Testing connection...', { id: 'test-connection' });
+      
+      const testConfig: unknown = {
         provider: instance.provider,
         baseUrl: instance.baseUrl,
         apiKey: instance.apiKey,
@@ -567,8 +590,9 @@ export default function UnifiedServicePanel() {
       
       // Include CLI configuration if CLI mode is enabled
       if (instance.useCLI) {
+        console.log('[testInstanceConnection] CLI mode enabled, adding CLI config');
         testConfig.useCLI = true;
-        testConfig.cliCommand = instance.cliCommand;
+        testConfig.cliCommand = instance.cliCommand || (instance.provider === 'google' ? 'gemini' : 'codex');
         testConfig.cliArgs = instance.cliArgs;
         testConfig.useOAuth = instance.useOAuth;
         testConfig.useGCloudADC = instance.useGCloudADC;
@@ -577,7 +601,25 @@ export default function UnifiedServicePanel() {
           testConfig.googleProject = instance.googleProject;
           testConfig.googleLocation = instance.googleLocation;
         }
+        // For CLI mode with OAuth, baseUrl and apiKey are optional
+        if (!testConfig.baseUrl && instance.provider === 'google') {
+          testConfig.baseUrl = getDefaultBaseUrl(instance.provider);
+        }
+      } else if (instance.provider === 'google') {
+        // For non-CLI Google, ensure baseUrl is set
+        if (!testConfig.baseUrl) {
+          testConfig.baseUrl = getDefaultBaseUrl(instance.provider);
+        }
+        // Include Google-specific config
+        if (instance.useVertexAI) {
+          testConfig.useVertexAI = instance.useVertexAI;
+          testConfig.googleProject = instance.googleProject;
+          testConfig.googleLocation = instance.googleLocation;
+          testConfig.googleApiVersion = instance.googleApiVersion;
+        }
       }
+      
+      console.log('[testInstanceConnection] Sending test config:', testConfig);
       
       const res = await fetch(`/api/v1/ai/config/${serviceType}/test`, {
         method: 'POST',
@@ -585,8 +627,18 @@ export default function UnifiedServicePanel() {
         body: JSON.stringify({ config: testConfig }),
       });
       
-      if (!res.ok) throw new Error(await res.text());
-      toast.success('Connection successful');
+      console.log('[testInstanceConnection] Response status:', res.status);
+      const responseData = await res.json().catch(() => ({}));
+      console.log('[testInstanceConnection] Response data:', responseData);
+      
+      if (!res.ok) {
+        const errorText = responseData.error || responseData.message || await res.text();
+        console.error('[testInstanceConnection] Test failed:', errorText);
+        toast.error(`Connection test failed: ${errorText}`, { id: 'test-connection' });
+        throw new Error(errorText);
+      }
+      
+      toast.success('Connection successful', { id: 'test-connection' });
       
       // Update connection status in cache
       queryClient.setQueryData(['ai-configs'], (old: AIServiceConfig[] | undefined) => {
@@ -605,26 +657,10 @@ export default function UnifiedServicePanel() {
           };
         });
       });
-    } catch (e: unknown) {
-      toast.error(e?.message || 'Connection failed');
-      
-      // Update connection status in cache
-      queryClient.setQueryData(['ai-configs'], (old: AIServiceConfig[] | undefined) => {
-        if (!old) return old;
-        return old.map(c => {
-          if (c.service_type !== serviceType) return c;
-          const instances: ProviderInstance[] = c.config.providerInstances || [];
-          return {
-            ...c,
-            config: {
-              ...c.config,
-              providerInstances: instances.map(i => 
-                i.id === instance.id ? { ...i, connected: false } : i
-              ),
-            },
-          };
-        });
-      });
+    } catch (error) {
+      console.error('[testInstanceConnection] Connection test error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Connection test failed';
+      toast.error(errorMessage, { id: 'test-connection' });
     }
   };
 
@@ -777,15 +813,18 @@ export default function UnifiedServicePanel() {
                     <div className="space-y-2">
                       <Label>Model *</Label>
                       <Select
-                        value={form.model || 'gemini-2.0-flash-exp'}
+                        value={form.model || 'gemini-3-pro-preview'}
                         onValueChange={(v) => setForm(serviceType, { model: v })}
                       >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="gemini-3-pro-preview">Gemini 3 Pro Preview (Latest)</SelectItem>
                           <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</SelectItem>
+                          <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
+                          <SelectItem value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</SelectItem>
                           <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
                           <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                          <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
+                          <SelectItem value="gemini-pro">Gemini Pro (v1)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -832,10 +871,13 @@ export default function UnifiedServicePanel() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label>API Key *</Label>
+                          <Label>
+                            API Key
+                            {!(form.useCLI && (form.useOAuth || form.useGCloudADC)) && ' *'}
+                          </Label>
                           <Input
                             type="password"
-                            placeholder="GEMINI_API_KEY or GOOGLE_API_KEY"
+                            placeholder={form.useCLI && form.useOAuth ? "Optional - not needed for OAuth" : "GEMINI_API_KEY or GOOGLE_API_KEY"}
                             value={form.apiKey}
                             onChange={(e) => setForm(serviceType, { apiKey: e.target.value })}
                           />
@@ -865,12 +907,17 @@ export default function UnifiedServicePanel() {
                           id={`${serviceType}-use-cli`}
                           checked={form.useCLI || false}
                           onCheckedChange={(checked) => {
-                            const updates: any = { useCLI: checked as boolean };
+                            const updates: Partial<typeof form> = { useCLI: checked as boolean };
                             if (checked) {
-                              // Set defaults when enabling CLI
+                              // Set defaults when enabling CLI, but don't reset OAuth/ADC if already set
                               updates.cliCommand = 'gemini';
-                              updates.useOAuth = false;
-                              updates.useGCloudADC = false;
+                              // Only reset OAuth/ADC if they're not already set
+                              if (form.useOAuth === undefined) {
+                                updates.useOAuth = false;
+                              }
+                              if (form.useGCloudADC === undefined) {
+                                updates.useGCloudADC = false;
+                              }
                             }
                             setForm(serviceType, updates);
                           }}
@@ -1023,10 +1070,13 @@ export default function UnifiedServicePanel() {
                         id={`${serviceType}-openai-use-cli`}
                         checked={form.useCLI || false}
                         onCheckedChange={(checked) => {
-                          const updates: any = { useCLI: checked as boolean };
+                          const updates: Partial<typeof form> = { useCLI: checked as boolean };
                           if (checked) {
                             updates.cliCommand = 'codex';
-                            updates.useOAuth = false;
+                            // Only reset OAuth if it's not already set
+                            if (form.useOAuth === undefined) {
+                              updates.useOAuth = false;
+                            }
                           }
                           setForm(serviceType, updates);
                         }}
@@ -1159,53 +1209,86 @@ export default function UnifiedServicePanel() {
                   </>
                 )}
                 <div className="flex gap-2">
-                  <Button onClick={() => addProviderInstance(serviceType, cfg)} className="flex-1">
+                  <Button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[Button] Add Provider clicked', { serviceType, cfg });
+                      addProviderInstance(serviceType, cfg).catch((error) => {
+                        console.error('[Button] Add Provider error:', error);
+                        toast.error(`Failed: ${error?.message || 'Unknown error'}`);
+                      });
+                    }} 
+                    className="flex-1"
+                    type="button"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Provider
                   </Button>
                   <Button
                     variant="outline"
                     onClick={async () => {
-                      const testForm = getForm(serviceType);
-                      
-                      // Validation: adjust based on provider and mode
-                      if (!testForm.provider || !testForm.baseUrl) {
-                        toast.error('Please fill in provider type and endpoint URL');
-                        return;
-                      }
-                      
-                      // For CLI mode with OAuth, API key is not required
-                      if (testForm.useCLI && (testForm.useOAuth || testForm.useGCloudADC)) {
-                        // OAuth mode - no API key needed
-                        if (!testForm.model && testForm.provider !== 'google_search') {
-                          toast.error('Model is required');
-                          return;
-                        }
-                      } else if (testForm.provider === 'google' && testForm.useVertexAI) {
-                        // Vertex AI mode - no API key needed
-                        if (!testForm.googleProject) {
-                          toast.error('GCP Project ID is required for Vertex AI mode');
-                          return;
-                        }
-                      } else {
-                        // Standard API mode - API key required
-                        if (!testForm.apiKey) {
-                          toast.error('API Key is required for API mode');
-                          return;
-                        }
-                        if (!testForm.model && testForm.provider !== 'google_search' && !isWebSearchProvider(testForm.provider)) {
-                          toast.error('Model is required');
-                          return;
-                        }
-                      }
-                      
                       try {
-                        const testConfig: any = {
+                        const testForm = getForm(serviceType);
+                        console.log('[TestConnection] Form state:', testForm);
+                        
+                        // Validation: provider is always required
+                        if (!testForm.provider) {
+                          toast.error('Please select a provider type');
+                          return;
+                        }
+                        
+                        // Base URL is optional for CLI mode
+                        const isCLIMode = (testForm.provider === 'google' || testForm.provider === 'openai') && testForm.useCLI;
+                        const effectiveBaseUrl = testForm.baseUrl || (!isCLIMode ? getDefaultBaseUrl(testForm.provider) : undefined);
+                        
+                        if (!isCLIMode && !effectiveBaseUrl) {
+                          toast.error('Please fill in endpoint URL');
+                          return;
+                        }
+                        
+                        // For CLI mode with OAuth, API key is not required
+                        if (testForm.useCLI && (testForm.useOAuth || testForm.useGCloudADC)) {
+                          // OAuth mode - no API key needed, but model is required for LLM providers
+                          if (!testForm.model && testForm.provider !== 'google_search' && !isWebSearchProvider(testForm.provider)) {
+                            toast.error('Model is required');
+                            return;
+                          }
+                        } else if (testForm.provider === 'google' && testForm.useVertexAI) {
+                          // Vertex AI mode - no API key needed
+                          if (!testForm.googleProject) {
+                            toast.error('GCP Project ID is required for Vertex AI mode');
+                            return;
+                          }
+                        } else if (testForm.provider === 'google' && testForm.useCLI) {
+                          // CLI mode without OAuth - API key required
+                          if (!testForm.apiKey) {
+                            toast.error('API Key is required for CLI mode without OAuth');
+                            return;
+                          }
+                          if (!testForm.model) {
+                            toast.error('Model is required');
+                            return;
+                          }
+                        } else {
+                          // Standard API mode - API key required
+                          if (!testForm.apiKey) {
+                            toast.error('API Key is required for API mode');
+                            return;
+                          }
+                          if (!testForm.model && testForm.provider !== 'google_search' && !isWebSearchProvider(testForm.provider)) {
+                            toast.error('Model is required');
+                            return;
+                          }
+                        }
+                        const testConfig: unknown = {
                           provider: testForm.provider,
-                          baseUrl: testForm.baseUrl,
+                          baseUrl: effectiveBaseUrl || undefined,
                           apiKey: testForm.apiKey || undefined,
                           model: testForm.model || undefined,
                         };
+                        
+                        console.log('[TestConnection] Test config:', testConfig);
                         
                         // Include CLI configuration if CLI mode is enabled
                         if (testForm.useCLI) {
@@ -1234,21 +1317,37 @@ export default function UnifiedServicePanel() {
                           testConfig.googleSearchEngineId = testForm.googleSearchEngineId;
                         }
                         
+                        console.log('[TestConnection] Sending request to:', `/api/v1/ai/config/${serviceType}/test`);
                         const res = await fetch(`/api/v1/ai/config/${serviceType}/test`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ config: testConfig }),
                         });
-                        if (!res.ok) {
-                          const errorText = await res.text();
-                          throw new Error(errorText || 'Connection test failed');
+                        
+                        console.log('[TestConnection] Response status:', res.status);
+                        const responseData = await res.json().catch((err) => {
+                          console.error('[TestConnection] JSON parse error:', err);
+                          return { success: false, error: 'Invalid response from server' };
+                        });
+                        console.log('[TestConnection] Response data:', responseData);
+                        
+                        if (!res.ok || !responseData.success) {
+                          const errorText = responseData.error || responseData.message || responseData.details?.connectivity || 'Connection test failed';
+                          console.error('[TestConnection] Test failed:', errorText);
+                          toast.error(`Connection test failed: ${errorText}`);
+                          return;
                         }
-                        const result = await res.json();
-                        toast.success(result.data?.message || 'Connection test successful');
+                        
+                        const message = responseData.data?.message || responseData.message || 'Connection test successful';
+                        console.log('[TestConnection] Test successful:', message);
+                        toast.success(message);
                       } catch (e: unknown) {
-                        toast.error(e instanceof Error ? e.message : 'Connection test failed');
+                        console.error('[TestConnection] Unexpected error:', e);
+                        const errorMsg = e instanceof Error ? e.message : 'Connection test failed';
+                        toast.error(`Connection test error: ${errorMsg}`);
                       }
                     }}
+                    type="button"
                   >
                     Test Connection
                   </Button>
@@ -1338,12 +1437,15 @@ export default function UnifiedServicePanel() {
                                     onValueChange={(v) => setEditForm(prev => prev ? { ...prev, model: v } : null)}
                                   >
                                     <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</SelectItem>
-                                      <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                                      <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                                      <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
-                                    </SelectContent>
+                                      <SelectContent>
+                                        <SelectItem value="gemini-3-pro-preview">Gemini 3 Pro Preview (Latest)</SelectItem>
+                                        <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</SelectItem>
+                                        <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
+                                        <SelectItem value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</SelectItem>
+                                        <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                                        <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
+                                        <SelectItem value="gemini-pro">Gemini Pro (v1)</SelectItem>
+                                      </SelectContent>
                                   </Select>
                                 </div>
                               )}
@@ -1401,10 +1503,13 @@ export default function UnifiedServicePanel() {
                                 ) : (
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                      <Label>API Key *</Label>
+                                      <Label>
+                                        API Key
+                                        {!(editForm.useCLI && (editForm.useOAuth || editForm.useGCloudADC)) && ' *'}
+                                      </Label>
                                       <Input
                                         type="password"
-                                        placeholder="GEMINI_API_KEY or GOOGLE_API_KEY"
+                                        placeholder={editForm.useCLI && editForm.useOAuth ? "Optional - not needed for OAuth" : "GEMINI_API_KEY or GOOGLE_API_KEY"}
                                         value={editForm.apiKey || ''}
                                         onChange={(e) => setEditForm(prev => prev ? { ...prev, apiKey: e.target.value } : null)}
                                       />
@@ -1431,7 +1536,7 @@ export default function UnifiedServicePanel() {
                                       id={`edit-${inst.id}-use-cli`}
                                       checked={editForm.useCLI || false}
                                       onCheckedChange={(checked) => {
-                                        const updates: any = { useCLI: checked as boolean };
+                                        const updates: unknown = { useCLI: checked as boolean };
                                         if (checked) {
                                           updates.cliCommand = 'gemini';
                                           updates.useOAuth = false;
@@ -1564,7 +1669,7 @@ export default function UnifiedServicePanel() {
                                     id={`edit-${inst.id}-openai-use-cli`}
                                     checked={editForm.useCLI || false}
                                     onCheckedChange={(checked) => {
-                                      const updates: any = { useCLI: checked as boolean };
+                                      const updates: unknown = { useCLI: checked as boolean };
                                       if (checked) {
                                         updates.cliCommand = 'codex';
                                         updates.useOAuth = false;

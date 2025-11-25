@@ -1,40 +1,67 @@
-// @ts-nocheck
-
 import { query, withTransaction } from '@/lib/database/unified-connection'
 import type { InventoryItem } from '@/domain/inventory'
 
 export async function getBySku(sku: string): Promise<InventoryItem | null> {
   const res = await query(
-    `SELECT * FROM public.inventory_items WHERE sku = $1 LIMIT 1`,
+    `
+      SELECT
+        sp.supplier_sku AS sku,
+        sp.supplier_id::text AS supplier_id,
+        sp.supplier_product_id::text AS product_id,
+        MAX(soh.location_id)::text AS location_id,
+        COALESCE(SUM(soh.qty), 0) AS qty,
+        MAX(sp.is_active) AS is_active,
+        MAX(soh.updated_at) AS updated_at
+      FROM core.supplier_product sp
+      LEFT JOIN core.stock_on_hand soh
+        ON soh.supplier_product_id = sp.supplier_product_id
+      WHERE sp.supplier_sku = $1
+      GROUP BY sp.supplier_sku, sp.supplier_id, sp.supplier_product_id
+      LIMIT 1
+    `,
     [sku]
   )
   const row = res.rows[0]
   if (!row) return null
   return {
     sku: row.sku,
-    supplierId: String(row.supplier_id ?? ''),
-    productId: row.product_id ? String(row.product_id) : undefined,
-    warehouseId: row.location_id ? String(row.location_id) : undefined,
-    quantityOnHand: Number(row.stock_qty ?? row.current_stock ?? 0),
-    quantityReserved: Number(row.reserved_qty ?? 0),
-    backorderable: row.status === 'active',
+    supplierId: row.supplier_id,
+    productId: row.product_id,
+    warehouseId: row.location_id ?? undefined,
+    quantityOnHand: Number(row.qty ?? 0),
+    quantityReserved: 0,
+    backorderable: row.is_active !== false,
     updatedAt: new Date(row.updated_at ?? Date.now()).toISOString(),
   }
 }
 
 export async function listBySupplier(supplierId: string): Promise<InventoryItem[]> {
   const res = await query(
-    `SELECT * FROM public.inventory_items WHERE supplier_id::text = $1`,
+    `
+      SELECT
+        sp.supplier_sku AS sku,
+        sp.supplier_id::text AS supplier_id,
+        sp.supplier_product_id::text AS product_id,
+        MAX(soh.location_id)::text AS location_id,
+        COALESCE(SUM(soh.qty), 0) AS qty,
+        MAX(sp.is_active) AS is_active,
+        MAX(soh.updated_at) AS updated_at
+      FROM core.supplier_product sp
+      LEFT JOIN core.stock_on_hand soh
+        ON soh.supplier_product_id = sp.supplier_product_id
+      WHERE sp.supplier_id::text = $1
+      GROUP BY sp.supplier_sku, sp.supplier_id, sp.supplier_product_id
+    `,
     [supplierId]
   )
-  return res.rows.map((row: unknown) => ({
+  return res.rows.map((row: any) => ({
     sku: row.sku,
-    supplierId: String(row.supplier_id ?? ''),
-    productId: row.product_id ? String(row.product_id) : undefined,
-    warehouseId: row.location_id ? String(row.location_id) : undefined,
-    quantityOnHand: Number(row.stock_qty ?? row.current_stock ?? 0),
-    quantityReserved: Number(row.reserved_qty ?? 0),
-    backorderable: row.status === 'active',
+    supplierId: row.supplier_id,
+    productId: row.product_id,
+    warehouseId: row.location_id ?? undefined,
+    quantityOnHand: Number(row.qty ?? 0),
+    quantityReserved: 0,
+    backorderable: row.is_active !== false,
     updatedAt: new Date(row.updated_at ?? Date.now()).toISOString(),
   }))
 }

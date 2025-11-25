@@ -8,6 +8,19 @@
 
 ## Current Database State
 
+### Dual-Database Topology (required)
+- **IS-SOH (Inventory Selected / Stock-on-Hand)**  
+  - Connection: `DATABASE_URL` / `ENTERPRISE_DATABASE_URL`  
+  - Schemas: `core`, `serve`, and a compatibility `public` schema composed of views over `core.*` (see `database/migrations/neon/001_fix_public_views.sql`).  
+  - Role: canonical supplier, product, price, and stock data. All write operations must target `core.*`.
+- **SPP (Supplier Processing Platform)**  
+  - Connection: `NEON_SPP_DATABASE_URL`  
+  - Schema: `spp` (see `database/scripts/spp_init_min.sql`) storing upload metadata, AI audits, and staging rows prior to being merged into `core`.
+- **Bridging**  
+  - `scripts/setup-two-tier.ts` configures FDW links so SPP can query `core/serve` (`setup_fdw_spp_to_issoh.sql`) and IS-SOH can inspect SPP tables (`setup_fdw_issoh_to_spp.sql`). These links are read-only conveniences; they do **not** change the fact that writes belong in each DB’s native schema.
+- **Key Rule**  
+  - `public.suppliers`, `public.inventory_items`, and related objects inside IS-SOH are compatibility views. They do not support inserts/updates and will continue to throw errors until code paths are refactored to hit `core.*`/`spp.*` directly.
+
 ### Existing Schemas
 - public (55 tables)
 - core (no data)

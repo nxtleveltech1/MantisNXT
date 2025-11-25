@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Play, RotateCw, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { buildApiUrl } from "@/lib/utils/api-url"
 
 interface JobControlPanelProps {
   onJobStarted: (jobId: string) => void
@@ -24,7 +25,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
   const startFullCategorization = useCallback(async () => {
     setIsStarting(true)
     try {
-      const response = await fetch("/api/category/ai-categorization/start", {
+      const response = await fetch(buildApiUrl("/api/category/ai-categorization/start"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -60,7 +61,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
   const startLowConfidenceRecategorization = useCallback(async () => {
     setIsStarting(true)
     try {
-      const response = await fetch("/api/category/ai-categorization/start", {
+      const response = await fetch(buildApiUrl("/api/category/ai-categorization/start"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -95,7 +96,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
   const startFailedRecategorization = useCallback(async () => {
     setIsStarting(true)
     try {
-      const response = await fetch("/api/category/ai-categorization/start", {
+      const response = await fetch(buildApiUrl("/api/category/ai-categorization/start"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * API Schema Validation Middleware
  *

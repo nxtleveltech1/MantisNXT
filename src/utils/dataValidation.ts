@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Bulletproof Data Validation and Sanitization Utilities
  * Handles malformed data, invalid timestamps, and provides safe fallbacks

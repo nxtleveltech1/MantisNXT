@@ -8,7 +8,9 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import * as XLSX from 'xlsx'
 import { query, withTransaction } from '@/lib/database'
+import { sppQuery } from '@/lib/database/spp-connection-manager'
 import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
+import type { PoolClient } from 'pg'
 
 type InventorySummaryRow = {
   sku: string;
@@ -257,7 +259,7 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
   try {
     // Get supplier information
     const supplierResult = await query(
-      'SELECT name, email FROM public.suppliers WHERE id = $1',
+      'SELECT name, contact_email AS email FROM core.supplier WHERE supplier_id::text = $1',
       [supplierId]
     )
 
@@ -457,6 +459,12 @@ async function handleUploadProcessing(request: NextRequest): Promise<NextRespons
       validatedData.supplierId
     )
 
+    await recordPricelistUploadInSpp({
+      supplierId: validatedData.supplierId,
+      session,
+      processedRows: validationResult.processedRows,
+    })
+
     // Update session completion
     await client.query(`
       UPDATE upload_sessions
@@ -553,9 +561,21 @@ async function processAndValidateData(
   let totalValue = 0
   let conflictsResolved = 0
 
-  // Get existing inventory for conflict detection
+  // Get existing inventory for conflict detection from core tables
   const existingInventoryResult = await client.query(`
-    SELECT sku, id, name, cost_price, stock_qty FROM public.inventory_items
+    SELECT
+      sp.supplier_sku AS sku,
+      sp.supplier_product_id::text AS id,
+      sp.name_from_supplier AS name,
+      ph.price AS cost_price,
+      COALESCE(SUM(soh.qty), 0) AS stock_qty
+    FROM core.supplier_product sp
+    LEFT JOIN core.price_history ph
+      ON ph.supplier_product_id = sp.supplier_product_id
+      AND ph.is_current = true
+    LEFT JOIN core.stock_on_hand soh
+      ON soh.supplier_product_id = sp.supplier_product_id
+    GROUP BY sp.supplier_product_id, ph.price, sp.supplier_sku, sp.name_from_supplier
   `)
   const existingInventory = new Map<string, InventorySummaryRow>(
     existingInventoryResult.rows.map((item: InventorySummaryRow) => [item.sku, item])
@@ -780,7 +800,7 @@ function resolveConflict(
   }
 }
 
-async function createBackup(client: unknown, sessionId: string, processedRows: ProcessedRow[]): Promise<string> {
+async function createBackup(client: PoolClient, sessionId: string, processedRows: ProcessedRow[]): Promise<string> {
   const backupId = `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
   // Get existing records that will be affected
@@ -790,9 +810,26 @@ async function createBackup(client: unknown, sessionId: string, processedRows: P
     .filter((sku): sku is string => typeof sku === 'string' && sku.length > 0)
 
   if (affectedSkus.length > 0) {
-    const affectedRecordsResult = await client.query(`
-      SELECT * FROM public.inventory_items WHERE sku = ANY($1)
-    `, [affectedSkus])
+    const affectedRecordsResult = await client.query(
+      `
+        SELECT
+          sp.supplier_sku AS sku,
+          sp.supplier_product_id::text AS supplier_product_id,
+          sp.name_from_supplier AS name,
+          ph.price AS cost_price,
+          COALESCE(SUM(soh.qty), 0) AS stock_qty,
+          sp.attrs_json
+        FROM core.supplier_product sp
+        LEFT JOIN core.price_history ph
+          ON ph.supplier_product_id = sp.supplier_product_id
+          AND ph.is_current = true
+        LEFT JOIN core.stock_on_hand soh
+          ON soh.supplier_product_id = sp.supplier_product_id
+        WHERE sp.supplier_sku = ANY($1)
+        GROUP BY sp.supplier_product_id, ph.price, sp.supplier_sku, sp.name_from_supplier, sp.attrs_json
+      `,
+      [affectedSkus]
+    )
 
     // Store backup
     await client.query(`
@@ -827,110 +864,9 @@ function normalizeTags(input: unknown): string[] {
   return []
 }
 
-async function upsertInventoryRecord(
-  client: unknown,
-  row: ProcessedRow,
-  supplierId: string
-): Promise<void> {
-  const stockQty = Number(row.mappedData.stock_qty || 0)
-  const reservedQty = Number(row.mappedData.reserved_qty || 0)
-  const availableQty = Math.max(0, stockQty - reservedQty)
-  const tags = normalizeTags(row.mappedData.tags)
-
-  const currency = (row.mappedData.currency || 'ZAR').toString().toUpperCase()
-  const supplierSku = (row.mappedData.supplier_sku || row.mappedData.sku) as string
-  const rsp = row.mappedData.rsp ?? null
-
-  await (client as any).query(
-    `
-      INSERT INTO public.inventory_items (
-        sku,
-        name,
-        description,
-        category,
-        brand,
-        supplier_id,
-        supplier_sku,
-        cost_price,
-        sale_price,
-        rsp,
-        currency,
-        stock_qty,
-        reserved_qty,
-        available_qty,
-        reorder_point,
-        max_stock,
-        unit,
-        weight,
-        barcode,
-        location,
-        status,
-        tags,
-        updated_at
-      )
-      VALUES (
-        $1, $2, $3, $4, $5,
-        $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15,
-        $16, $17, $18, $19, $20,
-        $21, $22, NOW()
-      )
-      ON CONFLICT (sku) DO UPDATE SET
-        name = EXCLUDED.name,
-        description = COALESCE(EXCLUDED.description, public.inventory_items.description),
-        category = COALESCE(EXCLUDED.category, public.inventory_items.category),
-        brand = COALESCE(EXCLUDED.brand, public.inventory_items.brand),
-        supplier_id = COALESCE(EXCLUDED.supplier_id, public.inventory_items.supplier_id),
-        supplier_sku = COALESCE(EXCLUDED.supplier_sku, public.inventory_items.supplier_sku),
-        cost_price = COALESCE(EXCLUDED.cost_price, public.inventory_items.cost_price),
-        sale_price = COALESCE(EXCLUDED.sale_price, public.inventory_items.sale_price),
-        rsp = COALESCE(EXCLUDED.rsp, public.inventory_items.rsp),
-        currency = COALESCE(EXCLUDED.currency, public.inventory_items.currency),
-        stock_qty = EXCLUDED.stock_qty,
-        reserved_qty = EXCLUDED.reserved_qty,
-        available_qty = EXCLUDED.available_qty,
-        reorder_point = COALESCE(EXCLUDED.reorder_point, public.inventory_items.reorder_point),
-        max_stock = COALESCE(EXCLUDED.max_stock, public.inventory_items.max_stock),
-        unit = COALESCE(EXCLUDED.unit, public.inventory_items.unit),
-        weight = COALESCE(EXCLUDED.weight, public.inventory_items.weight),
-        barcode = COALESCE(EXCLUDED.barcode, public.inventory_items.barcode),
-        location = COALESCE(EXCLUDED.location, public.inventory_items.location),
-        status = EXCLUDED.status,
-        tags = CASE
-          WHEN array_length(EXCLUDED.tags, 1) > 0 THEN EXCLUDED.tags
-          ELSE public.inventory_items.tags
-        END,
-        updated_at = NOW();
-    `,
-    [
-      row.mappedData.sku,
-      row.mappedData.name,
-      row.mappedData.description ?? null,
-      row.mappedData.category ?? null,
-      row.mappedData.brand ?? null,
-      supplierId,
-      supplierSku,
-      row.mappedData.cost_price ?? null,
-      row.mappedData.sale_price ?? null,
-      rsp,
-      currency,
-      stockQty,
-      reservedQty,
-      availableQty,
-      row.mappedData.reorder_point ?? 0,
-      row.mappedData.max_stock ?? null,
-      row.mappedData.unit ?? null,
-      row.mappedData.weight ?? null,
-      row.mappedData.barcode ?? null,
-      row.mappedData.location ?? null,
-      row.mappedData.status ?? 'active',
-      tags
-    ]
-  )
-}
 
 async function importToInventory(
-  client: unknown,
+  client: PoolClient,
   processedRows: ProcessedRow[],
   conflictResolution: unknown,
   supplierId: string
@@ -943,9 +879,24 @@ async function importToInventory(
   const newCategories = new Set<string>()
   const newBrands = new Set<string>()
 
-  // Get existing categories and brands
-  const existingCategoriesResult = await client.query('SELECT DISTINCT category FROM public.inventory_items')
-  const existingBrandsResult = await client.query('SELECT DISTINCT brand FROM public.inventory_items WHERE brand IS NOT NULL')
+  // Get existing categories and brands from core data
+  const existingCategoriesResult = await (client as any).query(
+    `
+      SELECT DISTINCT COALESCE(c.name, sp.attrs_json->>'category') AS category
+      FROM core.supplier_product sp
+      LEFT JOIN core.category c ON c.category_id = sp.category_id
+      WHERE sp.supplier_id = $1
+    `,
+    [supplierId]
+  )
+  const existingBrandsResult = await (client as any).query(
+    `
+      SELECT DISTINCT brand_from_supplier AS brand
+      FROM core.supplier_product
+      WHERE supplier_id = $1 AND brand_from_supplier IS NOT NULL
+    `,
+    [supplierId]
+  )
 
   const existingCategories = new Set<string>(
     existingCategoriesResult.rows
@@ -978,7 +929,6 @@ async function importToInventory(
             reason: `Upload session: ${row.id}`
           })
 
-          await upsertInventoryRecord(client, row, supplierId)
           created++
           totalValue += (row.mappedData.cost_price || 0) * (row.mappedData.stock_qty || 0)
 
@@ -1002,7 +952,6 @@ async function importToInventory(
               reason: `Upload session update: ${row.id}`
             })
           }
-          await upsertInventoryRecord(client, row, supplierId)
           updated++
           break
 
@@ -1027,6 +976,155 @@ async function importToInventory(
       newBrands: newBrands.size,
       affectedSuppliers: 1
     }
+  }
+}
+
+async function recordPricelistUploadInSpp({
+  supplierId,
+  session,
+  processedRows,
+}: {
+  supplierId: string
+  session: { filename?: string | null }
+  processedRows: ProcessedRow[]
+}) {
+  if (processedRows.length === 0) {
+    return
+  }
+
+  try {
+    const currencyFromRows = processedRows.find(
+      (row) => typeof row.mappedData.currency === 'string' && row.mappedData.currency.length > 0
+    )
+    const inferredCurrency = (currencyFromRows?.mappedData.currency as string | undefined)?.toUpperCase() || 'ZAR'
+
+    const uploadResult = await sppQuery<{ upload_id: string }>(
+      `
+        INSERT INTO spp.pricelist_upload (
+          supplier_id,
+          filename,
+          currency,
+          valid_from,
+          row_count,
+          status,
+          processed_by
+        ) VALUES (
+          $1, $2, $3, NOW(), $4, $5, $6
+        )
+        RETURNING upload_id
+      `,
+      [
+        supplierId,
+        session.filename ?? 'live-upload',
+        inferredCurrency,
+        processedRows.length,
+        'imported',
+        'live-route',
+      ]
+    )
+
+    const uploadId = uploadResult.rows[0]?.upload_id
+    if (!uploadId) {
+      return
+    }
+
+    const stagedRows = processedRows.filter((row) => row.status !== 'error')
+    if (stagedRows.length === 0) {
+      return
+    }
+
+    const rowsPayload = stagedRows.reduce(
+      (acc, row) => {
+        const supplierSku = (row.mappedData.supplier_sku || row.mappedData.sku || '').toString()
+        acc.rowNums.push(row.rowNumber)
+        acc.supplierSkus.push(supplierSku)
+        acc.names.push((row.mappedData.name || '').toString())
+        acc.brands.push((row.mappedData.brand || null) as string | null)
+        acc.uoms.push((row.mappedData.unit || 'EA').toString())
+        acc.packSizes.push((row.mappedData.pack_size as string | undefined) ?? null)
+        acc.prices.push(Number(row.mappedData.cost_price || 0))
+        acc.currencies.push(
+          ((row.mappedData.currency as string | undefined) || inferredCurrency).toUpperCase()
+        )
+        acc.categories.push((row.mappedData.category || null) as string | null)
+        acc.vatCodes.push((row.mappedData.vat_code || null) as string | null)
+        acc.barcodes.push((row.mappedData.barcode || null) as string | null)
+        acc.attrs.push(row.originalData || {})
+        acc.validationErrors.push(
+          row.issues && row.issues.length > 0 ? row.issues.map((issue) => issue.message) : null
+        )
+        return acc
+      },
+      {
+        rowNums: [] as number[],
+        supplierSkus: [] as string[],
+        names: [] as string[],
+        brands: [] as (string | null)[],
+        uoms: [] as string[],
+        packSizes: [] as (string | null)[],
+        prices: [] as number[],
+        currencies: [] as string[],
+        categories: [] as (string | null)[],
+        vatCodes: [] as (string | null)[],
+        barcodes: [] as (string | null)[],
+        attrs: [] as Record<string, unknown>[],
+        validationErrors: [] as (string[] | null)[],
+      }
+    )
+
+    await sppQuery(
+      `
+        INSERT INTO spp.pricelist_row (
+          upload_id,
+          row_num,
+          supplier_sku,
+          name,
+          brand,
+          uom,
+          pack_size,
+          price,
+          currency,
+          category_raw,
+          vat_code,
+          barcode,
+          attrs_json,
+          validation_errors
+        )
+        SELECT
+          $1,
+          unnest($2::int[]),
+          unnest($3::text[]),
+          unnest($4::text[]),
+          unnest($5::text[]),
+          unnest($6::text[]),
+          unnest($7::text[]),
+          unnest($8::numeric[]),
+          unnest($9::text[]),
+          unnest($10::text[]),
+          unnest($11::text[]),
+          unnest($12::text[]),
+          unnest($13::jsonb[]),
+          unnest($14::text[][])
+      `,
+      [
+        uploadId,
+        rowsPayload.rowNums,
+        rowsPayload.supplierSkus,
+        rowsPayload.names,
+        rowsPayload.brands,
+        rowsPayload.uoms,
+        rowsPayload.packSizes,
+        rowsPayload.prices,
+        rowsPayload.currencies,
+        rowsPayload.categories,
+        rowsPayload.vatCodes,
+        rowsPayload.barcodes,
+        rowsPayload.attrs,
+        rowsPayload.validationErrors,
+      ]
+    )
+  } catch (error) {
+    console.warn('⚠️  Failed to record SPP staging data:', error)
   }
 }
 

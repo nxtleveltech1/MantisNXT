@@ -46,18 +46,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
   constructor() {}
 
   async findById(id: string): Promise<Supplier | null> {
-    // Check if public.suppliers is a view - if so, read from core.supplier directly
-    const tableTypeCheck = await query(`
-      SELECT table_type 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-        AND table_name = 'suppliers'
-    `)
-    
-    const isView = tableTypeCheck.rows.length > 0 && tableTypeCheck.rows[0].table_type === 'VIEW'
-    
-    // Read from the actual table, not the view, to get ALL data
-    const supplierQuery = isView ? `
+    const supplierResult = await query(`
       SELECT 
         s.supplier_id::text as id,
         s.name,
@@ -66,25 +55,22 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
         CASE WHEN s.active THEN 'active'::text ELSE 'inactive'::text END as status,
         s.default_currency as currency,
         s.payment_terms,
+        s.payment_terms_days,
         s.contact_info,
         s.tax_number as tax_id,
+        s.contact_person,
+        s.contact_email,
+        s.contact_phone,
+        s.website,
         s.created_at,
-        s.updated_at,
-        s.contact_person
+        s.updated_at
       FROM core.supplier s
       WHERE CAST(s.supplier_id AS TEXT) = $1
       LIMIT 1
-    ` : `
-      SELECT *
-      FROM public.suppliers s
-      WHERE CAST(s.id AS TEXT) = $1
-      LIMIT 1
-    `
-    
-    const supplierResult = await query(supplierQuery, [id])
+    `, [id])
     if (supplierResult.rows.length === 0) return null
     
-    const row: unknown = supplierResult.rows[0]
+    const row: Record<string, any> = supplierResult.rows[0]
     
     // Debug: Log what we're getting from the database
     console.log('🔍 [findById] Raw database row:', {
@@ -96,7 +82,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     })
     
     // Extract data from contact_info JSONB if it exists
-    const contactInfo = row.contact_info || {}
+    const contactInfo = parseContactInfo(row.contact_info)
     console.log('🔍 [findById] Extracted contact_info:', contactInfo)
     
     // Map columns that exist - handle different column name variations
@@ -224,39 +210,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
 
   async create(data: CreateSupplierData): Promise<Supplier> {
     const supplierId: string = await withTransaction(async (client: PoolClient) => {
-      const supplierQuery = `
-        INSERT INTO public.suppliers (
-          name, code, legal_name, website, industry, tier, status, category, subcategory,
-          tags, brands, tax_id, registration_number, founded_year, employee_count, annual_revenue,
-          currency, created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW()
-        ) RETURNING id
-      `
-
-      const businessInfo = data.businessInfo
-      const supplierParams = [
-        data.name,
-        data.code,
-        businessInfo.legalName,
-        businessInfo.website ?? null,
-        businessInfo.industry ?? null,
-        data.tier,
-        data.status,
-        data.category,
-        data.subcategory ?? null,
-        data.tags,
-        data.brands || [],
-        businessInfo.taxId,
-        businessInfo.registrationNumber,
-        businessInfo.foundedYear ?? null,
-        businessInfo.employeeCount ?? null,
-        businessInfo.annualRevenue ?? null,
-        businessInfo.currency
-      ]
-
-      const supplierResult = await client.query(supplierQuery, supplierParams)
-      const newSupplierId: string = supplierResult.rows[0].id
+      const newSupplierId = await this.insertCoreSupplier(client, data)
 
       if (data.contacts && data.contacts.length > 0) {
         const contactArrays = data.contacts.reduce((acc, contact) => {
@@ -382,7 +336,7 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
           '{"business_rules": {"minimum_order_value": 100, "payment_terms": "' || $3 || '", "delivery_timeframe": "7-14 days"}}'::jsonb,
           true, NOW(), NOW()
         ) ON CONFLICT (supplier_id, profile_name) DO NOTHING`,
-        [newSupplierId, businessInfo.currency || 'ZAR', businessInfo.paymentTerms || 'Net 30']
+        [newSupplierId, data.businessInfo.currency || 'ZAR', data.businessInfo.paymentTerms || 'Net 30']
       )
 
       return newSupplierId
@@ -397,20 +351,9 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
 
   async update(id: string, data: UpdateSupplierData): Promise<Supplier> {
     await withTransaction(async (client: PoolClient) => {
-      // Check if public.suppliers is a view or table
-      const tableTypeCheck = await client.query(`
-        SELECT table_type 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-          AND table_name = 'suppliers'
-      `)
-      
-      const isView = tableTypeCheck.rows.length > 0 && tableTypeCheck.rows[0].table_type === 'VIEW'
-      
-      // Determine which table to update and get its columns
-      const tableSchema = isView ? 'core' : 'public'
-      const tableName = isView ? 'supplier' : 'suppliers'
-      const idColumn = isView ? 'supplier_id' : 'id'
+      const tableSchema = 'core'
+      const tableName = 'supplier'
+      const idColumn = 'supplier_id'
       
       const columnCheck = await client.query(`
         SELECT column_name 
@@ -666,6 +609,52 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     return updatedSupplier
   }
 
+  private async insertCoreSupplier(client: PoolClient, data: CreateSupplierData): Promise<string> {
+    const contactInfoPayload = buildContactInfoFromCreate(data)
+    const primaryContact = extractPrimaryContactDetails(data.contacts)
+    const paymentTerms = resolvePaymentTerms(data)
+    const paymentTermsDays = resolvePaymentTermsDays(data)
+
+    const insertResult = await client.query(`
+      INSERT INTO core.supplier (
+        name,
+        code,
+        active,
+        default_currency,
+        payment_terms,
+        payment_terms_days,
+        contact_phone,
+        contact_email,
+        website,
+        tax_number,
+        contact_info,
+        contact_person,
+        created_at,
+        updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11::jsonb, $12::jsonb, NOW(), NOW()
+      )
+      RETURNING supplier_id::text as id
+    `, [
+      data.name,
+      data.code,
+      data.status === 'active',
+      data.businessInfo.currency,
+      paymentTerms,
+      paymentTermsDays,
+      primaryContact.phone,
+      primaryContact.email,
+      data.businessInfo.website ?? null,
+      data.businessInfo.taxId,
+      JSON.stringify(contactInfoPayload),
+      primaryContact.person ? JSON.stringify(primaryContact.person) : null,
+    ])
+
+    return insertResult.rows[0].id
+  }
+
   async delete(id: string): Promise<void> {
     await withTransaction(async (client: PoolClient) => {
       // Delete all related data first (CASCADE would handle this, but being explicit)
@@ -673,258 +662,36 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
       await client.query('DELETE FROM supplier_contacts WHERE CAST(supplier_id AS TEXT) = $1', [id])
       await client.query('DELETE FROM supplier_addresses WHERE CAST(supplier_id AS TEXT) = $1', [id])
       // Finally delete the supplier itself
-      const result = await client.query('DELETE FROM public.suppliers WHERE CAST(id AS TEXT) = $1', [id])
+      const result = await client.query('DELETE FROM core.supplier WHERE CAST(supplier_id AS TEXT) = $1', [id])
       if (result.rowCount === 0) {
         throw new Error('Supplier not found')
       }
     })
   }
 
-  // OPTIMIZED: createMany using bulk insert (4-5x faster)
   async createMany(data: CreateSupplierData[]): Promise<Supplier[]> {
     if (data.length === 0) return []
 
-    const supplierIds: string[] = await withTransaction(async (client: PoolClient) => {
-      const supplierArrays = data.reduce((acc, supplier) => {
-        acc.names.push(supplier.name)
-        acc.codes.push(supplier.code)
-        const info = supplier.businessInfo
-        acc.legalNames.push(info.legalName)
-        acc.websites.push(info.website ?? null)
-        acc.industries.push(info.industry ?? null)
-        acc.tiers.push(supplier.tier)
-        acc.statuses.push(supplier.status)
-        acc.categories.push(supplier.category)
-        acc.subcategories.push(supplier.subcategory || null)
-        acc.tags.push(supplier.tags)
-        acc.taxIds.push(info.taxId)
-        acc.registrationNumbers.push(info.registrationNumber)
-        acc.foundedYears.push(info.foundedYear ?? null)
-        acc.employeeCounts.push(info.employeeCount ?? null)
-        acc.annualRevenues.push(info.annualRevenue ?? null)
-        acc.currencies.push(info.currency)
-        return acc
-      }, {
-        names: [] as string[],
-        codes: [] as string[],
-        legalNames: [] as string[],
-        websites: [] as (string | null)[],
-        industries: [] as (string | null)[],
-        tiers: [] as string[],
-        statuses: [] as string[],
-        categories: [] as string[],
-        subcategories: [] as (string | null)[],
-        tags: [] as string[][],
-        taxIds: [] as string[],
-        registrationNumbers: [] as string[],
-        foundedYears: [] as (number | null)[],
-        employeeCounts: [] as (number | null)[],
-        annualRevenues: [] as (number | null)[],
-        currencies: [] as string[]
-      })
-
-      const supplierResult = await client.query(`
-        INSERT INTO public.suppliers (
-          name, code, legal_name, website, industry, tier, status, category, subcategory,
-          tags, tax_id, registration_number, founded_year, employee_count, annual_revenue,
-          currency, created_at, updated_at
-        )
-        SELECT * FROM unnest(
-          $1::text[], $2::text[], $3::text[], $4::text[], $5::text[],
-          $6::text[], $7::text[], $8::text[], $9::text[], $10::text[][],
-          $11::text[], $12::text[], $13::int[], $14::int[], $15::numeric[],
-          $16::text[]
-        ) AS t(
-          name, code, legal_name, website, industry, tier, status, category, subcategory,
-          tags, tax_id, registration_number, founded_year, employee_count, annual_revenue,
-          currency
-        )
-        CROSS JOIN (SELECT NOW() as created_at, NOW() as updated_at) dates
-        RETURNING id
-      `, [
-        supplierArrays.names,
-        supplierArrays.codes,
-        supplierArrays.legalNames,
-        supplierArrays.websites,
-        supplierArrays.industries,
-        supplierArrays.tiers,
-        supplierArrays.statuses,
-        supplierArrays.categories,
-        supplierArrays.subcategories,
-        supplierArrays.tags,
-        supplierArrays.taxIds,
-        supplierArrays.registrationNumbers,
-        supplierArrays.foundedYears,
-        supplierArrays.employeeCounts,
-        supplierArrays.annualRevenues,
-        supplierArrays.currencies
-      ])
-
-      const supplierIds = supplierResult.rows.map(row => row.id)
-
-      const allContacts: unknown[] = []
-      data.forEach((supplier, idx) => {
-        if (supplier.contacts && supplier.contacts.length > 0) {
-          supplier.contacts.forEach(contact => {
-            allContacts.push({ supplierId: supplierIds[idx], ...contact })
-          })
-        }
-      })
-      if (allContacts.length > 0) {
-        const contactArrays = allContacts.reduce((acc, contact) => {
-          acc.supplierIds.push(contact.supplierId)
-          acc.types.push(contact.type)
-          acc.names.push(contact.name)
-          acc.titles.push(contact.title)
-          acc.emails.push(contact.email)
-          acc.phones.push(contact.phone)
-          acc.mobiles.push(contact.mobile ?? null)
-          acc.departments.push(contact.department ?? null)
-          acc.isPrimaries.push(contact.isPrimary)
-          acc.isActives.push(contact.isActive)
-          return acc
-        }, {
-          supplierIds: [] as string[],
-          types: [] as string[],
-          names: [] as string[],
-          titles: [] as string[],
-          emails: [] as string[],
-          phones: [] as string[],
-          mobiles: [] as (string | null)[],
-          departments: [] as (string | null)[],
-          isPrimaries: [] as boolean[],
-          isActives: [] as boolean[]
-        })
-        await client.query(`
-          INSERT INTO supplier_contacts (
-            supplier_id, type, name, title, email, phone, mobile, department,
-            is_primary, is_active, created_at
-          )
-          SELECT * FROM unnest(
-            $1::uuid[], $2::text[], $3::text[], $4::text[], $5::text[],
-            $6::text[], $7::text[], $8::text[], $9::boolean[], $10::boolean[]
-          ) AS t(supplier_id, type, name, title, email, phone, mobile, department, is_primary, is_active)
-          CROSS JOIN (SELECT NOW() as created_at) dates
-        `, [
-          contactArrays.supplierIds,
-          contactArrays.types,
-          contactArrays.names,
-          contactArrays.titles,
-          contactArrays.emails,
-          contactArrays.phones,
-          contactArrays.mobiles,
-          contactArrays.departments,
-          contactArrays.isPrimaries,
-          contactArrays.isActives
-        ])
-      }
-
-      const allAddresses: unknown[] = []
-      data.forEach((supplier, idx) => {
-        if (supplier.addresses && supplier.addresses.length > 0) {
-          supplier.addresses.forEach(address => {
-            allAddresses.push({ supplierId: supplierIds[idx], ...address })
-          })
-        }
-      })
-      if (allAddresses.length > 0) {
-        const addressArrays = allAddresses.reduce((acc, address) => {
-          acc.supplierIds.push(address.supplierId)
-          acc.types.push(address.type)
-          acc.names.push(address.name ?? null)
-          acc.addressLine1s.push(address.addressLine1)
-          acc.addressLine2s.push(address.addressLine2 ?? null)
-          acc.cities.push(address.city)
-          acc.states.push(address.state)
-          acc.postalCodes.push(address.postalCode)
-          acc.countries.push(address.country)
-          acc.isPrimaries.push(address.isPrimary)
-          acc.isActives.push(address.isActive)
-          return acc
-        }, {
-          supplierIds: [] as string[],
-          types: [] as string[],
-          names: [] as (string | null)[],
-          addressLine1s: [] as string[],
-          addressLine2s: [] as (string | null)[],
-          cities: [] as string[],
-          states: [] as string[],
-          postalCodes: [] as string[],
-          countries: [] as string[],
-          isPrimaries: [] as boolean[],
-          isActives: [] as boolean[]
-        })
-        await client.query(`
-          INSERT INTO supplier_addresses (
-            supplier_id, type, name, address_line1, address_line2, city, state,
-            postal_code, country, is_primary, is_active, created_at
-          )
-          SELECT * FROM unnest(
-            $1::uuid[], $2::text[], $3::text[], $4::text[], $5::text[],
-            $6::text[], $7::text[], $8::text[], $9::text[], $10::boolean[], $11::boolean[]
-          ) AS t(supplier_id, type, name, address_line1, address_line2, city, state, postal_code, country, is_primary, is_active)
-          CROSS JOIN (SELECT NOW() as created_at) dates
-        `, [
-          addressArrays.supplierIds,
-          addressArrays.types,
-          addressArrays.names,
-          addressArrays.addressLine1s,
-          addressArrays.addressLine2s,
-          addressArrays.cities,
-          addressArrays.states,
-          addressArrays.postalCodes,
-          addressArrays.countries,
-          addressArrays.isPrimaries,
-          addressArrays.isActives
-        ])
-      }
-
-      await client.query(`
-        INSERT INTO supplier_performance (
-          supplier_id, overall_rating, quality_rating, delivery_rating,
-          service_rating, price_rating, created_at, updated_at
-        )
-        SELECT id, 0, 0, 0, 0, 0, NOW(), NOW()
-        FROM unnest($1::uuid[]) AS t(id)
-      `, [supplierIds])
-
-      return supplierIds
-    })
-
-    const createdSuppliers = await Promise.all(
-      supplierIds.map(id => this.findById(id))
-    )
-    return createdSuppliers.filter((s): s is Supplier => s !== null)
-  }
-
-  async updateMany(updates: Array<{id: string, data: UpdateSupplierData}>): Promise<Supplier[]> {
-    const results: Supplier[] = []
-
-    for (const update of updates) {
-      const supplier = await this.update(update.id, update.data)
-      results.push(supplier)
+    const suppliers: Supplier[] = []
+    for (const supplierData of data) {
+      const supplier = await this.create(supplierData)
+      suppliers.push(supplier)
     }
-
-    return results
+    return suppliers
   }
 
-  async deleteMany(ids: string[]): Promise<void> {
-    for (const id of ids) {
-      await this.delete(id)
-    }
-  }
 
   async getMetrics(): Promise<SupplierMetrics> {
     const metricsQuery = `
       SELECT
         COUNT(*) as total_suppliers,
-        COUNT(CASE WHEN status = 'active' THEN 1 END) as active_suppliers,
-        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_suppliers,
-        COUNT(CASE WHEN tier = 'strategic' THEN 1 END) as strategic_suppliers,
+        COUNT(*) FILTER (WHERE s.active) as active_suppliers,
+        COUNT(*) FILTER (WHERE COALESCE(s.contact_info->>'status', 'pending') = 'pending') as pending_suppliers,
+        COUNT(*) FILTER (WHERE COALESCE(s.contact_info->>'tier', 'approved') = 'strategic') as strategic_suppliers,
         AVG(sp.overall_rating) as avg_rating,
         AVG(sp.on_time_delivery_rate) as avg_delivery_rate
-      FROM public.suppliers s
-      LEFT JOIN supplier_performance sp ON s.id = sp.supplier_id
+      FROM core.supplier s
+      LEFT JOIN supplier_performance sp ON s.supplier_id = sp.supplier_id
     `
     const result = await query(metricsQuery)
     const row = result.rows[0] || {}
@@ -1211,4 +978,82 @@ export class PostgreSQLSupplierRepository implements SupplierRepository {
     // Placeholder - would implement Excel export using a library like exceljs
     throw new Error('Excel export not yet implemented')
   }
+}
+
+const DEFAULT_PAYMENT_TERMS = 'Net 30'
+const DEFAULT_PAYMENT_TERMS_DAYS = 30
+
+function parseContactInfo(value: unknown) {
+  if (!value) return {}
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value)
+    } catch {
+      return {}
+    }
+  }
+  return value as Record<string, unknown>
+}
+
+function extractPrimaryContactDetails(contacts?: Array<Record<string, unknown>>) {
+  if (!contacts || contacts.length === 0) {
+    return { email: null, phone: null, person: null }
+  }
+
+  const primary = contacts.find((contact: Record<string, unknown>) => contact.isPrimary) || contacts[0]
+
+  return {
+    email: primary.email ?? null,
+    phone: primary.phone ?? null,
+    person: {
+      name: primary.name ?? null,
+      title: primary.title ?? null,
+      email: primary.email ?? null,
+      phone: primary.phone ?? null,
+      department: primary.department ?? null,
+    },
+  }
+}
+
+function buildContactInfoFromCreate(data: CreateSupplierData) {
+  return {
+    status: data.status,
+    tier: data.tier,
+    category: data.category,
+    subcategory: data.subcategory ?? null,
+    categories: data.categories ?? [],
+    tags: data.tags ?? [],
+    brands: data.brands ?? [],
+    legalName: data.businessInfo.legalName,
+    industry: data.businessInfo.industry ?? null,
+    website: data.businessInfo.website ?? null,
+    taxId: data.businessInfo.taxId,
+    registrationNumber: data.businessInfo.registrationNumber,
+    foundedYear: data.businessInfo.foundedYear ?? null,
+    employeeCount: data.businessInfo.employeeCount ?? null,
+    annualRevenue: data.businessInfo.annualRevenue ?? null,
+    currency: data.businessInfo.currency,
+    notes: data.notes ?? null,
+  }
+}
+
+function resolvePaymentTerms(input: { businessInfo?: Record<string, unknown>; paymentTerms?: string }) {
+  if (input.paymentTerms) return input.paymentTerms
+  const businessInfo = input.businessInfo ?? {}
+  if ((businessInfo as Record<string, unknown>).paymentTerms) {
+    return (businessInfo as Record<string, string>).paymentTerms
+  }
+  return DEFAULT_PAYMENT_TERMS
+}
+
+function resolvePaymentTermsDays(input: {
+  businessInfo?: Record<string, unknown>
+  paymentTermsDays?: number
+}) {
+  if (input.paymentTermsDays !== undefined) return input.paymentTermsDays
+  const businessInfo = input.businessInfo ?? {}
+  if ((businessInfo as Record<string, unknown>).paymentTermsDays !== undefined) {
+    return Number((businessInfo as Record<string, number>).paymentTermsDays)
+  }
+  return DEFAULT_PAYMENT_TERMS_DAYS
 }

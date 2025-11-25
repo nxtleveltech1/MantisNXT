@@ -8,23 +8,43 @@
 import { NextResponse } from 'next/server';
 import { checkCLIAvailability } from '@/lib/ai/cli-provider';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
+    console.log('[CLI Availability] Starting check...');
+    const startTime = Date.now();
+    
+    // Run the check - let it complete naturally (Next.js has its own timeout)
+    // The individual CLI checks have their own timeouts (3-5s each)
     const availability = await checkCLIAvailability();
+    
+    const duration = Date.now() - startTime;
+    console.log(`[CLI Availability] Check completed in ${duration}ms:`, {
+      hasGoogle: !!availability.google,
+      hasOpenai: !!availability.openai,
+      hasAnthropic: !!availability.anthropic,
+      googleAvailable: availability.google?.available,
+      googleVersion: availability.google?.version,
+      openaiAvailable: availability.openai?.available,
+      openaiVersion: availability.openai?.version,
+      anthropicAvailable: availability.anthropic?.available,
+      anthropicVersion: availability.anthropic?.version,
+    });
     
     return NextResponse.json({
       success: true,
       data: availability,
     });
   } catch (error) {
-    console.error('CLI availability check failed:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to check CLI availability',
-      },
-      { status: 500 }
-    );
+    console.error('[CLI Availability] Check failed:', error);
+    // Return empty results instead of error to prevent UI breakage
+    // The UI will show "Unknown" state instead of breaking
+    return NextResponse.json({
+      success: true,
+      data: {},
+    });
   }
 }
 

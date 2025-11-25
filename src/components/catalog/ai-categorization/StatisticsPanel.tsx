@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, memo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, CheckCircle, AlertTriangle, TrendingUp, Activity } from "lucide-react"
+import { buildApiUrl } from "@/lib/utils/api-url"
 
 interface Stats {
   total_products: number
@@ -32,7 +33,7 @@ export const StatisticsPanel = memo(function StatisticsPanel({ refreshTrigger }:
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch("/api/category/ai-categorization/stats")
+      const response = await fetch(buildApiUrl("/api/category/ai-categorization/stats"))
       const data = await response.json()
 
       if (data.success) {

@@ -517,11 +517,10 @@ export class CustomerSyncService {
   /**
    * Get sync queue status
    */
-  static async getStatus(queueId: string): Promise<SyncProgress> {
-    throw new Error('orgId required');
-  }
-
-  static async getStatus(queueId: string, orgId: string): Promise<SyncProgress> {
+  static async getStatus(queueId: string, orgId?: string): Promise<SyncProgress> {
+    if (!orgId) {
+      throw new Error('orgId required');
+    }
     const status: any = await WooCommerceSyncQueue.getQueueStatus(queueId, orgId);
     return {
       queueId: status.id,

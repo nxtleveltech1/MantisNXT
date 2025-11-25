@@ -189,8 +189,9 @@ describe('VAT Utils', () => {
       })
 
       // Override the query function temporarily
-      const originalQuery = require('@/lib/database').query
-      require('@/lib/database').query = mockQuery
+      const dbModule = await import('@/lib/database')
+      const originalQuery = dbModule.query
+      dbModule.query = mockQuery
 
       const rows = [
         {
@@ -207,7 +208,7 @@ describe('VAT Utils', () => {
       expect(result.rows[0].price_incl_vat).toBe(120.00)
 
       // Restore original query function
-      require('@/lib/database').query = originalQuery
+      dbModule.query = originalQuery
     })
   })
 })

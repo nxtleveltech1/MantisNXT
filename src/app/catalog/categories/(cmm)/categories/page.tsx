@@ -41,6 +41,9 @@ export default function CategoriesPage() {
         throw new Error("Failed to load categories")
       }
       const data: Category[] = await response.json()
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[Categories] fetched", Array.isArray(data) ? data.length : 0)
+      }
       setCategories(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error("Failed to fetch categories:", error)

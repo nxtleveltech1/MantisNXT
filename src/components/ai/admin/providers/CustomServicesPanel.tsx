@@ -68,15 +68,34 @@ export default function CustomServicesPanel() {
   const [configs, setConfigs] = useState<Record<string, ServiceConfigRecord | null>>({});
   
   // CLI availability state
-  const { data: cliAvailability } = useQuery<Record<string, { available: boolean; version?: string; installationHint?: string }>>({
+  const { data: cliAvailability, refetch: refetchCLIAvailability, isFetching: isFetchingCLI } = useQuery<Record<string, { available: boolean; version?: string; installationHint?: string }>>({
     queryKey: ['ai-cli-availability'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/ai/cli/availability');
-      if (!res.ok) return {};
-      const data = await res.json();
-      return data.data || {};
+      try {
+        const res = await fetch('/api/v1/ai/cli/availability');
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.warn('[CustomServicesPanel] CLI availability check failed:', res.status, errorText);
+          // Return empty object on error, but don't throw - let UI show "unknown" state
+          return {};
+        }
+        const data = await res.json();
+        console.log('[CustomServicesPanel] CLI availability response:', {
+          success: data.success,
+          data: data.data,
+          google: data.data?.google,
+          openai: data.data?.openai,
+        });
+        return data.data || {};
+      } catch (error) {
+        console.error('[CustomServicesPanel] CLI availability check error:', error);
+        return {};
+      }
     },
     refetchInterval: 60000, // Check every minute
+    retry: 2, // Retry failed requests
+    retryDelay: 1000, // Wait 1 second between retries
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
   
   // Form state for adding a new provider instance per service
@@ -140,13 +159,33 @@ export default function CustomServicesPanel() {
 
   const updateConfig = useMutation({
     mutationFn: async ({ serviceId, payload }: { serviceId: string; payload: unknown }) => {
-      const res = await fetch(`/api/v1/ai/services/${serviceId}/config`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      console.log('[CustomServicesPanel] Mutation called:', { serviceId, payload });
+      try {
+        const res = await fetch(`/api/v1/ai/services/${serviceId}/config`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        console.log('[CustomServicesPanel] Mutation response status:', res.status, res.statusText);
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('[CustomServicesPanel] Mutation error response:', errorText);
+          let errorMessage = 'Failed to save provider';
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error?.message || errorJson.message || errorText;
+          } catch {
+            errorMessage = errorText || 'Failed to save provider';
+          }
+          throw new Error(errorMessage);
+        }
+        const result = await res.json();
+        console.log('[CustomServicesPanel] Mutation success:', result);
+        return result;
+      } catch (error) {
+        console.error('[CustomServicesPanel] Mutation exception:', error);
+        throw error;
+      }
     },
     onSuccess: (_, vars) => {
       toast.success('Provider saved');
@@ -157,7 +196,11 @@ export default function CustomServicesPanel() {
         }).catch(() => {});
       }, 100);
     },
-    onError: (e: unknown) => toast.error(e?.message || 'Failed to save provider'),
+    onError: (e: unknown) => {
+      const message = e instanceof Error ? e.message : String(e) || 'Failed to save provider';
+      console.error('Failed to save provider:', e);
+      toast.error(message);
+    },
   });
 
   const getDefaultBaseUrl = (provider: ProviderKey): string => {
@@ -233,24 +276,36 @@ export default function CustomServicesPanel() {
     const form = getForm(serviceId);
     const isWebSearch = isWebSearchProvider(form.provider);
     
-    if (!form.provider || !form.baseUrl) {
-      toast.error('Please fill in provider type and endpoint URL');
+    // Validation: provider is always required
+    if (!form.provider) {
+      toast.error('Please select a provider type');
+      return;
+    }
+
+    // Base URL is optional for CLI mode, but ensure it has a default for API mode
+    const isCLIMode = (form.provider === 'google' || form.provider === 'openai') && form.useCLI;
+    const effectiveBaseUrl = form.baseUrl || (!isCLIMode ? getDefaultBaseUrl(form.provider) : undefined);
+    
+    if (!isCLIMode && !effectiveBaseUrl) {
+      toast.error('Please fill in endpoint URL');
       return;
     }
 
     // Google Gemini validation
     if (form.provider === 'google') {
       if (form.useCLI) {
-        // CLI mode validation
-        if (!form.useOAuth && !form.useGCloudADC && !form.apiKey) {
-          toast.error('API Key or OAuth/gcloud ADC is required for CLI mode');
+        // Ensure OAuth is defaulted to true if not explicitly set
+        const effectiveUseOAuth = form.useOAuth !== undefined ? form.useOAuth : true;
+        // CLI mode validation - allow OAuth or gcloud ADC without API key
+        if (!effectiveUseOAuth && !form.useGCloudADC && !form.apiKey?.trim()) {
+          toast.error('Select OAuth/gcloud ADC or provide an API key for CLI mode');
           return;
         }
-        if (form.useGCloudADC && !form.googleProject) {
+        if (form.useGCloudADC && !form.googleProject?.trim()) {
           toast.error('GCP Project ID is required for gcloud ADC mode');
           return;
         }
-        if (!form.model) {
+        if (!form.model?.trim()) {
           toast.error('Model is required for Google Gemini');
           return;
         }
@@ -300,45 +355,60 @@ export default function CustomServicesPanel() {
     const cfg = record?.config || {};
     const instances: ProviderInstance[] = cfg.providerInstances || [];
     
+    // For Google Gemini CLI mode, default OAuth to true if not explicitly set
+    const effectiveUseOAuth = form.provider === 'google' && form.useCLI && form.useOAuth === undefined 
+      ? true 
+      : (form.useOAuth === true);
+    
     const newInstance: ProviderInstance = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       provider: form.provider,
-      baseUrl: form.baseUrl,
-      apiKey: form.apiKey || undefined, // Optional for Vertex AI mode
-      model: form.model || undefined, // Optional for web search
+      baseUrl: effectiveBaseUrl || undefined,
+      apiKey: form.apiKey?.trim() || undefined, // Optional for Vertex AI mode or OAuth CLI mode
+      model: form.model?.trim() || undefined, // Optional for web search
       enabled: true,
       ...(form.provider === 'google_search' && form.googleSearchEngineId
-        ? { googleSearchEngineId: form.googleSearchEngineId }
+        ? { googleSearchEngineId: form.googleSearchEngineId.trim() }
         : {}),
       ...(form.provider === 'google' ? {
         useVertexAI: form.useVertexAI || false,
-        googleProject: form.googleProject || undefined,
-        googleLocation: form.googleLocation || 'us-central1',
+        googleProject: form.googleProject?.trim() || undefined,
+        googleLocation: form.googleLocation?.trim() || 'us-central1',
         googleApiVersion: form.googleApiVersion || 'v1',
       } : {}),
       // CLI options
       ...((form.useCLI && (form.provider === 'google' || form.provider === 'openai')) ? {
         useCLI: true,
-        cliCommand: form.cliCommand || (form.provider === 'google' ? 'gemini' : 'codex'),
-        cliArgs: form.cliArgs ? form.cliArgs.split(',').map(s => s.trim()).filter(Boolean) : undefined,
-        useOAuth: form.useOAuth || false,
-        useGCloudADC: form.useGCloudADC || false,
-        cliWorkingDirectory: form.cliWorkingDirectory || undefined,
+        cliCommand: form.cliCommand?.trim() || (form.provider === 'google' ? 'gemini' : 'codex'),
+        cliArgs: form.cliArgs?.trim() ? form.cliArgs.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+        useOAuth: effectiveUseOAuth, // Use effective OAuth value
+        useGCloudADC: form.useGCloudADC === true, // Explicitly set to boolean
+        cliWorkingDirectory: form.cliWorkingDirectory?.trim() || undefined,
       } : {}),
     };
 
     const updatedInstances = [...instances, newInstance];
     const activeId = cfg.activeProviderInstanceId || newInstance.id;
 
+    const payload = {
+      config: {
+        ...cfg,
+        providerInstances: updatedInstances,
+        activeProviderInstanceId: activeId,
+      },
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[CustomServicesPanel] Adding provider instance:', {
+        serviceId,
+        newInstance,
+        payload,
+      });
+    }
+
     updateConfig.mutate({
       serviceId,
-      payload: {
-        config: {
-          ...cfg,
-          providerInstances: updatedInstances,
-          activeProviderInstanceId: activeId,
-        },
-      },
+      payload,
     });
 
     // Reset form
@@ -459,12 +529,38 @@ export default function CustomServicesPanel() {
 
   const testInstanceConnection = async (serviceId: string, instance: ProviderInstance) => {
     try {
-      const testConfig = {
+      const testConfig: unknown = {
         provider: instance.provider,
-        baseUrl: instance.baseUrl,
+        baseUrl: instance.baseUrl || getDefaultBaseUrl(instance.provider),
         apiKey: instance.apiKey,
         model: instance.model,
       };
+      
+      // Include CLI configuration if CLI mode is enabled
+      if (instance.useCLI) {
+        testConfig.useCLI = true;
+        testConfig.cliCommand = instance.cliCommand;
+        testConfig.cliArgs = instance.cliArgs;
+        testConfig.useOAuth = instance.useOAuth;
+        testConfig.useGCloudADC = instance.useGCloudADC;
+        testConfig.cliWorkingDirectory = instance.cliWorkingDirectory;
+        if (instance.useGCloudADC && instance.provider === 'google') {
+          testConfig.googleProject = instance.googleProject;
+          testConfig.googleLocation = instance.googleLocation;
+        }
+      } else if (instance.provider === 'google') {
+        // For non-CLI Google, ensure baseUrl is set and include Google-specific config
+        if (!testConfig.baseUrl) {
+          testConfig.baseUrl = getDefaultBaseUrl(instance.provider);
+        }
+        if (instance.useVertexAI) {
+          testConfig.useVertexAI = instance.useVertexAI;
+          testConfig.googleProject = instance.googleProject;
+          testConfig.googleLocation = instance.googleLocation;
+          testConfig.googleApiVersion = instance.googleApiVersion;
+        }
+      }
+      
       const res = await fetch(`/api/v1/ai/config/assistant/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -652,15 +748,18 @@ export default function CustomServicesPanel() {
                     <div className="space-y-2">
                       <Label>Model *</Label>
                       <Select
-                        value={form.model || 'gemini-2.0-flash-exp'}
+                        value={form.model || 'gemini-3-pro-preview'}
                         onValueChange={(v) => setForm(s.id, { model: v })}
                       >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="gemini-3-pro-preview">Gemini 3 Pro Preview (Latest)</SelectItem>
                           <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</SelectItem>
+                          <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
+                          <SelectItem value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</SelectItem>
                           <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
                           <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                          <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
+                          <SelectItem value="gemini-pro">Gemini Pro (v1)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -723,10 +822,13 @@ export default function CustomServicesPanel() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label>API Key *</Label>
+                          <Label>
+                            API Key
+                            {!(form.useCLI && (form.useOAuth || form.useGCloudADC)) && ' *'}
+                          </Label>
                           <Input
                             type="password"
-                            placeholder="GEMINI_API_KEY or GOOGLE_API_KEY"
+                            placeholder={form.useCLI && form.useOAuth ? "Optional - not needed for OAuth" : "GEMINI_API_KEY or GOOGLE_API_KEY"}
                             value={form.apiKey}
                             onChange={(e) => setForm(s.id, { apiKey: e.target.value })}
                           />
@@ -753,21 +855,26 @@ export default function CustomServicesPanel() {
                           type="checkbox"
                           id={`${s.id}-use-cli`}
                           checked={form.useCLI || false}
-                          onChange={(e) => {
-                            const updates: any = { useCLI: e.target.checked };
-                            if (e.target.checked) {
-                              updates.cliCommand = 'gemini';
-                              updates.useOAuth = false;
-                              updates.useGCloudADC = false;
-                            }
-                            setForm(s.id, updates);
-                          }}
+                        onChange={(e) => {
+                          const updates: Record<string, unknown> = { useCLI: e.target.checked };
+                          if (e.target.checked) {
+                            updates.cliCommand = 'gemini';
+                            // Default to OAuth for CLI mode (works for free/paid) unless already chosen
+                            if (form.useOAuth === undefined) updates.useOAuth = true;
+                            if (form.useGCloudADC === undefined) updates.useGCloudADC = false;
+                          }
+                          setForm(s.id, updates);
+                        }}
                           className="rounded"
                         />
                         <Label htmlFor={`${s.id}-use-cli`} className="text-sm font-normal cursor-pointer">
                           Use CLI Mode (OAuth supports free & paid accounts)
                         </Label>
-                        {cliAvailability?.google && (
+                        {isFetchingCLI ? (
+                          <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                            Checking...
+                          </span>
+                        ) : cliAvailability?.google ? (
                           <span className={`text-xs px-2 py-1 rounded ${
                             cliAvailability.google.available 
                               ? 'bg-green-100 text-green-800' 
@@ -777,7 +884,20 @@ export default function CustomServicesPanel() {
                               ? `✓ CLI Available (v${cliAvailability.google.version || '?'})` 
                               : 'CLI Not Installed'}
                           </span>
+                        ) : (
+                          <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                            Unknown
+                          </span>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => refetchCLIAvailability()}
+                          className="h-6 px-2 text-xs"
+                          title="Refresh CLI availability"
+                        >
+                          ↻
+                        </Button>
                       </div>
                       {form.useCLI && (
                         <div className="space-y-4 pl-6 border-l-2">
@@ -913,10 +1033,13 @@ export default function CustomServicesPanel() {
                         id={`${s.id}-openai-use-cli`}
                         checked={form.useCLI || false}
                         onChange={(e) => {
-                          const updates: any = { useCLI: e.target.checked };
+                          const updates: Record<string, unknown> = { useCLI: e.target.checked };
                           if (e.target.checked) {
                             updates.cliCommand = 'codex';
-                            updates.useOAuth = false;
+                            // Only reset OAuth if it's not already set
+                            if (form.useOAuth === undefined) {
+                              updates.useOAuth = false;
+                            }
                           }
                           setForm(s.id, updates);
                         }}
@@ -925,7 +1048,11 @@ export default function CustomServicesPanel() {
                       <Label htmlFor={`${s.id}-openai-use-cli`} className="text-sm font-normal cursor-pointer">
                         Use CLI Mode (Codex CLI)
                       </Label>
-                      {cliAvailability?.openai && (
+                      {isFetchingCLI ? (
+                        <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                          Checking...
+                        </span>
+                      ) : cliAvailability?.openai ? (
                         <span className={`text-xs px-2 py-1 rounded ${
                           cliAvailability.openai.available 
                             ? 'bg-green-100 text-green-800' 
@@ -935,7 +1062,20 @@ export default function CustomServicesPanel() {
                             ? `✓ CLI Available (v${cliAvailability.openai.version || '?'})` 
                             : 'CLI Not Installed'}
                         </span>
+                      ) : (
+                        <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                          Unknown
+                        </span>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => refetchCLIAvailability()}
+                        className="h-6 px-2 text-xs"
+                        title="Refresh CLI availability"
+                      >
+                        ↻
+                      </Button>
                     </div>
                     {form.useCLI && (
                       <div className="space-y-4 pl-6 border-l-2">
@@ -1030,26 +1170,75 @@ export default function CustomServicesPanel() {
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <Button onClick={() => addProviderInstance(s.id)} className="flex-1">
+                  <Button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[CustomServicesPanel] Add Provider clicked for service:', s.id);
+                      console.log('[CustomServicesPanel] Current form state:', getForm(s.id));
+                      console.log('[CustomServicesPanel] updateConfig mutation state:', {
+                        isPending: updateConfig.isPending,
+                        isError: updateConfig.isError,
+                        isSuccess: updateConfig.isSuccess,
+                        error: updateConfig.error,
+                      });
+                      try {
+                        addProviderInstance(s.id);
+                      } catch (error) {
+                        console.error('[CustomServicesPanel] Add Provider error:', error);
+                        toast.error(`Failed to add provider: ${error instanceof Error ? error.message : String(error)}`);
+                      }
+                    }} 
+                    className="flex-1"
+                    type="button"
+                    disabled={updateConfig.isPending}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Provider
+                    {updateConfig.isPending ? 'Adding...' : 'Add Provider'}
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={async () => {
+                    type="button"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[CustomServicesPanel] Test Connection clicked for service:', s.id);
                       const form = getForm(s.id);
+                      console.log('[CustomServicesPanel] Form state for test:', form);
                       const isWebSearch = isWebSearchProvider(form.provider);
+                      const isCLIMode = (form.provider === 'google' || form.provider === 'openai') && form.useCLI;
                       
-                      if (!form.provider || !form.baseUrl) {
-                        toast.error('Please fill in provider type and endpoint URL');
+                      if (!form.provider) {
+                        console.warn('[CustomServicesPanel] Validation failed: no provider');
+                        toast.error('Please fill in provider type');
                         return;
                       }
+                      if (!isCLIMode && !form.baseUrl) {
+                        console.warn('[CustomServicesPanel] Validation failed: no baseUrl');
+                        toast.error('Please fill in endpoint URL');
+                        return;
+                      }
+                      
+                      console.log('[CustomServicesPanel] Test connection validation passed, proceeding...');
 
                       // Google Gemini validation for testing
                       if (form.provider === 'google') {
                         if (form.useVertexAI) {
                           if (!form.googleProject) {
                             toast.error('GCP Project ID is required for Vertex AI mode');
+                            return;
+                          }
+                        } else if (form.useCLI) {
+                          if (!form.useOAuth && !form.useGCloudADC && !form.apiKey) {
+                            toast.error('Select OAuth/gcloud ADC or provide an API key for CLI mode');
+                            return;
+                          }
+                          if (form.useGCloudADC && !form.googleProject) {
+                            toast.error('GCP Project ID is required for gcloud ADC mode');
+                            return;
+                          }
+                          if (!form.model) {
+                            toast.error('Model is required for testing');
                             return;
                           }
                         } else {
@@ -1074,9 +1263,9 @@ export default function CustomServicesPanel() {
                       }
 
                       try {
-                        const testConfig: any = {
+                        const testConfig: unknown = {
                           provider: form.provider,
-                          baseUrl: form.baseUrl,
+                          ...(isCLIMode ? {} : { baseUrl: form.baseUrl }),
                           apiKey: form.apiKey,
                           model: form.model,
                           ...(form.provider === 'google' && {
@@ -1091,7 +1280,7 @@ export default function CustomServicesPanel() {
                         };
                         
                         // Include CLI configuration if CLI mode is enabled
-                        if (form.useCLI) {
+                        if (isCLIMode) {
                           testConfig.useCLI = true;
                           testConfig.cliCommand = form.cliCommand;
                           testConfig.cliArgs = form.cliArgs ? form.cliArgs.split(',').map((s: string) => s.trim()).filter(Boolean) : undefined;
@@ -1204,10 +1393,13 @@ export default function CustomServicesPanel() {
                                   >
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
+                                      <SelectItem value="gemini-3-pro-preview">Gemini 3 Pro Preview (Latest)</SelectItem>
                                       <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</SelectItem>
+                                      <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
+                                      <SelectItem value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</SelectItem>
                                       <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
                                       <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                                      <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
+                                      <SelectItem value="gemini-pro">Gemini Pro (v1)</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -1268,10 +1460,13 @@ export default function CustomServicesPanel() {
                                 ) : (
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                      <Label>API Key *</Label>
+                                      <Label>
+                                        API Key
+                                        {!(editForm.useCLI && (editForm.useOAuth || editForm.useGCloudADC)) && ' *'}
+                                      </Label>
                                       <Input
                                         type="password"
-                                        placeholder="GEMINI_API_KEY or GOOGLE_API_KEY"
+                                        placeholder={editForm.useCLI && editForm.useOAuth ? "Optional - not needed for OAuth" : "GEMINI_API_KEY or GOOGLE_API_KEY"}
                                         value={editForm.apiKey || ''}
                                         onChange={(e) => setEditForm(prev => prev ? { ...prev, apiKey: e.target.value } : null)}
                                       />
@@ -1299,11 +1494,16 @@ export default function CustomServicesPanel() {
                                       id={`edit-${inst.id}-use-cli`}
                                       checked={editForm.useCLI || false}
                                       onChange={(e) => {
-                                        const updates: any = { useCLI: e.target.checked };
+                                        const updates: Record<string, unknown> = { useCLI: e.target.checked };
                                         if (e.target.checked) {
                                           updates.cliCommand = 'gemini';
-                                          updates.useOAuth = false;
-                                          updates.useGCloudADC = false;
+                                          // Only reset OAuth/ADC if they're not already set
+                                          if (editForm.useOAuth === undefined) {
+                                            updates.useOAuth = false;
+                                          }
+                                          if (editForm.useGCloudADC === undefined) {
+                                            updates.useGCloudADC = false;
+                                          }
                                         }
                                         setEditForm(prev => prev ? { ...prev, ...updates } : null);
                                       }}
@@ -1312,7 +1512,11 @@ export default function CustomServicesPanel() {
                                     <Label htmlFor={`edit-${inst.id}-use-cli`} className="text-sm font-normal cursor-pointer">
                                       Use CLI Mode (OAuth supports free & paid accounts)
                                     </Label>
-                                    {cliAvailability?.google && (
+                                    {isFetchingCLI ? (
+                                      <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                                        Checking...
+                                      </span>
+                                    ) : cliAvailability?.google ? (
                                       <span className={`text-xs px-2 py-1 rounded ${
                                         cliAvailability.google.available 
                                           ? 'bg-green-100 text-green-800' 
@@ -1322,7 +1526,20 @@ export default function CustomServicesPanel() {
                                           ? `✓ CLI Available (v${cliAvailability.google.version || '?'})` 
                                           : 'CLI Not Installed'}
                                       </span>
+                                    ) : (
+                                      <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                                        Unknown
+                                      </span>
                                     )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => refetchCLIAvailability()}
+                                      className="h-6 px-2 text-xs"
+                                      title="Refresh CLI availability"
+                                    >
+                                      ↻
+                                    </Button>
                                   </div>
                                   {editForm.useCLI && (
                                     <div className="space-y-4 pl-6 border-l-2">
@@ -1451,10 +1668,13 @@ export default function CustomServicesPanel() {
                                     id={`edit-${inst.id}-openai-use-cli`}
                                     checked={editForm.useCLI || false}
                                     onChange={(e) => {
-                                      const updates: any = { useCLI: e.target.checked };
+                                      const updates: Record<string, unknown> = { useCLI: e.target.checked };
                                       if (e.target.checked) {
                                         updates.cliCommand = 'codex';
-                                        updates.useOAuth = false;
+                                        // Only reset OAuth if it's not already set
+                                        if (editForm.useOAuth === undefined) {
+                                          updates.useOAuth = false;
+                                        }
                                       }
                                       setEditForm(prev => prev ? { ...prev, ...updates } : null);
                                     }}
@@ -1463,7 +1683,11 @@ export default function CustomServicesPanel() {
                                   <Label htmlFor={`edit-${inst.id}-openai-use-cli`} className="text-sm font-normal cursor-pointer">
                                     Use CLI Mode (Codex CLI)
                                   </Label>
-                                  {cliAvailability?.openai && (
+                                  {isFetchingCLI ? (
+                                    <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                                      Checking...
+                                    </span>
+                                  ) : cliAvailability?.openai ? (
                                     <span className={`text-xs px-2 py-1 rounded ${
                                       cliAvailability.openai.available 
                                         ? 'bg-green-100 text-green-800' 
@@ -1473,7 +1697,20 @@ export default function CustomServicesPanel() {
                                         ? `✓ CLI Available (v${cliAvailability.openai.version || '?'})` 
                                         : 'CLI Not Installed'}
                                     </span>
+                                  ) : (
+                                    <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                                      Unknown
+                                    </span>
                                   )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => refetchCLIAvailability()}
+                                    className="h-6 px-2 text-xs"
+                                    title="Refresh CLI availability"
+                                  >
+                                    ↻
+                                  </Button>
                                 </div>
                                 {editForm.useCLI && (
                                   <div className="space-y-4 pl-6 border-l-2">

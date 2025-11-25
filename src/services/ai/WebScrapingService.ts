@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 // Web Scraping Service for extracting company information from websites
 import * as cheerio from 'cheerio';
 

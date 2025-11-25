@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { BarChart3, Tags, TrendingUp, AlertCircle, CheckCircle } from "lucide-react"
+import { buildApiUrl } from "@/lib/utils/api-url"
 
 interface CategorizationStats {
   total_products: number
@@ -56,8 +57,8 @@ export default function CmmDashboard() {
       setError(null)
 
       const [statsRes, categoriesRes] = await Promise.all([
-        fetch("/api/category/ai-categorization/stats"),
-        fetch("/api/categories"),
+        fetch(buildApiUrl("/api/category/ai-categorization/stats")),
+        fetch(buildApiUrl("/api/categories")),
       ])
 
       if (statsRes.ok) {

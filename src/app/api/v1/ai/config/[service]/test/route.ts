@@ -13,6 +13,9 @@ import {
 import { testConfigSchema } from '@/lib/ai/validation-schemas';
 import { CLIProviderExecutor } from '@/lib/ai/cli-provider';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/v1/ai/config/[service]/test
  * Test AI service configuration and connectivity

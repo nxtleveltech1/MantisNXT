@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertTriangle, CheckCircle, Loader2, RefreshCcw, ShieldCheck, X } from "lucide-react"
 import { toast } from "sonner"
+import { buildApiUrl } from "@/lib/utils/api-url"
 
 type CategorySuggestion = {
   proposed_category_id?: string | null
@@ -55,8 +56,8 @@ export default function ConflictResolutionQueue() {
     setLoading(true)
     try {
       const [conflictsRes, categoriesRes] = await Promise.all([
-        fetch("/api/category/conflicts"),
-        fetch("/api/categories"),
+        fetch(buildApiUrl("/api/category/conflicts")),
+        fetch(buildApiUrl("/api/categories")),
       ])
 
       if (conflictsRes.ok) {
@@ -96,7 +97,7 @@ export default function ConflictResolutionQueue() {
   ) => {
     setResolvingId(conflict.supplier_product_id)
     try {
-      const response = await fetch("/api/category/assign", {
+      const response = await fetch(buildApiUrl("/api/category/assign"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -128,7 +129,7 @@ export default function ConflictResolutionQueue() {
 
     setResolvingId(conflict.supplier_product_id)
     try {
-      const response = await fetch("/api/category/ai-categorization/proposals/approve", {
+      const response = await fetch(buildApiUrl("/api/category/ai-categorization/proposals/approve"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

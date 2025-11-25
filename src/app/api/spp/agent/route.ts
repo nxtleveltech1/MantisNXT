@@ -7,6 +7,8 @@ import { applyJoinSheetsConfigFromBuffer } from '@/lib/cmm/supplier-rules-engine
 import { AIService, isAIEnabled } from '@/lib/ai'
 import { applyVatPolicyToRows } from '@/lib/cmm/vat-utils'
 
+export const runtime = 'nodejs'
+
 async function auditStart(supplier_id: string | null, upload_id: string | null, action: string) {
   const res = await query(
     `INSERT INTO public.ai_agent_audit (supplier_id, upload_id, action, status, details)
@@ -35,9 +37,33 @@ async function aiExtractRows(buffer: Buffer, filename: string, timeoutMs?: numbe
     console.log(`🤖 Starting AI extraction for ${filename}`)
     const ai = new AIService()
     const isExcel = filename.toLowerCase().endsWith('.xlsx') || filename.toLowerCase().endsWith('.xls')
-    let prompt = 'Extract supplier pricelist rows from messy spreadsheet. Provide JSON array of objects with fields: supplier_sku, name, brand, uom, pack_size, cost_price_ex_vat, price_incl_vat, vat_rate, currency, category_raw, stock_on_hand, barcode.'
+    const isPDF = filename.toLowerCase().endsWith('.pdf')
+    
+    let prompt = 'Extract supplier pricelist rows from this document. Provide JSON array of objects with fields: supplier_sku, name, brand, uom, pack_size, cost_price_ex_vat, price_incl_vat, vat_rate, currency, category_raw, stock_on_hand, barcode.'
     prompt += `\nFilename: ${filename}`
-    if (isExcel) {
+    
+    if (isPDF) {
+      const { createRequire } = await import('module')
+      const requireFn = createRequire(import.meta.url)
+      const pdfParseModule = requireFn('pdf-parse/dist/node/cjs/index.cjs')
+      const pdfParse = pdfParseModule?.default ?? pdfParseModule
+      console.log('📄 PDF detected - parsing text with pdf-parse')
+      try {
+        const pdfData = await pdfParse(buffer)
+        const lines = pdfData.text
+          ?.split(/\r?\n/)
+          .map(line => line.trim())
+          .filter(Boolean) ?? []
+        const sample = lines.slice(0, 200)
+        prompt += `\nDocument type: PDF with ${pdfData.numpages ?? 'unknown'} pages.`
+        prompt += '\nPDF text sample (first lines): ' + JSON.stringify(sample)
+      } catch (pdfError) {
+        console.error('❌ Failed to parse PDF text:', pdfError)
+        const fallbackText = buffer.toString('utf-8')
+        const fallbackLines = fallbackText.split(/\r?\n/).slice(0, 100)
+        prompt += '\nPDF text sample (fallback): ' + JSON.stringify(fallbackLines)
+      }
+    } else if (isExcel) {
       const wb = XLSX.read(buffer, { type: 'buffer' })
       const summaries = wb.SheetNames.slice(0, 12).map(n => {
         const ws = wb.Sheets[n]
@@ -52,14 +78,17 @@ async function aiExtractRows(buffer: Buffer, filename: string, timeoutMs?: numbe
       const lines = text.split(/\r?\n/).slice(0, 50)
       prompt += '\nText sample: ' + JSON.stringify(lines)
     }
+    
     prompt += '\nReturn ONLY JSON array, no commentary. Ensure all price fields are numeric.'
-    // Use extended timeout for large files (120s default, configurable)
-    const extractionTimeout = timeoutMs ?? parseInt(process.env.AI_EXTRACTION_TIMEOUT_MS || '120000')
+    
+    // Use extended timeout for large files (120s default, configurable, longer for PDFs)
+    const extractionTimeout = timeoutMs ?? (isPDF ? 180000 : parseInt(process.env.AI_EXTRACTION_TIMEOUT_MS || '120000'))
+    
     const res = await ai.generateText(prompt, { 
       temperature: 0,
-      // Pass timeout via metadata if supported, otherwise rely on provider config
       metadata: { timeoutMs: extractionTimeout }
     } as any)
+    
     const txt = (res?.text || '').trim()
     const m = txt.match(/\[([\s\S]*)\]$/)
     const jsonStr = m ? m[0] : txt
@@ -499,6 +528,86 @@ export async function POST(request: NextRequest) {
       // Heuristic extraction (primary method when no rules)
       try {
         const buf = Buffer.from(await file.arrayBuffer())
+        const isPDF = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf'
+        
+        // For PDFs, use AI extraction directly
+        if (isPDF && isAIEnabled() && allow_ai_fallback) {
+          console.log(`📄 PDF detected, using AI extraction for ${file.name}`)
+          const aiRows = await aiExtractRows(buf, file.name, 180000) // 3 min timeout for PDFs
+          if (aiRows && aiRows.length > 0) {
+            console.log(`✅ AI extracted ${aiRows.length} rows from PDF`)
+            
+            // Map AI rows to pricelist_row format
+            const mapped = aiRows.map((row: any, idx: number) => {
+              const parsePrice = (value: unknown): number => {
+                if (!value && value !== 0) return 0
+                if (typeof value === 'number') return Math.max(0, value)
+                const str = String(value).trim()
+                if (!str) return 0
+                const cleaned = str.replace(/^[R$€£¥₹]\s*/i, '').replace(/,/g, '').replace(/\s+/g, '').trim()
+                const parsed = parseFloat(cleaned)
+                return isNaN(parsed) ? 0 : Math.max(0, parsed)
+              }
+              
+              const costPrice = row.cost_price_ex_vat || parsePrice(row.price) || 0
+              const attrs: any = {}
+              if (row.cost_excluding !== undefined) attrs.cost_excluding = parsePrice(row.cost_excluding)
+              if (row.cost_including !== undefined) attrs.cost_including = parsePrice(row.cost_including)
+              if (row.rsp !== undefined) attrs.rsp = parsePrice(row.rsp)
+              
+              return {
+                upload_id,
+                row_num: idx + 1,
+                supplier_sku: row.supplier_sku || row.sku || '',
+                name: row.name || row.product_name || '',
+                brand: row.brand || undefined,
+                uom: row.uom || 'EA',
+                pack_size: row.pack_size || undefined,
+                price: costPrice,
+                cost_price_ex_vat: costPrice,
+                price_incl_vat: row.price_incl_vat || row.price_including || undefined,
+                vat_rate: row.vat_rate || 0.15,
+                currency: row.currency || currency || 'ZAR',
+                category_raw: row.category_raw || row.category || undefined,
+                stock_on_hand: row.stock_on_hand || 0,
+                barcode: row.barcode || undefined,
+                attrs_json: attrs
+              }
+            })
+            
+            const inserted = await pricelistService.insertRows(upload_id!, mapped)
+            const extractionId = await auditStart(supplier_id, upload_id, 'ai_pdf_extraction')
+            await auditFinish(extractionId, 'completed', { rows_inserted: inserted })
+            
+            // Validate extracted rows
+            const validation = await pricelistService.validateUpload(upload_id!)
+            const validationId = await auditStart(supplier_id, upload_id, 'validation')
+            await auditFinish(validationId, 'completed', { 
+              status: validation.status, 
+              errors: validation.errors?.length || 0, 
+              warnings: validation.warnings?.length || 0 
+            })
+            
+            return NextResponse.json({
+              success: true,
+              data: {
+                upload_id,
+                processing_method: 'ai_pdf_extraction',
+                validation: {
+                  totals: {
+                    rows: mapped.length,
+                    valid: validation.valid_rows,
+                    errors: validation.invalid_rows,
+                    warnings: validation.warnings?.length || 0
+                  },
+                  errors: validation.errors?.slice(0, 10) || [],
+                  warnings: validation.warnings || []
+                }
+              }
+            })
+          }
+        }
+        
         let rows: any[] = []
         let usedJoin = false
         if (typeof aiSummary === 'string') {
@@ -516,7 +625,7 @@ export async function POST(request: NextRequest) {
             } catch {}
           }
         }
-        const isCSV = file.name.toLowerCase().endsWith('.csv') || (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls'))
+        const isCSV = file.name.toLowerCase().endsWith('.csv') || (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls') && !isPDF)
         if (!usedJoin && isCSV) {
           const text = buf.toString('utf-8')
           const lines = text.split(/\r?\n/).filter(l => l.trim())

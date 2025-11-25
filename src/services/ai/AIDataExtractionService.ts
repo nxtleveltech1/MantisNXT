@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * AI-Powered Data Extraction Service
  * Uses Claude/OpenAI to intelligently extract structured supplier information from web content

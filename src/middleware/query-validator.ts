@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Query Schema Validation Middleware
  *

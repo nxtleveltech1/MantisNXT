@@ -379,8 +379,11 @@ export async function upsertConfigByServiceId(
   updates: { config?: Record<string, unknown>; enabled?: boolean }
 ): Promise<AIConfigRecord> {
   const resolvedOrg = resolveOrgId(orgId);
-  const configObject = updates.config ? { ...updates.config } : {};
   const existingRecord = await getConfigByServiceId(resolvedOrg, serviceId).catch(() => null);
+  const existingConfig = existingRecord?.config || {};
+  const configObject = updates.config
+    ? { ...existingConfig, ...updates.config } // merge to avoid wiping when only toggling enabled
+    : existingConfig;
   const instance = pickActiveInstance(configObject);
   const providerKey =
     instance?.provider || configObject.activeProvider || configObject.provider || 'openai';

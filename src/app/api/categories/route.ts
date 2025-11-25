@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
-import { getSchemaMode } from "@/lib/cmm/db"
+import { getSchemaMode, clearSchemaModeCache } from "@/lib/cmm/db"
 import { getCategories } from "@/lib/cmm/db-sql"
 import { normalizeCategoryLabel } from "@/lib/cmm/proposed-categories"
 import { query as dbQuery } from "@/lib/database/unified-connection"
 
 export async function GET() {
   try {
+    // Clear schema mode cache to force fresh detection
+    clearSchemaModeCache()
     const schemaMode = await getSchemaMode()
 
     if (schemaMode === "none") {
@@ -55,6 +57,7 @@ export async function GET() {
           ) AS has_children
         FROM core.category c
         LEFT JOIN product_stats ps ON ps.category_id = c.category_id
+        WHERE c.is_active = true
         ORDER BY c.path, c.name
       `)
 

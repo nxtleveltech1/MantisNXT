@@ -6,6 +6,11 @@ const SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000
 
 let cachedSchemaMode: { mode: CmmSchemaMode; expiresAt: number } | null = null
 
+// Force cache invalidation function
+export function clearSchemaModeCache() {
+  cachedSchemaMode = null
+}
+
 async function probeSchema(): Promise<CmmSchemaMode> {
   try {
     const { rows } = await query<{

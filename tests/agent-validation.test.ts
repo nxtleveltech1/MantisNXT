@@ -112,8 +112,9 @@ describe('Agent Route Validation', () => {
         })
         .mockResolvedValueOnce({ rows: [] }) // No rules for other calls
 
-      const originalQuery = require('@/lib/database').query
-      require('@/lib/database').query = mockQuery
+      const dbModule = await import('@/lib/database')
+      const originalQuery = dbModule.query
+      dbModule.query = mockQuery
 
       const rows = [
         {
@@ -148,7 +149,7 @@ describe('Agent Route Validation', () => {
       expect(result.errors[0].reason).toContain('Barcode is required for this supplier')
       expect(result.warnings[0].message).toBe('Brand is recommended')
 
-      require('@/lib/database').query = originalQuery
+      dbModule.query = originalQuery
     })
 
     it('should handle empty input gracefully', async () => {
@@ -162,8 +163,9 @@ describe('Agent Route Validation', () => {
     it('should handle database errors gracefully', async () => {
       const mockQuery = jest.fn().mockRejectedValue(new Error('Database connection failed'))
       
-      const originalQuery = require('@/lib/database').query
-      require('@/lib/database').query = mockQuery
+      const dbModule = await import('@/lib/database')
+      const originalQuery = dbModule.query
+      dbModule.query = mockQuery
 
       const rows = [
         {
@@ -180,7 +182,7 @@ describe('Agent Route Validation', () => {
       expect(result.errors).toHaveLength(0)
       expect(result.warnings).toHaveLength(0)
 
-      require('@/lib/database').query = originalQuery
+      dbModule.query = originalQuery
     })
   })
 })

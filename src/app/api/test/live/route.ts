@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       const supplierId = created.id
 
       // Read supplier via public view
-      const readResult = await pool.query('SELECT * FROM public.suppliers WHERE id = $1', [supplierId])
+      const readResult = await pool.query('SELECT * FROM core.supplier WHERE supplier_id = $1', [supplierId])
 
       // Clean up (deactivate)
       await deactivateSupplier(supplierId)
@@ -111,7 +111,20 @@ export async function GET(request: NextRequest) {
 
       // Clean up inserted records (best effort)
       await pool.query('DELETE FROM stock_movements WHERE reference_doc = $1 AND notes = $2', ['setStock', 'API Test Movement'])
-      await pool.query('DELETE FROM public.inventory_items WHERE sku = $1', [testSKU])
+      await pool.query(
+        `
+          DELETE FROM core.stock_on_hand soh
+          USING core.supplier_product sp
+          WHERE soh.supplier_product_id = sp.supplier_product_id
+            AND sp.supplier_sku = $1
+            AND sp.supplier_id = $2
+        `,
+        [testSKU, '00000000-0000-0000-0000-000000000000']
+      )
+      await pool.query(
+        'DELETE FROM core.supplier_product WHERE supplier_sku = $1 AND supplier_id = $2',
+        [testSKU, '00000000-0000-0000-0000-000000000000']
+      )
 
       addTest('Inventory Operations', true, {
         schemaColumns: inventorySchema.rows.length,

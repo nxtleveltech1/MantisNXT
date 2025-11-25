@@ -8,14 +8,15 @@ export async function GET(request: NextRequest) {
     const result = await pool.query(`
       SELECT
         COUNT(*) as total_suppliers,
-        COUNT(CASE WHEN status = 'active' THEN 1 END) as active_suppliers,
+        COUNT(*) FILTER (WHERE s.active) as active_suppliers,
         0 as pending_approvals,
         0 as contracts_expiring_soon,
-        COALESCE(AVG(performance_score), 0) as avg_performance_rating,
-        COALESCE(AVG(on_time_delivery_rate), 0) as on_time_delivery_rate,
-        COALESCE(AVG(quality_rating), 0) as quality_acceptance_rate,
+        COALESCE(AVG(sp.overall_rating), 0) as avg_performance_rating,
+        COALESCE(AVG(sp.on_time_delivery_rate), 0) as on_time_delivery_rate,
+        COALESCE(AVG(sp.quality_rating), 0) as quality_acceptance_rate,
         0 as total_purchase_value
-      FROM public.suppliers
+      FROM core.supplier s
+      LEFT JOIN supplier_performance sp ON s.supplier_id = sp.supplier_id
     `)
 
     const data = result.rows[0]
