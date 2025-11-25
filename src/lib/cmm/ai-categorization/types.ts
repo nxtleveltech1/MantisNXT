@@ -48,6 +48,7 @@ export interface JobParams {
   filters?: JobFilters;
   config?: JobConfig;
   batch_size?: number;
+  product_limit?: number;
   created_by?: string;
 }
 
@@ -203,6 +204,7 @@ export interface StartJobRequest {
   filters?: JobFilters;
   config?: JobConfig;
   batch_size?: number;
+  product_limit?: number;
 }
 
 export interface StartJobResponse {

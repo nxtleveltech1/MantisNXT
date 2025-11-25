@@ -16,7 +16,6 @@ import {
   TrendingUp,
   Users,
   Settings as SettingsIcon,
-  Shield,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -33,7 +32,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const data = {
+export const sidebarData = {
   user: {
     name: "John Doe",
     email: "admin@mantisnxt.com",
@@ -347,17 +346,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} label={null} />
-        <NavProjects projects={data.projects} />
-        {data.navSecondary.length ? (
-          <NavSecondary items={data.navSecondary} className="mt-auto" />
+      </SidebarMenu>
+    </SidebarHeader>
+    <SidebarContent>
+        <NavMain items={sidebarData.navMain} label={null} />
+        <NavProjects projects={sidebarData.projects} />
+        {sidebarData.navSecondary.length ? (
+          <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
         ) : null}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={sidebarData.user} />
       </SidebarFooter>
     </Sidebar>
   )

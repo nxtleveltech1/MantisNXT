@@ -1,14 +1,36 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-import type { NextRequest} from "next/server";
-import { NextResponse } from "next/server";
-import { pool } from "@/lib/database";
-import { z } from "zod";
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import {
   sortByTimestamp,
   filterByDateRange,
   serializeTimestamp,
-} from "@/lib/utils/date-utils";
+} from '@/lib/utils/date-utils'
+
+type DatabaseModule = typeof import('@/lib/database')
+
+let cachedPool: DatabaseModule['pool'] | null = null
+let dbLoadError: string | null = null
+
+async function resolvePool() {
+  if (cachedPool) {
+    return cachedPool
+  }
+  if (dbLoadError) {
+    return null
+  }
+  try {
+    const dbModule: DatabaseModule = await import('@/lib/database')
+    cachedPool = dbModule.pool
+    return cachedPool
+  } catch (error) {
+    dbLoadError = error instanceof Error ? error.message : 'Database connection unavailable'
+    console.error('⚠️ Recent activities database unavailable:', error)
+    return null
+  }
+}
 
 interface RecentActivity {
   id: string;
@@ -34,8 +56,57 @@ const GetActivitiesSchema = z.object({
   dateTo: z.string().optional(),
 });
 
+const FALLBACK_ACTIVITIES: RecentActivity[] = [
+  {
+    id: 'sample_supplier_1',
+    type: 'supplier_added',
+    title: 'New Supplier Added',
+    description: 'Supplier onboarding sample record',
+    entityType: 'supplier',
+    entityId: 'sample_supplier',
+    entityName: 'Sample Supplier',
+    timestamp: new Date().toISOString(),
+    priority: 'medium',
+    status: 'completed',
+    metadata: {
+      category: 'supplier_management',
+      source: 'sample',
+    },
+  },
+  {
+    id: 'sample_inventory_1',
+    type: 'inventory_update',
+    title: 'Inventory Updated',
+    description: 'Inventory update sample record',
+    entityType: 'inventory',
+    entityId: 'sample_inventory',
+    entityName: 'Sample Inventory Item',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+    priority: 'low',
+    status: 'completed',
+    metadata: {
+      category: 'inventory_management',
+      source: 'sample',
+    },
+  },
+]
+
+interface ActivityResult {
+  items: RecentActivity[];
+  isFallback: boolean;
+  reason?: string;
+}
+
 // Generate real activities from database changes and events
-async function generateRecentActivities(limit: number = 20) {
+async function generateRecentActivities(limit: number = 20): Promise<ActivityResult> {
+  const pool = await resolvePool()
+  if (!pool) {
+    return {
+      items: FALLBACK_ACTIVITIES.slice(0, limit),
+      isFallback: true,
+      reason: dbLoadError ?? 'Database connection is not configured',
+    }
+  }
   try {
     // Get recent supplier additions/updates using core schema
     const supplierActivitiesQuery = `
@@ -84,14 +155,13 @@ async function generateRecentActivities(limit: number = 20) {
       LIMIT 5
     `;
 
-    const [supplierResult, inventoryResult, newInventoryResult] =
-      await Promise.all([
-        pool.query(supplierActivitiesQuery),
-        pool.query(inventoryActivitiesQuery),
-        pool.query(newInventoryQuery),
-      ]);
+    const [supplierResult, inventoryResult, newInventoryResult] = await Promise.all([
+      pool.query(supplierActivitiesQuery),
+      pool.query(inventoryActivitiesQuery),
+      pool.query(newInventoryQuery),
+    ])
 
-    const activities: RecentActivity[] = [];
+    const activities: RecentActivity[] = []
 
     // Add supplier activities
     supplierResult.rows.forEach((row) => {
@@ -110,8 +180,8 @@ async function generateRecentActivities(limit: number = 20) {
           category: "supplier_management",
           source: "system",
         },
-      });
-    });
+      })
+    })
 
     // Add inventory update activities
     inventoryResult.rows.forEach((row) => {
@@ -154,11 +224,15 @@ async function generateRecentActivities(limit: number = 20) {
     });
 
     // Sort by timestamp (most recent first) and limit
-    const sortedActivities = sortByTimestamp(activities, "desc");
-    return sortedActivities.slice(0, limit);
+    const sortedActivities = sortByTimestamp(activities, 'desc')
+    return { items: sortedActivities.slice(0, limit), isFallback: false }
   } catch (error) {
-    console.error("Error generating activities:", error);
-    return [];
+    console.error('Error generating activities:', error)
+    return {
+      items: FALLBACK_ACTIVITIES.slice(0, limit),
+      isFallback: true,
+      reason: error instanceof Error ? error.message : 'Failed to query recent activities',
+    }
   }
 }
 
@@ -179,12 +253,12 @@ export async function GET(request: NextRequest) {
     const validatedParams = GetActivitiesSchema.parse(queryParams);
 
     // Generate real activities from database
-    const activities = await generateRecentActivities(
+    const activityResult = await generateRecentActivities(
       validatedParams.limit + validatedParams.offset
-    );
+    )
 
     // Apply filters
-    let filteredActivities = activities;
+    let filteredActivities = activityResult.items
 
     // Filter by activity type
     if (validatedParams.type && validatedParams.type.length > 0) {
@@ -250,8 +324,14 @@ export async function GET(request: NextRequest) {
           filteredActivities.length,
       },
       metrics,
+      metadata: activityResult.isFallback
+        ? {
+            fallback: true,
+            reason: activityResult.reason,
+          }
+        : undefined,
       timestamp: new Date().toISOString(),
-    });
+    })
   } catch (error) {
     console.error("❌ Error fetching recent activities:", error);
 

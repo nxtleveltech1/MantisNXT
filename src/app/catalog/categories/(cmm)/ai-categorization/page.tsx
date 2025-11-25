@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, useMemo, memo } from "react"
-import AppLayout from "@/components/layout/AppLayout"
+import AppLayout, { findSectionForPath } from "@/components/layout/AppLayout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,8 @@ import { ProductsTable } from "@/components/catalog/ai-categorization/ProductsTa
 import { StatisticsPanel } from "@/components/catalog/ai-categorization/StatisticsPanel"
 import { ProposedCategoriesPanel } from "@/components/catalog/ai-categorization/ProposedCategoriesPanel"
 import { buildApiUrl } from "@/lib/utils/api-url"
+import { SectionQuickLinks } from "@/components/layout/SectionQuickLinks"
+import { usePathname } from "next/navigation"
 
 interface Job {
   job_id: string
@@ -70,6 +72,11 @@ export default function AICategoryManagementPage() {
   const [recentJobs, setRecentJobs] = useState<Job[]>([])
   const [activeTab, setActiveTab] = useState("overview")
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const pathname = usePathname() || ""
+  const sectionLinks = useMemo(
+    () => findSectionForPath(pathname)?.items ?? [],
+    [pathname],
+  )
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -124,22 +131,42 @@ export default function AICategoryManagementPage() {
         { label: "Category Management", href: "/catalog/categories" },
         { label: "AI Category Management" },
       ]}
+      showQuickLinks={false}
     >
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-4">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Brain className="h-8 w-8 text-primary" />
               AI Category Management
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Intelligent product categorization with smart re-categorization
-            </p>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <SectionQuickLinks
+                sectionTitle="AI Category Management"
+                links={sectionLinks}
+                activePath={pathname}
+                className="hidden md:flex"
+              />
+              <Button onClick={refreshData} variant="outline" size="sm" className="h-10 px-4">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
-          <Button onClick={refreshData} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            Intelligent product categorization with smart re-categorization
+          </p>
+          {/* Mobile QuickLinks fallback */}
+          {sectionLinks.length > 0 ? (
+            <div className="md:hidden pt-2">
+              <SectionQuickLinks
+                sectionTitle="AI Category Management"
+                links={sectionLinks}
+                activePath={pathname}
+                className="justify-start"
+              />
+            </div>
+          ) : null}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>

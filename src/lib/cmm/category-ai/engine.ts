@@ -19,6 +19,7 @@ import { CLIProviderClient, CLIProviderExecutor } from '@/lib/ai/cli-provider';
 
 const DEFAULT_TIMEOUT_MS = 3000; // 3s default for fast responses with parallel processing
 const CLI_NOT_FOUND_PATTERNS = ['ENOENT', 'not found', 'not recognized', 'No such file or directory'];
+const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 
 const hasValidApiKey = (provider: ProviderConfig): boolean => {
   const key = provider?.apiKey;
@@ -46,6 +47,102 @@ const cliModelName = (modelName?: string | null): string =>
 
 const isCliMissingError = (message: string): boolean =>
   CLI_NOT_FOUND_PATTERNS.some(marker => message.toLowerCase().includes(marker.toLowerCase()));
+
+const shouldUseResponsesApi = (provider: ProviderConfig): boolean => {
+  if (provider.forceResponsesApi === true) return true;
+  if (provider.useChatCompletions === true) return false;
+  const providerKey = provider.provider?.toLowerCase() ?? '';
+  if (providerKey.includes('compatible') || providerKey.includes('azure')) {
+    return false;
+  }
+  const base = provider.baseUrl?.toLowerCase();
+  if (base && !base.includes('api.openai.com')) {
+    return false;
+  }
+  return true;
+};
+
+const buildChatCompletionsUrl = (provider: ProviderConfig): string => {
+  const base = (provider.baseUrl || OPENAI_BASE_URL).replace(/\/$/, '');
+  return `${base}/chat/completions`;
+};
+
+type ChatCompletionOptions = {
+  prompt: string;
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  timeoutMs: number;
+  systemPrompt?: string;
+};
+
+async function callChatCompletions(
+  provider: ProviderConfig,
+  options: ChatCompletionOptions
+): Promise<string> {
+  const url = buildChatCompletionsUrl(provider);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (provider.apiKey) {
+    const lower = url.toLowerCase();
+    if (lower.includes('azure.com')) {
+      headers['api-key'] = provider.apiKey;
+    } else {
+      headers.Authorization = `Bearer ${provider.apiKey}`;
+    }
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs);
+  try {
+    const body = {
+      model: options.model,
+      messages: [
+        {
+          role: 'system',
+          content:
+            options.systemPrompt ||
+            'You are an expert inventory categorization assistant that strictly returns JSON.',
+        },
+        { role: 'user', content: options.prompt },
+      ],
+      temperature: options.temperature,
+      max_tokens: options.maxTokens,
+    };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const responseText = await response.text();
+      throw new Error(
+        `Chat completion failed (${response.status} ${response.statusText}) ${responseText.slice(0, 500)}`
+      );
+    }
+    const data = await response.json();
+    const message = data?.choices?.[0]?.message?.content;
+    if (!message) {
+      throw new Error('Chat completion response missing content');
+    }
+    if (Array.isArray(message)) {
+      return message
+        .map(part => {
+          if (typeof part === 'string') return part;
+          if (part?.type === 'text' && typeof part.text === 'string') return part.text;
+          return '';
+        })
+        .join('')
+        .trim();
+    }
+    return typeof message === 'string' ? message : JSON.stringify(message);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -148,6 +245,7 @@ Return ONLY valid JSON matching this schema:
 
   const providerKey = provider.provider?.toLowerCase();
   const providerHasApiKey = hasValidApiKey(provider);
+  const useResponsesApi = shouldUseResponsesApi(provider);
 
   if (provider.useCLI) {
     const cliCommand = resolveCliCommand(provider, providerKey);
@@ -269,7 +367,22 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
         : 'Please provide an API key or enable CLI mode.')
     );
   }
-  
+
+  if (!useResponsesApi) {
+    const compatText = await callChatCompletions(provider, {
+      prompt,
+      model: modelName || 'gpt-4o-mini',
+      temperature: isReasoningModel(modelName) ? 0.2 : 0.1,
+      maxTokens: 2000,
+      timeoutMs,
+    });
+    const parsed = parseStructuredJsonResponse(compatText, BatchCategorySuggestionSchema);
+    console.log(
+      `[engine] runProviderBatch success (compat chat) provider=${provider.provider} model=${modelName} suggestions=${parsed?.suggestions?.length ?? 0}`
+    );
+    return parsed;
+  }
+
   const openai = createOpenAI({
     apiKey: provider.apiKey,
     ...(provider.baseUrl ? { baseURL: provider.baseUrl } : {}),
@@ -514,6 +627,17 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
         ? 'CLI mode failed or CLI command not found. Please provide a valid API key or fix CLI installation.'
         : 'Please provide an API key or enable CLI mode.')
     );
+  }
+
+  if (!useResponsesApi) {
+    const compatText = await callChatCompletions(provider, {
+      prompt,
+      model: modelName || 'gpt-4o-mini',
+      temperature: isReasoningModel(modelName) ? 0.2 : 0.1,
+      maxTokens: 1200,
+      timeoutMs,
+    });
+    return parseStructuredJsonResponse(compatText, CategorySuggestionSchema);
   }
 
   const openai = createOpenAI({

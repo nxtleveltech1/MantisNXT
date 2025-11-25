@@ -39,6 +39,8 @@ NEON_DATABASE_URL=postgresql://user:password@host:5432/database
 JWT_SECRET=your-production-secret-key-min-32-chars
 JWT_EXPIRES_IN=24h
 ALLOW_PUBLIC_GET_ENDPOINTS=/api/suppliers,/api/inventory,/api/health
+PUBLIC_API_TOKEN=optional-readonly-token
+ENTERPRISE_DATABASE_URL=postgresql://user:password@host:5432/database
 
 # Caching
 CACHE_TTL_SECONDS=60
@@ -51,6 +53,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com
 # Security
 ENABLE_RATE_LIMITING=true
 ALLOW_PUBLIC_GET_ENDPOINTS=/api/health
+PUBLIC_API_TOKEN=optional-readonly-token
 CACHE_TTL_SECONDS=60
 RATE_LIMIT_REQUESTS=100
 RATE_LIMIT_WINDOW=60000

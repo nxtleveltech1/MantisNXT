@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       filters = {},
       config = {},
       batch_size,
+      product_limit,
     } = body;
 
     // Create the job
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
       filters,
       config,
       batch_size,
+      product_limit,
       created_by: 'api_user', // TODO: Get from session/auth
     });
     console.log(`[API:start] job created: ${jobId}`);

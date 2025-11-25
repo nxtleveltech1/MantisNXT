@@ -2,6 +2,28 @@ import { NextResponse } from 'next/server'
 
 const API_PREFIX = '/api'
 
+const ALWAYS_PUBLIC_ENDPOINTS = [
+  '/api/health',
+  '/api/health/database',
+  '/api/health/database-enterprise',
+  '/api/health/database-connections',
+  '/api/health/frontend',
+  '/api/health/system',
+  '/api/core/selections',
+  '/api/dashboard_metrics',
+  '/api/dashboard/inventory-by-category',
+  '/api/dashboard/stock-alerts',
+  '/api/dashboard/location-analytics',
+  '/api/activities/recent',
+  '/api/analytics/anomalies',
+  '/api/analytics/dashboard',
+  '/api/analytics/predictions',
+  '/api/analytics/recommendations',
+  '/api/catalog/metrics',
+  '/api/suppliers',
+  '/api/suppliers/v3',
+]
+
 function parseAllowlist(input: string | undefined): string[] {
   if (!input) return []
   return input
@@ -19,40 +41,30 @@ export function middleware(request: Request) {
     return NextResponse.next()
   }
 
-  // Always allow health and OPTIONS (preflight)
-  if (request.method === 'OPTIONS' || pathname === '/api/health') {
+  // Always allow OPTIONS (preflight)
+  if (request.method === 'OPTIONS') {
     return NextResponse.next()
   }
 
-  // Public endpoints that don't require authentication
-  const publicEndpoints = [
-    '/api/health',
-    '/api/health/database',
-    '/api/health/database-enterprise',
-    '/api/core/selections',
-    '/api/dashboard_metrics', // Dashboard metrics for initial load
-    '/api/dashboard/inventory-by-category',
-    '/api/dashboard/stock-alerts',
-    '/api/dashboard/location-analytics',
-    '/api/activities/recent',
-    '/api/analytics/anomalies',
-    '/api/analytics/dashboard',
-    '/api/analytics/predictions',
-    '/api/analytics/recommendations',
-    '/api/catalog/metrics',
-  ]
-
-  if (publicEndpoints.some((endpoint) => pathname.startsWith(endpoint))) {
+  if (ALWAYS_PUBLIC_ENDPOINTS.some((endpoint) => pathname.startsWith(endpoint))) {
     return NextResponse.next()
   }
 
-  // Dev allowlist for public GETs (comma-separated prefixes)
+  // Configurable allowlist for read-only endpoints (comma-separated prefixes)
   const allowList = parseAllowlist(process.env.ALLOW_PUBLIC_GET_ENDPOINTS)
-  if (
-    process.env.NODE_ENV !== 'production' &&
-    request.method === 'GET' &&
-    allowList.some((prefix) => pathname.startsWith(prefix))
-  ) {
+  const allowListMatch =
+    request.method === 'GET' && allowList.some((prefix) => pathname.startsWith(prefix))
+  if (allowListMatch) {
+    return NextResponse.next()
+  }
+
+  // Optional header-based token to allow curated public access (e.g. demo embeds)
+  const publicToken = process.env.PUBLIC_API_TOKEN
+  const suppliedToken =
+    request.headers.get('x-public-token') ||
+    request.headers.get('x-demo-token') ||
+    request.headers.get('x-preview-token')
+  if (publicToken && suppliedToken && suppliedToken === publicToken && request.method === 'GET') {
     return NextResponse.next()
   }
 

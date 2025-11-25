@@ -100,6 +100,9 @@ export async function getCompleteInventory(request: NextRequest) {
 
     const offset = (page - 1) * limit;
 
+    const rspExpression = 'COALESCE(i.sale_price, i.cost_price)';
+    const rspValueExpression = 'COALESCE(i.sale_price, i.cost_price, 0)';
+
     // Build dynamic query with proper SQL injection protection
     // Include enriched data from supplier_product and pricelist
     let baseQuery = `
@@ -117,10 +120,11 @@ export async function getCompleteInventory(request: NextRequest) {
         COALESCE(ph.price, i.cost_price, 0) as cost_per_unit_zar,
         COALESCE(ph.price, i.cost_price, 0) * i.stock_qty as total_value_zar,
         COALESCE(cat.category_raw, i.category, 'Unknown') as category,
-        (COALESCE(i.rsp, i.sale_price, 0) - COALESCE(ph.price, i.cost_price, 0)) as margin,
+        ${rspExpression} as rsp,
+        (${rspValueExpression} - COALESCE(ph.price, i.cost_price, 0)) as margin,
         CASE
           WHEN COALESCE(ph.price, i.cost_price, 0) > 0 THEN
-            (COALESCE(i.rsp, i.sale_price, 0) - COALESCE(ph.price, i.cost_price, 0))
+            (${rspValueExpression} - COALESCE(ph.price, i.cost_price, 0))
             / COALESCE(NULLIF(ph.price, 0), NULLIF(i.cost_price, 0), 1)
           ELSE 0
         END as margin_percentage
@@ -222,13 +226,13 @@ export async function getCompleteInventory(request: NextRequest) {
 
     // Apply price filters
     if (minPrice) {
-      baseQuery += ` AND COALESCE(i.rsp, i.sale_price) >= $${paramIndex}`;
+      baseQuery += ` AND ${rspExpression} >= $${paramIndex}`;
       queryParams.push(parseFloat(minPrice));
       paramIndex++;
     }
 
     if (maxPrice) {
-      baseQuery += ` AND COALESCE(i.rsp, i.sale_price) <= $${paramIndex}`;
+      baseQuery += ` AND ${rspExpression} <= $${paramIndex}`;
       queryParams.push(parseFloat(maxPrice));
       paramIndex++;
     }
@@ -265,7 +269,12 @@ export async function getCompleteInventory(request: NextRequest) {
     const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'name';
     const safeSortOrder = validSortOrders.includes(sortOrder) ? sortOrder : 'asc';
 
-    baseQuery += ` ORDER BY i.${safeSortBy} ${safeSortOrder.toUpperCase()}`;
+    const resolveSortColumn = (field: string) => {
+      if (field === 'rsp') return rspExpression;
+      return `i.${field}`;
+    };
+
+    baseQuery += ` ORDER BY ${resolveSortColumn(safeSortBy)} ${safeSortOrder.toUpperCase()}`;
 
     // Apply pagination
     baseQuery += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
@@ -352,13 +361,13 @@ export async function getCompleteInventory(request: NextRequest) {
     }
 
     if (minPrice) {
-      countQuery += ` AND COALESCE(i.rsp, i.sale_price) >= $${countParamIndex}`;
+      countQuery += ` AND ${rspExpression} >= $${countParamIndex}`;
       countParams.push(parseFloat(minPrice));
       countParamIndex++;
     }
 
     if (maxPrice) {
-      countQuery += ` AND COALESCE(i.rsp, i.sale_price) <= $${countParamIndex}`;
+      countQuery += ` AND ${rspExpression} <= $${countParamIndex}`;
       countParams.push(parseFloat(maxPrice));
       countParamIndex++;
     }

@@ -1,17 +1,24 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import AppLayout from '@/components/layout/AppLayout'
+import AppLayout, { findSectionForPath } from '@/components/layout/AppLayout'
 import EnhancedInventoryDashboard from '@/components/inventory/EnhancedInventoryDashboard'
 import AsyncBoundary from '@/components/ui/AsyncBoundary'
 import InventoryManagement from '@/components/inventory/InventoryManagement'
 import SupplierInventoryView from '@/components/inventory/SupplierInventoryView'
 import ProductStockManagement from '@/components/inventory/ProductStockManagement'
 import InventoryDetailView from '@/components/inventory/InventoryDetailView'
+import { SectionQuickLinks } from '@/components/layout/SectionQuickLinks'
+import { usePathname } from 'next/navigation'
 
 export default function InventoryPage() {
   const [selectedDetailItem, setSelectedDetailItem] = useState<string | null>(null)
+  const pathname = usePathname() || ''
+  const sectionLinks = useMemo(
+    () => findSectionForPath(pathname)?.items ?? [],
+    [pathname],
+  )
 
   const breadcrumbs = [
     { label: 'Inventory Management' }
@@ -21,8 +28,21 @@ export default function InventoryPage() {
     <AppLayout
       title="Comprehensive Inventory Management"
       breadcrumbs={breadcrumbs}
+      showQuickLinks={false}
     >
       <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4">
+          <h1 className="text-3xl font-bold tracking-tight">Inventory Management</h1>
+          {sectionLinks.length > 0 ? (
+            <SectionQuickLinks
+              sectionTitle="Inventory"
+              links={sectionLinks}
+              activePath={pathname}
+              className="flex-wrap justify-end gap-2"
+            />
+          ) : null}
+        </div>
+
         <Tabs defaultValue="management" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>

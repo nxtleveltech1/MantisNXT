@@ -34,7 +34,11 @@ export class JobManager {
    */
   async createJob(params: JobParams): Promise<string> {
     // Estimate total products
-    const totalProducts = await this.estimateProducts(params.filters || {});
+    const estimatedProducts = await this.estimateProducts(params.filters || {});
+    const productLimit =
+      typeof params.product_limit === 'number' && params.product_limit > 0
+        ? Math.min(params.product_limit, estimatedProducts)
+        : estimatedProducts;
 
     const batchSize = Math.min(
       params.batch_size || DEFAULT_JOB_CONFIG.default_batch_size,
@@ -55,7 +59,7 @@ export class JobManager {
 
     const result = await dbQuery<{ job_id: string }>(sql, [
       params.job_type,
-      totalProducts,
+      productLimit,
       batchSize,
       JSON.stringify(params.filters || {}),
       JSON.stringify(params.config || {}),

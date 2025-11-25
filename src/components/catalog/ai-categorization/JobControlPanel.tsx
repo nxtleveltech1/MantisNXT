@@ -17,10 +17,32 @@ interface JobControlPanelProps {
 
 export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: JobControlPanelProps) {
   const [batchSize, setBatchSize] = useState(200)
+  const [productLimit, setProductLimit] = useState<number | ''>('')
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.7)
   const [supplierFilter, setSupplierFilter] = useState("")
   const [forceOverride, setForceOverride] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
+
+  const buildPayload = useCallback(
+    (jobType: "full_scan" | "recategorize", extraFilters: Record<string, unknown> = {}, configOverrides: Record<string, unknown> = {}) => {
+      const limit = typeof productLimit === 'number' && productLimit > 0 ? productLimit : undefined
+      return {
+        job_type: jobType,
+        filters: {
+          supplier_id: supplierFilter || undefined,
+          ...extraFilters,
+        },
+        config: {
+          confidence_threshold: confidenceThreshold,
+          force_recategorize: jobType !== "full_scan" || forceOverride,
+          ...configOverrides,
+        },
+        batch_size: batchSize,
+        product_limit: limit,
+      }
+    },
+    [batchSize, confidenceThreshold, forceOverride, productLimit, supplierFilter]
+  )
 
   const startFullCategorization = useCallback(async () => {
     setIsStarting(true)
@@ -29,16 +51,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          job_type: "full_scan",
-          filters: {
-            supplier_id: supplierFilter || undefined,
-            exclude_categorized: !forceOverride,
-          },
-          config: {
-            confidence_threshold: confidenceThreshold,
-            force_recategorize: forceOverride,
-          },
-          batch_size: batchSize,
+          ...buildPayload("full_scan", { exclude_categorized: !forceOverride })
         }),
       })
 
@@ -65,16 +78,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          job_type: "recategorize",
-          filters: {
-            supplier_id: supplierFilter || undefined,
-            confidence_max: confidenceThreshold,
-          },
-          config: {
-            confidence_threshold: confidenceThreshold,
-            force_recategorize: true,
-          },
-          batch_size: batchSize,
+          ...buildPayload("recategorize", { confidence_max: confidenceThreshold }, { force_recategorize: true })
         }),
       })
 
@@ -100,16 +104,7 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          job_type: "recategorize",
-          filters: {
-            supplier_id: supplierFilter || undefined,
-            status: ["failed"],
-          },
-          config: {
-            confidence_threshold: confidenceThreshold,
-            force_recategorize: true,
-          },
-          batch_size: batchSize,
+          ...buildPayload("recategorize", { status: ["failed"] }, { force_recategorize: true })
         }),
       })
 
@@ -148,6 +143,27 @@ export const JobControlPanel = memo(function JobControlPanel({ onJobStarted }: J
               onChange={(e) => setBatchSize(parseInt(e.target.value) || 200)}
             />
             <p className="text-xs text-muted-foreground">Products per batch (50-500)</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="product-limit">Total Products (Optional)</Label>
+            <Input
+              id="product-limit"
+              type="number"
+              min="1"
+              placeholder="All"
+              value={productLimit === '' ? '' : productLimit}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value === '') {
+                  setProductLimit('')
+                } else {
+                  const parsed = parseInt(value, 10)
+                  setProductLimit(Number.isFinite(parsed) && parsed > 0 ? parsed : '')
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">Process only the first N products (oldest first).</p>
           </div>
 
           <div className="space-y-2">

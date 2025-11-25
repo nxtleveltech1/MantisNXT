@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import AppLayout from "@/components/layout/AppLayout"
+import { useEffect, useMemo, useState } from "react"
+import AppLayout, { findSectionForPath } from "@/components/layout/AppLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { GitBranch, Plus } from "lucide-react"
 import { toast } from "sonner"
+import { SectionQuickLinks } from "@/components/layout/SectionQuickLinks"
+import { usePathname } from "next/navigation"
 
 type Category = {
   id: string
@@ -28,6 +30,11 @@ export default function CategoriesPage() {
   const [creating, setCreating] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
   const [parentCategory, setParentCategory] = useState<string>("")
+  const pathname = usePathname() || ""
+  const sectionLinks = useMemo(
+    () => findSectionForPath(pathname)?.items ?? [],
+    [pathname],
+  )
 
   useEffect(() => {
     void fetchCategories()
@@ -98,15 +105,35 @@ export default function CategoriesPage() {
     <AppLayout
       title="Categories"
       breadcrumbs={[{ label: "Category Management", href: "/catalog/categories" }, { label: "Categories" }]}
+      showQuickLinks={false}
     >
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Categories</h1>
-            <p className="text-muted-foreground">
-              Build and maintain the category hierarchy powering AI product classification.
-            </p>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
+            {sectionLinks.length > 0 ? (
+              <SectionQuickLinks
+                sectionTitle="Categories"
+                links={sectionLinks}
+                activePath={pathname}
+                className="hidden md:flex"
+              />
+            ) : null}
           </div>
+          <p className="text-muted-foreground">
+            Build and maintain the category hierarchy powering AI product classification.
+          </p>
+          {/* Mobile QuickLinks fallback if needed, or keep it hidden on mobile as per design */}
+          {sectionLinks.length > 0 ? (
+            <div className="md:hidden pt-2">
+               <SectionQuickLinks
+                sectionTitle="Categories"
+                links={sectionLinks}
+                activePath={pathname}
+                className="justify-start"
+              />
+            </div>
+          ) : null}
         </div>
 
         <Card>

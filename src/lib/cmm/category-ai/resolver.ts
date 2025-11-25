@@ -16,6 +16,8 @@ export type ProviderConfig = {
   useOAuth?: boolean;
   useGCloudADC?: boolean;
   cliWorkingDirectory?: string;
+  useChatCompletions?: boolean;
+  forceResponsesApi?: boolean;
 };
 
 export type CategoryAIResolvedConfig = {
@@ -231,6 +233,12 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
               useGCloudADC: activeInst.useGCloudADC,
               cliWorkingDirectory: activeInst.cliWorkingDirectory,
             } : {}),
+            ...(typeof activeInst.useChatCompletions === 'boolean'
+              ? { useChatCompletions: activeInst.useChatCompletions }
+              : {}),
+            ...(typeof activeInst.forceResponsesApi === 'boolean'
+              ? { forceResponsesApi: activeInst.forceResponsesApi }
+              : {}),
           });
           return providers;
         }
@@ -265,6 +273,12 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
             useGCloudADC: inst.useGCloudADC,
             cliWorkingDirectory: inst.cliWorkingDirectory,
           } : {}),
+          ...(typeof inst.useChatCompletions === 'boolean'
+            ? { useChatCompletions: inst.useChatCompletions }
+            : {}),
+          ...(typeof inst.forceResponsesApi === 'boolean'
+            ? { forceResponsesApi: inst.forceResponsesApi }
+            : {}),
         });
       }
     }
@@ -282,6 +296,12 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
           model:
             value.model || config.model ? String(value.model || config.model).trim() : undefined,
           enabled: true,
+          ...(typeof value.useChatCompletions === 'boolean'
+            ? { useChatCompletions: value.useChatCompletions }
+            : {}),
+          ...(typeof value.forceResponsesApi === 'boolean'
+            ? { forceResponsesApi: value.forceResponsesApi }
+            : {}),
         });
       }
     }
@@ -297,6 +317,12 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
       baseUrl: config.baseUrl,
       model: config.model ? String(config.model).trim() : undefined,
       enabled: true,
+      ...(typeof config.useChatCompletions === 'boolean'
+        ? { useChatCompletions: config.useChatCompletions }
+        : {}),
+      ...(typeof config.forceResponsesApi === 'boolean'
+        ? { forceResponsesApi: config.forceResponsesApi }
+        : {}),
     });
   }
 
