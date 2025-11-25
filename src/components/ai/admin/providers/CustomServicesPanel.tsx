@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,17 +75,10 @@ export default function CustomServicesPanel() {
         const res = await fetch('/api/v1/ai/cli/availability');
         if (!res.ok) {
           const errorText = await res.text();
-          console.warn('[CustomServicesPanel] CLI availability check failed:', res.status, errorText);
           // Return empty object on error, but don't throw - let UI show "unknown" state
           return {};
         }
         const data = await res.json();
-        console.log('[CustomServicesPanel] CLI availability response:', {
-          success: data.success,
-          data: data.data,
-          google: data.data?.google,
-          openai: data.data?.openai,
-        });
         return data.data || {};
       } catch (error) {
         console.error('[CustomServicesPanel] CLI availability check error:', error);
@@ -159,14 +152,12 @@ export default function CustomServicesPanel() {
 
   const updateConfig = useMutation({
     mutationFn: async ({ serviceId, payload }: { serviceId: string; payload: unknown }) => {
-      console.log('[CustomServicesPanel] Mutation called:', { serviceId, payload });
       try {
         const res = await fetch(`/api/v1/ai/services/${serviceId}/config`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        console.log('[CustomServicesPanel] Mutation response status:', res.status, res.statusText);
         if (!res.ok) {
           const errorText = await res.text();
           console.error('[CustomServicesPanel] Mutation error response:', errorText);
@@ -180,7 +171,6 @@ export default function CustomServicesPanel() {
           throw new Error(errorMessage);
         }
         const result = await res.json();
-        console.log('[CustomServicesPanel] Mutation success:', result);
         return result;
       } catch (error) {
         console.error('[CustomServicesPanel] Mutation exception:', error);
@@ -273,42 +263,70 @@ export default function CustomServicesPanel() {
   };
 
   const addProviderInstance = (serviceId: string) => {
-    const form = getForm(serviceId);
-    const isWebSearch = isWebSearchProvider(form.provider);
-    
-    // Validation: provider is always required
-    if (!form.provider) {
-      toast.error('Please select a provider type');
-      return;
-    }
+    try {
+      console.log('[CustomServicesPanel] addProviderInstance called', serviceId);
+      const form = getForm(serviceId);
+      console.log('[CustomServicesPanel] Form state:', form);
+      
+      let isWebSearch = false;
+      try {
+        isWebSearch = isWebSearchProvider(form.provider);
+        console.log('[CustomServicesPanel] isWebSearch:', isWebSearch);
+      } catch (error) {
+        console.error('[CustomServicesPanel] Error in isWebSearchProvider:', error);
+        throw error;
+      }
+      
+      // Validation: provider is always required
+      if (!form.provider) {
+        console.warn('[CustomServicesPanel] Validation failed: no provider');
+        toast.error('Please select a provider type');
+        return;
+      }
+      console.log('[CustomServicesPanel] Provider check passed:', form.provider);
 
-    // Base URL is optional for CLI mode, but ensure it has a default for API mode
-    const isCLIMode = (form.provider === 'google' || form.provider === 'openai') && form.useCLI;
-    const effectiveBaseUrl = form.baseUrl || (!isCLIMode ? getDefaultBaseUrl(form.provider) : undefined);
-    
-    if (!isCLIMode && !effectiveBaseUrl) {
-      toast.error('Please fill in endpoint URL');
-      return;
-    }
+      // Base URL is optional for CLI mode, but ensure it has a default for API mode
+      const isCLIMode = (form.provider === 'google' || form.provider === 'openai') && form.useCLI;
+      const effectiveBaseUrl = form.baseUrl || (!isCLIMode ? getDefaultBaseUrl(form.provider) : undefined);
+      
+      console.log('[CustomServicesPanel] Validation check:', { isCLIMode, effectiveBaseUrl, baseUrl: form.baseUrl, useCLI: form.useCLI });
+      
+      if (!isCLIMode && !effectiveBaseUrl) {
+        console.warn('[CustomServicesPanel] Validation failed: no baseUrl and not CLI mode');
+        toast.error('Please fill in endpoint URL');
+        return;
+      }
+      console.log('[CustomServicesPanel] BaseUrl check passed');
 
-    // Google Gemini validation
-    if (form.provider === 'google') {
-      if (form.useCLI) {
-        // Ensure OAuth is defaulted to true if not explicitly set
-        const effectiveUseOAuth = form.useOAuth !== undefined ? form.useOAuth : true;
-        // CLI mode validation - allow OAuth or gcloud ADC without API key
-        if (!effectiveUseOAuth && !form.useGCloudADC && !form.apiKey?.trim()) {
-          toast.error('Select OAuth/gcloud ADC or provide an API key for CLI mode');
-          return;
-        }
-        if (form.useGCloudADC && !form.googleProject?.trim()) {
-          toast.error('GCP Project ID is required for gcloud ADC mode');
-          return;
-        }
-        if (!form.model?.trim()) {
-          toast.error('Model is required for Google Gemini');
-          return;
-        }
+      // Google Gemini validation
+      if (form.provider === 'google') {
+        console.log('[CustomServicesPanel] Google provider validation starting');
+        if (form.useCLI) {
+          console.log('[CustomServicesPanel] Google CLI mode detected');
+          // Ensure OAuth is defaulted to true if not explicitly set
+          const effectiveUseOAuth = form.useOAuth !== undefined ? form.useOAuth : true;
+          console.log('[CustomServicesPanel] OAuth check:', { effectiveUseOAuth, useOAuth: form.useOAuth, useGCloudADC: form.useGCloudADC, apiKey: form.apiKey?.trim() });
+          // CLI mode validation - allow OAuth or gcloud ADC without API key
+          if (!effectiveUseOAuth && !form.useGCloudADC && !form.apiKey?.trim()) {
+            console.warn('[CustomServicesPanel] Validation failed: CLI mode requires OAuth/gcloud ADC or API key');
+            toast.error('Select OAuth/gcloud ADC or provide an API key for CLI mode');
+            return;
+          }
+          console.log('[CustomServicesPanel] OAuth/API key check passed');
+          if (form.useGCloudADC && !form.googleProject?.trim()) {
+            console.warn('[CustomServicesPanel] Validation failed: GCP Project ID required for gcloud ADC');
+            toast.error('GCP Project ID is required for gcloud ADC mode');
+            return;
+          }
+          console.log('[CustomServicesPanel] GCP Project check passed');
+          // Model is optional for CLI mode with OAuth - can be set later
+          // Only require model if using API key mode
+          if (!effectiveUseOAuth && !form.useGCloudADC && !form.model?.trim()) {
+            console.warn('[CustomServicesPanel] Validation failed: Model required for API key CLI mode');
+            toast.error('Model is required when using API key for CLI mode');
+            return;
+          }
+          console.log('[CustomServicesPanel] Model check passed for CLI mode');
       } else if (form.useVertexAI) {
         if (!form.googleProject) {
           toast.error('GCP Project ID is required for Vertex AI mode');
@@ -325,21 +343,20 @@ export default function CustomServicesPanel() {
         }
       }
     } else if (form.provider === 'openai' && form.useCLI) {
-      // OpenAI CLI mode validation
+      // OpenAI CLI mode validation - OAuth doesn't require API key or model
       if (!form.useOAuth && !form.apiKey) {
         toast.error('API Key or OAuth is required for CLI mode');
         return;
       }
-      if (!form.model) {
-        toast.error('Model is required for OpenAI');
-        return;
-      }
+      // Model is optional for OAuth CLI mode
     } else {
       if (!form.apiKey) {
+        console.warn('[CustomServicesPanel] Validation failed: no apiKey for provider', form.provider);
         toast.error('API Key is required');
         return;
       }
       if (!isWebSearch && !form.model) {
+        console.warn('[CustomServicesPanel] Validation failed: no model for provider', form.provider, 'isWebSearch:', isWebSearch);
         toast.error('Model is required for LLM providers');
         return;
       }
@@ -347,9 +364,12 @@ export default function CustomServicesPanel() {
     
     // Google Search requires engine ID
     if (form.provider === 'google_search' && !form.googleSearchEngineId) {
+      console.warn('[CustomServicesPanel] Validation failed: no googleSearchEngineId');
       toast.error('Google Search Engine ID is required for Google Search provider');
       return;
     }
+    
+    console.log('[CustomServicesPanel] All validation passed, proceeding to create instance');
 
     const record = configs[serviceId];
     const cfg = record?.config || {};
@@ -360,12 +380,18 @@ export default function CustomServicesPanel() {
       ? true 
       : (form.useOAuth === true);
     
+    // Set default model for Google Gemini if not provided
+    let defaultModel = form.model?.trim();
+    if (form.provider === 'google' && !defaultModel) {
+      defaultModel = 'gemini-3-pro-preview'; // Default to latest model
+    }
+    
     const newInstance: ProviderInstance = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       provider: form.provider,
       baseUrl: effectiveBaseUrl || undefined,
       apiKey: form.apiKey?.trim() || undefined, // Optional for Vertex AI mode or OAuth CLI mode
-      model: form.model?.trim() || undefined, // Optional for web search
+      model: defaultModel || undefined, // Optional for web search, default for Google
       enabled: true,
       ...(form.provider === 'google_search' && form.googleSearchEngineId
         ? { googleSearchEngineId: form.googleSearchEngineId.trim() }
@@ -396,20 +422,26 @@ export default function CustomServicesPanel() {
         providerInstances: updatedInstances,
         activeProviderInstanceId: activeId,
       },
+      enabled: record?.enabled ?? true,
     };
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[CustomServicesPanel] Adding provider instance:', {
+    console.log('[CustomServicesPanel] Calling updateConfig.mutate', { serviceId, payload });
+    updateConfig.mutate(
+      {
         serviceId,
-        newInstance,
         payload,
-      });
-    }
-
-    updateConfig.mutate({
-      serviceId,
-      payload,
-    });
+      },
+      {
+        onSuccess: () => {
+          console.log('[CustomServicesPanel] Mutation succeeded');
+          toast.success('Provider added successfully');
+        },
+        onError: (error) => {
+          console.error('[CustomServicesPanel] Add provider mutation error:', error);
+          toast.error(`Failed to add provider: ${error instanceof Error ? error.message : String(error)}`);
+        },
+      }
+    );
 
     // Reset form
     setNewProviderForms(prev => {
@@ -417,6 +449,10 @@ export default function CustomServicesPanel() {
       delete next[serviceId];
       return next;
     });
+    } catch (error) {
+      console.error('[CustomServicesPanel] addProviderInstance exception:', error);
+      toast.error(`Failed to add provider: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   const deleteProviderInstance = (serviceId: string, instanceId: string) => {
@@ -1170,56 +1206,44 @@ export default function CustomServicesPanel() {
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <Button 
+                  <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log('[CustomServicesPanel] Add Provider clicked for service:', s.id);
-                      console.log('[CustomServicesPanel] Current form state:', getForm(s.id));
-                      console.log('[CustomServicesPanel] updateConfig mutation state:', {
-                        isPending: updateConfig.isPending,
-                        isError: updateConfig.isError,
-                        isSuccess: updateConfig.isSuccess,
-                        error: updateConfig.error,
-                      });
+                      console.log('[CustomServicesPanel] Add Provider button clicked', s.id);
                       try {
                         addProviderInstance(s.id);
                       } catch (error) {
                         console.error('[CustomServicesPanel] Add Provider error:', error);
                         toast.error(`Failed to add provider: ${error instanceof Error ? error.message : String(error)}`);
                       }
-                    }} 
-                    className="flex-1"
+                    }}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 flex-1"
                     type="button"
                     disabled={updateConfig.isPending}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     {updateConfig.isPending ? 'Adding...' : 'Add Provider'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    type="button"
+                  </button>
+                  <button
                     onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log('[CustomServicesPanel] Test Connection clicked for service:', s.id);
+                      console.log('[CustomServicesPanel] Test Connection button clicked', s.id, s.service_key);
                       const form = getForm(s.id);
-                      console.log('[CustomServicesPanel] Form state for test:', form);
+                      console.log('[CustomServicesPanel] Form for test:', form);
                       const isWebSearch = isWebSearchProvider(form.provider);
                       const isCLIMode = (form.provider === 'google' || form.provider === 'openai') && form.useCLI;
                       
                       if (!form.provider) {
-                        console.warn('[CustomServicesPanel] Validation failed: no provider');
+                        console.warn('[CustomServicesPanel] Test validation failed: no provider');
                         toast.error('Please fill in provider type');
                         return;
                       }
                       if (!isCLIMode && !form.baseUrl) {
-                        console.warn('[CustomServicesPanel] Validation failed: no baseUrl');
                         toast.error('Please fill in endpoint URL');
                         return;
                       }
-                      
-                      console.log('[CustomServicesPanel] Test connection validation passed, proceeding...');
 
                       // Google Gemini validation for testing
                       if (form.provider === 'google') {
@@ -1292,20 +1316,28 @@ export default function CustomServicesPanel() {
                             testConfig.googleLocation = form.googleLocation;
                           }
                         }
-                        const res = await fetch(`/api/v1/ai/config/assistant/test`, {
+                        const res = await fetch(`/api/v1/ai/config/${s.service_key}/test`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ config: testConfig }),
                         });
-                        if (!res.ok) throw new Error(await res.text());
-                        toast.success('Connection test successful');
+                        if (!res.ok) {
+                          const errorText = await res.text();
+                          throw new Error(errorText);
+                        }
+                        const result = await res.json();
+                        toast.success(result?.data?.message || 'Connection test successful');
                       } catch (e: unknown) {
-                        toast.error(e?.message || 'Connection test failed');
+                        const errorMessage = e instanceof Error ? e.message : String(e) || 'Connection test failed';
+                        toast.error(errorMessage);
+                        console.error('[CustomServicesPanel] Test connection error:', e);
                       }
                     }}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2"
+                    type="button"
                   >
                     Test Connection
-                  </Button>
+                  </button>
                 </div>
               </div>
 

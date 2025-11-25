@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
       // Update stock_on_hand
       await client.query(
-        'UPDATE core.stock_on_hand SET qty = $1, updated_at = NOW() WHERE supplier_product_id = $2::uuid',
+        'UPDATE core.stock_on_hand SET qty = $1, as_of_ts = NOW() WHERE supplier_product_id = $2::uuid',
         [nextQty, body.supplierProductId]
       );
 

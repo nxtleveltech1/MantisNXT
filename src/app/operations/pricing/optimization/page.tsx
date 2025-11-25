@@ -20,14 +20,52 @@ import { Play, CheckCircle2, Clock, XCircle, Eye } from 'lucide-react';
 import type { OptimizationRun} from '@/lib/db/pricing-schema';
 import { OptimizationStatus, PricingStrategy } from '@/lib/db/pricing-schema';
 import Link from 'next/link';
+import { Progress } from '@/components/ui/progress';
+
+interface OptimizationProgress {
+  progress_percent: number;
+  current_step: string;
+  products_processed: number;
+  total_products: number;
+}
 
 export default function OptimizationPage() {
   const [runs, setRuns] = useState<OptimizationRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState<Record<string, OptimizationProgress>>({});
 
   useEffect(() => {
     fetchRuns();
   }, []);
+
+  // Poll for progress on running optimizations
+  useEffect(() => {
+    const runningRuns = runs.filter(r => r.status === OptimizationStatus.RUNNING || r.status === OptimizationStatus.PENDING);
+    
+    if (runningRuns.length === 0) return;
+
+    const pollProgress = async () => {
+      for (const run of runningRuns) {
+        try {
+          const response = await fetch(`/api/v1/pricing/optimization/${run.run_id}/progress`);
+          const data = await response.json();
+          if (data.success) {
+            setProgress(prev => ({ ...prev, [run.run_id]: data.data }));
+          }
+        } catch (error) {
+          console.error(`Failed to fetch progress for ${run.run_id}:`, error);
+        }
+      }
+    };
+
+    // Poll immediately
+    pollProgress();
+
+    // Poll every 2 seconds
+    const interval = setInterval(pollProgress, 2000);
+
+    return () => clearInterval(interval);
+  }, [runs]);
 
   const fetchRuns = async () => {
     try {
@@ -160,6 +198,20 @@ export default function OptimizationPage() {
                     )}
                   </div>
                 </CardHeader>
+                {(run.status === OptimizationStatus.RUNNING || run.status === OptimizationStatus.PENDING) && progress[run.run_id] && (
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{progress[run.run_id].current_step}</span>
+                        <span className="font-medium">{progress[run.run_id].progress_percent}%</span>
+                      </div>
+                      <Progress value={progress[run.run_id].progress_percent} />
+                      <div className="text-xs text-muted-foreground">
+                        {progress[run.run_id].products_processed} of {progress[run.run_id].total_products} products processed
+                      </div>
+                    </div>
+                  </CardContent>
+                )}
                 {run.status === OptimizationStatus.COMPLETED && (
                   <CardContent>
                     <div className="grid grid-cols-4 gap-4 text-sm">

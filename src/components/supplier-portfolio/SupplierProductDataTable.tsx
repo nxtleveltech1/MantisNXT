@@ -86,6 +86,7 @@ interface SelectionProduct {
   uom?: string
   pack_size?: string
   qty_on_hand?: number
+  sup_soh?: number
   is_in_stock: boolean
   selected_at: string
   first_seen_at?: string
@@ -143,7 +144,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'rsp', label: 'RSP', visible: true, sortable: true, width: 'w-32' },
   { id: 'price_change', label: 'Price Change', visible: false, sortable: true, width: 'w-32' },
   { id: 'status', label: 'Status', visible: true, sortable: false, width: 'w-40' },
-  { id: 'stock', label: 'Stock', visible: false, sortable: true, width: 'w-24' },
+  { id: 'stock', label: 'Sup SOH', visible: false, sortable: true, width: 'w-24' },
   { id: 'first_seen', label: 'First Seen', visible: false, sortable: true, width: 'w-32' },
   { id: 'cost_inc_vat', label: 'Cost IncVAT', visible: true, sortable: true, width: 'w-32' },
   { id: 'actions', label: '', visible: true, sortable: false, width: 'w-16' },
@@ -226,6 +227,7 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
         uom: p.uom,
         pack_size: p.pack_size,
         qty_on_hand: p.qty_on_hand,
+        sup_soh: p.sup_soh ?? p.qty_on_hand ?? null,
         is_in_stock: !!p.is_in_stock,
         selected_at: p.selected_at,
         is_selected: true,
@@ -907,7 +909,9 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                       if (col.id === 'stock') {
                         return (
                           <TableCell key={col.id}>
-                            {product.qty_on_hand !== undefined ? (
+                            {product.sup_soh !== undefined && product.sup_soh !== null ? (
+                              <div className="text-sm">{product.sup_soh}</div>
+                            ) : product.qty_on_hand !== undefined && product.qty_on_hand !== null ? (
                               <div className="text-sm">{product.qty_on_hand}</div>
                             ) : (
                               '-'
@@ -1060,8 +1064,12 @@ const SupplierProductDataTable: React.FC<SupplierProductTableProps> = ({
                   <div className="mt-1 font-medium">{formatCostAmount(detailsProduct.attrs_json?.cost_excluding ?? detailsProduct.current_price || 0)}</div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Stock Quantity</p>
-                  <div className="mt-1">{detailsProduct.qty_on_hand || 0}</div>
+                  <p className="text-sm font-medium text-muted-foreground">Sup SOH</p>
+                  <div className="mt-1">
+                    {detailsProduct.sup_soh ??
+                      detailsProduct.qty_on_hand ??
+                      0}
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Barcode</p>

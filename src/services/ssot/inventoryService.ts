@@ -47,7 +47,7 @@ export async function listBySupplier(supplierId: string): Promise<InventoryItem[
         MAX(soh.location_id)::text AS location_id,
         COALESCE(SUM(soh.qty), 0) AS qty,
         MAX(sp.is_active) AS is_active,
-        MAX(soh.updated_at) AS updated_at
+        MAX(soh.as_of_ts) AS updated_at
       FROM core.supplier_product sp
       LEFT JOIN core.stock_on_hand soh
         ON soh.supplier_product_id = sp.supplier_product_id
@@ -109,7 +109,7 @@ export async function adjustStock(params: {
     }
 
     await client.query(
-      `UPDATE core.stock_on_hand SET qty = GREATEST(0, qty + $1), updated_at = NOW()
+      `UPDATE core.stock_on_hand SET qty = GREATEST(0, qty + $1), as_of_ts = NOW()
        WHERE supplier_product_id = $2`,
       [delta, supplierProductId]
     )
@@ -181,7 +181,7 @@ export async function setStock(params: {
       )
     } else {
       await client.query(
-        `UPDATE core.stock_on_hand SET qty = $1, unit_cost = COALESCE($2, unit_cost), updated_at = NOW() WHERE supplier_product_id = $3`,
+        `UPDATE core.stock_on_hand SET qty = $1, unit_cost = COALESCE($2, unit_cost), as_of_ts = NOW() WHERE supplier_product_id = $3`,
         [quantity, unitCost ?? null, spId]
       )
     }

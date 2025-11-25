@@ -33,7 +33,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
   { key: 'pack_size', label: 'Pack Size', visible: false, order: 9, align: 'left', sortable: false },
   { key: 'barcode', label: 'Barcode', visible: false, order: 10, align: 'left', sortable: false },
   { key: 'category', label: 'Category', visible: true, order: 11, align: 'left', sortable: true },
-  { key: 'soh', label: 'Stock on Hand', visible: true, order: 12, align: 'right', sortable: false },
+  { key: 'soh', label: 'Sup SOH', visible: true, order: 12, align: 'right', sortable: false },
   { key: 'on_order', label: 'Stock on Order', visible: true, order: 13, align: 'right', sortable: false },
   { key: 'cost_ex_vat', label: 'Cost ExVAT', visible: true, order: 14, align: 'right', sortable: false },
   { key: 'vat', label: 'VAT (15%)', visible: true, order: 15, align: 'right', sortable: false },
@@ -105,6 +105,8 @@ type CatalogRow = {
   cost_ex_vat?: number
   cost_inc_vat?: number
   rsp?: number
+  qty_on_hand?: number
+  sup_soh?: number
   currency?: string
   series_range?: string
   previous_cost?: number
@@ -368,7 +370,7 @@ export function CatalogTable() {
       case 'soh':
         return (
           <TableCell key={column.key} className={className}>
-            {(row as unknown).qty_on_hand ?? 0}
+            {row.sup_soh ?? (row as unknown).qty_on_hand ?? 0}
           </TableCell>
         )
       case 'on_order':

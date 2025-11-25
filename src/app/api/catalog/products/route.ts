@@ -161,6 +161,7 @@ export async function GET(request: NextRequest) {
         cp.price AS current_price,
         cp.currency,
         ls.qty_on_hand,
+        ls.qty_on_hand AS sup_soh,
         qty.qty_on_order,
         pp.previous_price AS previous_cost,
         CASE
@@ -260,6 +261,7 @@ export async function GET(request: NextRequest) {
           NULL::numeric AS current_price,
           NULL::text AS currency,
           NULL::int AS qty_on_hand,
+          NULL::int AS sup_soh,
           qty.qty_on_order
         FROM core.supplier_product sp
         JOIN core.supplier s ON s.supplier_id = sp.supplier_id

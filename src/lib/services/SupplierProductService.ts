@@ -11,7 +11,11 @@
  */
 
 import { query as dbQuery, withTransaction } from '../../../lib/database/unified-connection';
-import type { SupplierProduct, ProductTableBySupplier, BulkOperationResult } from '../../types/nxt-spp';
+import type {
+  SupplierProduct,
+  ProductTableBySupplier,
+  BulkOperationResult,
+} from '../../types/nxt-spp';
 
 export class SupplierProductService {
   /**
@@ -97,7 +101,7 @@ export class SupplierProductService {
    * Get product table view for a supplier (for selection UI)
    */
   async getProductTable(
-    supplierId: string,
+    supplierId?: string,
     options?: {
       include_inactive?: boolean;
       include_unmapped?: boolean;
@@ -107,9 +111,16 @@ export class SupplierProductService {
       offset?: number;
     }
   ): Promise<{ products: ProductTableBySupplier[]; total: number }> {
-    const conditions: string[] = ['sp.supplier_id = $1'];
-    const params: unknown[] = [supplierId];
-    let paramIndex = 2;
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    let paramIndex = 1;
+
+    // Only filter by supplier_id if provided
+    if (supplierId) {
+      conditions.push('sp.supplier_id = $1');
+      params.push(supplierId);
+      paramIndex = 2;
+    }
 
     if (!options?.include_inactive) {
       conditions.push('sp.is_active = true');
@@ -217,7 +228,7 @@ export class SupplierProductService {
 
     // Apply pagination and ordering
     query += ` ORDER BY sp.is_new DESC, sp.last_seen_at DESC NULLS LAST`;
-    
+
     if (options?.limit !== undefined && options.limit > 0) {
       query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex}`;
       params.push(options.limit, options.offset || 0);

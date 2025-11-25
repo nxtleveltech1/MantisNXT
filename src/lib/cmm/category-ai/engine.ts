@@ -18,6 +18,34 @@ import { mark } from './metrics';
 import { CLIProviderClient, CLIProviderExecutor } from '@/lib/ai/cli-provider';
 
 const DEFAULT_TIMEOUT_MS = 3000; // 3s default for fast responses with parallel processing
+const CLI_NOT_FOUND_PATTERNS = ['ENOENT', 'not found', 'not recognized', 'No such file or directory'];
+
+const hasValidApiKey = (provider: ProviderConfig): boolean => {
+  const key = provider?.apiKey;
+  return typeof key === 'string' && key.trim().length > 0 && key !== 'dummy';
+};
+
+const resolveCliCommand = (provider: ProviderConfig, providerKey?: string): string | undefined => {
+  if (provider?.cliCommand) return provider.cliCommand;
+  if (providerKey === 'google') return 'gemini';
+  if (providerKey === 'openai') return 'codex';
+  return undefined;
+};
+
+const sanitizeModelName = (modelName?: string | null): string | undefined => {
+  if (!modelName) return undefined;
+  return String(modelName)
+    .trim()
+    .replace(/\s+(medium|high|low|fast|slow)$/i, '')
+    .replace(/\(medium\)|\(high\)|\(low\)/gi, '')
+    .trim();
+};
+
+const cliModelName = (modelName?: string | null): string =>
+  sanitizeModelName(modelName) || 'gpt-5.1-codex-max';
+
+const isCliMissingError = (message: string): boolean =>
+  CLI_NOT_FOUND_PATTERNS.some(marker => message.toLowerCase().includes(marker.toLowerCase()));
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -119,6 +147,73 @@ Return ONLY valid JSON matching this schema:
 }`;
 
   const providerKey = provider.provider?.toLowerCase();
+  const providerHasApiKey = hasValidApiKey(provider);
+
+  if (provider.useCLI) {
+    const cliCommand = resolveCliCommand(provider, providerKey);
+    if (!cliCommand) {
+      throw new Error(
+        'CLI mode is enabled but no CLI command specified. Please configure cliCommand in provider settings.'
+      );
+    }
+
+    const cliCheck = await CLIProviderExecutor.checkCLIInstalled(cliCommand);
+    if (!cliCheck.installed) {
+      const installationHint =
+        cliCommand === 'codex'
+          ? 'For OpenAI Codex CLI: Install with `npm install -g @openai/codex-cli` or visit https://github.com/openai/codex-cli. Then authenticate with `codex auth login` (supports free and paid accounts).'
+          : cliCommand === 'gemini'
+          ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
+          : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
+      throw new Error(
+        `CLI command '${cliCommand}' is not installed or not available in PATH. ${installationHint} ` +
+          `\n\nTo use API mode instead, disable CLI mode in the AI Services configuration and provide an API key.`
+      );
+    }
+
+    try {
+      const cliClient = new CLIProviderClient({
+        provider: providerKey as any,
+        command: cliCommand,
+        args: provider.cliArgs,
+        env: {
+          ...(provider.apiKey && providerKey === 'openai' && { OPENAI_API_KEY: provider.apiKey }),
+          ...(provider.apiKey && providerKey === 'google' && { GEMINI_API_KEY: provider.apiKey }),
+        },
+        workingDirectory: provider.cliWorkingDirectory,
+        timeout: timeoutMs,
+      });
+
+      const cliModel = cliModelName(provider.model);
+      const result = await withTimeout(
+        cliClient.generateText(prompt, { model: cliModelName(provider.model) }),
+        timeoutMs,
+        `cli batch generateText (${cliModel})`
+      );
+      const parsed = parseStructuredJsonResponse(result, BatchCategorySuggestionSchema);
+      return parsed;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[engine] CLI runProviderBatch failed:', err);
+      if (isCliMissingError(errorMessage)) {
+        throw new Error(
+          `CLI command '${cliCommand}' not found or not available. Please install it or disable CLI mode and use API mode with an API key.`
+        );
+      }
+
+      mark('providerFallbacks');
+      if (providerHasApiKey) {
+        console.warn(
+          `[engine] CLI execution failed (${errorMessage}), falling back to API mode with provided API key`
+        );
+      } else {
+        throw new Error(
+          `CLI execution failed: ${errorMessage}. CLI mode is enabled but execution failed and no valid API key is provided for fallback. Please check CLI installation and authentication, or provide an API key for fallback.`
+        );
+      }
+    }
+  }
+
   if (providerKey === 'anthropic') {
     const anthropic = createAnthropic({
       apiKey: provider.apiKey,
@@ -166,12 +261,7 @@ IMPORTANT: Respond with ONLY valid JSON matching the schema.`;
 
   // OpenAI or compatible
   // Skip if no API key and not CLI mode (or CLI already failed)
-  const hasValidApiKey = provider.apiKey && 
-    provider.apiKey !== 'dummy' && 
-    typeof provider.apiKey === 'string' && 
-    provider.apiKey.trim().length > 0;
-  
-  if (!hasValidApiKey) {
+  if (!providerHasApiKey) {
     throw new Error(
       'API key is required for OpenAI API mode. ' +
       (provider.useCLI 
@@ -293,34 +383,36 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
 }`;
 
   const providerKey = provider.provider?.toLowerCase();
-  
+  const providerHasApiKey = hasValidApiKey(provider);
+
   // Check if CLI mode is enabled - try CLI first
   if (provider.useCLI) {
-    const cliCommand = provider.cliCommand || (providerKey === 'google' ? 'gemini' : providerKey === 'openai' ? 'codex' : '');
-    
+    const cliCommand = resolveCliCommand(provider, providerKey);
+
     if (!cliCommand) {
       throw new Error(
         'CLI mode is enabled but no CLI command specified. Please configure cliCommand in provider settings.'
       );
     }
-    
+
     // Check if CLI command exists before trying to use it
     const cliCheck = await CLIProviderExecutor.checkCLIInstalled(cliCommand);
     if (!cliCheck.installed) {
-      const installationHint = cliCommand === 'codex' 
-        ? 'For OpenAI Codex CLI: Install with `npm install -g @openai/codex-cli` or visit https://github.com/openai/codex-cli. Then authenticate with `codex auth login` (supports free and paid accounts).'
-        : cliCommand === 'gemini'
-        ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
-        : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
-      
+      const installationHint =
+        cliCommand === 'codex'
+          ? 'For OpenAI Codex CLI: Install with `npm install -g @openai/codex-cli` or visit https://github.com/openai/codex-cli. Then authenticate with `codex auth login` (supports free and paid accounts).'
+          : cliCommand === 'gemini'
+          ? 'For Google Gemini CLI: Install with `npm install -g @google/generative-ai-cli` or visit https://github.com/google/generative-ai-cli. Then authenticate with `gemini auth login` (supports free and paid accounts).'
+          : `Please ensure '${cliCommand}' is installed and available in your PATH.`;
+
       throw new Error(
         `CLI command '${cliCommand}' is not installed or not available in PATH. ${installationHint} ` +
-        `\n\nTo use API mode instead, disable CLI mode in the AI Services configuration and provide an API key.`
+          `\n\nTo use API mode instead, disable CLI mode in the AI Services configuration and provide an API key.`
       );
     }
-    
+
     try {
-      const cliConfig = {
+      const cliClient = new CLIProviderClient({
         provider: providerKey as any,
         command: cliCommand,
         args: provider.cliArgs,
@@ -330,62 +422,50 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
         },
         workingDirectory: provider.cliWorkingDirectory,
         timeout: timeoutMs,
-      };
-      
-      // Clean model name to remove suffixes like "medium", "high", etc.
-      const cleanedModelName = modelName 
-        ? modelName.trim().replace(/\s+(medium|high|low|fast|slow)$/i, '').replace(/\(medium\)|\(high\)|\(low\)/gi, '').trim()
-        : 'gpt-5.1-codex-max';
-      
-      const cliClient = new CLIProviderClient(cliConfig);
+      });
+
+      const cleanedModelName = cliModelName(provider.model || modelName);
       const result = await withTimeout(
         cliClient.generateText(prompt, { model: cleanedModelName }),
         timeoutMs,
         `cli single generateText (${cleanedModelName || 'default'})`
       );
-      
+
       const parsed = parseStructuredJsonResponse(result, CategorySuggestionSchema);
       return parsed;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error(`[engine] CLI runProviderSingle failed:`, err);
-      
+
       // If CLI command doesn't exist or not found, don't fall back to API mode
-      if (errorMessage.includes('ENOENT') || errorMessage.includes('not found') || errorMessage.includes('not available')) {
+      if (isCliMissingError(errorMessage)) {
         throw new Error(
           `CLI command '${cliCommand}' not found or not available. Please install it or disable CLI mode and use API mode with an API key.`
         );
       }
-      
+
       // Only fall through to API mode if CLI execution fails BUT valid API key exists
       mark('providerFallbacks');
-      const hasValidApiKey = provider.apiKey && 
-        provider.apiKey !== 'dummy' && 
-        typeof provider.apiKey === 'string' && 
-        provider.apiKey.trim().length > 0;
-      
-      if (hasValidApiKey) {
-        console.warn(`[engine] CLI execution failed (${errorMessage}), falling back to API mode with provided API key`);
+
+      if (providerHasApiKey) {
+        console.warn(
+          `[engine] CLI execution failed (${errorMessage}), falling back to API mode with provided API key`
+        );
         // Continue to API mode below
       } else {
         // CLI failed and no valid API key - throw error
         throw new Error(
           `CLI execution failed: ${errorMessage}. ` +
-          `CLI mode is enabled but execution failed and no valid API key is provided for fallback. ` +
-          `Please check CLI installation and authentication, or provide an API key for fallback.`
+            `CLI mode is enabled but execution failed and no valid API key is provided for fallback. ` +
+            `Please check CLI installation and authentication, or provide an API key for fallback.`
         );
       }
     }
   }
-  
+
   if (providerKey === 'anthropic') {
     // Skip if no API key and CLI mode already failed
-    const hasValidApiKey = provider.apiKey && 
-      provider.apiKey !== 'dummy' && 
-      typeof provider.apiKey === 'string' && 
-      provider.apiKey.trim().length > 0;
-    
-    if (!hasValidApiKey) {
+    if (!providerHasApiKey) {
       throw new Error(
         'API key is required for Anthropic API mode. ' +
         (provider.useCLI 
@@ -427,12 +507,7 @@ Task: Suggest the most appropriate category. Return ONLY valid JSON:
 
   // OpenAI or compatible
   // Skip if no API key and not CLI mode (or CLI already failed)
-  const hasValidApiKey = provider.apiKey && 
-    provider.apiKey !== 'dummy' && 
-    typeof provider.apiKey === 'string' && 
-    provider.apiKey.trim().length > 0;
-  
-  if (!hasValidApiKey) {
+  if (!providerHasApiKey) {
     throw new Error(
       'API key is required for OpenAI API mode. ' +
       (provider.useCLI 

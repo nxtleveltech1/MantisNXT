@@ -25,6 +25,7 @@ export const PRICING_TABLES = {
   PRICE_CHANGE_LOG: `${SCHEMA.CORE}.price_change_log`,
   COMPETITOR_PRICES: `${SCHEMA.CORE}.competitor_prices`,
   PRICE_ELASTICITY: `${SCHEMA.CORE}.price_elasticity`,
+  PRICING_AUTOMATION_CONFIG: 'pricing_automation_config',
 } as const;
 
 export type PricingTableName = typeof PRICING_TABLES[keyof typeof PRICING_TABLES];
@@ -340,6 +341,25 @@ export interface PricePerformanceMetrics {
   margin_percent: number;
   conversion_rate?: number;
   cart_abandonment_rate?: number;
+}
+
+/**
+ * Pricing Automation Configuration Interface
+ */
+export interface PricingAutomationConfig {
+  org_id: string;
+  enable_auto_activation: boolean;
+  auto_activation_confidence_threshold: number;
+  enable_ai_recommendations: boolean;
+  default_margin_percent: number;
+  min_margin_percent: number;
+  max_price_increase_percent: number;
+  require_review_for_high_impact: boolean;
+  high_impact_threshold_percent: number;
+  enable_batch_processing: boolean;
+  batch_size: number;
+  created_at: Date;
+  updated_at: Date;
 }
 
 /**

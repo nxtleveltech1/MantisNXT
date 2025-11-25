@@ -24,7 +24,8 @@ export function deriveStockStatus(current: number, reorder: number, max: number)
 
 export function assertCamelItem(i: unknown): asserts i is InventoryItem {
   if (
-    typeof i !== 'object' || i === null ||
+    typeof i !== 'object' ||
+    i === null ||
     typeof i.id !== 'string' ||
     typeof i.sku !== 'string' ||
     typeof i.currentStock !== 'number' ||
@@ -40,7 +41,7 @@ export async function fetchInventory(opts?: { signal?: AbortSignal }): Promise<I
   if (!res.ok) throw new Error(`INVENTORY_FETCH_FAILED: ${res.status}`);
   const data = (await res.json()) as unknown;
   if (!Array.isArray(data)) throw new Error('INVENTORY_FETCH_FAILED: array expected');
-  return data.map((row) => {
+  return data.map(row => {
     assertCamelItem(row);
     return row;
   });
@@ -59,19 +60,44 @@ export function bySku(items: InventoryItem[]): Record<string, InventoryItem> {
 }
 
 // Phase 3 allocation helpers
-export async function allocateToSupplier(itemId: string, supplierId: string, quantity: number, opts?: { orgId?: string; notes?: string; expiresAt?: string }) {
+export async function allocateToSupplier(
+  itemId: string,
+  supplierId: string,
+  quantity: number,
+  opts?: { orgId?: string; notes?: string; expiresAt?: string }
+) {
   const res = await fetch(`/api/suppliers/${supplierId}/inventory`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'allocate_to_supplier', inventoryItemId: itemId, quantity, orgId: opts?.orgId, notes: opts?.notes, expiresAt: opts?.expiresAt })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'allocate_to_supplier',
+      inventoryItemId: itemId,
+      quantity,
+      orgId: opts?.orgId,
+      notes: opts?.notes,
+      expiresAt: opts?.expiresAt,
+    }),
   });
   if (!res.ok) throw new Error(`ALLOCATE_FAILED: ${res.status}`);
   return res.json();
 }
 
-export async function deallocateFromSupplier(itemId: string, supplierId: string, quantity: number, opts?: { orgId?: string; notes?: string }) {
+export async function deallocateFromSupplier(
+  itemId: string,
+  supplierId: string,
+  quantity: number,
+  opts?: { orgId?: string; notes?: string }
+) {
   const res = await fetch(`/api/suppliers/${supplierId}/inventory`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'deallocate_from_supplier', inventoryItemId: itemId, quantity, orgId: opts?.orgId, notes: opts?.notes })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'deallocate_from_supplier',
+      inventoryItemId: itemId,
+      quantity,
+      orgId: opts?.orgId,
+      notes: opts?.notes,
+    }),
   });
   if (!res.ok) throw new Error(`DEALLOCATE_FAILED: ${res.status}`);
   return res.json();
@@ -107,8 +133,12 @@ function normalizeLocation(input: unknown): LocationOption | null {
       // @ts-expect-error indexing unknown
       input.name ?? input.location_name ?? input.locationName ?? input.label ?? maybeId;
 
-    const id = typeof maybeId === 'string' || typeof maybeId === 'number' ? String(maybeId).trim() : '';
-    const name = typeof maybeName === 'string' || typeof maybeName === 'number' ? String(maybeName).trim() : '';
+    const id =
+      typeof maybeId === 'string' || typeof maybeId === 'number' ? String(maybeId).trim() : '';
+    const name =
+      typeof maybeName === 'string' || typeof maybeName === 'number'
+        ? String(maybeName).trim()
+        : '';
 
     if (id) {
       return { id, name: name || id };
@@ -135,7 +165,11 @@ type InventoryZustandState = {
   addProduct: (p: unknown) => Promise<void>;
   updateProduct: (id: string, p: unknown) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
-  adjustInventory: (payload: { inventoryItemId: string; delta: number; reason: string }) => Promise<void>;
+  adjustInventory: (payload: {
+    inventoryItemId: string;
+    delta: number;
+    reason: string;
+  }) => Promise<void>;
   clearError: () => void;
 };
 
@@ -167,37 +201,47 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
 
       // Map API fields (camelCase or snake_case) to component expectations
       const items = rows.map((r: unknown) => {
-        const supplierId = r.supplier_id ?? r.supplierId ?? r.supplier_uuid ?? r.supplier?.id ?? null;
+        const supplierId =
+          r.supplier_id ?? r.supplierId ?? r.supplier_uuid ?? r.supplier?.id ?? null;
         const supplierProductId =
-          r.supplier_product_id ?? r.supplierProductId ?? r.product?.id ?? r.inventory_item_id ?? null;
-        const productId =
-          r.product_id ?? r.productId ?? supplierProductId ?? r.product?.id ?? null;
+          r.supplier_product_id ??
+          r.supplierProductId ??
+          r.product?.id ??
+          r.inventory_item_id ??
+          null;
+        const productId = r.product_id ?? r.productId ?? supplierProductId ?? r.product?.id ?? null;
         const sku = r.sku ?? r.supplier_sku ?? r.product?.sku ?? '';
         const categoryRaw =
-          r.category_name ?? r.categoryName ?? r.category ?? r.category_id ?? r.categoryId ?? r.product?.category ?? 'uncategorized';
+          r.category_name ??
+          r.categoryName ??
+          r.category ??
+          r.category_id ??
+          r.categoryId ??
+          r.product?.category ??
+          'uncategorized';
         const category =
           typeof categoryRaw === 'string' ? categoryRaw : String(categoryRaw ?? 'uncategorized');
-        const currentStock = Number(
-          r.current_stock ?? r.currentStock ?? r.stock_qty ?? r.qty ?? 0
-        );
-        const reservedStock = Number(
-          r.reserved_stock ?? r.reservedStock ?? r.reserved_qty ?? 0
-        );
+        const currentStock = Number(r.current_stock ?? r.currentStock ?? r.stock_qty ?? r.qty ?? 0);
+        const reservedStock = Number(r.reserved_stock ?? r.reservedStock ?? r.reserved_qty ?? 0);
         const availableStock = Number(
           r.available_stock ?? r.availableStock ?? r.available_qty ?? currentStock - reservedStock
         );
         const unitCost = Number(
-          r.cost_per_unit_zar ?? r.costPerUnitZar ?? r.unit_cost_zar ?? r.unit_cost ?? r.cost_price ?? 0
+          r.cost_per_unit_zar ??
+            r.costPerUnitZar ??
+            r.unit_cost_zar ??
+            r.unit_cost ??
+            r.cost_price ??
+            0
         );
-        const rspSource = r.rsp ?? r.recommended_selling_price ?? r.rrp ?? r.recommendedRetailPrice ?? null;
+        const rspSource =
+          r.rsp ?? r.recommended_selling_price ?? r.rrp ?? r.recommendedRetailPrice ?? null;
         const rsp = rspSource === null || rspSource === undefined ? null : Number(rspSource);
         const totalValue = Number(r.total_value_zar ?? unitCost * currentStock);
         const stockStatus =
-          r.stock_status ?? r.stockStatus ?? (currentStock <= 0
-            ? 'out_of_stock'
-            : currentStock <= 10
-              ? 'low_stock'
-              : 'in_stock');
+          r.stock_status ??
+          r.stockStatus ??
+          (currentStock <= 0 ? 'out_of_stock' : currentStock <= 10 ? 'low_stock' : 'in_stock');
         const locationIdRaw =
           r.location_id ?? r.locationId ?? r.location?.id ?? r.location_code ?? r.locationCode;
         const locationNameRaw =
@@ -216,13 +260,18 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           typeof locationNameRaw === 'string' || typeof locationNameRaw === 'number'
             ? String(locationNameRaw).trim()
             : 'Main Warehouse';
-        const locationOption = normalizeLocation({ id: locationId || locationName, name: locationName });
+        const locationOption = normalizeLocation({
+          id: locationId || locationName,
+          name: locationName,
+        });
         const location = locationOption?.name ?? locationName;
         const currency = r.currency ?? r.currency_code ?? 'ZAR';
         const reorderPoint = Number(r.reorder_point ?? r.reorderPoint ?? 10);
         const maxStockLevel = Number(r.max_stock_level ?? r.maxStockLevel ?? 100);
-        const supplierName = r.supplier_name ?? r.supplierName ?? r.supplier?.name ?? 'Unknown Supplier';
-        const supplierStatus = r.supplier_status ?? r.supplierStatus ?? r.supplier?.status ?? 'active';
+        const supplierName =
+          r.supplier_name ?? r.supplierName ?? r.supplier?.name ?? 'Unknown Supplier';
+        const supplierStatus =
+          r.supplier_status ?? r.supplierStatus ?? r.supplier?.status ?? 'active';
 
         return {
           id: r.id ?? r.soh_id ?? productId ?? sku,
@@ -260,26 +309,32 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
             supplier_id: supplierId,
             unit_cost_zar: unitCost,
             rsp,
-            status: r.product?.status ?? (stockStatus === 'out_of_stock' ? 'inactive' : 'active')
+            status: r.product?.status ?? (stockStatus === 'out_of_stock' ? 'inactive' : 'active'),
           },
           supplier: {
             id: supplierId ?? 'unknown',
             name: supplierName,
             status: supplierStatus,
-            preferred_supplier: r.supplier?.preferred_supplier ?? false
-          }
+            preferred_supplier: r.supplier?.preferred_supplier ?? false,
+          },
         };
       });
 
       const derivedLocations = items
-        .map((entry: { location?: unknown; location_id?: unknown; product?: { location?: unknown; location_id?: unknown } }) => {
-          const raw = entry?.location_id ?? entry?.product?.location_id ?? entry?.location;
-          const name = entry?.location ?? entry?.product?.location ?? raw;
-          return normalizeLocation({ id: raw ?? name, name });
-        })
+        .map(
+          (entry: {
+            location?: unknown;
+            location_id?: unknown;
+            product?: { location?: unknown; location_id?: unknown };
+          }) => {
+            const raw = entry?.location_id ?? entry?.product?.location_id ?? entry?.location;
+            const name = entry?.location ?? entry?.product?.location ?? raw;
+            return normalizeLocation({ id: raw ?? name, name });
+          }
+        )
         .filter((loc): loc is LocationOption => Boolean(loc));
 
-      set((state) => {
+      set(state => {
         const combined = new Map<string, LocationOption>();
 
         for (const location of state.locations) {
@@ -319,7 +374,8 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
 
       // Map to consistent format
       const products = productRows.map((p: unknown) => {
-        const supplierId = p.supplier_id ?? p.supplierId ?? p.supplier_uuid ?? p.supplier?.id ?? null;
+        const supplierId =
+          p.supplier_id ?? p.supplierId ?? p.supplier_uuid ?? p.supplier?.id ?? null;
         const unitCost = Number(
           p.unit_cost_zar ?? p.unit_cost ?? p.cost_price ?? p.price ?? p.salePrice ?? 0
         );
@@ -344,7 +400,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           sku: p.sku || p.supplier_sku || '',
           unit_of_measure: p.unit_of_measure || p.unit || p.uom || 'each',
           unit_cost_zar: unitCost,
-          status: p.status || 'active'
+          status: p.status || 'active',
         };
       });
 
@@ -362,11 +418,11 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
       if (!res.ok) throw new Error(`SUPPLIERS_FETCH_FAILED: ${res.status}`);
       const data = await res.json();
       // Handle v3 API response format with pagination
-      const supplierRows = Array.isArray(data?.data) 
-        ? data.data 
-        : Array.isArray(data) 
-        ? data 
-        : (data?.data || data?.items || []);
+      const supplierRows = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+          ? data
+          : data?.data || data?.items || [];
 
       // Map to consistent format
       const suppliers = supplierRows.map((s: unknown) => ({
@@ -378,7 +434,7 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
         status: s.status || 'active',
         performance_tier: s.performance_tier || 'unrated',
         preferred_supplier: s.preferred_supplier || false,
-        contact_person: s.contact_person || null
+        contact_person: s.contact_person || null,
       }));
 
       set({ suppliers, loading: false });
@@ -388,16 +444,32 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   },
 
   fetchLocations: async () => {
+    set({ loading: true, error: null });
     try {
       const res = await fetch('/api/inventory/locations?is_active=true&pageSize=500');
-      if (!res.ok) throw new Error(`LOCATIONS_FETCH_FAILED: ${res.status}`);
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => 'Unknown error');
+        let errorDetails: unknown;
+        try {
+          errorDetails = JSON.parse(errorText);
+        } catch {
+          errorDetails = errorText;
+        }
+        throw new Error(
+          `LOCATIONS_FETCH_FAILED: ${res.status} ${res.statusText} - ${JSON.stringify(errorDetails)}`
+        );
+      }
       const payload = await res.json();
-      const rows = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+      const rows = Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload)
+          ? payload
+          : [];
       const apiLocations = rows
         .map((row: unknown) => normalizeLocation(row))
         .filter((loc): loc is LocationOption => Boolean(loc));
 
-      set((state) => {
+      set(state => {
         const combined = new Map<string, LocationOption>();
 
         for (const location of state.locations) {
@@ -413,15 +485,22 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
         );
 
-        return { locations: sorted };
+        return { locations: sorted, loading: false, error: null };
       });
     } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error
+          ? e.message
+          : e instanceof TypeError && e.message === 'Failed to fetch'
+            ? 'Network error: Unable to connect to server. Please check your connection and try again.'
+            : 'Failed to fetch locations list';
       console.error('Failed to fetch locations list', e);
+      set({ error: errorMessage, loading: false });
     }
   },
 
   setFilters: (f: Partial<Filters>) => {
-    set((state) => ({ filters: { ...state.filters, ...f } }));
+    set(state => ({ filters: { ...state.filters, ...f } }));
     // Optionally refetch items when filters change
   },
 
@@ -431,7 +510,11 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       // Use /api/inventory instead of deprecated /api/inventory/products
-      const res = await fetch('/api/inventory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+      const res = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p),
+      });
       if (!res.ok) throw new Error(`ADD_PRODUCT_FAILED: ${res.status}`);
       await get().fetchProducts();
       set({ loading: false });
@@ -481,7 +564,9 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
           // ignore parsing errors
         }
 
-        const err = new Error(`UPDATE_PRODUCT_FAILED: ${res.status}${errorDetails ? ` — ${errorDetails}` : ''}`);
+        const err = new Error(
+          `UPDATE_PRODUCT_FAILED: ${res.status}${errorDetails ? ` — ${errorDetails}` : ''}`
+        );
         throw err;
       }
       await Promise.all([get().fetchProducts(), get().fetchItems()]);
@@ -527,7 +612,11 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
   adjustInventory: async ({ inventoryItemId, delta, reason }) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/inventory/adjustments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inventoryItemId, delta, reason }) });
+      const res = await fetch('/api/inventory/adjustments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inventoryItemId, delta, reason }),
+      });
       if (!res.ok) throw new Error(`ADJUST_INVENTORY_FAILED: ${res.status}`);
       await get().fetchItems();
       set({ loading: false });
@@ -536,22 +625,46 @@ export const useInventoryStore = create<InventoryZustandState>((set, get) => ({
     }
   },
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
 }));
 
-export async function consignmentIn(itemId: string, supplierId: string, quantity: number, opts?: { orgId?: string; notes?: string }) {
+export async function consignmentIn(
+  itemId: string,
+  supplierId: string,
+  quantity: number,
+  opts?: { orgId?: string; notes?: string }
+) {
   const res = await fetch(`/api/suppliers/${supplierId}/inventory`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'consignment_in', inventoryItemId: itemId, quantity, orgId: opts?.orgId, notes: opts?.notes })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'consignment_in',
+      inventoryItemId: itemId,
+      quantity,
+      orgId: opts?.orgId,
+      notes: opts?.notes,
+    }),
   });
   if (!res.ok) throw new Error(`CONSIGNMENT_IN_FAILED: ${res.status}`);
   return res.json();
 }
 
-export async function consignmentOut(itemId: string, supplierId: string, quantity: number, opts?: { orgId?: string; notes?: string }) {
+export async function consignmentOut(
+  itemId: string,
+  supplierId: string,
+  quantity: number,
+  opts?: { orgId?: string; notes?: string }
+) {
   const res = await fetch(`/api/suppliers/${supplierId}/inventory`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'consignment_out', inventoryItemId: itemId, quantity, orgId: opts?.orgId, notes: opts?.notes })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'consignment_out',
+      inventoryItemId: itemId,
+      quantity,
+      orgId: opts?.orgId,
+      notes: opts?.notes,
+    }),
   });
   if (!res.ok) throw new Error(`CONSIGNMENT_OUT_FAILED: ${res.status}`);
   return res.json();

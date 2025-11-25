@@ -391,6 +391,8 @@ export interface ProductTableBySupplier {
   last_seen_at?: Date;
   internal_product_id?: string;
   internal_product_name?: string;
+  sup_soh?: number;
+  qty_on_hand?: number;
 }
 
 /**
@@ -409,6 +411,7 @@ export interface SelectedCatalog {
   category_name?: string;
   is_in_stock: boolean;
   qty_on_hand?: number;
+  sup_soh?: number;
   selected_at: Date;
 }
 

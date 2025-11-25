@@ -2,21 +2,17 @@
  * GET /api/core/suppliers/products/table - Get product table view for supplier selection UI
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { supplierProductService } from '@/lib/services/SupplierProductService';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const supplierId = searchParams.get('supplier_id');
+    const supplierIdParam = searchParams.get('supplier_id');
 
-    if (!supplierId) {
-      return NextResponse.json(
-        { success: false, error: 'Supplier ID is required' },
-        { status: 400 }
-      );
-    }
+    // Handle "all" as a special case - fetch from all suppliers (undefined)
+    const supplierId = supplierIdParam && supplierIdParam !== 'all' ? supplierIdParam : undefined;
 
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
@@ -27,9 +23,10 @@ export async function GET(request: NextRequest) {
       category_id: searchParams.get('category_id') || undefined,
       search: searchParams.get('search') || undefined,
       limit: limit > 0 ? limit : 50,
-      offset: offset >= 0 ? offset : 0
+      offset: offset >= 0 ? offset : 0,
     };
 
+    // getProductTable now supports optional supplierId (undefined = all suppliers)
     const { products, total } = await supplierProductService.getProductTable(supplierId, options);
 
     return NextResponse.json({
@@ -39,14 +36,14 @@ export async function GET(request: NextRequest) {
       total,
       limit: options.limit,
       offset: options.offset,
-      hasMore: (options.offset + products.length) < total
+      hasMore: options.offset + products.length < total,
     });
   } catch (error) {
     console.error('Get product table error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get product table'
+        error: error instanceof Error ? error.message : 'Failed to get product table',
       },
       { status: 500 }
     );

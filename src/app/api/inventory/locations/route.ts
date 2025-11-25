@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
       supplier_id: searchParams.get('supplier_id') || undefined,
       page: parseInt(searchParams.get('page') || '1'),
       pageSize: parseInt(searchParams.get('pageSize') || '20'),
-      sortBy: (searchParams.get('sortBy') as 'name' | 'type' | 'created_at' | 'updated_at') || 'name',
+      sortBy:
+        (searchParams.get('sortBy') as 'name' | 'type' | 'created_at' | 'updated_at') || 'name',
       sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc',
     };
 
@@ -48,17 +49,42 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error fetching locations:', error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[GET /api/inventory/locations] Error fetching locations:', {
+      error: errorMessage,
+      stack: errorStack,
+      errorType: error?.constructor?.name,
+    });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch locations',
-        details: errorMessage,
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    // Ensure we always return a valid JSON response
+    try {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to fetch locations',
+          details: errorMessage,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 }
+      );
+    } catch (jsonError) {
+      // Fallback if JSON serialization fails
+      console.error(
+        '[GET /api/inventory/locations] Failed to serialize error response:',
+        jsonError
+      );
+      return new NextResponse(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to fetch locations',
+          details: 'Internal server error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
   }
 }
 
@@ -80,7 +106,10 @@ export async function POST(request: NextRequest) {
 
     if (!body.type || !['internal', 'supplier', 'consignment'].includes(body.type)) {
       return NextResponse.json(
-        { success: false, error: 'Valid location type is required (internal, supplier, or consignment)' },
+        {
+          success: false,
+          error: 'Valid location type is required (internal, supplier, or consignment)',
+        },
         { status: 400 }
       );
     }

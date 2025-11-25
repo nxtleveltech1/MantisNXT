@@ -1,322 +1,436 @@
-"use client"
+'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { RefreshCw, Package, Building2, Tag, ShoppingBag, Settings2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Checkbox } from '@/components/ui/checkbox'
-import { cn } from '@/lib/utils'
-import { ColumnManagementDialog, type ColumnDef } from '@/components/catalog/ColumnManagementDialog'
-import { Skeleton } from '@/components/ui/skeleton'
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import {
-  Search,
-  Columns,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Info,
-  AlertTriangle,
-  Activity,
-  BarChart3,
-} from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { useInventoryStore } from '@/lib/stores/inventory-store'
-import { useNotificationStore } from '@/lib/stores/notification-store'
+  ColumnManagementDialog,
+  type ColumnDef,
+} from '@/components/catalog/ColumnManagementDialog';
+
+import { useInventoryStore } from '@/lib/stores/inventory-store';
+import { useNotificationStore } from '@/lib/stores/notification-store';
 
 function formatCost(value: number | undefined | null): string {
-  const n = Number(value ?? 0)
-  const fixed = n.toFixed(2)
-  const [intPart, decPart] = fixed.split('.')
-  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-  return `${withSpaces}.${decPart}`
+  const n = Number(value ?? 0);
+  const fixed = n.toFixed(2);
+  const [intPart, decPart] = fixed.split('.');
+  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${withSpaces}.${decPart}`;
 }
 
 // Default column configuration - matching CatalogTable exactly + checkbox and quantity
 const DEFAULT_COLUMNS: ColumnDef[] = [
   { key: 'select', label: 'Select', visible: true, order: 0, align: 'left', sortable: false },
   { key: 'supplier', label: 'Supplier', visible: true, order: 1, align: 'left', sortable: true },
-  { key: 'supplier_code', label: 'Supplier Code', visible: false, order: 2, align: 'left', sortable: false },
+  {
+    key: 'supplier_code',
+    label: 'Supplier Code',
+    visible: false,
+    order: 2,
+    align: 'left',
+    sortable: false,
+  },
   { key: 'sku', label: 'SKU', visible: true, order: 3, align: 'left', sortable: true },
   { key: 'name', label: 'Product Name', visible: true, order: 4, align: 'left', sortable: true },
-  { key: 'description', label: 'Product Description', visible: true, order: 5, align: 'left', sortable: false },
+  {
+    key: 'description',
+    label: 'Product Description',
+    visible: true,
+    order: 5,
+    align: 'left',
+    sortable: false,
+  },
   { key: 'brand', label: 'Brand', visible: true, order: 6, align: 'left', sortable: false },
-  { key: 'series_range', label: 'Series (Range)', visible: true, order: 7, align: 'left', sortable: false },
+  {
+    key: 'series_range',
+    label: 'Series (Range)',
+    visible: true,
+    order: 7,
+    align: 'left',
+    sortable: false,
+  },
   { key: 'uom', label: 'UOM', visible: false, order: 8, align: 'left', sortable: false },
-  { key: 'pack_size', label: 'Pack Size', visible: false, order: 9, align: 'left', sortable: false },
+  {
+    key: 'pack_size',
+    label: 'Pack Size',
+    visible: false,
+    order: 9,
+    align: 'left',
+    sortable: false,
+  },
   { key: 'barcode', label: 'Barcode', visible: false, order: 10, align: 'left', sortable: false },
   { key: 'category', label: 'Category', visible: true, order: 11, align: 'left', sortable: true },
-  { key: 'soh', label: 'Stock on Hand', visible: true, order: 12, align: 'right', sortable: false },
-  { key: 'on_order', label: 'Stock on Order', visible: true, order: 13, align: 'right', sortable: false },
-  { key: 'cost_ex_vat', label: 'Cost ExVAT', visible: true, order: 14, align: 'right', sortable: false },
+  { key: 'soh', label: 'Sup SOH', visible: true, order: 12, align: 'right', sortable: false },
+  {
+    key: 'on_order',
+    label: 'Stock on Order',
+    visible: true,
+    order: 13,
+    align: 'right',
+    sortable: false,
+  },
+  {
+    key: 'cost_ex_vat',
+    label: 'Cost ExVAT',
+    visible: true,
+    order: 14,
+    align: 'right',
+    sortable: false,
+  },
   { key: 'vat', label: 'VAT (15%)', visible: true, order: 15, align: 'right', sortable: false },
-  { key: 'cost_diff', label: 'Cost Diff', visible: true, order: 16, align: 'right', sortable: false },
-  { key: 'previous_cost', label: 'Previous Cost', visible: true, order: 17, align: 'right', sortable: false },
+  {
+    key: 'cost_diff',
+    label: 'Cost Diff',
+    visible: true,
+    order: 16,
+    align: 'right',
+    sortable: false,
+  },
+  {
+    key: 'previous_cost',
+    label: 'Previous Cost',
+    visible: true,
+    order: 17,
+    align: 'right',
+    sortable: false,
+  },
   { key: 'rsp', label: 'RSP', visible: true, order: 18, align: 'right', sortable: false },
-  { key: 'cost_inc_vat', label: 'Cost IncVAT', visible: true, order: 19, align: 'right', sortable: false },
+  {
+    key: 'cost_inc_vat',
+    label: 'Cost IncVAT',
+    visible: true,
+    order: 19,
+    align: 'right',
+    sortable: false,
+  },
   { key: 'quantity', label: 'Quantity', visible: true, order: 20, align: 'right', sortable: false },
-  { key: 'currency', label: 'Currency', visible: false, order: 21, align: 'right', sortable: false },
-  { key: 'first_seen', label: 'First Seen', visible: false, order: 22, align: 'left', sortable: true },
-  { key: 'last_seen', label: 'Last Seen', visible: false, order: 23, align: 'left', sortable: true },
+  {
+    key: 'currency',
+    label: 'Currency',
+    visible: false,
+    order: 21,
+    align: 'right',
+    sortable: false,
+  },
+  {
+    key: 'first_seen',
+    label: 'First Seen',
+    visible: false,
+    order: 22,
+    align: 'left',
+    sortable: true,
+  },
+  {
+    key: 'last_seen',
+    label: 'Last Seen',
+    visible: false,
+    order: 23,
+    align: 'left',
+    sortable: true,
+  },
   { key: 'active', label: 'Active', visible: false, order: 24, align: 'left', sortable: false },
-]
+];
 
 // Load columns from localStorage or return defaults
 function loadColumnsFromStorage(): ColumnDef[] {
-  if (typeof window === 'undefined') return DEFAULT_COLUMNS
-  
+  if (typeof window === 'undefined') return DEFAULT_COLUMNS;
+
   try {
-    const stored = localStorage.getItem('multi_product_selector_columns')
-    if (!stored) return DEFAULT_COLUMNS
-    
-    const parsed = JSON.parse(stored) as ColumnDef[]
-    const defaultMap = new Map(DEFAULT_COLUMNS.map((col) => [col.key, col]))
-    const storedMap = new Map(parsed.map((col) => [col.key, col]))
-    
-    const merged = DEFAULT_COLUMNS.map((defaultCol) => {
-      const storedCol = storedMap.get(defaultCol.key)
+    const stored = localStorage.getItem('multi_product_selector_columns');
+    if (!stored) return DEFAULT_COLUMNS;
+
+    const parsed = JSON.parse(stored) as ColumnDef[];
+    const defaultMap = new Map(DEFAULT_COLUMNS.map(col => [col.key, col]));
+    const storedMap = new Map(parsed.map(col => [col.key, col]));
+
+    const merged = DEFAULT_COLUMNS.map(defaultCol => {
+      const storedCol = storedMap.get(defaultCol.key);
       return storedCol
         ? { ...defaultCol, ...storedCol, order: storedCol.order ?? defaultCol.order }
-        : defaultCol
-    })
-    
-    return merged.sort((a, b) => a.order - b.order)
+        : defaultCol;
+    });
+
+    return merged.sort((a, b) => a.order - b.order);
   } catch {
-    return DEFAULT_COLUMNS
+    return DEFAULT_COLUMNS;
   }
 }
 
 // Save columns to localStorage
 function saveColumnsToStorage(columns: ColumnDef[]): void {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem('multi_product_selector_columns', JSON.stringify(columns))
+    localStorage.setItem('multi_product_selector_columns', JSON.stringify(columns));
   } catch (error) {
-    console.error('Failed to save columns to localStorage:', error)
+    console.error('Failed to save columns to localStorage:', error);
   }
 }
 
 type CatalogRow = {
-  supplier_product_id: string
-  supplier_id: string
-  supplier_name: string
-  supplier_code?: string
-  supplier_sku: string
-  product_name: string
-  description?: string
-  uom?: string
-  pack_size?: string
-  barcode?: string
-  category_id?: string
-  category_name?: string
-  is_active: boolean
-  first_seen_at?: string
-  last_seen_at?: string
-  current_price?: number
-  cost_ex_vat?: number
-  cost_inc_vat?: number
-  rsp?: number
-  currency?: string
-  series_range?: string
-  previous_cost?: number
-  cost_diff?: number
+  supplier_product_id: string;
+  supplier_id: string;
+  supplier_name: string;
+  supplier_code?: string;
+  supplier_sku: string;
+  product_name: string;
+  description?: string;
+  uom?: string;
+  pack_size?: string;
+  barcode?: string;
+  category_id?: string;
+  category_name?: string;
+  is_active: boolean;
+  first_seen_at?: string;
+  last_seen_at?: string;
+  current_price?: number;
+  cost_ex_vat?: number;
+  cost_inc_vat?: number;
+  rsp?: number;
+  currency?: string;
+  series_range?: string;
+  previous_cost?: number;
+  cost_diff?: number;
   attrs_json?: {
-    description?: string
-    cost_including?: number
-    cost_excluding?: number
-    rsp?: number
-    brand?: string
-    [key: string]: unknown
-  }
-}
+    description?: string;
+    cost_including?: number;
+    cost_excluding?: number;
+    rsp?: number;
+    brand?: string;
+    [key: string]: unknown;
+  };
+  qty_on_hand?: number;
+  sup_soh?: number;
+};
 
 interface MultiProductSelectorDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-type QuantityMap = Record<string, number>
+type QuantityMap = Record<string, number>;
 
-export default function MultiProductSelectorDialog({ open, onOpenChange }: MultiProductSelectorDialogProps) {
-  const { fetchItems } = useInventoryStore()
-  const { addNotification } = useNotificationStore()
+export default function MultiProductSelectorDialog({
+  open,
+  onOpenChange,
+}: MultiProductSelectorDialogProps) {
+  const { fetchItems } = useInventoryStore();
+  const { addNotification } = useNotificationStore();
 
-  const [rows, setRows] = useState<CatalogRow[]>([])
-  const [loading, setLoading] = useState(false)
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(50)
-  const [total, setTotal] = useState(0)
-  const [suppliers, setSuppliers] = useState<{ supplier_id: string; name: string }[]>([])
-  const [categories, setCategories] = useState<Array<{ category_id?: string; id?: string; name: string }>>([])
-  const [supplierId, setSupplierId] = useState<string>('all')
-  const [categoryId, setCategoryId] = useState<string>('all')
-  const [isActive, setIsActive] = useState<'all' | 'active' | 'inactive'>('all')
-  const [priceMin, setPriceMin] = useState<string>('')
-  const [priceMax, setPriceMax] = useState<string>('')
-  const [sortBy, setSortBy] = useState<string>('supplier_name')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [columns, setColumns] = useState<ColumnDef[]>(() => loadColumnsFromStorage())
-  const [columnDialogOpen, setColumnDialogOpen] = useState(false)
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [quantities, setQuantities] = useState<QuantityMap>({})
+  const [rows, setRows] = useState<CatalogRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // Immediate input value
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [total, setTotal] = useState(0);
+  const [suppliers, setSuppliers] = useState<{ supplier_id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<
+    Array<{ category_id?: string; id?: string; name: string }>
+  >([]);
+  const [supplierId, setSupplierId] = useState<string>('all');
+  const [categoryId, setCategoryId] = useState<string>('all');
+  const [isActive, setIsActive] = useState<'all' | 'active' | 'inactive'>('all');
+  const [priceMin, setPriceMin] = useState<string>('');
+  const [priceMax, setPriceMax] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('supplier_name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [columns, setColumns] = useState<ColumnDef[]>(() => loadColumnsFromStorage());
+  const [columnDialogOpen, setColumnDialogOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [quantities, setQuantities] = useState<QuantityMap>({});
   const [metrics, setMetrics] = useState({
     totalSupplierProducts: 0,
     totalProductsAllSuppliers: 0,
     suppliers: 0,
     brands: 0,
-  })
-  const [metricsLoading, setMetricsLoading] = useState(false)
+  });
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Memoize category map to avoid recreating on every render
+  const categoryMap = useMemo(() => {
+    return new Map(categories.map(c => [c.category_id || c.id, c.name]));
+  }, [categories]);
+
+  // Debounce search input to reduce API calls
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, open]);
 
   // Reset filters when dialog closes
   useEffect(() => {
     if (!open) {
-      setSupplierId('all')
-      setCategoryId('all')
-      setIsActive('all')
-      setPriceMin('')
-      setPriceMax('')
-      setSearch('')
-      setSelected(new Set())
-      setQuantities({})
-      setPage(1)
-      setTotal(0)
+      setSupplierId('all');
+      setCategoryId('all');
+      setIsActive('all');
+      setPriceMin('');
+      setPriceMax('');
+      setSearch('');
+      setSearchInput('');
+      setSelected(new Set());
+      setQuantities({});
+      setPage(1);
+      setTotal(0);
+      setIsSubmitting(false);
     }
-  }, [open])
+  }, [open]);
 
   // Save columns to localStorage whenever they change
   useEffect(() => {
-    saveColumnsToStorage(columns)
-  }, [columns])
+    saveColumnsToStorage(columns);
+  }, [columns]);
 
   // Helper to get visible columns in order
   const visibleColumns = useMemo(() => {
-    return columns.filter((col) => col.visible).sort((a, b) => a.order - b.order)
-  }, [columns])
+    return columns.filter(col => col.visible).sort((a, b) => a.order - b.order);
+  }, [columns]);
 
   // Helper to check if column is visible
   const isColumnVisible = (key: string) => {
-    return columns.find((col) => col.key === key)?.visible ?? false
-  }
+    return columns.find(col => col.key === key)?.visible ?? false;
+  };
 
   const fetchData = useCallback(async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const params = new URLSearchParams()
-      if (search) params.set('search', search)
-      if (supplierId && supplierId !== 'all') params.append('supplier_id', supplierId)
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (supplierId && supplierId !== 'all') params.append('supplier_id', supplierId);
       if (categoryId && categoryId !== 'all') {
         if (categoryId.startsWith('raw:')) {
-          params.append('category_raw', categoryId.slice(4))
+          params.append('category_raw', categoryId.slice(4));
         } else {
-          params.append('category_id', categoryId)
+          params.append('category_id', categoryId);
         }
       }
-      if (isActive !== 'all') params.set('is_active', String(isActive === 'active'))
-      if (priceMin) params.set('price_min', priceMin)
-      if (priceMax) params.set('price_max', priceMax)
-      params.set('sort_by', sortBy)
-      params.set('sort_dir', sortDir)
-      params.set('page', String(page))
-      params.set('limit', String(limit))
-      const res = await fetch(`/api/catalog/products?${params}`)
-      if (!res.ok) throw new Error('Failed to load catalog')
-      const data = await res.json()
-      setRows(data.data || [])
-      setTotal(data.pagination?.total || 0)
+      if (isActive !== 'all') params.set('is_active', String(isActive === 'active'));
+      if (priceMin) params.set('price_min', priceMin);
+      if (priceMax) params.set('price_max', priceMax);
+      params.set('sort_by', sortBy);
+      params.set('sort_dir', sortDir);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      const res = await fetch(`/api/catalog/products?${params}`);
+      if (!res.ok) throw new Error('Failed to load catalog');
+      const data = await res.json();
+      setRows(data.data || []);
+      setTotal(data.pagination?.total || 0);
     } catch (err) {
-      console.error('Catalog load error:', err)
-      setRows([])
-      setTotal(0)
+      console.error('Catalog load error:', err);
+      setRows([]);
+      setTotal(0);
       addNotification({
         type: 'error',
         title: 'Failed to load products',
-        message: err instanceof Error ? err.message : 'Unknown error'
-      })
+        message: err instanceof Error ? err.message : 'Unknown error',
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [search, supplierId, categoryId, isActive, priceMin, priceMax, sortBy, sortDir, page, limit, addNotification])
+  }, [
+    search,
+    supplierId,
+    categoryId,
+    isActive,
+    priceMin,
+    priceMax,
+    sortBy,
+    sortDir,
+    page,
+    limit,
+    addNotification,
+  ]);
 
   useEffect(() => {
     if (open) {
-      fetchData()
+      fetchData();
     }
-  }, [open, fetchData])
+  }, [open, fetchData]);
 
   // Fetch metrics
   const fetchMetrics = useCallback(async () => {
-    setMetricsLoading(true)
+    setMetricsLoading(true);
     try {
-      const params = new URLSearchParams()
+      const params = new URLSearchParams();
       if (supplierId && supplierId !== 'all') {
-        params.set('supplier_id', supplierId)
+        params.set('supplier_id', supplierId);
       }
-      const res = await fetch(`/api/catalog/metrics?${params}`)
-      if (!res.ok) throw new Error('Failed to load metrics')
-      const data = await res.json()
-      setMetrics(data.data || {
-        totalSupplierProducts: 0,
-        totalProductsAllSuppliers: 0,
-        suppliers: 0,
-        brands: 0,
-      })
+      const res = await fetch(`/api/catalog/metrics?${params}`);
+      if (!res.ok) throw new Error('Failed to load metrics');
+      const data = await res.json();
+      setMetrics(
+        data.data || {
+          totalSupplierProducts: 0,
+          totalProductsAllSuppliers: 0,
+          suppliers: 0,
+          brands: 0,
+        }
+      );
     } catch (err) {
-      console.error('Metrics load error:', err)
+      console.error('Metrics load error:', err);
     } finally {
-      setMetricsLoading(false)
+      setMetricsLoading(false);
     }
-  }, [supplierId])
+  }, [supplierId]);
 
   useEffect(() => {
     if (open) {
-      fetchMetrics()
+      fetchMetrics();
     }
-  }, [open, fetchMetrics])
+  }, [open, fetchMetrics]);
 
   // Load filter data
   useEffect(() => {
-    if (!open) return
-    ;(async () => {
+    if (!open) return;
+    (async () => {
       try {
         const [sres, cres] = await Promise.all([
           fetch('/api/catalog/suppliers'),
           fetch('/api/catalog/categories'),
-        ])
-        const sjson = await sres.json()
-        const cjson = await cres.json()
-        setSuppliers(sjson.data || [])
-        setCategories(cjson.data || [])
+        ]);
+        const sjson = await sres.json();
+        const cjson = await cres.json();
+        setSuppliers(sjson.data || []);
+        setCategories(cjson.data || []);
       } catch (e) {
         // ignore
       }
-    })()
-  }, [open])
+    })();
+  }, [open]);
 
-  const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit])
+  const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
   // Helper to get sort key for a column
   const getSortKey = (columnKey: string): string => {
@@ -327,12 +441,43 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
       category: 'category_name',
       first_seen: 'first_seen_at',
       last_seen: 'last_seen_at',
-    }
-    return sortMap[columnKey] || columnKey
+    };
+    return sortMap[columnKey] || columnKey;
+  };
 
-        if (cancelled) return
-        
-        const normalized: SelectorRow[] = data.map((r: unknown) => ({
+  // Load products when filters change
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const url = new URL('/api/core/suppliers/products/table', window.location.origin);
+        url.searchParams.set('supplier_id', supplierId);
+        url.searchParams.set('limit', String(limit));
+        url.searchParams.set('offset', String((page - 1) * limit));
+        if (search) url.searchParams.set('search', search);
+
+        const resp = await fetch(url.toString());
+        if (cancelled) return;
+
+        if (!resp.ok) {
+          throw new Error(`Failed to fetch products: ${resp.status} ${resp.statusText}`);
+        }
+
+        const json = await resp.json().catch(() => ({}));
+        if (cancelled) return;
+
+        const data = Array.isArray(json?.products) ? json.products : [];
+        const totalCount = json?.total || 0;
+
+        if (!cancelled) {
+          setTotal(totalCount);
+        }
+
+        if (cancelled) return;
+
+        const normalized = data.map((r: unknown) => ({
           supplier_product_id: r.supplier_product_id,
           supplier_id: r.supplier_id,
           supplier_sku: r.supplier_sku,
@@ -343,72 +488,61 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
           category_name: r.category_name || null,
           supplier_name: r.supplier_name || null,
           current_price: r.current_price ?? null,
-        }))
-        
-        // Build brand list
-        const brands = Array.from(new Set(normalized.map(r => (r.brand || '').trim()).filter(Boolean))).sort()
-        setBrandList(brands)
+        }));
 
-        // Attach category names if missing
-        const catMap = new Map(categoryList.map(c => [c.id, c.name]))
-        const withCatNames = normalized.map(r => ({
-          ...r,
-          category_name: r.category_name || (r.category_id ? (catMap.get(r.category_id) || null) : r.category_name)
-        }))
-        
+        // Attach category names if missing and map to CatalogRow format
+        // Use categoryMap from closure (memoized, stable reference)
+        const catMap = categoryMap;
+        const withCatNames: CatalogRow[] = normalized.map(r => ({
+          supplier_product_id: r.supplier_product_id,
+          supplier_id: r.supplier_id,
+          supplier_name: r.supplier_name || 'Unknown Supplier',
+          supplier_sku: r.supplier_sku,
+          product_name: r.name_from_supplier || 'Unknown Product',
+          uom: r.uom,
+          category_id: r.category_id || undefined,
+          category_name:
+            r.category_name || (r.category_id ? catMap.get(r.category_id) || undefined : undefined),
+          is_active: true,
+          current_price: r.current_price || undefined,
+          attrs_json: r.brand ? { brand: r.brand } : undefined,
+        }));
+
         if (!cancelled) {
-          setRows(withCatNames)
+          setRows(withCatNames);
         }
       } catch (e) {
-        console.error('Failed to load products:', e)
+        console.error('Failed to load products:', e);
         if (!cancelled) {
-          setRows([])
-          addNotification({ 
-            type: 'error', 
-            title: 'Failed to load products', 
-            message: e instanceof Error ? e.message : 'Unknown error' 
-          })
+          setRows([]);
+          addNotification({
+            type: 'error',
+            title: 'Failed to load products',
+            message: e instanceof Error ? e.message : 'Unknown error',
+          });
         }
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoading(false);
       }
-    }
-    const t = setTimeout(load, 300)
-    return () => { cancelled = true; clearTimeout(t) }
-  }, [addNotification, categoryList, open, page, search, supplierId])
+    };
+    const t = setTimeout(load, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [addNotification, categoryMap, open, page, search, supplierId, limit]);
 
-  const categories = useMemo(() => {
-    // Prefer canonical category list when available
-    if (categoryList.length > 0) return categoryList.map(c => c.name)
-    return Array.from(new Set(rows.map(p => p.category_name || 'uncategorized'))).sort()
-  }, [rows, categoryList])
-
-  // Since we now use server-side pagination and search, just display the current page of rows
-  // Client-side filtering would give incorrect results with paginated data
-  const filtered = useMemo(() => {
-    // Apply only client-side category and brand filters for the current page
-    return rows.filter(p => {
-      if (category !== 'all_categories') {
-        const name = p.category_name || 'uncategorized'
-        if (name !== category) return false
-      }
-      if (brand !== 'all_brands') {
-        if ((p.brand || '').toLowerCase() !== brand.toLowerCase()) return false
-      }
-      return true
-    })
-  }, [rows, category, brand])
-
-  const supplierNameFromRow = (r: SelectorRow) => r.supplier_name || 'Unknown'
+  const supplierNameFromRow = (r: CatalogRow) => r.supplier_name || 'Unknown';
 
   const setQty = (productId: string, qty: number) => {
-    setQuantities(prev => ({ ...prev, [productId]: qty }))
+    setQuantities(prev => ({ ...prev, [productId]: qty }));
     setSelected(prev => {
-      const next = new Set(prev)
-      if (qty > 0) next.add(productId); else next.delete(productId)
-      return next
-    })
-  }
+      const next = new Set(prev);
+      if (qty > 0) next.add(productId);
+      else next.delete(productId);
+      return next;
+    });
+  };
 
   // Helper to render table header cell
   const renderHeaderCell = (column: ColumnDef) => {
@@ -416,41 +550,41 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
       column.align === 'right' && 'text-right',
       column.align === 'center' && 'text-center',
       column.sortable && 'cursor-pointer hover:bg-muted/50'
-    )
+    );
 
     const handleSort = () => {
       if (column.sortable) {
-        const sortKey = getSortKey(column.key)
-        setSortBy(sortKey)
-        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+        const sortKey = getSortKey(column.key);
+        setSortBy(sortKey);
+        setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
       }
-    }
+    };
 
     if (column.key === 'select') {
       return (
         <TableHead key={column.key} className="w-12">
           <Checkbox
             checked={rows.length > 0 && selected.size === rows.length}
-            onCheckedChange={(checked) => {
+            onCheckedChange={checked => {
               if (checked) {
-                setSelected(new Set(rows.map(r => r.supplier_product_id)))
+                setSelected(new Set(rows.map(r => r.supplier_product_id)));
               } else {
-                setSelected(new Set())
-                setQuantities({})
+                setSelected(new Set());
+                setQuantities({});
               }
             }}
             aria-label="Select all"
           />
         </TableHead>
-      )
+      );
     }
 
     return (
       <TableHead key={column.key} className={className} onClick={handleSort}>
         {column.label}
       </TableHead>
-    )
-  }
+    );
+  };
 
   // Helper to render table body cell
   const renderBodyCell = (column: ColumnDef, row: CatalogRow) => {
@@ -458,7 +592,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
       column.align === 'right' && 'text-right',
       column.align === 'center' && 'text-center',
       column.key === 'description' && 'max-w-md'
-    )
+    );
 
     switch (column.key) {
       case 'select':
@@ -466,24 +600,24 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
           <TableCell key={column.key} className="w-12">
             <Checkbox
               checked={selected.has(row.supplier_product_id)}
-              onCheckedChange={(checked) => {
-                const newSelected = new Set(selected)
+              onCheckedChange={checked => {
+                const newSelected = new Set(selected);
                 if (checked) {
-                  newSelected.add(row.supplier_product_id)
+                  newSelected.add(row.supplier_product_id);
                 } else {
-                  newSelected.delete(row.supplier_product_id)
+                  newSelected.delete(row.supplier_product_id);
                   setQuantities(prev => {
-                    const next = { ...prev }
-                    delete next[row.supplier_product_id]
-                    return next
-                  })
+                    const next = { ...prev };
+                    delete next[row.supplier_product_id];
+                    return next;
+                  });
                 }
-                setSelected(newSelected)
+                setSelected(newSelected);
               }}
               aria-label={`Select ${row.product_name}`}
             />
           </TableCell>
-        )
+        );
       case 'supplier':
         return (
           <TableCell key={column.key} className={className}>
@@ -492,81 +626,81 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               {!row.is_active && <Badge variant="secondary">inactive</Badge>}
             </div>
           </TableCell>
-        )
+        );
       case 'supplier_code':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.supplier_code || '-'}
           </TableCell>
-        )
+        );
       case 'sku':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.supplier_sku}
           </TableCell>
-        )
+        );
       case 'name':
         return (
           <TableCell key={column.key} className={className}>
             {row.product_name || 'Product Details Unavailable'}
           </TableCell>
-        )
+        );
       case 'description':
         return (
           <TableCell key={column.key} className={className}>
-            <div className="text-sm text-muted-foreground truncate">
+            <div className="text-muted-foreground truncate text-sm">
               {row.description || row.attrs_json?.description || '-'}
             </div>
           </TableCell>
-        )
+        );
       case 'brand':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {(row as unknown).brand || row.attrs_json?.brand || '-'}
           </TableCell>
-        )
+        );
       case 'series_range':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.series_range || '-'}
           </TableCell>
-        )
+        );
       case 'uom':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.uom || '-'}
           </TableCell>
-        )
+        );
       case 'pack_size':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.pack_size || '-'}
           </TableCell>
-        )
+        );
       case 'barcode':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.barcode || '-'}
           </TableCell>
-        )
+        );
       case 'category':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.category_name || '-'}
           </TableCell>
-        )
+        );
       case 'soh':
         return (
           <TableCell key={column.key} className={className}>
-            {(row as unknown).qty_on_hand ?? 0}
+            {row.sup_soh ?? row.qty_on_hand ?? 0}
           </TableCell>
-        )
+        );
       case 'on_order':
         return (
           <TableCell key={column.key} className={className}>
             {(row as unknown).qty_on_order ?? 0}
           </TableCell>
-        )
+        );
       case 'cost_ex_vat':
         return (
           <TableCell key={column.key} className={className}>
@@ -578,15 +712,15 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
                   ? formatCost(row.current_price)
                   : '-'}
           </TableCell>
-        )
+        );
       case 'vat':
         return (
           <TableCell key={column.key} className={className}>
             {formatCost(
-              ((row as unknown).cost_ex_vat ?? row.current_price ?? 0) as number * 0.15
+              (((row as unknown).cost_ex_vat ?? row.current_price ?? 0) as number) * 0.15
             )}
           </TableCell>
-        )
+        );
       case 'cost_diff':
         return (
           <TableCell key={column.key} className={className}>
@@ -594,7 +728,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               ? `${row.cost_diff >= 0 ? '+' : ''}${formatCost(row.cost_diff)}`
               : '-'}
           </TableCell>
-        )
+        );
       case 'previous_cost':
         return (
           <TableCell key={column.key} className={className}>
@@ -602,7 +736,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               ? formatCost(row.previous_cost)
               : '-'}
           </TableCell>
-        )
+        );
       case 'rsp':
         return (
           <TableCell key={column.key} className={className}>
@@ -612,7 +746,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
                 ? formatCost(Number(row.attrs_json.rsp))
                 : '-'}
           </TableCell>
-        )
+        );
       case 'cost_inc_vat':
         return (
           <TableCell key={column.key} className={className}>
@@ -622,7 +756,7 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
                 ? formatCost(Number(row.attrs_json.cost_including))
                 : '-'}
           </TableCell>
-        )
+        );
       case 'quantity':
         return (
           <TableCell key={column.key} className={className}>
@@ -630,152 +764,214 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               type="number"
               min={0}
               value={quantities[row.supplier_product_id] ?? 0}
-              onChange={(e) => {
-                const qty = Math.max(0, Number(e.target.value || 0))
-                setQuantities(prev => ({ ...prev, [row.supplier_product_id]: qty }))
+              onChange={e => {
+                const qty = Math.max(0, Number(e.target.value || 0));
+                setQuantities(prev => ({ ...prev, [row.supplier_product_id]: qty }));
                 if (qty > 0 && !selected.has(row.supplier_product_id)) {
-                  setSelected(prev => new Set(prev).add(row.supplier_product_id))
+                  setSelected(prev => new Set(prev).add(row.supplier_product_id));
                 } else if (qty === 0 && selected.has(row.supplier_product_id)) {
                   setSelected(prev => {
-                    const next = new Set(prev)
-                    next.delete(row.supplier_product_id)
-                    return next
-                  })
+                    const next = new Set(prev);
+                    next.delete(row.supplier_product_id);
+                    return next;
+                  });
                 }
               }}
-              className="w-24 ml-auto"
+              className="ml-auto w-24"
               aria-label={`Quantity for ${row.product_name}`}
             />
           </TableCell>
-        )
+        );
       case 'currency':
         return (
           <TableCell key={column.key} className={className}>
             {row.currency || 'ZAR'}
           </TableCell>
-        )
+        );
       case 'first_seen':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.first_seen_at ? new Date(row.first_seen_at).toLocaleDateString() : '-'}
           </TableCell>
-        )
+        );
       case 'last_seen':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.last_seen_at ? new Date(row.last_seen_at).toLocaleDateString() : '-'}
           </TableCell>
-        )
+        );
       case 'active':
         return (
           <TableCell key={column.key} className={cn(className, 'text-muted-foreground')}>
             {row.is_active ? 'Yes' : 'No'}
           </TableCell>
-        )
+        );
       default:
-        return <TableCell key={column.key} className={className}>-</TableCell>
+        return (
+          <TableCell key={column.key} className={className}>
+            -
+          </TableCell>
+        );
     }
-  }
+  };
 
-  const selectedCount = selected.size
-  const canSubmit = Array.from(selected).some(id => (quantities[id] || 0) > 0)
+  const selectedCount = selected.size;
+  const canSubmit = Array.from(selected).some(id => (quantities[id] || 0) > 0);
 
   const handleBulkAdd = async () => {
+    // Prevent multiple simultaneous submissions
+    if (isSubmitting) {
+      console.log('[MultiProductSelector] handleBulkAdd already in progress, skipping');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      console.log('[MultiProductSelector] handleBulkAdd called', { selected: Array.from(selected), quantities })
-      
+      console.log('[MultiProductSelector] handleBulkAdd called', {
+        selected: Array.from(selected),
+        quantities,
+      });
+
       const items = Array.from(selected)
         .filter(id => (quantities[id] || 0) > 0)
         .map(id => {
-          const p = rows.find(x => x.supplier_product_id === id)!
-          const qty = Number(quantities[id] || 0)
-          const costPrice = Number((p as unknown).cost_ex_vat ?? p.attrs_json?.cost_excluding ?? p.current_price ?? 0)
+          const p = rows.find(x => x.supplier_product_id === id)!;
+          const qty = Number(quantities[id] || 0);
+          const costPrice = Number(
+            (p as unknown).cost_ex_vat ?? p.attrs_json?.cost_excluding ?? p.current_price ?? 0
+          );
           if (isNaN(costPrice) || costPrice < 0) {
-            throw new Error(`Invalid cost price for product ${p.supplier_sku || p.supplier_product_id}`)
+            throw new Error(
+              `Invalid cost price for product ${p.supplier_sku || p.supplier_product_id}`
+            );
           }
-          
+
           const item = {
             sku: p.supplier_sku || String(p.supplier_product_id), // fallback to ID if SKU missing
-            name: p.product_name || p.name_from_supplier || 'Unknown Product',
+            name: p.product_name || 'Unknown Product',
             description: p.description || p.attrs_json?.description || undefined,
-            category: (p.category_name || 'uncategorized'),
+            category: p.category_name || 'uncategorized',
             supplier_id: p.supplier_id,
             supplier_sku: p.supplier_sku || String(p.supplier_product_id),
             cost_price: costPrice,
             stock_qty: qty,
             unit: p.uom || 'each',
-          }
-          
+          };
+
           // Validate required fields
           if (!item.supplier_id) {
-            throw new Error(`Missing supplier_id for product ${p.supplier_product_id}`)
+            throw new Error(`Missing supplier_id for product ${p.supplier_product_id}`);
           }
           if (!item.supplier_sku) {
-            throw new Error(`Missing supplier_sku for product ${p.supplier_product_id}`)
+            throw new Error(`Missing supplier_sku for product ${p.supplier_product_id}`);
           }
           if (!item.sku) {
-            throw new Error(`Missing sku for product ${p.supplier_product_id}`)
+            throw new Error(`Missing sku for product ${p.supplier_product_id}`);
           }
           if (!item.name || item.name.trim().length === 0) {
-            throw new Error(`Missing name for product ${p.supplier_product_id}`)
+            throw new Error(`Missing name for product ${p.supplier_product_id}`);
           }
-          console.log('[MultiProductSelector] Prepared item:', item)
-          return item
-        })
+          console.log('[MultiProductSelector] Prepared item:', item);
+          return item;
+        });
 
       if (items.length === 0) {
-        console.warn('[MultiProductSelector] No items to add')
-        addNotification({ type: 'warning', title: 'No products selected', message: 'Select at least one product with quantity > 0' })
-        return
+        console.warn('[MultiProductSelector] No items to add');
+        addNotification({
+          type: 'warning',
+          title: 'No products selected',
+          message: 'Select at least one product with quantity > 0',
+        });
+        return;
       }
 
-      console.log('[MultiProductSelector] Sending bulk create request:', { action: 'bulk_create', itemsCount: items.length })
+      console.log('[MultiProductSelector] Sending bulk create request:', {
+        action: 'bulk_create',
+        itemsCount: items.length,
+      });
       const res = await fetch('/api/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'bulk_create', items })
-      })
+        body: JSON.stringify({ action: 'bulk_create', items }),
+      });
 
-      const responseText = await res.text()
-      console.log('[MultiProductSelector] Response:', { status: res.status, ok: res.ok, text: responseText })
+      const responseText = await res.text();
+      console.log('[MultiProductSelector] Response:', {
+        status: res.status,
+        ok: res.ok,
+        text: responseText,
+      });
 
       if (!res.ok) {
-        throw new Error(`Bulk add failed: ${res.status} ${responseText}`)
+        throw new Error(`Bulk add failed: ${res.status} ${responseText}`);
       }
 
-      const result = JSON.parse(responseText)
-      console.log('[MultiProductSelector] Success:', result)
+      const result = JSON.parse(responseText);
+      console.log('[MultiProductSelector] Result:', result);
 
-      addNotification({ type: 'success', title: 'Products added', message: `${items.length} products added to stock holding` })
-      await fetchItems()
-      onOpenChange(false)
-      setSelected(new Set())
-      setQuantities({})
+      // Check if the operation was actually successful
+      if (!result.success) {
+        const errorDetails = result.data?.errors
+          ?.map(
+            (e: { sku?: string; error?: string }) =>
+              `${e.sku || 'Unknown'}: ${e.error || 'Unknown error'}`
+          )
+          .join('; ');
+
+        throw new Error(
+          `Bulk add partially failed: ${result.message || 'Some items failed'}. ${errorDetails ? `Errors: ${errorDetails}` : ''}`
+        );
+      }
+
+      const createdCount = result.data?.created?.length || 0;
+      const updatedCount = result.data?.updated?.length || 0;
+      const totalProcessed = createdCount + updatedCount;
+
+      if (totalProcessed === 0) {
+        throw new Error(
+          'No products were created or updated. Please check the item details and try again.'
+        );
+      }
+
+      addNotification({
+        type: 'success',
+        title: 'Products added',
+        message: `${totalProcessed} product${totalProcessed !== 1 ? 's' : ''} processed (${createdCount} created, ${updatedCount} updated)`,
+      });
+      await fetchItems();
+      onOpenChange(false);
+      setSelected(new Set());
+      setQuantities({});
     } catch (e: unknown) {
-      console.error('[MultiProductSelector] Error in handleBulkAdd:', e)
-      addNotification({ type: 'error', title: 'Failed to add products', message: e instanceof Error ? e.message : 'Unknown error' })
+      console.error('[MultiProductSelector] Error in handleBulkAdd:', e);
+      addNotification({
+        type: 'error',
+        title: 'Failed to add products',
+        message: e instanceof Error ? e.message : 'Unknown error',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const hasActiveFilters = search || category !== 'all_categories' || brand !== 'all_brands' || supplierId !== 'all_suppliers'
-  const filteredCount = filtered.length
-  const totalCount = total || rows.length
+  const hasActiveFilters = search || categoryId !== 'all' || supplierId !== 'all';
+  const totalCount = total || rows.length;
 
   const clearFilters = () => {
-    setSearch('')
-    setCategory('all_categories')
-    setBrand('all_brands')
-    setSupplierId('all_suppliers')
-    setPage(1)
-  }
+    setSearch('');
+    setCategoryId('all');
+    setSupplierId('all');
+    setPage(1);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="flex max-h-[90vh] w-full max-w-[95vw] flex-col overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Add Multiple Products</DialogTitle>
           <DialogDescription>
-            Browse supplier portfolio, filter, select, and set quantities to add to NXT stock holding.
+            Browse supplier portfolio, filter, select, and set quantities to add to NXT stock
+            holding.
           </DialogDescription>
         </DialogHeader>
 
@@ -789,21 +985,21 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
             </CardHeader>
             <CardContent>
               {/* Summary Cards - Matching CatalogTable exactly */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">TOTAL SUPPLIER PRODUCTS</p>
-                        <p className="text-2xl font-bold mt-1">
+                        <p className="text-muted-foreground text-sm">TOTAL SUPPLIER PRODUCTS</p>
+                        <p className="mt-1 text-2xl font-bold">
                           {metricsLoading ? (
-                            <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                            <span className="bg-muted inline-block h-8 w-20 animate-pulse rounded" />
                           ) : (
                             metrics.totalSupplierProducts.toLocaleString()
                           )}
                         </p>
                       </div>
-                      <Package className="h-8 w-8 text-muted-foreground" />
+                      <Package className="text-muted-foreground h-8 w-8" />
                     </div>
                   </CardContent>
                 </Card>
@@ -811,16 +1007,18 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">TOTAL PRODUCTS (ALL SUPPLIERS)</p>
-                        <p className="text-2xl font-bold mt-1">
+                        <p className="text-muted-foreground text-sm">
+                          TOTAL PRODUCTS (ALL SUPPLIERS)
+                        </p>
+                        <p className="mt-1 text-2xl font-bold">
                           {metricsLoading ? (
-                            <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                            <span className="bg-muted inline-block h-8 w-20 animate-pulse rounded" />
                           ) : (
                             metrics.totalProductsAllSuppliers.toLocaleString()
                           )}
                         </p>
                       </div>
-                      <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+                      <ShoppingBag className="text-muted-foreground h-8 w-8" />
                     </div>
                   </CardContent>
                 </Card>
@@ -828,16 +1026,16 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">SUPPLIERS</p>
-                        <p className="text-2xl font-bold mt-1">
+                        <p className="text-muted-foreground text-sm">SUPPLIERS</p>
+                        <p className="mt-1 text-2xl font-bold">
                           {metricsLoading ? (
-                            <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                            <span className="bg-muted inline-block h-8 w-20 animate-pulse rounded" />
                           ) : (
                             metrics.suppliers.toLocaleString()
                           )}
                         </p>
                       </div>
-                      <Building2 className="h-8 w-8 text-muted-foreground" />
+                      <Building2 className="text-muted-foreground h-8 w-8" />
                     </div>
                   </CardContent>
                 </Card>
@@ -845,74 +1043,97 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">BRANDS</p>
-                        <p className="text-2xl font-bold mt-1">
+                        <p className="text-muted-foreground text-sm">BRANDS</p>
+                        <p className="mt-1 text-2xl font-bold">
                           {metricsLoading ? (
-                            <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                            <span className="bg-muted inline-block h-8 w-20 animate-pulse rounded" />
                           ) : (
                             metrics.brands.toLocaleString()
                           )}
                         </p>
                       </div>
-                      <Tag className="h-8 w-8 text-muted-foreground" />
+                      <Tag className="text-muted-foreground h-8 w-8" />
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Filter Bar - Matching CatalogTable exactly */}
-              <div className="flex flex-wrap items-center gap-3 mb-4">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
                 <Input
                   placeholder="Search by name or SKU"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
                   className="max-w-sm"
                 />
                 <Select value={supplierId} onValueChange={setSupplierId}>
-                  <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All suppliers</SelectItem>
-                    {suppliers.filter(s => s && s.supplier_id).map(s => (
-                      <SelectItem key={s.supplier_id} value={s.supplier_id}>{s.name}</SelectItem>
-                    ))}
+                    {suppliers
+                      .filter(s => s && s.supplier_id)
+                      .map(s => (
+                        <SelectItem key={s.supplier_id} value={s.supplier_id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All categories</SelectItem>
-                    {categories.filter(c => !!c).map((c: unknown) => (
-                      <SelectItem key={String(c.category_id ?? c.id)} value={String(c.category_id ?? c.id)}>{c.name}</SelectItem>
-                    ))}
+                    {categories
+                      .filter(c => !!c)
+                      .map((c: unknown) => (
+                        <SelectItem
+                          key={String(c.category_id ?? c.id)}
+                          value={String(c.category_id ?? c.id)}
+                        >
+                          {c.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 <Select value={isActive} onValueChange={v => setIsActive(v as unknown)}>
-                  <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input placeholder="Min price" value={priceMin} onChange={e => setPriceMin(e.target.value)} className="w-24" />
-                <Input placeholder="Max price" value={priceMax} onChange={e => setPriceMax(e.target.value)} className="w-24" />
+                <Input
+                  placeholder="Min price"
+                  value={priceMin}
+                  onChange={e => setPriceMin(e.target.value)}
+                  className="w-24"
+                />
+                <Input
+                  placeholder="Max price"
+                  value={priceMax}
+                  onChange={e => setPriceMax(e.target.value)}
+                  className="w-24"
+                />
                 <Button variant="outline" onClick={() => fetchData()} disabled={loading}>
-                  <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
+                  <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
                   Refresh
                 </Button>
-                <div className="ml-auto text-sm text-muted-foreground">
+                <div className="text-muted-foreground ml-auto text-sm">
                   {total.toLocaleString()} items
                 </div>
               </div>
 
               {/* Manage Columns Button - Matching CatalogTable exactly */}
-              <div className="flex items-center justify-between mb-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setColumnDialogOpen(true)}
-                >
-                  <Settings2 className="h-4 w-4 mr-2" />
+              <div className="mb-2 flex items-center justify-between">
+                <Button variant="outline" size="sm" onClick={() => setColumnDialogOpen(true)}>
+                  <Settings2 className="mr-2 h-4 w-4" />
                   Manage Columns
                 </Button>
                 <ColumnManagementDialog
@@ -925,26 +1146,22 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               </div>
 
               {/* Table - Matching CatalogTable exactly */}
-              <div className="rounded-md border overflow-auto">
+              <div className="overflow-auto rounded-md border">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      {visibleColumns.map((column) => renderHeaderCell(column))}
-                    </TableRow>
+                    <TableRow>{visibleColumns.map(column => renderHeaderCell(column))}</TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.map((r) => (
-                      <TableRow
-                        key={r.supplier_product_id}
-                      >
-                        {visibleColumns.map((column) => renderBodyCell(column, r))}
+                    {rows.map(r => (
+                      <TableRow key={r.supplier_product_id}>
+                        {visibleColumns.map(column => renderBodyCell(column, r))}
                       </TableRow>
                     ))}
                     {rows.length === 0 && !loading && (
                       <TableRow>
                         <TableCell
                           colSpan={visibleColumns.length}
-                          className="text-center text-sm text-muted-foreground py-8"
+                          className="text-muted-foreground py-8 text-center text-sm"
                         >
                           No results
                         </TableCell>
@@ -955,25 +1172,43 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               </div>
 
               {/* Pagination - Matching CatalogTable exactly */}
-              <div className="flex items-center justify-between mt-3 text-sm">
+              <div className="mt-3 flex items-center justify-between text-sm">
                 <div>
                   Page {page} of {pageCount}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                  >
                     Prev
                   </Button>
-                  <Select value={String(limit)} onValueChange={(v) => { setLimit(parseInt(v, 10)); setPage(1) }}>
+                  <Select
+                    value={String(limit)}
+                    onValueChange={v => {
+                      setLimit(parseInt(v, 10));
+                      setPage(1);
+                    }}
+                  >
                     <SelectTrigger className="w-24">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {[25, 50, 100, 200].map(n => (
-                        <SelectItem key={n} value={String(n)}>{n} / page</SelectItem>
+                        <SelectItem key={n} value={String(n)}>
+                          {n} / page
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" size="sm" disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= pageCount}
+                    onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                  >
                     Next
                   </Button>
                 </div>
@@ -983,12 +1218,13 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
         </div>
 
         {/* Footer with Actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t gap-4">
-          <div className="text-sm text-muted-foreground">
-            Selected: <span className="font-medium text-foreground">{selectedCount}</span>
+        <div className="flex items-center justify-between gap-4 border-t px-6 py-4">
+          <div className="text-muted-foreground text-sm">
+            Selected: <span className="text-foreground font-medium">{selectedCount}</span>
             {selectedCount > 0 && (
               <span className="ml-2">
-                ({Array.from(selected).filter(id => (quantities[id] || 0) > 0).length} with quantity)
+                ({Array.from(selected).filter(id => (quantities[id] || 0) > 0).length} with
+                quantity)
               </span>
             )}
           </div>
@@ -997,20 +1233,35 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
               Cancel
             </Button>
             <Button
-              disabled={!canSubmit || loading}
+              disabled={!canSubmit || loading || isSubmitting}
               onClick={() => {
-                console.log('[MultiProductSelector] Button clicked', { canSubmit, loading, selectedCount, quantities: Object.fromEntries(Array.from(selected).map(id => [id, quantities[id]])) })
-                handleBulkAdd()
+                console.log('[MultiProductSelector] Button clicked', {
+                  canSubmit,
+                  loading,
+                  selectedCount,
+                  quantities: Object.fromEntries(
+                    Array.from(selected).map(id => [id, quantities[id]])
+                  ),
+                });
+                handleBulkAdd();
               }}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
-              title={!canSubmit ? 'Select products and enter quantities > 0' : loading ? 'Processing...' : 'Import selected products to inventory'}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 shadow-lg hover:from-green-700 hover:to-emerald-700"
+              title={
+                !canSubmit
+                  ? 'Select products and enter quantities > 0'
+                  : loading || isSubmitting
+                    ? 'Processing...'
+                    : 'Import selected products to inventory'
+              }
             >
-              <Package className="h-4 w-4 mr-2" />
-              {loading ? 'Importing...' : `Add Selected ${selectedCount > 0 ? `(${selectedCount})` : ''}`}
+              <Package className="mr-2 h-4 w-4" />
+              {loading || isSubmitting
+                ? 'Importing...'
+                : `Add Selected ${selectedCount > 0 ? `(${selectedCount})` : ''}`}
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

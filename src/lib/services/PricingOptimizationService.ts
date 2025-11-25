@@ -105,6 +105,9 @@ export class PricingOptimizationService {
         throw new Error('No products found in specified scope');
       }
 
+      // Update progress: Initializing
+      await this.updateProgress(run.run_id, 0, 'Initializing optimization', 0, products.length);
+
       // Select appropriate optimizer based on strategy and config
       const optimizers = this.getOptimizers(run.strategy, run.config);
 
@@ -114,6 +117,16 @@ export class PricingOptimizationService {
       for (let i = 0; i < products.length; i++) {
         const product = products[i];
 
+        // Update progress
+        const progressPercent = Math.round(((i + 1) / products.length) * 100);
+        await this.updateProgress(
+          run.run_id,
+          progressPercent,
+          `Processing product ${i + 1} of ${products.length}`,
+          i + 1,
+          products.length
+        );
+
         // Run each configured algorithm
         for (const optimizer of optimizers) {
           const recommendation = await optimizer.optimize(product, run);
@@ -122,6 +135,9 @@ export class PricingOptimizationService {
           }
         }
       }
+
+      // Update progress: Saving recommendations
+      await this.updateProgress(run.run_id, 95, 'Saving recommendations', products.length, products.length);
 
       // Save recommendations
       await this.saveRecommendations(run.run_id, recommendations);
@@ -173,6 +189,34 @@ export class PricingOptimizationService {
     }
 
     return this.parseOptimizationRun(result.rows[0]);
+  }
+
+  /**
+   * Get optimization progress
+   */
+  static async getProgress(runId: string): Promise<OptimizationProgress | null> {
+    const sql = `
+      SELECT 
+        progress_percent,
+        current_step,
+        products_processed,
+        (SELECT COUNT(*) FROM ${PRICING_TABLES.OPTIMIZATION_RECOMMENDATIONS} WHERE run_id = $1) as total_products
+      FROM ${PRICING_TABLES.OPTIMIZATION_RUNS}
+      WHERE run_id = $1
+    `;
+    const result = await query(sql, [runId]);
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      progress_percent: Number(row.progress_percent || 0),
+      current_step: row.current_step || '',
+      products_processed: Number(row.products_processed || 0),
+      total_products: Number(row.total_products || 0),
+    };
   }
 
   /**
@@ -568,6 +612,29 @@ export class PricingOptimizationService {
     `;
 
     await query(sql, [runId]);
+  }
+
+  /**
+   * Update optimization progress
+   */
+  private static async updateProgress(
+    runId: string,
+    progressPercent: number,
+    currentStep: string,
+    productsProcessed: number,
+    totalProducts: number
+  ): Promise<void> {
+    const sql = `
+      UPDATE ${PRICING_TABLES.OPTIMIZATION_RUNS}
+      SET 
+        progress_percent = $2,
+        current_step = $3,
+        products_processed = $4,
+        updated_at = NOW()
+      WHERE run_id = $1
+    `;
+
+    await query(sql, [runId, progressPercent, currentStep, productsProcessed]);
   }
 
   /**

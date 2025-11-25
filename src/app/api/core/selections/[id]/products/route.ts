@@ -59,6 +59,7 @@ export async function GET(
         cp.price AS current_price,
         cp.currency,
         ls.qty_on_hand,
+        ls.qty_on_hand AS sup_soh,
         sp.first_seen_at,
         sp.last_seen_at,
         (COALESCE(ls.qty_on_hand, 0) > 0) AS is_in_stock
