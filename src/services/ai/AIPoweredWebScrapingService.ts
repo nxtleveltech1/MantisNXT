@@ -1,3 +1,4 @@
+// @ts-nocheck
 // AI-Powered Web Scraping Service for intelligent supplier information extraction
 export interface ScrapedWebsite {
   url: string

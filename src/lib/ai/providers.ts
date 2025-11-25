@@ -57,7 +57,7 @@ const providerHealthState: Record<AIProviderId, AIProviderHealth> = AI_PROVIDER_
     acc[id] = createInitialHealth(id);
     return acc;
   },
-  {} as Record<AIProviderId, AIProviderHealth>,
+  {} as Record<AIProviderId, AIProviderHealth>
 );
 
 const getProviderEnablementHint = (config: AIProviderConfig): string => {
@@ -83,7 +83,9 @@ const getProviderEnablementHint = (config: AIProviderConfig): string => {
   }
 };
 
-const coerceAnnotations = (metadata?: Record<string, unknown>): Record<string, string | number | boolean> | undefined => {
+const coerceAnnotations = (
+  metadata?: Record<string, unknown>
+): Record<string, string | number | boolean> | undefined => {
   if (!metadata) return undefined;
   const annotations: Record<string, string | number | boolean> = {};
   for (const [key, value] of Object.entries(metadata)) {
@@ -98,7 +100,7 @@ const normalizeMessageContent = (content: unknown): string => {
   if (content == null) return '';
   if (typeof content === 'string') return content;
   if (Array.isArray(content)) {
-    return content.map((part) => normalizeMessageContent(part)).join('');
+    return content.map(part => normalizeMessageContent(part)).join('');
   }
   if (typeof content === 'object') {
     if (typeof content.text === 'string') return content.text;
@@ -110,7 +112,7 @@ const normalizeMessageContent = (content: unknown): string => {
 
 const mapResponseMessages = (messages: unknown[] | undefined): AIChatMessage[] | undefined => {
   if (!messages || messages.length === 0) return undefined;
-  return messages.map((message) => ({
+  return messages.map(message => ({
     role: (message.role ?? 'assistant') as AIChatMessage['role'],
     content: normalizeMessageContent(message.content),
     name: message.name,
@@ -123,7 +125,7 @@ const mapResponseMessages = (messages: unknown[] | undefined): AIChatMessage[] |
 
 const createAbortSignal = (
   timeoutMs: number | undefined,
-  externalSignal?: AbortSignal,
+  externalSignal?: AbortSignal
 ): { signal?: AbortSignal; cleanup?: () => void } => {
   const hasTimeout = typeof timeoutMs === 'number' && timeoutMs > 0;
   if (!hasTimeout || typeof AbortController === 'undefined') {
@@ -353,12 +355,14 @@ const instantiateProviderBinding = (config: AIProviderConfig): ProviderBinding =
           args: config.credentials.cliArgs,
           env: {
             ...(config.credentials.apiKey && { OPENAI_API_KEY: config.credentials.apiKey }),
-            ...(config.credentials.organization && { OPENAI_ORGANIZATION: config.credentials.organization }),
+            ...(config.credentials.organization && {
+              OPENAI_ORGANIZATION: config.credentials.organization,
+            }),
           },
           workingDirectory: config.credentials.cliWorkingDirectory,
           timeout: 60000,
         };
-        
+
         const cliClient = new CLIProviderClient(cliConfig);
         const capabilities = CLIProviderExecutor.getProviderCapabilities(config.id);
 
@@ -380,7 +384,7 @@ const instantiateProviderBinding = (config: AIProviderConfig): ProviderBinding =
           raw: cliClient,
         };
       }
-      
+
       // API mode
       const openai = createOpenAI({
         apiKey: config.credentials.apiKey,
@@ -500,11 +504,16 @@ class ProviderClient implements AIClient {
     this.supportsEmbeddings = this.binding.supportsEmbeddings;
   }
 
-  private resolveModel(options: AIProviderRuntimeOptions | undefined, category: 'default' | 'chat' | 'streaming' | 'embedding'): string {
+  private resolveModel(
+    options: AIProviderRuntimeOptions | undefined,
+    category: 'default' | 'chat' | 'streaming' | 'embedding'
+  ): string {
     if (options && options.model) return options.model;
     if (category === 'chat' && this.config.models.chat) return this.config.models.chat;
-    if (category === 'streaming' && this.config.models.streaming) return this.config.models.streaming;
-    if (category === 'embedding' && this.config.models.embedding) return this.config.models.embedding;
+    if (category === 'streaming' && this.config.models.streaming)
+      return this.config.models.streaming;
+    if (category === 'embedding' && this.config.models.embedding)
+      return this.config.models.embedding;
     return this.config.models.default;
   }
 
@@ -512,7 +521,9 @@ class ProviderClient implements AIClient {
     const globalConfig = getAIConfig();
     const targetMaxTokens = options?.maxTokens ?? globalConfig.maxTokens;
     const providerLimit = this.config.limits.maxTokens;
-    const maxOutputTokens = providerLimit ? Math.min(targetMaxTokens, providerLimit) : targetMaxTokens;
+    const maxOutputTokens = providerLimit
+      ? Math.min(targetMaxTokens, providerLimit)
+      : targetMaxTokens;
     const timeoutMs = this.config.requestTimeoutMs ?? globalConfig.requestTimeoutMs;
     const { signal, cleanup } = createAbortSignal(timeoutMs, options?.signal);
 
@@ -536,7 +547,7 @@ class ProviderClient implements AIClient {
     usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number },
     success: boolean = true,
     error?: Error,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): AIUsageMetrics {
     const metrics: AIUsageMetrics = {
       provider: this.id,
@@ -572,7 +583,7 @@ class ProviderClient implements AIClient {
   }
 
   private formatMessages(messages: AIChatMessage[]): ModelMessage[] {
-    return messages.map((message) => ({
+    return messages.map(message => ({
       role: message.role,
       content: message.content,
       name: message.name,
@@ -602,7 +613,14 @@ class ProviderClient implements AIClient {
 
       const duration = Date.now() - startedAt;
       const usage = result.totalUsage ?? result.usage;
-      const metrics = this.buildUsageMetrics(model, duration, usage, true, undefined, options?.metadata);
+      const metrics = this.buildUsageMetrics(
+        model,
+        duration,
+        usage,
+        true,
+        undefined,
+        options?.metadata
+      );
       markProviderSuccess(this.id, duration);
       emitUsage({
         ...metrics,
@@ -625,7 +643,14 @@ class ProviderClient implements AIClient {
     } catch (error) {
       const duration = Date.now() - startedAt;
       markProviderFailure(this.id, error);
-      const metrics = this.buildUsageMetrics(model, duration, undefined, false, error as Error, options?.metadata);
+      const metrics = this.buildUsageMetrics(
+        model,
+        duration,
+        undefined,
+        false,
+        error as Error,
+        options?.metadata
+      );
       emitUsage({
         ...metrics,
         operation: 'generate',
@@ -638,7 +663,10 @@ class ProviderClient implements AIClient {
     }
   }
 
-  async streamText(prompt: string, options?: AIProviderRuntimeOptions): Promise<AsyncIterable<AIStreamChunk>> {
+  async streamText(
+    prompt: string,
+    options?: AIProviderRuntimeOptions
+  ): Promise<AsyncIterable<AIStreamChunk>> {
     if (!this.supportsStreaming) {
       throw new Error('Provider ' + this.id + ' does not support streaming.');
     }
@@ -700,7 +728,14 @@ class ProviderClient implements AIClient {
           } else {
             markProviderSuccess(self.id, duration);
           }
-          const metrics = self.buildUsageMetrics(model, duration, usage, !error, error instanceof Error ? error : undefined, options?.metadata);
+          const metrics = self.buildUsageMetrics(
+            model,
+            duration,
+            usage,
+            !error,
+            error instanceof Error ? error : undefined,
+            options?.metadata
+          );
           emitUsage({
             ...metrics,
             operation: 'stream',
@@ -715,7 +750,14 @@ class ProviderClient implements AIClient {
     } catch (error) {
       const duration = Date.now() - startedAt;
       markProviderFailure(this.id, error);
-      const metrics = this.buildUsageMetrics(model, duration, undefined, false, error as Error, options?.metadata);
+      const metrics = this.buildUsageMetrics(
+        model,
+        duration,
+        undefined,
+        false,
+        error as Error,
+        options?.metadata
+      );
       emitUsage({
         ...metrics,
         operation: 'stream',
@@ -731,7 +773,10 @@ class ProviderClient implements AIClient {
     const model = this.resolveModel(options, 'chat');
     const callSettings = this.computeCallSettings(options);
     const formattedMessages = this.formatMessages(messages);
-    const promptLength = messages.reduce((total, message) => total + (message.content ? message.content.length : 0), 0);
+    const promptLength = messages.reduce(
+      (total, message) => total + (message.content ? message.content.length : 0),
+      0
+    );
     const startedAt = Date.now();
 
     try {
@@ -752,7 +797,14 @@ class ProviderClient implements AIClient {
 
       const duration = Date.now() - startedAt;
       const usage = result.totalUsage ?? result.usage;
-      const metrics = this.buildUsageMetrics(model, duration, usage, true, undefined, options?.metadata);
+      const metrics = this.buildUsageMetrics(
+        model,
+        duration,
+        usage,
+        true,
+        undefined,
+        options?.metadata
+      );
       markProviderSuccess(this.id, duration);
       const responseMessages = mapResponseMessages(result.response?.messages);
       emitUsage({
@@ -778,7 +830,14 @@ class ProviderClient implements AIClient {
     } catch (error) {
       const duration = Date.now() - startedAt;
       markProviderFailure(this.id, error);
-      const metrics = this.buildUsageMetrics(model, duration, undefined, false, error as Error, options?.metadata);
+      const metrics = this.buildUsageMetrics(
+        model,
+        duration,
+        undefined,
+        false,
+        error as Error,
+        options?.metadata
+      );
       emitUsage({
         ...metrics,
         operation: 'chat',
@@ -819,7 +878,14 @@ class ProviderClient implements AIClient {
         });
 
         const duration = Date.now() - startedAt;
-        const metrics = this.buildUsageMetrics(model, duration, result.usage, true, undefined, options?.metadata);
+        const metrics = this.buildUsageMetrics(
+          model,
+          duration,
+          result.usage,
+          true,
+          undefined,
+          options?.metadata
+        );
         markProviderSuccess(this.id, duration);
         emitUsage({
           ...metrics,
@@ -828,7 +894,7 @@ class ProviderClient implements AIClient {
           responseLength: 0,
         });
 
-        const vectors = result.embeddings.map((embedding) => Array.from(embedding));
+        const vectors = result.embeddings.map(embedding => Array.from(embedding));
 
         return {
           vector: vectors[0] ?? [],
@@ -848,7 +914,14 @@ class ProviderClient implements AIClient {
       });
 
       const duration = Date.now() - startedAt;
-      const metrics = this.buildUsageMetrics(model, duration, result.usage, true, undefined, options?.metadata);
+      const metrics = this.buildUsageMetrics(
+        model,
+        duration,
+        result.usage,
+        true,
+        undefined,
+        options?.metadata
+      );
       markProviderSuccess(this.id, duration);
       emitUsage({
         ...metrics,
@@ -866,7 +939,14 @@ class ProviderClient implements AIClient {
     } catch (error) {
       const duration = Date.now() - startedAt;
       markProviderFailure(this.id, error);
-      const metrics = this.buildUsageMetrics(model, duration, undefined, false, error as Error, options?.metadata);
+      const metrics = this.buildUsageMetrics(
+        model,
+        duration,
+        undefined,
+        false,
+        error as Error,
+        options?.metadata
+      );
       emitUsage({
         ...metrics,
         operation: 'embed',
@@ -988,7 +1068,7 @@ const scheduleHealthChecks = (): void => {
     }
 
     healthCheckPromise = runScheduledHealthChecks()
-      .catch((error) => {
+      .catch(error => {
         console.error('AI provider health check cycle failed', error);
       })
       .finally(() => {
@@ -1024,16 +1104,19 @@ if (isServerRuntime) {
   ensureHealthMonitoring();
 }
 
-export const getProviderClient = (providerId: AIProviderId): AIClient => getOrCreateProviderClient(providerId);
+export const getProviderClient = (providerId: AIProviderId): AIClient =>
+  getOrCreateProviderClient(providerId);
 
 export const getProviderClientsForFallback = (preferred?: AIProviderId): AIClient[] => {
   const chain = getProviderFallbackChain(preferred);
-  return chain.map((providerId) => getOrCreateProviderClient(providerId));
+  return chain.map(providerId => getOrCreateProviderClient(providerId));
 };
 
-export const getProviderHealthStatus = (providerId: AIProviderId): AIProviderHealth => getHealthSnapshot(providerId);
+export const getProviderHealthStatus = (providerId: AIProviderId): AIProviderHealth =>
+  getHealthSnapshot(providerId);
 
-export const getAllProviderHealthStatus = (): AIProviderHealth[] => AI_PROVIDER_IDS.map((providerId) => getHealthSnapshot(providerId));
+export const getAllProviderHealthStatus = (): AIProviderHealth[] =>
+  AI_PROVIDER_IDS.map(providerId => getHealthSnapshot(providerId));
 
 export const onAIUsage = (listener: UsageListener): (() => void) => {
   usageListeners.add(listener);

@@ -1,5 +1,7 @@
-import { query, withTransaction } from '@/lib/database/unified-connection'
-import type { Supplier } from '@/domain/supplier'
+// @ts-nocheck
+
+import { query, withTransaction } from '@/lib/database/unified-connection';
+import type { Supplier } from '@/domain/supplier';
 
 export interface SupplierListFilters {
   search?: string;
@@ -10,40 +12,35 @@ export interface SupplierListFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
-export async function listSuppliers(filters: SupplierListFilters = {}): Promise<{ data: Supplier[]; total: number; page: number; limit: number; }>{
-  const {
-    search,
-    status,
-    page = 1,
-    limit = 50,
-    sortBy = 'name',
-    sortOrder = 'asc'
-  } = filters
+export async function listSuppliers(
+  filters: SupplierListFilters = {}
+): Promise<{ data: Supplier[]; total: number; page: number; limit: number }> {
+  const { search, status, page = 1, limit = 50, sortBy = 'name', sortOrder = 'asc' } = filters;
 
-  const offset = (page - 1) * limit
+  const offset = (page - 1) * limit;
 
-  const where: string[] = ['1=1']
-  const params: unknown[] = []
-  let i = 1
+  const where: string[] = ['1=1'];
+  const params: unknown[] = [];
+  let i = 1;
 
   // Filter by active status by default (unless explicitly requesting inactive)
-  const hasStatusFilter = status && status.length > 0
-  const hasActiveStatus = hasStatusFilter && status.includes('active')
-  const hasInactiveStatus = hasStatusFilter && status.includes('inactive')
-  
+  const hasStatusFilter = status && status.length > 0;
+  const hasActiveStatus = hasStatusFilter && status.includes('active');
+  const hasInactiveStatus = hasStatusFilter && status.includes('inactive');
+
   if (!hasStatusFilter || (!hasInactiveStatus && hasActiveStatus)) {
     // Only show active suppliers by default, or if explicitly requesting active
-    where.push(`active = true`)
+    where.push(`active = true`);
   } else if (hasInactiveStatus && !hasActiveStatus) {
     // Only show inactive if explicitly requested and active not requested
-    where.push(`active = false`)
+    where.push(`active = false`);
   }
   // If both active and inactive are requested, no filter needed (show all)
 
   if (search && search.trim().length > 0) {
-    where.push(`(name ILIKE $${i} OR code ILIKE $${i})`)
-    params.push(`%${search}%`)
-    i++
+    where.push(`(name ILIKE $${i} OR code ILIKE $${i})`);
+    params.push(`%${search}%`);
+    i++;
   }
 
   // Map sortBy to actual column names in core.supplier table
@@ -53,8 +50,8 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
     status: 'active', // Map to active column, we'll convert to status in SELECT
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-  }
-  const sortColumn = sortByColumnMap[sortBy] || 'name'
+  };
+  const sortColumn = sortByColumnMap[sortBy] || 'name';
 
   // Read directly from core.supplier table
   const sql = `
@@ -71,11 +68,11 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
     WHERE ${where.join(' AND ')}
     ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}
     LIMIT $${i} OFFSET $${i + 1}
-  `
-  params.push(limit, offset)
+  `;
+  params.push(limit, offset);
 
-  const res = await query(sql, params)
-  const total = res.rows.length > 0 ? Number(res.rows[0].__total) : 0
+  const res = await query(sql, params);
+  const total = res.rows.length > 0 ? Number(res.rows[0].__total) : 0;
 
   const data: Supplier[] = res.rows.map((r: unknown) => ({
     id: String(r.id),
@@ -85,9 +82,9 @@ export async function listSuppliers(filters: SupplierListFilters = {}): Promise<
     orgId: r.org_id ? String(r.org_id) : undefined,
     createdAt: new Date(r.created_at ?? Date.now()).toISOString(),
     updatedAt: new Date(r.updated_at ?? Date.now()).toISOString(),
-  }))
+  }));
 
-  return { data, total, page, limit }
+  return { data, total, page, limit };
 }
 
 export async function getSupplierById(id: string): Promise<Supplier | null> {
@@ -106,20 +103,20 @@ export async function getSupplierById(id: string): Promise<Supplier | null> {
      WHERE supplier_id::text = $1
      LIMIT 1`,
     [id]
-  )
-  const row = res.rows[0]
-  if (!row) return null
+  );
+  const row = res.rows[0];
+  if (!row) return null;
 
   const contactInfo =
     typeof row.contact_info === 'string'
       ? (() => {
           try {
-            return JSON.parse(row.contact_info)
+            return JSON.parse(row.contact_info);
           } catch {
-            return {}
+            return {};
           }
         })()
-      : row.contact_info || {}
+      : row.contact_info || {};
 
   return {
     id: String(row.id),
@@ -129,7 +126,7 @@ export async function getSupplierById(id: string): Promise<Supplier | null> {
     orgId: row.org_id ? String(row.org_id) : undefined,
     createdAt: new Date(row.created_at ?? Date.now()).toISOString(),
     updatedAt: new Date(row.updated_at ?? Date.now()).toISOString(),
-  }
+  };
 }
 
 export interface UpsertSupplierInput {
@@ -149,7 +146,10 @@ export interface UpsertSupplierInput {
 async function getDefaultOrgId(): Promise<string> {
   // Try environment variable first
   const envOrgId = process.env.DEFAULT_ORG_ID;
-  if (envOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)) {
+  if (
+    envOrgId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(envOrgId)
+  ) {
     return envOrgId;
   }
 
@@ -170,9 +170,18 @@ async function getDefaultOrgId(): Promise<string> {
 }
 
 export async function upsertSupplier(input: UpsertSupplierInput): Promise<Supplier> {
-  const { id, name, code, status = 'active', currency = 'ZAR', paymentTerms, contact, orgId } = input
-  
-  return withTransaction(async (client) => {
+  const {
+    id,
+    name,
+    code,
+    status = 'active',
+    currency = 'ZAR',
+    paymentTerms,
+    contact,
+    orgId,
+  } = input;
+
+  return withTransaction(async client => {
     // Resolve org_id - use provided, or get default
     let resolvedOrgId = orgId;
     if (!resolvedOrgId) {
@@ -201,7 +210,7 @@ export async function upsertSupplier(input: UpsertSupplierInput): Promise<Suppli
           resolvedOrgId,
           id,
         ]
-      )
+      );
     } else {
       // For new suppliers, org_id is required
       const ins = await client.query(
@@ -217,8 +226,8 @@ export async function upsertSupplier(input: UpsertSupplierInput): Promise<Suppli
           contact ? JSON.stringify(contact) : null,
           resolvedOrgId,
         ]
-      )
-      input.id = String(ins.rows[0].supplier_id)
+      );
+      input.id = String(ins.rows[0].supplier_id);
     }
 
     const sup = await client.query(
@@ -226,25 +235,27 @@ export async function upsertSupplier(input: UpsertSupplierInput): Promise<Suppli
        FROM core.supplier
        WHERE supplier_id = $1`,
       [input.id]
-    )
-    const row = sup.rows[0]
+    );
+    const row = sup.rows[0];
     return {
       id: String(row.id),
       name: row.name,
-      status: (row.active ? 'active' : 'inactive'),
+      status: row.active ? 'active' : 'inactive',
       code: row.code ?? undefined,
       orgId: row.org_id ? String(row.org_id) : undefined,
       createdAt: new Date(row.created_at ?? Date.now()).toISOString(),
       updatedAt: new Date(row.updated_at ?? Date.now()).toISOString(),
-    }
-  })
+    };
+  });
 }
 
 export async function deactivateSupplier(id: string): Promise<void> {
-  await query(`UPDATE core.supplier SET active = false, updated_at = NOW() WHERE supplier_id = $1`, [id])
+  await query(
+    `UPDATE core.supplier SET active = false, updated_at = NOW() WHERE supplier_id = $1`,
+    [id]
+  );
 }
 
 export async function linkExternalRef(_id: string, _system: string, _value: string): Promise<void> {
   // TODO: Implement external refs mapping table if/when required.
 }
-

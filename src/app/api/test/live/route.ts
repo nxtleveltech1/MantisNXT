@@ -3,24 +3,24 @@
  * Comprehensive test of all backend functionality
  */
 
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { pool } from '@/lib/database'
-import { upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService'
-import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
-import getDatabaseMetadata from '@/lib/database-info'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/database';
+import { upsertSupplier, deactivateSupplier } from '@/services/ssot/supplierService';
+import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService';
+import getDatabaseMetadata from '@/lib/database-info';
 
 export async function GET(request: NextRequest) {
-  const metadata = getDatabaseMetadata()
+  const metadata = getDatabaseMetadata();
   const results = {
     timestamp: new Date().toISOString(),
     tests: [] as any[],
     summary: {
       passed: 0,
       failed: 0,
-      total: 0
-    }
-  }
+      total: 0,
+    },
+  };
 
   // Helper function to add test result
   function addTest(name: string, success: boolean, details?: any, error?: string) {
@@ -29,70 +29,100 @@ export async function GET(request: NextRequest) {
       success,
       details,
       error,
-      timestamp: new Date().toISOString()
-    })
+      timestamp: new Date().toISOString(),
+    });
 
     if (success) {
-      results.summary.passed++
+      results.summary.passed++;
     } else {
-      results.summary.failed++
+      results.summary.failed++;
     }
-    results.summary.total++
+    results.summary.total++;
   }
 
   try {
     // Test 1: Database Connection
     try {
-      const connectionResult = await pool.query('SELECT NOW() as current_time, version() as pg_version')
+      const connectionResult = await pool.query(
+        'SELECT NOW() as current_time, version() as pg_version'
+      );
       addTest('Database Connection', true, {
         time: connectionResult.rows[0].current_time,
-        version: connectionResult.rows[0].pg_version.split(' ')[0]
-      })
+        version: connectionResult.rows[0].pg_version.split(' ')[0],
+      });
     } catch (error) {
-      addTest('Database Connection', false, null, error instanceof Error ? error.message : 'Unknown error')
+      addTest(
+        'Database Connection',
+        false,
+        null,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
 
     // Test 2: Table Existence Check
     try {
-      const tables = ['organizations', 'suppliers', 'inventory_items', 'stock_movements']
-      const tableResults = []
+      const tables = ['organizations', 'suppliers', 'inventory_items', 'stock_movements'];
+      const tableResults = [];
 
       for (const table of tables) {
         try {
-          const result = await pool.query(`SELECT COUNT(*) as count FROM ${table}`)
-          tableResults.push({ table, count: result.rows[0].count, status: 'exists' })
+          const result = await pool.query(`SELECT COUNT(*) as count FROM ${table}`);
+          tableResults.push({ table, count: result.rows[0].count, status: 'exists' });
         } catch (error) {
-          tableResults.push({ table, count: 0, status: 'missing' })
+          tableResults.push({ table, count: 0, status: 'missing' });
         }
       }
 
-      const missingTables = tableResults.filter(t => t.status === 'missing')
-      addTest('Table Existence', missingTables.length === 0, tableResults,
-              missingTables.length > 0 ? `Missing tables: ${missingTables.map(t => t.table).join(', ')}` : undefined)
+      const missingTables = tableResults.filter(t => t.status === 'missing');
+      addTest(
+        'Table Existence',
+        missingTables.length === 0,
+        tableResults,
+        missingTables.length > 0
+          ? `Missing tables: ${missingTables.map(t => t.table).join(', ')}`
+          : undefined
+      );
     } catch (error) {
-      addTest('Table Existence', false, null, error instanceof Error ? error.message : 'Unknown error')
+      addTest(
+        'Table Existence',
+        false,
+        null,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
 
     // Test 3: Suppliers CRUD Operations
     try {
       // Create test supplier
-      const created = await upsertSupplier({ name: 'API Test Supplier', code: 'APITEST', status: 'active', contact: { email: 'apitest@supplier.com', phone: '+27123456789' } })
-      const supplierId = created.id
+      const created = await upsertSupplier({
+        name: 'API Test Supplier',
+        code: 'APITEST',
+        status: 'active',
+        contact: { email: 'apitest@supplier.com', phone: '+27123456789' },
+      });
+      const supplierId = created.id;
 
       // Read supplier via public view
-      const readResult = await pool.query('SELECT * FROM core.supplier WHERE supplier_id = $1', [supplierId])
+      const readResult = await pool.query('SELECT * FROM core.supplier WHERE supplier_id = $1', [
+        supplierId,
+      ]);
 
       // Clean up (deactivate)
-      await deactivateSupplier(supplierId)
+      await deactivateSupplier(supplierId);
 
       addTest('Suppliers CRUD', true, {
         created: created.name ?? 'API Test Supplier',
         read: readResult.rows.length > 0,
         updated: true,
-        deleted: true
-      })
+        deleted: true,
+      });
     } catch (error) {
-      addTest('Suppliers CRUD', false, null, error instanceof Error ? error.message : 'Unknown error')
+      addTest(
+        'Suppliers CRUD',
+        false,
+        null,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
 
     // Test 4: Inventory Operations
@@ -103,14 +133,27 @@ export async function GET(request: NextRequest) {
         FROM information_schema.columns
         WHERE table_name = 'inventory_items'
         ORDER BY ordinal_position
-      `)
+      `);
 
-      const testSKU = `TEST-${Date.now()}`
-      await upsertSupplierProduct({ supplierId: '00000000-0000-0000-0000-000000000000', sku: testSKU, name: 'Test Product' })
-      await setStock({ supplierId: '00000000-0000-0000-0000-000000000000', sku: testSKU, quantity: 10, unitCost: 100, reason: 'API Test Movement' })
+      const testSKU = `TEST-${Date.now()}`;
+      await upsertSupplierProduct({
+        supplierId: '00000000-0000-0000-0000-000000000000',
+        sku: testSKU,
+        name: 'Test Product',
+      });
+      await setStock({
+        supplierId: '00000000-0000-0000-0000-000000000000',
+        sku: testSKU,
+        quantity: 10,
+        unitCost: 100,
+        reason: 'API Test Movement',
+      });
 
       // Clean up inserted records (best effort)
-      await pool.query('DELETE FROM stock_movements WHERE reference_doc = $1 AND notes = $2', ['setStock', 'API Test Movement'])
+      await pool.query('DELETE FROM stock_movements WHERE reference_doc = $1 AND notes = $2', [
+        'setStock',
+        'API Test Movement',
+      ]);
       await pool.query(
         `
           DELETE FROM core.stock_on_hand soh
@@ -120,55 +163,74 @@ export async function GET(request: NextRequest) {
             AND sp.supplier_id = $2
         `,
         [testSKU, '00000000-0000-0000-0000-000000000000']
-      )
+      );
       await pool.query(
         'DELETE FROM core.supplier_product WHERE supplier_sku = $1 AND supplier_id = $2',
         [testSKU, '00000000-0000-0000-0000-000000000000']
-      )
+      );
 
       addTest('Inventory Operations', true, {
         schemaColumns: inventorySchema.rows.length,
         itemCreated: testSKU,
-        movementRecorded: true
-      })
+        movementRecorded: true,
+      });
     } catch (error) {
-      addTest('Inventory Operations', false, null, error instanceof Error ? error.message : 'Unknown error')
+      addTest(
+        'Inventory Operations',
+        false,
+        null,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
 
     // Test 5: Upload Sessions
     try {
-      const uploadResult = await pool.query(`SELECT COUNT(*) as count FROM upload_sessions`)
+      const uploadResult = await pool.query(`SELECT COUNT(*) as count FROM upload_sessions`);
 
       addTest('Upload Sessions', true, {
         count: parseInt(uploadResult.rows[0].count),
-        status: 'ready'
-      })
+        status: 'ready',
+      });
     } catch (error) {
-      addTest('Upload Sessions', false, null, error instanceof Error ? error.message : 'Unknown error')
+      addTest(
+        'Upload Sessions',
+        false,
+        null,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
 
     // Test 6: Upload Session Tables
     try {
-      const uploadTables = ['upload_sessions', 'upload_temp_data', 'upload_backups']
-      const uploadResults = []
+      const uploadTables = ['upload_sessions', 'upload_temp_data', 'upload_backups'];
+      const uploadResults = [];
 
       for (const table of uploadTables) {
         try {
-          const result = await pool.query(`SELECT COUNT(*) as count FROM ${table}`)
-          uploadResults.push({ table, count: parseInt(result.rows[0].count), status: 'ready' })
+          const result = await pool.query(`SELECT COUNT(*) as count FROM ${table}`);
+          uploadResults.push({ table, count: parseInt(result.rows[0].count), status: 'ready' });
         } catch (error) {
-          uploadResults.push({ table, count: 0, status: 'error' })
+          uploadResults.push({ table, count: 0, status: 'error' });
         }
       }
 
-      addTest('Upload Infrastructure', uploadResults.every(r => r.status === 'ready'), uploadResults)
+      addTest(
+        'Upload Infrastructure',
+        uploadResults.every(r => r.status === 'ready'),
+        uploadResults
+      );
     } catch (error) {
-      addTest('Upload Infrastructure', false, null, error instanceof Error ? error.message : 'Unknown error')
+      addTest(
+        'Upload Infrastructure',
+        false,
+        null,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
 
     // Test 7: Performance Check
     try {
-      const startTime = Date.now()
+      const startTime = Date.now();
 
       // Run a complex query to test performance
       const perfResult = await pool.query(`
@@ -177,84 +239,103 @@ export async function GET(request: NextRequest) {
           (SELECT COUNT(*) FROM public.inventory_items) as inventory_count,
           (SELECT COUNT(*) FROM stock_movements) as movement_count,
           (SELECT COUNT(*) FROM upload_sessions) as upload_count
-      `)
+      `);
 
-      const queryTime = Date.now() - startTime
+      const queryTime = Date.now() - startTime;
 
-      addTest('Database Performance', queryTime < 1000, {
-        queryTime: `${queryTime}ms`,
-        counts: perfResult.rows[0]
-      }, queryTime >= 1000 ? 'Query took longer than 1 second' : undefined)
+      addTest(
+        'Database Performance',
+        queryTime < 1000,
+        {
+          queryTime: `${queryTime}ms`,
+          counts: perfResult.rows[0],
+        },
+        queryTime >= 1000 ? 'Query took longer than 1 second' : undefined
+      );
     } catch (error) {
-      addTest('Database Performance', false, null, error instanceof Error ? error.message : 'Unknown error')
+      addTest(
+        'Database Performance',
+        false,
+        null,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
 
     // Calculate overall health score
-    const healthScore = results.summary.total > 0 ?
-      Math.round((results.summary.passed / results.summary.total) * 100) : 0
+    const healthScore =
+      results.summary.total > 0
+        ? Math.round((results.summary.passed / results.summary.total) * 100)
+        : 0;
 
     return NextResponse.json({
       success: true,
       healthScore,
-      status: healthScore === 100 ? 'excellent' :
-              healthScore >= 80 ? 'good' :
-              healthScore >= 60 ? 'fair' : 'poor',
+      status:
+        healthScore === 100
+          ? 'excellent'
+          : healthScore >= 80
+            ? 'good'
+            : healthScore >= 60
+              ? 'fair'
+              : 'poor',
       database: {
         host: metadata.host,
         port: metadata.port,
-        database: metadata.database
+        database: metadata.database,
       },
       ...results,
-      recommendations: generateRecommendations(results.tests)
-    })
-
+      recommendations: generateRecommendations(results.tests),
+    });
   } catch (error) {
-    console.error('API test failed:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'API test execution failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      ...results
-    }, { status: 500 })
+    console.error('API test failed:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'API test execution failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        ...results,
+      },
+      { status: 500 }
+    );
   }
 }
 
 function generateRecommendations(tests: any[]): string[] {
-  const recommendations: string[] = []
+  const recommendations: string[] = [];
 
-  const failedTests = tests.filter(t => !t.success)
+  const failedTests = tests.filter(t => !t.success);
 
   if (failedTests.length === 0) {
-    recommendations.push('All systems operational - backend is ready for production use')
+    recommendations.push('All systems operational - backend is ready for production use');
   } else {
-    recommendations.push(`${failedTests.length} tests failed - review and fix issues`)
+    recommendations.push(`${failedTests.length} tests failed - review and fix issues`);
 
     failedTests.forEach(test => {
       switch (test.name) {
         case 'Database Connection':
-          recommendations.push('Check database server status and connection credentials')
-          break
+          recommendations.push('Check database server status and connection credentials');
+          break;
         case 'Table Existence':
-          recommendations.push('Run database migration script to create missing tables')
-          break
+          recommendations.push('Run database migration script to create missing tables');
+          break;
         case 'Suppliers CRUD':
-          recommendations.push('Check suppliers table permissions and structure')
-          break
+          recommendations.push('Check suppliers table permissions and structure');
+          break;
         case 'Inventory Operations':
-          recommendations.push('Verify inventory and stock_movements table configuration')
-          break
+          recommendations.push('Verify inventory and stock_movements table configuration');
+          break;
         case 'Authentication Schema':
-          recommendations.push('Set up authentication tables and default admin user')
-          break
+          recommendations.push('Set up authentication tables and default admin user');
+          break;
         case 'Upload Infrastructure':
-          recommendations.push('Create upload session tables for file processing')
-          break
+          recommendations.push('Create upload session tables for file processing');
+          break;
         case 'Database Performance':
-          recommendations.push('Optimize database queries and check server resources')
-          break
+          recommendations.push('Optimize database queries and check server resources');
+          break;
       }
-    })
+    });
   }
 
-  return recommendations
+  return recommendations;
 }

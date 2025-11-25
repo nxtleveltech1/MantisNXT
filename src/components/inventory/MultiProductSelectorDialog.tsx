@@ -18,6 +18,32 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { ColumnManagementDialog, type ColumnDef } from '@/components/catalog/ColumnManagementDialog'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
+  Search,
+  Columns,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Info,
+  AlertTriangle,
+  Activity,
+  BarChart3,
+} from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useInventoryStore } from '@/lib/stores/inventory-store'
 import { useNotificationStore } from '@/lib/stores/notification-store'
 
@@ -303,6 +329,85 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
       last_seen: 'last_seen_at',
     }
     return sortMap[columnKey] || columnKey
+
+        if (cancelled) return
+        
+        const normalized: SelectorRow[] = data.map((r: unknown) => ({
+          supplier_product_id: r.supplier_product_id,
+          supplier_id: r.supplier_id,
+          supplier_sku: r.supplier_sku,
+          name_from_supplier: r.name_from_supplier,
+          uom: r.uom,
+          brand: r.brand || null,
+          category_id: r.category_id || null,
+          category_name: r.category_name || null,
+          supplier_name: r.supplier_name || null,
+          current_price: r.current_price ?? null,
+        }))
+        
+        // Build brand list
+        const brands = Array.from(new Set(normalized.map(r => (r.brand || '').trim()).filter(Boolean))).sort()
+        setBrandList(brands)
+
+        // Attach category names if missing
+        const catMap = new Map(categoryList.map(c => [c.id, c.name]))
+        const withCatNames = normalized.map(r => ({
+          ...r,
+          category_name: r.category_name || (r.category_id ? (catMap.get(r.category_id) || null) : r.category_name)
+        }))
+        
+        if (!cancelled) {
+          setRows(withCatNames)
+        }
+      } catch (e) {
+        console.error('Failed to load products:', e)
+        if (!cancelled) {
+          setRows([])
+          addNotification({ 
+            type: 'error', 
+            title: 'Failed to load products', 
+            message: e instanceof Error ? e.message : 'Unknown error' 
+          })
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    const t = setTimeout(load, 300)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [addNotification, categoryList, open, page, search, supplierId])
+
+  const categories = useMemo(() => {
+    // Prefer canonical category list when available
+    if (categoryList.length > 0) return categoryList.map(c => c.name)
+    return Array.from(new Set(rows.map(p => p.category_name || 'uncategorized'))).sort()
+  }, [rows, categoryList])
+
+  // Since we now use server-side pagination and search, just display the current page of rows
+  // Client-side filtering would give incorrect results with paginated data
+  const filtered = useMemo(() => {
+    // Apply only client-side category and brand filters for the current page
+    return rows.filter(p => {
+      if (category !== 'all_categories') {
+        const name = p.category_name || 'uncategorized'
+        if (name !== category) return false
+      }
+      if (brand !== 'all_brands') {
+        if ((p.brand || '').toLowerCase() !== brand.toLowerCase()) return false
+      }
+      return true
+    })
+  }, [rows, category, brand])
+
+  const supplierNameFromRow = (r: SelectorRow) => r.supplier_name || 'Unknown'
+
+  const setQty = (productId: string, qty: number) => {
+    setQuantities(prev => ({ ...prev, [productId]: qty }))
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (qty > 0) next.add(productId); else next.delete(productId)
+      return next
+    })
   }
 
   // Helper to render table header cell
@@ -650,6 +755,18 @@ export default function MultiProductSelectorDialog({ open, onOpenChange }: Multi
       console.error('[MultiProductSelector] Error in handleBulkAdd:', e)
       addNotification({ type: 'error', title: 'Failed to add products', message: e instanceof Error ? e.message : 'Unknown error' })
     }
+  }
+
+  const hasActiveFilters = search || category !== 'all_categories' || brand !== 'all_brands' || supplierId !== 'all_suppliers'
+  const filteredCount = filtered.length
+  const totalCount = total || rows.length
+
+  const clearFilters = () => {
+    setSearch('')
+    setCategory('all_categories')
+    setBrand('all_brands')
+    setSupplierId('all_suppliers')
+    setPage(1)
   }
 
   return (

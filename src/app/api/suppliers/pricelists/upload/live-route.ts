@@ -3,14 +3,22 @@
  * Real-time integration with PostgreSQL for supplier price lists
  */
 
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { z } from 'zod'
-import * as XLSX from 'xlsx'
-import { query, withTransaction } from '@/lib/database'
-import { sppQuery } from '@/lib/database/spp-connection-manager'
-import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService'
-import type { PoolClient } from 'pg'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import * as XLSX from 'xlsx';
+import { query, withTransaction } from '@/lib/database';
+import { sppQuery } from '@/lib/database/spp-connection-manager';
+import { upsertSupplierProduct, setStock } from '@/services/ssot/inventoryService';
+import type { PoolClient } from 'pg';
+
+type InventorySummaryRow = {
+  sku: string;
+  id: string;
+  name: string;
+  cost_price: number | null;
+  stock_qty: number | null;
+};
 
 type InventorySummaryRow = {
   sku: string;
@@ -29,8 +37,8 @@ const UploadSessionSchema = z.object({
   supplierId: z.string().uuid(),
   filename: z.string().min(1),
   fileSize: z.number().min(1),
-  totalRows: z.number().min(1)
-})
+  totalRows: z.number().min(1),
+});
 
 const FieldMappingSchema = z.object({
   sku: z.string().min(1, 'SKU mapping is required'),
@@ -51,8 +59,8 @@ const FieldMappingSchema = z.object({
   barcode: z.string().optional(),
   location: z.string().optional(),
   tags: z.string().optional(),
-  notes: z.string().optional()
-})
+  notes: z.string().optional(),
+});
 
 const ProcessUploadSchema = z.object({
   sessionId: z.string().min(1),
@@ -61,123 +69,141 @@ const ProcessUploadSchema = z.object({
   conflictResolution: z.object({
     strategy: z.enum(['skip', 'update', 'merge', 'create_variant']),
     updateFields: z.array(z.string()).default([]),
-    preserveFields: z.array(z.string()).default([])
+    preserveFields: z.array(z.string()).default([]),
   }),
-  validationOptions: z.object({
-    skipEmptyRows: z.boolean().default(true),
-    validateSkus: z.boolean().default(true),
-    checkDuplicates: z.boolean().default(true),
-    validatePrices: z.boolean().default(true),
-    normalizeText: z.boolean().default(true),
-    createBackup: z.boolean().default(true)
-  }).default({}),
-  dryRun: z.boolean().default(false)
-})
+  validationOptions: z
+    .object({
+      skipEmptyRows: z.boolean().default(true),
+      validateSkus: z.boolean().default(true),
+      checkDuplicates: z.boolean().default(true),
+      validatePrices: z.boolean().default(true),
+      normalizeText: z.boolean().default(true),
+      createBackup: z.boolean().default(true),
+    })
+    .default({}),
+  dryRun: z.boolean().default(false),
+});
 
 interface UploadSession {
-  id: string
-  supplierId: string
-  supplierName: string
-  filename: string
-  fileSize: number
-  totalRows: number
-  processedRows: number
-  validRows: number
-  errorRows: number
-  warningRows: number
-  skippedRows: number
-  status: 'uploading' | 'mapping' | 'validating' | 'importing' | 'completed' | 'failed' | 'rollback'
-  progress: number
-  createdAt: Date
-  updatedAt: Date
-  completedAt?: Date
-  backupId?: string
-  fieldMappings?: Record<string, string>
-  validationResults?: ValidationResult
-  importResults?: ImportResult
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  filename: string;
+  fileSize: number;
+  totalRows: number;
+  processedRows: number;
+  validRows: number;
+  errorRows: number;
+  warningRows: number;
+  skippedRows: number;
+  status:
+    | 'uploading'
+    | 'mapping'
+    | 'validating'
+    | 'importing'
+    | 'completed'
+    | 'failed'
+    | 'rollback';
+  progress: number;
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt?: Date;
+  backupId?: string;
+  fieldMappings?: Record<string, string>;
+  validationResults?: ValidationResult;
+  importResults?: ImportResult;
 }
 
 interface ValidationIssue {
-  row: number
-  field: string
-  value: unknown
-  severity: 'error' | 'warning' | 'info'
-  message: string
-  suggestion?: string
-  autoFixAvailable?: boolean
+  row: number;
+  field: string;
+  value: unknown;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  suggestion?: string;
+  autoFixAvailable?: boolean;
 }
 
 interface ProcessedRow {
-  id: string
-  rowNumber: number
-  originalData: Record<string, unknown>
-  mappedData: Record<string, unknown>
-  status: 'valid' | 'warning' | 'error' | 'skipped'
-  issues: ValidationIssue[]
-  action: 'create' | 'update' | 'skip'
-  existingRecord?: unknown
-  resolvedConflicts?: string[]
+  id: string;
+  rowNumber: number;
+  originalData: Record<string, unknown>;
+  mappedData: Record<string, unknown>;
+  status: 'valid' | 'warning' | 'error' | 'skipped';
+  issues: ValidationIssue[];
+  action: 'create' | 'update' | 'skip';
+  existingRecord?: unknown;
+  resolvedConflicts?: string[];
 }
 
 interface ValidationResult {
-  isValid: boolean
+  isValid: boolean;
   summary: {
-    totalRows: number
-    validRows: number
-    errorRows: number
-    warningRows: number
-    skippedRows: number
-    duplicatesFound: number
-    conflictsResolved: number
-    estimatedValue: number
-    categories: Set<string>
-    brands: Set<string>
-  }
-  issues: ValidationIssue[]
-  processedRows: ProcessedRow[]
-  recommendations: string[]
+    totalRows: number;
+    validRows: number;
+    errorRows: number;
+    warningRows: number;
+    skippedRows: number;
+    duplicatesFound: number;
+    conflictsResolved: number;
+    estimatedValue: number;
+    categories: Set<string>;
+    brands: Set<string>;
+  };
+  issues: ValidationIssue[];
+  processedRows: ProcessedRow[];
+  recommendations: string[];
 }
 
 interface ImportResult {
-  created: number
-  updated: number
-  skipped: number
-  errors: string[]
-  backupId?: string
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+  backupId?: string;
   summary: {
-    totalValue: number
-    newCategories: number
-    newBrands: number
-    affectedSuppliers: number
-  }
+    totalValue: number;
+    newCategories: number;
+    newBrands: number;
+    affectedSuppliers: number;
+  };
 }
 
 // GET /api/suppliers/pricelists/upload/live-route - Get upload session status
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const sessionId = searchParams.get('sessionId')
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get('sessionId');
 
     if (!sessionId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Session ID is required'
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Session ID is required',
+        },
+        { status: 400 }
+      );
     }
 
     // Get session from database
-    const sessionResult = await query(`
+    const sessionResult = await query(
+      `
       SELECT * FROM upload_sessions WHERE id = $1
-    `, [sessionId])
+    `,
+      [sessionId]
+    );
 
     if (sessionResult.rows.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'Upload session not found'
-      }, { status: 404 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Upload session not found',
+        },
+        { status: 404 }
+      );
     }
 
-    const session = sessionResult.rows[0]
+    const session = sessionResult.rows[0];
 
     return NextResponse.json({
       success: true,
@@ -185,75 +211,88 @@ export async function GET(request: NextRequest) {
         ...session,
         fieldMappings: session.field_mappings,
         validationResults: session.validation_results,
-        importResults: session.import_results
-      }
-    })
-
+        importResults: session.import_results,
+      },
+    });
   } catch (error) {
-    console.error('Error retrieving upload session:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 })
+    console.error('Error retrieving upload session:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 // POST /api/suppliers/pricelists/upload/live-route - Create upload session or process upload
 export async function POST(request: NextRequest) {
   try {
-    const contentType = request.headers.get('content-type')
+    const contentType = request.headers.get('content-type');
 
     // Handle file upload (multipart/form-data)
     if (contentType?.includes('multipart/form-data')) {
-      return handleFileUpload(request)
+      return handleFileUpload(request);
     }
 
     // Handle upload processing (application/json)
-    return handleUploadProcessing(request)
-
+    return handleUploadProcessing(request);
   } catch (error) {
-    console.error('Error in upload handler:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Upload operation failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error in upload handler:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Upload operation failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 // Handle file upload and create session
 async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
-  const formData = await request.formData()
-  const file = formData.get('file') as File
-  const supplierId = formData.get('supplierId') as string
+  const formData = await request.formData();
+  const file = formData.get('file') as File;
+  const supplierId = formData.get('supplierId') as string;
 
   if (!file || !supplierId) {
-    return NextResponse.json({
-      success: false,
-      error: 'File and supplier ID are required'
-    }, { status: 400 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'File and supplier ID are required',
+      },
+      { status: 400 }
+    );
   }
 
   // Validate file type and size
   const allowedTypes = [
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-excel',
-    'text/csv'
-  ]
+    'text/csv',
+  ];
 
   if (!allowedTypes.includes(file.type)) {
-    return NextResponse.json({
-      success: false,
-      error: 'Invalid file type. Please upload Excel (.xlsx, .xls) or CSV files only'
-    }, { status: 400 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Invalid file type. Please upload Excel (.xlsx, .xls) or CSV files only',
+      },
+      { status: 400 }
+    );
   }
 
-  const maxSize = 25 * 1024 * 1024 // 25MB
+  const maxSize = 25 * 1024 * 1024; // 25MB
   if (file.size > maxSize) {
-    return NextResponse.json({
-      success: false,
-      error: 'File size exceeds 25MB limit'
-    }, { status: 400 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'File size exceeds 25MB limit',
+      },
+      { status: 400 }
+    );
   }
 
   try {
@@ -261,78 +300,94 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
     const supplierResult = await query(
       'SELECT name, contact_email AS email FROM core.supplier WHERE supplier_id::text = $1',
       [supplierId]
-    )
+    );
 
     if (supplierResult.rows.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'Supplier not found'
-      }, { status: 404 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Supplier not found',
+        },
+        { status: 404 }
+      );
     }
 
-    const supplier = supplierResult.rows[0]
+    const supplier = supplierResult.rows[0];
 
     // Process file
-    const arrayBuffer = await file.arrayBuffer()
-    let data: unknown[][]
-    let headers: string[]
+    const arrayBuffer = await file.arrayBuffer();
+    let data: unknown[][];
+    let headers: string[];
 
     if (file.type === 'text/csv') {
       // Handle CSV
-      const text = new TextDecoder().decode(arrayBuffer)
-      const lines = text.split('\n').filter(line => line.trim())
+      const text = new TextDecoder().decode(arrayBuffer);
+      const lines = text.split('\n').filter(line => line.trim());
       data = lines.map(line =>
         line.split(',').map(cell => cell.trim().replace(/^["']|["']$/g, ''))
-      )
-      headers = data[0]
-      data = data.slice(1)
+      );
+      headers = data[0];
+      data = data.slice(1);
     } else {
       // Handle Excel
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' })
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
       if (jsonData.length < 2) {
-        return NextResponse.json({
-          success: false,
-          error: 'File must contain at least a header row and one data row'
-        }, { status: 400 })
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'File must contain at least a header row and one data row',
+          },
+          { status: 400 }
+        );
       }
 
-      headers = jsonData[0] as string[]
+      headers = jsonData[0] as string[];
       data = jsonData
         .slice(1)
-        .filter((row): row is unknown[] => Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== ''))
-        .map(row => row as unknown[])
+        .filter(
+          (row): row is unknown[] =>
+            Array.isArray(row) &&
+            row.some(cell => cell !== null && cell !== undefined && cell !== '')
+        )
+        .map(row => row as unknown[]);
     }
 
     // Create upload session in database
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    await query(`
+    await query(
+      `
       INSERT INTO upload_sessions (
         id, supplier_id, supplier_name, filename, file_size, total_rows,
         status, progress, headers, sample_data, created_at, updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, 'uploading', 100, $7, $8, NOW(), NOW())
-    `, [
-      sessionId,
-      supplierId,
-      supplier.name,
-      file.name,
-      file.size,
-      data.length,
-      JSON.stringify(headers),
-      JSON.stringify(data.slice(0, 5)) // First 5 rows for preview
-    ])
+    `,
+      [
+        sessionId,
+        supplierId,
+        supplier.name,
+        file.name,
+        file.size,
+        data.length,
+        JSON.stringify(headers),
+        JSON.stringify(data.slice(0, 5)), // First 5 rows for preview
+      ]
+    );
 
     // Store complete file data temporarily
-    await query(`
+    await query(
+      `
       INSERT INTO upload_temp_data (session_id, data, created_at)
       VALUES ($1, $2, NOW())
-    `, [sessionId, JSON.stringify({ headers, data })])
+    `,
+      [sessionId, JSON.stringify({ headers, data })]
+    );
 
     // Generate automatic field mappings
-    const autoMappings = generateAutoMappings(headers)
+    const autoMappings = generateAutoMappings(headers);
 
     return NextResponse.json({
       success: true,
@@ -341,67 +396,71 @@ async function handleFileUpload(request: NextRequest): Promise<NextResponse> {
         supplier: {
           id: supplierId,
           name: supplier.name,
-          email: supplier.email
+          email: supplier.email,
         },
         file: {
           name: file.name,
           size: file.size,
-          totalRows: data.length
+          totalRows: data.length,
         },
         headers,
         sampleData: data.slice(0, 5),
         autoMappings,
-        mappingConfidence: calculateMappingConfidence(autoMappings, headers)
+        mappingConfidence: calculateMappingConfidence(autoMappings, headers),
       },
-      message: 'File uploaded successfully'
-    })
-
+      message: 'File uploaded successfully',
+    });
   } catch (error) {
-    console.error('File processing error:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to process file',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 400 })
+    console.error('File processing error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to process file',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 400 }
+    );
   }
 }
 
 // Handle upload processing with validation and conflict resolution
 async function handleUploadProcessing(request: NextRequest): Promise<NextResponse> {
-  const body = await request.json()
-  const validatedData = ProcessUploadSchema.parse(body)
+  const body = await request.json();
+  const validatedData = ProcessUploadSchema.parse(body);
 
-  return await withTransaction(async (client) => {
+  return await withTransaction(async client => {
     // Get session from database
-    const sessionResult = await client.query(
-      'SELECT * FROM upload_sessions WHERE id = $1',
-      [validatedData.sessionId]
-    )
+    const sessionResult = await client.query('SELECT * FROM upload_sessions WHERE id = $1', [
+      validatedData.sessionId,
+    ]);
 
     if (sessionResult.rows.length === 0) {
-      throw new Error('Upload session not found')
+      throw new Error('Upload session not found');
     }
 
-    const session = sessionResult.rows[0]
+    const session = sessionResult.rows[0];
 
     // Get file data
     const fileDataResult = await client.query(
       'SELECT data FROM upload_temp_data WHERE session_id = $1',
       [validatedData.sessionId]
-    )
+    );
 
     if (fileDataResult.rows.length === 0) {
-      throw new Error('File data not found')
+      throw new Error('File data not found');
     }
 
-    const fileData = JSON.parse(fileDataResult.rows[0].data)
+    const fileData = JSON.parse(fileDataResult.rows[0].data);
 
     // Update session status
-    await client.query(`
+    await client.query(
+      `
       UPDATE upload_sessions
       SET status = 'validating', progress = 10, field_mappings = $2, updated_at = NOW()
       WHERE id = $1
-    `, [validatedData.sessionId, JSON.stringify(validatedData.fieldMappings)])
+    `,
+      [validatedData.sessionId, JSON.stringify(validatedData.fieldMappings)]
+    );
 
     // Process and validate data
     const validationResult = await processAndValidateData(
@@ -411,44 +470,54 @@ async function handleUploadProcessing(request: NextRequest): Promise<NextRespons
       validatedData.conflictResolution,
       validatedData.validationOptions,
       client
-    )
+    );
 
     // Update session with validation results
-    await client.query(`
+    await client.query(
+      `
       UPDATE upload_sessions
       SET validation_results = $2, valid_rows = $3, error_rows = $4,
           warning_rows = $5, skipped_rows = $6, progress = 75, status = 'importing', updated_at = NOW()
       WHERE id = $1
-    `, [
-      validatedData.sessionId,
-      JSON.stringify(validationResult),
-      validationResult.summary.validRows,
-      validationResult.summary.errorRows,
-      validationResult.summary.warningRows,
-      validationResult.summary.skippedRows
-    ])
+    `,
+      [
+        validatedData.sessionId,
+        JSON.stringify(validationResult),
+        validationResult.summary.validRows,
+        validationResult.summary.errorRows,
+        validationResult.summary.warningRows,
+        validationResult.summary.skippedRows,
+      ]
+    );
 
     // If dry run, return validation results without importing
     if (validatedData.dryRun) {
-      await client.query(`
+      await client.query(
+        `
         UPDATE upload_sessions SET status = 'validating', progress = 50, updated_at = NOW() WHERE id = $1
-      `, [validatedData.sessionId])
+      `,
+        [validatedData.sessionId]
+      );
 
       return NextResponse.json({
         success: true,
         data: {
           sessionId: validatedData.sessionId,
           validationResult,
-          dryRun: true
+          dryRun: true,
         },
-        message: 'Validation completed (dry run)'
-      })
+        message: 'Validation completed (dry run)',
+      });
     }
 
     // Create backup before importing
-    let backupId: string | undefined
+    let backupId: string | undefined;
     if (validatedData.validationOptions.createBackup) {
-      backupId = await createBackup(client, validatedData.sessionId, validationResult.processedRows)
+      backupId = await createBackup(
+        client,
+        validatedData.sessionId,
+        validationResult.processedRows
+      );
     }
 
     // Import data to inventory
@@ -457,28 +526,29 @@ async function handleUploadProcessing(request: NextRequest): Promise<NextRespons
       validationResult.processedRows,
       validatedData.conflictResolution,
       validatedData.supplierId
-    )
+    );
 
     await recordPricelistUploadInSpp({
       supplierId: validatedData.supplierId,
       session,
       processedRows: validationResult.processedRows,
-    })
+    });
 
     // Update session completion
-    await client.query(`
+    await client.query(
+      `
       UPDATE upload_sessions
       SET status = 'completed', progress = 100, completed_at = NOW(),
           backup_id = $2, import_results = $3, updated_at = NOW()
       WHERE id = $1
-    `, [
-      validatedData.sessionId,
-      backupId,
-      JSON.stringify(importResult)
-    ])
+    `,
+      [validatedData.sessionId, backupId, JSON.stringify(importResult)]
+    );
 
     // Clean up temporary data
-    await client.query('DELETE FROM upload_temp_data WHERE session_id = $1', [validatedData.sessionId])
+    await client.query('DELETE FROM upload_temp_data WHERE session_id = $1', [
+      validatedData.sessionId,
+    ]);
 
     return NextResponse.json({
       success: true,
@@ -486,17 +556,17 @@ async function handleUploadProcessing(request: NextRequest): Promise<NextRespons
         sessionId: validatedData.sessionId,
         validationResult,
         importResult,
-        backupId
+        backupId,
       },
-      message: `Import completed successfully. ${importResult.created} items created, ${importResult.updated} items updated.`
-    })
-  })
+      message: `Import completed successfully. ${importResult.created} items created, ${importResult.updated} items updated.`,
+    });
+  });
 }
 
 // Helper functions for processing and validation
 function generateAutoMappings(headers: string[]): Record<string, string> {
-  const mappings: Record<string, string> = {}
-  const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'))
+  const mappings: Record<string, string> = {};
+  const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
 
   const fieldPatterns = {
     sku: ['sku', 'item_code', 'product_code', 'part_number', 'part_no'],
@@ -515,35 +585,35 @@ function generateAutoMappings(headers: string[]): Record<string, string> {
     weight: ['weight', 'mass', 'kg', 'grams'],
     barcode: ['barcode', 'ean', 'upc', 'gtin'],
     location: ['location', 'bin', 'warehouse', 'shelf'],
-    currency: ['currency', 'curr']
-  }
+    currency: ['currency', 'curr'],
+  };
 
   for (const [field, patterns] of Object.entries(fieldPatterns)) {
-    let bestMatch = { header: '', confidence: 0 }
+    let bestMatch = { header: '', confidence: 0 };
 
     normalizedHeaders.forEach((header, index) => {
       for (const pattern of patterns) {
         if (header.includes(pattern)) {
-          const confidence = pattern.length / header.length
+          const confidence = pattern.length / header.length;
           if (confidence > bestMatch.confidence) {
-            bestMatch = { header: headers[index], confidence }
+            bestMatch = { header: headers[index], confidence };
           }
         }
       }
-    })
+    });
 
     if (bestMatch.confidence > 0.4) {
-      mappings[field] = bestMatch.header
+      mappings[field] = bestMatch.header;
     }
   }
 
-  return mappings
+  return mappings;
 }
 
 function calculateMappingConfidence(mappings: Record<string, string>, headers: string[]): number {
-  const requiredFields = ['sku', 'name', 'category', 'cost_price', 'stock_qty']
-  const mappedRequired = requiredFields.filter(field => mappings[field])
-  return mappedRequired.length / requiredFields.length
+  const requiredFields = ['sku', 'name', 'category', 'cost_price', 'stock_qty'];
+  const mappedRequired = requiredFields.filter(field => mappings[field]);
+  return mappedRequired.length / requiredFields.length;
 }
 
 async function processAndValidateData(
@@ -554,12 +624,12 @@ async function processAndValidateData(
   validationOptions: unknown,
   client: unknown
 ): Promise<ValidationResult> {
-  const issues: ValidationIssue[] = []
-  const processedRows: ProcessedRow[] = []
-  const categories = new Set<string>()
-  const brands = new Set<string>()
-  let totalValue = 0
-  let conflictsResolved = 0
+  const issues: ValidationIssue[] = [];
+  const processedRows: ProcessedRow[] = [];
+  const categories = new Set<string>();
+  const brands = new Set<string>();
+  let totalValue = 0;
+  let conflictsResolved = 0;
 
   // Get existing inventory for conflict detection from core tables
   const existingInventoryResult = await client.query(`
@@ -576,19 +646,21 @@ async function processAndValidateData(
     LEFT JOIN core.stock_on_hand soh
       ON soh.supplier_product_id = sp.supplier_product_id
     GROUP BY sp.supplier_product_id, ph.price, sp.supplier_sku, sp.name_from_supplier
-  `)
+  `);
   const existingInventory = new Map<string, InventorySummaryRow>(
     existingInventoryResult.rows.map((item: InventorySummaryRow) => [item.sku, item])
-  )
+  );
 
   for (let i = 0; i < data.length; i++) {
-    const row = data[i]
-    const rowNumber = i + 2 // Account for header row and 1-based indexing
+    const row = data[i];
+    const rowNumber = i + 2; // Account for header row and 1-based indexing
 
     // Skip empty rows if configured
-    if (validationOptions.skipEmptyRows &&
-        row.every((cell: unknown) => !cell || cell.toString().trim() === '')) {
-      continue
+    if (
+      validationOptions.skipEmptyRows &&
+      row.every((cell: unknown) => !cell || cell.toString().trim() === '')
+    ) {
+      continue;
     }
 
     const processedRow: ProcessedRow = {
@@ -598,20 +670,20 @@ async function processAndValidateData(
       mappedData: {},
       status: 'valid',
       issues: [],
-      action: 'create'
-    }
+      action: 'create',
+    };
 
     // Build original data object
     headers.forEach((header, index) => {
-      processedRow.originalData[header] = row[index]
-    })
+      processedRow.originalData[header] = row[index];
+    });
 
     // Apply field mappings and validate
     for (const [targetField, sourceField] of Object.entries(fieldMappings)) {
-      if (!sourceField || !headers.includes(sourceField)) continue
+      if (!sourceField || !headers.includes(sourceField)) continue;
 
-      const sourceIndex = headers.indexOf(sourceField)
-      const value = row[sourceIndex]
+      const sourceIndex = headers.indexOf(sourceField);
+      const value = row[sourceIndex];
 
       processedRow.mappedData[targetField] = transformAndValidateField(
         targetField,
@@ -619,40 +691,41 @@ async function processAndValidateData(
         processedRow.issues,
         rowNumber,
         validationOptions
-      )
+      );
     }
 
     // Check for existing records and handle conflicts
     if (processedRow.mappedData.sku) {
-      const existingRecord = existingInventory.get(processedRow.mappedData.sku)
+      const existingRecord = existingInventory.get(processedRow.mappedData.sku);
       if (existingRecord) {
-        processedRow.existingRecord = existingRecord
-        const conflictResult = resolveConflict(processedRow, existingRecord, conflictResolution)
-        processedRow.action = conflictResult.action
-        processedRow.resolvedConflicts = conflictResult.resolvedFields
+        processedRow.existingRecord = existingRecord;
+        const conflictResult = resolveConflict(processedRow, existingRecord, conflictResolution);
+        processedRow.action = conflictResult.action;
+        processedRow.resolvedConflicts = conflictResult.resolvedFields;
 
         if (conflictResult.action !== 'skip') {
-          conflictsResolved++
+          conflictsResolved++;
         }
       }
     }
 
     // Set final status based on issues
     if (processedRow.issues.some(issue => issue.severity === 'error')) {
-      processedRow.status = 'error'
+      processedRow.status = 'error';
     } else if (processedRow.issues.length > 0) {
-      processedRow.status = 'warning'
+      processedRow.status = 'warning';
     }
 
     // Update statistics
-    if (processedRow.mappedData.category) categories.add(processedRow.mappedData.category)
-    if (processedRow.mappedData.brand) brands.add(processedRow.mappedData.brand)
+    if (processedRow.mappedData.category) categories.add(processedRow.mappedData.category);
+    if (processedRow.mappedData.brand) brands.add(processedRow.mappedData.brand);
     if (processedRow.mappedData.cost_price) {
-      totalValue += (parseFloat(processedRow.mappedData.cost_price) || 0) *
-                   (parseInt(processedRow.mappedData.stock_qty) || 0)
+      totalValue +=
+        (parseFloat(processedRow.mappedData.cost_price) || 0) *
+        (parseInt(processedRow.mappedData.stock_qty) || 0);
     }
 
-    processedRows.push(processedRow)
+    processedRows.push(processedRow);
   }
 
   // Calculate summary statistics
@@ -666,19 +739,19 @@ async function processAndValidateData(
     conflictsResolved,
     estimatedValue: totalValue,
     categories,
-    brands
-  }
+    brands,
+  };
 
   // Generate recommendations
-  const recommendations = generateRecommendations(summary, processedRows)
+  const recommendations = generateRecommendations(summary, processedRows);
 
   return {
     isValid: summary.errorRows === 0,
     summary,
     issues,
     processedRows,
-    recommendations
-  }
+    recommendations,
+  };
 }
 
 function transformAndValidateField(
@@ -690,22 +763,22 @@ function transformAndValidateField(
 ): unknown {
   if (value === null || value === undefined || value === '') {
     // Check if field is required
-    const requiredFields = ['sku', 'name', 'category', 'cost_price', 'stock_qty']
+    const requiredFields = ['sku', 'name', 'category', 'cost_price', 'stock_qty'];
     if (requiredFields.includes(fieldName)) {
       issues.push({
         row: rowNumber,
         field: fieldName,
         value,
         severity: 'error',
-        message: `Required field '${fieldName}' is empty`
-      })
+        message: `Required field '${fieldName}' is empty`,
+      });
     }
-    return null
+    return null;
   }
 
   switch (fieldName) {
     case 'sku': {
-      const sku = value.toString().trim().toUpperCase()
+      const sku = value.toString().trim().toUpperCase();
       if (validationOptions.validateSkus && !/^[A-Z0-9-_]+$/i.test(sku)) {
         issues.push({
           row: rowNumber,
@@ -713,33 +786,33 @@ function transformAndValidateField(
           value,
           severity: 'warning',
           message: 'SKU contains special characters',
-          suggestion: 'Use only alphanumeric characters, hyphens, and underscores'
-        })
+          suggestion: 'Use only alphanumeric characters, hyphens, and underscores',
+        });
       }
-      return sku
+      return sku;
     }
 
     case 'cost_price':
     case 'sale_price':
     case 'rsp': {
-      const price = parseFloat(value.toString().replace(/[^\d.-]/g, ''))
+      const price = parseFloat(value.toString().replace(/[^\d.-]/g, ''));
       if (isNaN(price) || price < 0) {
         issues.push({
           row: rowNumber,
           field: fieldName,
           value,
           severity: 'error',
-          message: `Invalid ${fieldName} value`
-        })
-        return null
+          message: `Invalid ${fieldName} value`,
+        });
+        return null;
       }
-      return price
+      return price;
     }
 
     case 'stock_qty':
     case 'reorder_point':
     case 'max_stock': {
-      const quantity = parseInt(value.toString())
+      const quantity = parseInt(value.toString());
       if (isNaN(quantity) || quantity < 0) {
         issues.push({
           row: rowNumber,
@@ -747,24 +820,24 @@ function transformAndValidateField(
           value,
           severity: 'warning',
           message: `Invalid ${fieldName} value, using 0`,
-          autoFixAvailable: true
-        })
-        return 0
+          autoFixAvailable: true,
+        });
+        return 0;
       }
-      return quantity
+      return quantity;
     }
 
     case 'weight': {
-      const weight = parseFloat(value.toString())
-      return isNaN(weight) ? null : weight
+      const weight = parseFloat(value.toString());
+      return isNaN(weight) ? null : weight;
     }
 
     default: {
-      const stringValue = value.toString().trim()
+      const stringValue = value.toString().trim();
       if (validationOptions.normalizeText) {
         return stringValue.toLowerCase().replace(/\s+/g, ' ');
       }
-      return stringValue
+      return stringValue;
     }
   }
 }
@@ -773,41 +846,45 @@ function resolveConflict(
   processedRow: ProcessedRow,
   existingRecord: unknown,
   conflictResolution: unknown
-): { action: 'create' | 'update' | 'skip', resolvedFields: string[] } {
-  const resolvedFields: string[] = []
+): { action: 'create' | 'update' | 'skip'; resolvedFields: string[] } {
+  const resolvedFields: string[] = [];
 
   switch (conflictResolution.strategy) {
     case 'skip':
-      return { action: 'skip', resolvedFields: [] }
+      return { action: 'skip', resolvedFields: [] };
 
     case 'update':
-      return { action: 'update', resolvedFields: Object.keys(processedRow.mappedData) }
+      return { action: 'update', resolvedFields: Object.keys(processedRow.mappedData) };
 
     case 'merge': {
       const mergeFields = Object.keys(processedRow.mappedData).filter(field => {
-        const newValue = processedRow.mappedData[field]
-        return newValue !== null && newValue !== undefined && newValue !== ''
-      })
-      return { action: 'update', resolvedFields: mergeFields }
+        const newValue = processedRow.mappedData[field];
+        return newValue !== null && newValue !== undefined && newValue !== '';
+      });
+      return { action: 'update', resolvedFields: mergeFields };
     }
 
     case 'create_variant':
-      processedRow.mappedData.sku = `${processedRow.mappedData.sku}-V${Date.now()}`
-      return { action: 'create', resolvedFields: ['sku'] }
+      processedRow.mappedData.sku = `${processedRow.mappedData.sku}-V${Date.now()}`;
+      return { action: 'create', resolvedFields: ['sku'] };
 
     default:
-      return { action: 'skip', resolvedFields: [] }
+      return { action: 'skip', resolvedFields: [] };
   }
 }
 
-async function createBackup(client: PoolClient, sessionId: string, processedRows: ProcessedRow[]): Promise<string> {
-  const backupId = `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+async function createBackup(
+  client: PoolClient,
+  sessionId: string,
+  processedRows: ProcessedRow[]
+): Promise<string> {
+  const backupId = `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   // Get existing records that will be affected
   const affectedSkus = processedRows
     .filter(row => row.action !== 'skip' && row.existingRecord)
     .map(row => row.mappedData.sku)
-    .filter((sku): sku is string => typeof sku === 'string' && sku.length > 0)
+    .filter((sku): sku is string => typeof sku === 'string' && sku.length > 0);
 
   if (affectedSkus.length > 0) {
     const affectedRecordsResult = await client.query(
@@ -829,41 +906,145 @@ async function createBackup(client: PoolClient, sessionId: string, processedRows
         GROUP BY sp.supplier_product_id, ph.price, sp.supplier_sku, sp.name_from_supplier, sp.attrs_json
       `,
       [affectedSkus]
-    )
+    );
 
     // Store backup
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO upload_backups (
         id, session_id, affected_records, original_data, created_at
       ) VALUES ($1, $2, $3, $4, NOW())
-    `, [
-      backupId,
-      sessionId,
-      JSON.stringify(affectedSkus),
-      JSON.stringify(affectedRecordsResult.rows)
-    ])
+    `,
+      [
+        backupId,
+        sessionId,
+        JSON.stringify(affectedSkus),
+        JSON.stringify(affectedRecordsResult.rows),
+      ]
+    );
   }
 
-  return backupId
+  return backupId;
 }
 
 function normalizeTags(input: unknown): string[] {
   if (Array.isArray(input)) {
     return input
       .map(tag => (typeof tag === 'string' ? tag.trim() : String(tag ?? '')).toLowerCase())
-      .filter(tag => tag.length > 0)
+      .filter(tag => tag.length > 0);
   }
 
   if (typeof input === 'string') {
     return input
       .split(/[;,]/)
       .map(tag => tag.trim().toLowerCase())
-      .filter(Boolean)
+      .filter(Boolean);
   }
 
-  return []
+  return [];
 }
 
+async function upsertInventoryRecord(
+  client: PoolClient,
+  row: ProcessedRow,
+  supplierId: string
+): Promise<void> {
+  const stockQty = Number(row.mappedData.stock_qty || 0);
+  const reservedQty = Number(row.mappedData.reserved_qty || 0);
+  const availableQty = Math.max(0, stockQty - reservedQty);
+  const tags = normalizeTags(row.mappedData.tags);
+
+  const currency = (row.mappedData.currency || 'ZAR').toString().toUpperCase();
+  const supplierSku = (row.mappedData.supplier_sku || row.mappedData.sku) as string;
+  const rsp = row.mappedData.rsp ?? null;
+
+  await client.query(
+    `
+      INSERT INTO public.inventory_items (
+        sku,
+        name,
+        description,
+        category,
+        brand,
+        supplier_id,
+        supplier_sku,
+        cost_price,
+        sale_price,
+        rsp,
+        currency,
+        stock_qty,
+        reserved_qty,
+        available_qty,
+        reorder_point,
+        max_stock,
+        unit,
+        weight,
+        barcode,
+        location,
+        status,
+        tags,
+        updated_at
+      )
+      VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15,
+        $16, $17, $18, $19, $20,
+        $21, $22, NOW()
+      )
+      ON CONFLICT (sku) DO UPDATE SET
+        name = EXCLUDED.name,
+        description = COALESCE(EXCLUDED.description, public.inventory_items.description),
+        category = COALESCE(EXCLUDED.category, public.inventory_items.category),
+        brand = COALESCE(EXCLUDED.brand, public.inventory_items.brand),
+        supplier_id = COALESCE(EXCLUDED.supplier_id, public.inventory_items.supplier_id),
+        supplier_sku = COALESCE(EXCLUDED.supplier_sku, public.inventory_items.supplier_sku),
+        cost_price = COALESCE(EXCLUDED.cost_price, public.inventory_items.cost_price),
+        sale_price = COALESCE(EXCLUDED.sale_price, public.inventory_items.sale_price),
+        rsp = COALESCE(EXCLUDED.rsp, public.inventory_items.rsp),
+        currency = COALESCE(EXCLUDED.currency, public.inventory_items.currency),
+        stock_qty = EXCLUDED.stock_qty,
+        reserved_qty = EXCLUDED.reserved_qty,
+        available_qty = EXCLUDED.available_qty,
+        reorder_point = COALESCE(EXCLUDED.reorder_point, public.inventory_items.reorder_point),
+        max_stock = COALESCE(EXCLUDED.max_stock, public.inventory_items.max_stock),
+        unit = COALESCE(EXCLUDED.unit, public.inventory_items.unit),
+        weight = COALESCE(EXCLUDED.weight, public.inventory_items.weight),
+        barcode = COALESCE(EXCLUDED.barcode, public.inventory_items.barcode),
+        location = COALESCE(EXCLUDED.location, public.inventory_items.location),
+        status = EXCLUDED.status,
+        tags = CASE
+          WHEN array_length(EXCLUDED.tags, 1) > 0 THEN EXCLUDED.tags
+          ELSE public.inventory_items.tags
+        END,
+        updated_at = NOW();
+    `,
+    [
+      row.mappedData.sku,
+      row.mappedData.name,
+      row.mappedData.description ?? null,
+      row.mappedData.category ?? null,
+      row.mappedData.brand ?? null,
+      supplierId,
+      supplierSku,
+      row.mappedData.cost_price ?? null,
+      row.mappedData.sale_price ?? null,
+      rsp,
+      currency,
+      stockQty,
+      reservedQty,
+      availableQty,
+      row.mappedData.reorder_point ?? 0,
+      row.mappedData.max_stock ?? null,
+      row.mappedData.unit ?? null,
+      row.mappedData.weight ?? null,
+      row.mappedData.barcode ?? null,
+      row.mappedData.location ?? null,
+      row.mappedData.status ?? 'active',
+      tags,
+    ]
+  );
+}
 
 async function importToInventory(
   client: PoolClient,
@@ -871,16 +1052,16 @@ async function importToInventory(
   conflictResolution: unknown,
   supplierId: string
 ): Promise<ImportResult> {
-  let created = 0
-  let updated = 0
-  let skipped = 0
-  const errors: string[] = []
-  let totalValue = 0
-  const newCategories = new Set<string>()
-  const newBrands = new Set<string>()
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  let totalValue = 0;
+  const newCategories = new Set<string>();
+  const newBrands = new Set<string>();
 
   // Get existing categories and brands from core data
-  const existingCategoriesResult = await (client as any).query(
+  const existingCategoriesResult = await (client as unknown).query(
     `
       SELECT DISTINCT COALESCE(c.name, sp.attrs_json->>'category') AS category
       FROM core.supplier_product sp
@@ -888,80 +1069,88 @@ async function importToInventory(
       WHERE sp.supplier_id = $1
     `,
     [supplierId]
-  )
-  const existingBrandsResult = await (client as any).query(
+  );
+  const existingBrandsResult = await (client as unknown).query(
     `
       SELECT DISTINCT brand_from_supplier AS brand
       FROM core.supplier_product
       WHERE supplier_id = $1 AND brand_from_supplier IS NOT NULL
     `,
     [supplierId]
-  )
+  );
 
   const existingCategories = new Set<string>(
     existingCategoriesResult.rows
       .map((r: CategoryRow) => r.category)
-      .filter((value: string | null): value is string => typeof value === 'string' && value.length > 0)
-  )
+      .filter(
+        (value: string | null): value is string => typeof value === 'string' && value.length > 0
+      )
+  );
   const existingBrands = new Set<string>(
     existingBrandsResult.rows
       .map((r: BrandRow) => r.brand)
-      .filter((value: string | null): value is string => typeof value === 'string' && value.length > 0)
-  )
+      .filter(
+        (value: string | null): value is string => typeof value === 'string' && value.length > 0
+      )
+  );
 
   for (const row of processedRows) {
     if (row.status === 'error') {
-      skipped++
-      continue
+      skipped++;
+      continue;
     }
 
     try {
       switch (row.action) {
         case 'create':
           // Create new inventory item
-          const spSku = row.mappedData.supplier_sku || row.mappedData.sku
-          await upsertSupplierProduct({ supplierId, sku: spSku, name: row.mappedData.name })
+          const spSku = row.mappedData.supplier_sku || row.mappedData.sku;
+          await upsertSupplierProduct({ supplierId, sku: spSku, name: row.mappedData.name });
           await setStock({
             supplierId,
             sku: spSku,
             quantity: row.mappedData.stock_qty || 0,
             unitCost: row.mappedData.cost_price,
-            reason: `Upload session: ${row.id}`
-          })
+            reason: `Upload session: ${row.id}`,
+          });
 
-          created++
-          totalValue += (row.mappedData.cost_price || 0) * (row.mappedData.stock_qty || 0)
+          await upsertInventoryRecord(client, row, supplierId);
+          created++;
+          totalValue += (row.mappedData.cost_price || 0) * (row.mappedData.stock_qty || 0);
 
           // Track new categories and brands
           if (row.mappedData.category && !existingCategories.has(row.mappedData.category)) {
-            newCategories.add(row.mappedData.category)
+            newCategories.add(row.mappedData.category);
           }
           if (row.mappedData.brand && !existingBrands.has(row.mappedData.brand)) {
-            newBrands.add(row.mappedData.brand)
+            newBrands.add(row.mappedData.brand);
           }
-          break
+          break;
 
         case 'update':
-          const spSkuUpd = row.mappedData.supplier_sku || row.mappedData.sku
+          const spSkuUpd = row.mappedData.supplier_sku || row.mappedData.sku;
           if (row.mappedData.stock_qty !== undefined) {
             await setStock({
               supplierId,
               sku: spSkuUpd,
               quantity: row.mappedData.stock_qty,
               unitCost: row.mappedData.cost_price,
-              reason: `Upload session update: ${row.id}`
-            })
+              reason: `Upload session update: ${row.id}`,
+            });
           }
-          updated++
-          break
+          await upsertInventoryRecord(client, row, supplierId);
+          updated++;
+          break;
 
         case 'skip':
-          skipped++
-          break
+          skipped++;
+          break;
       }
     } catch (error) {
-      errors.push(`Row ${row.rowNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      skipped++
+      errors.push(
+        `Row ${row.rowNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      skipped++;
     }
   }
 
@@ -974,9 +1163,9 @@ async function importToInventory(
       totalValue,
       newCategories: newCategories.size,
       newBrands: newBrands.size,
-      affectedSuppliers: 1
-    }
-  }
+      affectedSuppliers: 1,
+    },
+  };
 }
 
 async function recordPricelistUploadInSpp({
@@ -984,19 +1173,20 @@ async function recordPricelistUploadInSpp({
   session,
   processedRows,
 }: {
-  supplierId: string
-  session: { filename?: string | null }
-  processedRows: ProcessedRow[]
+  supplierId: string;
+  session: { filename?: string | null };
+  processedRows: ProcessedRow[];
 }) {
   if (processedRows.length === 0) {
-    return
+    return;
   }
 
   try {
     const currencyFromRows = processedRows.find(
-      (row) => typeof row.mappedData.currency === 'string' && row.mappedData.currency.length > 0
-    )
-    const inferredCurrency = (currencyFromRows?.mappedData.currency as string | undefined)?.toUpperCase() || 'ZAR'
+      row => typeof row.mappedData.currency === 'string' && row.mappedData.currency.length > 0
+    );
+    const inferredCurrency =
+      (currencyFromRows?.mappedData.currency as string | undefined)?.toUpperCase() || 'ZAR';
 
     const uploadResult = await sppQuery<{ upload_id: string }>(
       `
@@ -1021,39 +1211,39 @@ async function recordPricelistUploadInSpp({
         'imported',
         'live-route',
       ]
-    )
+    );
 
-    const uploadId = uploadResult.rows[0]?.upload_id
+    const uploadId = uploadResult.rows[0]?.upload_id;
     if (!uploadId) {
-      return
+      return;
     }
 
-    const stagedRows = processedRows.filter((row) => row.status !== 'error')
+    const stagedRows = processedRows.filter(row => row.status !== 'error');
     if (stagedRows.length === 0) {
-      return
+      return;
     }
 
     const rowsPayload = stagedRows.reduce(
       (acc, row) => {
-        const supplierSku = (row.mappedData.supplier_sku || row.mappedData.sku || '').toString()
-        acc.rowNums.push(row.rowNumber)
-        acc.supplierSkus.push(supplierSku)
-        acc.names.push((row.mappedData.name || '').toString())
-        acc.brands.push((row.mappedData.brand || null) as string | null)
-        acc.uoms.push((row.mappedData.unit || 'EA').toString())
-        acc.packSizes.push((row.mappedData.pack_size as string | undefined) ?? null)
-        acc.prices.push(Number(row.mappedData.cost_price || 0))
+        const supplierSku = (row.mappedData.supplier_sku || row.mappedData.sku || '').toString();
+        acc.rowNums.push(row.rowNumber);
+        acc.supplierSkus.push(supplierSku);
+        acc.names.push((row.mappedData.name || '').toString());
+        acc.brands.push((row.mappedData.brand || null) as string | null);
+        acc.uoms.push((row.mappedData.unit || 'EA').toString());
+        acc.packSizes.push((row.mappedData.pack_size as string | undefined) ?? null);
+        acc.prices.push(Number(row.mappedData.cost_price || 0));
         acc.currencies.push(
           ((row.mappedData.currency as string | undefined) || inferredCurrency).toUpperCase()
-        )
-        acc.categories.push((row.mappedData.category || null) as string | null)
-        acc.vatCodes.push((row.mappedData.vat_code || null) as string | null)
-        acc.barcodes.push((row.mappedData.barcode || null) as string | null)
-        acc.attrs.push(row.originalData || {})
+        );
+        acc.categories.push((row.mappedData.category || null) as string | null);
+        acc.vatCodes.push((row.mappedData.vat_code || null) as string | null);
+        acc.barcodes.push((row.mappedData.barcode || null) as string | null);
+        acc.attrs.push(row.originalData || {});
         acc.validationErrors.push(
-          row.issues && row.issues.length > 0 ? row.issues.map((issue) => issue.message) : null
-        )
-        return acc
+          row.issues && row.issues.length > 0 ? row.issues.map(issue => issue.message) : null
+        );
+        return acc;
       },
       {
         rowNums: [] as number[],
@@ -1070,7 +1260,7 @@ async function recordPricelistUploadInSpp({
         attrs: [] as Record<string, unknown>[],
         validationErrors: [] as (string[] | null)[],
       }
-    )
+    );
 
     await sppQuery(
       `
@@ -1122,34 +1312,38 @@ async function recordPricelistUploadInSpp({
         rowsPayload.attrs,
         rowsPayload.validationErrors,
       ]
-    )
+    );
   } catch (error) {
-    console.warn('⚠️  Failed to record SPP staging data:', error)
+    console.warn('⚠️  Failed to record SPP staging data:', error);
   }
 }
 
 function generateRecommendations(summary: unknown, processedRows: ProcessedRow[]): string[] {
-  const recommendations: string[] = []
+  const recommendations: string[] = [];
 
   if (summary.errorRows > 0) {
-    recommendations.push(`${summary.errorRows} rows have errors that need to be resolved before import`)
+    recommendations.push(
+      `${summary.errorRows} rows have errors that need to be resolved before import`
+    );
   }
 
   if (summary.warningRows > summary.validRows * 0.2) {
-    recommendations.push('High number of warnings detected - review data quality')
+    recommendations.push('High number of warnings detected - review data quality');
   }
 
   if (summary.duplicatesFound > 0) {
-    recommendations.push(`${summary.duplicatesFound} duplicate SKUs found - consider conflict resolution strategy`)
+    recommendations.push(
+      `${summary.duplicatesFound} duplicate SKUs found - consider conflict resolution strategy`
+    );
   }
 
   if (summary.categories.size > 20) {
-    recommendations.push('Large number of categories - consider standardization')
+    recommendations.push('Large number of categories - consider standardization');
   }
 
   if (summary.estimatedValue > 1000000) {
-    recommendations.push('High-value import detected - ensure pricing accuracy before proceeding')
+    recommendations.push('High-value import detected - ensure pricing accuracy before proceeding');
   }
 
-  return recommendations
+  return recommendations;
 }

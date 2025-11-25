@@ -3,13 +3,13 @@
  * Live database integration with full CRUD operations
  */
 
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-  // TODO(SSOT): Replace all legacy reads/writes with core.* access
-import { query } from '@/lib/database/unified-connection'
-import { setStock, upsertSupplierProduct } from '@/services/ssot/inventoryService'
-import { TransactionHelper } from '@/lib/database/transaction-helper'
-import { z } from 'zod'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+// TODO(SSOT): Replace all legacy reads/writes with core.* access
+import { query } from '@/lib/database/unified-connection';
+import { setStock, upsertSupplierProduct } from '@/services/ssot/inventoryService';
+import { TransactionHelper } from '@/lib/database/transaction-helper';
+import { z } from 'zod';
 
 // Enhanced validation schemas
 const inventoryItemSchema = z.object({
@@ -31,12 +31,14 @@ const inventoryItemSchema = z.object({
   max_stock: z.number().int().min(0).optional(),
   unit: z.string().max(50).optional(),
   weight: z.number().min(0).optional(),
-  dimensions: z.object({
-    length: z.number().min(0),
-    width: z.number().min(0),
-    height: z.number().min(0),
-    unit: z.string().max(10)
-  }).optional(),
+  dimensions: z
+    .object({
+      length: z.number().min(0),
+      width: z.number().min(0),
+      height: z.number().min(0),
+      unit: z.string().max(10),
+    })
+    .optional(),
   barcode: z.string().max(100).optional(),
   location: z.string().max(100).optional(),
   tags: z.array(z.string()).default([]),
@@ -44,19 +46,18 @@ const inventoryItemSchema = z.object({
   status: z.enum(['active', 'inactive', 'discontinued']).default('active'),
   tax_rate: z.number().min(0).max(1).default(0.15),
   custom_fields: z.record(z.string(), z.any()).default({}),
-  notes: z.string().optional()
-})
+  notes: z.string().optional(),
+});
 
 const bulkUpdateSchema = z.object({
-  items: z.array(z.object({
-    id: z.union([
-      z.string().uuid(),
-      z.string().min(1, 'Inventory item ID is required')
-    ]),
-    updates: inventoryItemSchema.partial()
-  })),
-  reason: z.string().optional()
-})
+  items: z.array(
+    z.object({
+      id: z.union([z.string().uuid(), z.string().min(1, 'Inventory item ID is required')]),
+      updates: inventoryItemSchema.partial(),
+    })
+  ),
+  reason: z.string().optional(),
+});
 
 const stockMovementSchema = z.object({
   item_id: z.string().uuid(),
@@ -67,37 +68,37 @@ const stockMovementSchema = z.object({
   reference: z.string().optional(),
   location_from: z.string().optional(),
   location_to: z.string().optional(),
-  notes: z.string().optional()
-})
+  notes: z.string().optional(),
+});
 
 // GET /api/inventory/complete - Enhanced inventory listing with analytics
 export async function getCompleteInventory(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(request.url);
 
     // Extract and validate query parameters
-    const search = searchParams.get('search')
-    const category = searchParams.get('category')?.split(',')
-    const brand = searchParams.get('brand')?.split(',')
-    const supplier = searchParams.get('supplier')?.split(',')
-    const status = searchParams.get('status')?.split(',')
-    const lowStock = searchParams.get('low_stock') === 'true'
-    const outOfStock = searchParams.get('out_of_stock') === 'true'
-    const overStock = searchParams.get('over_stock') === 'true'
-    const minCost = searchParams.get('min_cost')
-    const maxCost = searchParams.get('max_cost')
-    const minPrice = searchParams.get('min_price')
-    const maxPrice = searchParams.get('max_price')
-    const location = searchParams.get('location')?.split(',')
-    const tags = searchParams.get('tags')?.split(',')
-    const sortBy = searchParams.get('sort_by') || 'name'
-    const sortOrder = searchParams.get('sort_order') || 'asc'
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 1000)
-    const includeAnalytics = searchParams.get('include_analytics') === 'true'
-    const includeMovements = searchParams.get('include_movements') === 'true'
+    const search = searchParams.get('search');
+    const category = searchParams.get('category')?.split(',');
+    const brand = searchParams.get('brand')?.split(',');
+    const supplier = searchParams.get('supplier')?.split(',');
+    const status = searchParams.get('status')?.split(',');
+    const lowStock = searchParams.get('low_stock') === 'true';
+    const outOfStock = searchParams.get('out_of_stock') === 'true';
+    const overStock = searchParams.get('over_stock') === 'true';
+    const minCost = searchParams.get('min_cost');
+    const maxCost = searchParams.get('max_cost');
+    const minPrice = searchParams.get('min_price');
+    const maxPrice = searchParams.get('max_price');
+    const location = searchParams.get('location')?.split(',');
+    const tags = searchParams.get('tags')?.split(',');
+    const sortBy = searchParams.get('sort_by') || 'name';
+    const sortOrder = searchParams.get('sort_order') || 'asc';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 1000);
+    const includeAnalytics = searchParams.get('include_analytics') === 'true';
+    const includeMovements = searchParams.get('include_movements') === 'true';
 
-    const offset = (page - 1) * limit
+    const offset = (page - 1) * limit;
 
     // Build dynamic query with proper SQL injection protection
     // Include enriched data from supplier_product and pricelist
@@ -143,10 +144,10 @@ export async function getCompleteInventory(request: NextRequest) {
         LIMIT 1
       ) cat ON TRUE
       WHERE 1=1
-    `
+    `;
 
-    const queryParams: unknown[] = []
-    let paramIndex = 1
+    const queryParams: unknown[] = [];
+    let paramIndex = 1;
 
     // Apply search filter
     if (search) {
@@ -156,35 +157,35 @@ export async function getCompleteInventory(request: NextRequest) {
         i.description ILIKE $${paramIndex} OR
         i.barcode ILIKE $${paramIndex} OR
         s.name ILIKE $${paramIndex}
-      )`
-      queryParams.push(`%${search}%`)
-      paramIndex++
+      )`;
+      queryParams.push(`%${search}%`);
+      paramIndex++;
     }
 
     // Apply category filter
     if (category?.length) {
-      baseQuery += ` AND i.category = ANY($${paramIndex})`
-      queryParams.push(category)
-      paramIndex++
+      baseQuery += ` AND i.category = ANY($${paramIndex})`;
+      queryParams.push(category);
+      paramIndex++;
     }
 
     // Apply brand filter
     if (brand?.length) {
-      baseQuery += ` AND i.brand = ANY($${paramIndex})`
-      queryParams.push(brand)
-      paramIndex++
+      baseQuery += ` AND i.brand = ANY($${paramIndex})`;
+      queryParams.push(brand);
+      paramIndex++;
     }
 
     // Apply supplier filter
     if (supplier?.length) {
       if (supplier.length === 1) {
-        baseQuery += ` AND i.supplier_id = $${paramIndex}::uuid`
-        queryParams.push(supplier[0])
-        paramIndex++
+        baseQuery += ` AND i.supplier_id = $${paramIndex}::uuid`;
+        queryParams.push(supplier[0]);
+        paramIndex++;
       } else {
-        baseQuery += ` AND i.supplier_id = ANY($${paramIndex}::uuid[])`
-        queryParams.push(supplier)
-        paramIndex++
+        baseQuery += ` AND i.supplier_id = ANY($${paramIndex}::uuid[])`;
+        queryParams.push(supplier);
+        paramIndex++;
       }
     }
 
@@ -195,72 +196,83 @@ export async function getCompleteInventory(request: NextRequest) {
 
     // Apply stock filters
     if (lowStock) {
-      baseQuery += ` AND i.stock_qty <= i.reorder_point AND i.stock_qty > 0`
+      baseQuery += ` AND i.stock_qty <= i.reorder_point AND i.stock_qty > 0`;
     }
 
     if (outOfStock) {
-      baseQuery += ` AND i.stock_qty = 0`
+      baseQuery += ` AND i.stock_qty = 0`;
     }
 
     if (overStock) {
-      baseQuery += ` AND i.max_stock IS NOT NULL AND i.stock_qty >= i.max_stock`
+      baseQuery += ` AND i.max_stock IS NOT NULL AND i.stock_qty >= i.max_stock`;
     }
 
     // Apply cost filters
     if (minCost) {
-      baseQuery += ` AND i.cost_price >= $${paramIndex}`
-      queryParams.push(parseFloat(minCost))
-      paramIndex++
+      baseQuery += ` AND i.cost_price >= $${paramIndex}`;
+      queryParams.push(parseFloat(minCost));
+      paramIndex++;
     }
 
     if (maxCost) {
-      baseQuery += ` AND i.cost_price <= $${paramIndex}`
-      queryParams.push(parseFloat(maxCost))
-      paramIndex++
+      baseQuery += ` AND i.cost_price <= $${paramIndex}`;
+      queryParams.push(parseFloat(maxCost));
+      paramIndex++;
     }
 
     // Apply price filters
     if (minPrice) {
-      baseQuery += ` AND COALESCE(i.rsp, i.sale_price) >= $${paramIndex}`
-      queryParams.push(parseFloat(minPrice))
-      paramIndex++
+      baseQuery += ` AND COALESCE(i.rsp, i.sale_price) >= $${paramIndex}`;
+      queryParams.push(parseFloat(minPrice));
+      paramIndex++;
     }
 
     if (maxPrice) {
-      baseQuery += ` AND COALESCE(i.rsp, i.sale_price) <= $${paramIndex}`
-      queryParams.push(parseFloat(maxPrice))
-      paramIndex++
+      baseQuery += ` AND COALESCE(i.rsp, i.sale_price) <= $${paramIndex}`;
+      queryParams.push(parseFloat(maxPrice));
+      paramIndex++;
     }
 
     // Apply location filter
     if (location?.length) {
-      baseQuery += ` AND i.location = ANY($${paramIndex})`
-      queryParams.push(location)
-      paramIndex++
+      baseQuery += ` AND i.location = ANY($${paramIndex})`;
+      queryParams.push(location);
+      paramIndex++;
     }
 
     // Apply tags filter
     if (tags?.length) {
-      baseQuery += ` AND i.tags && $${paramIndex}`
-      queryParams.push(tags)
-      paramIndex++
+      baseQuery += ` AND i.tags && $${paramIndex}`;
+      queryParams.push(tags);
+      paramIndex++;
     }
 
     // Apply sorting
-    const validSortFields = ['name', 'sku', 'category', 'brand', 'cost_price', 'sale_price', 'rsp', 'stock_qty', 'created_at', 'updated_at']
-    const validSortOrders = ['asc', 'desc']
+    const validSortFields = [
+      'name',
+      'sku',
+      'category',
+      'brand',
+      'cost_price',
+      'sale_price',
+      'rsp',
+      'stock_qty',
+      'created_at',
+      'updated_at',
+    ];
+    const validSortOrders = ['asc', 'desc'];
 
-    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'name'
-    const safeSortOrder = validSortOrders.includes(sortOrder) ? sortOrder : 'asc'
+    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'name';
+    const safeSortOrder = validSortOrders.includes(sortOrder) ? sortOrder : 'asc';
 
-    baseQuery += ` ORDER BY i.${safeSortBy} ${safeSortOrder.toUpperCase()}`
+    baseQuery += ` ORDER BY i.${safeSortBy} ${safeSortOrder.toUpperCase()}`;
 
     // Apply pagination
-    baseQuery += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
-    queryParams.push(limit, offset)
+    baseQuery += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    queryParams.push(limit, offset);
 
     // Execute main query
-    const result = await query(baseQuery, queryParams)
+    const result = await query(baseQuery, queryParams);
 
     // Build proper count query without complex LATERAL joins
     let countQuery = `
@@ -268,11 +280,11 @@ export async function getCompleteInventory(request: NextRequest) {
       FROM public.inventory_items i
       LEFT JOIN public.suppliers s ON i.supplier_id::text = s.id
       WHERE 1=1
-    `
+    `;
 
     // Rebuild the WHERE conditions for count query (same as baseQuery filters)
-    let countParamIndex = 1
-    const countParams: unknown[] = []
+    let countParamIndex = 1;
+    const countParams: unknown[] = [];
 
     if (search) {
       countQuery += ` AND (
@@ -281,94 +293,94 @@ export async function getCompleteInventory(request: NextRequest) {
         i.description ILIKE $${countParamIndex} OR
         i.barcode ILIKE $${countParamIndex} OR
         s.name ILIKE $${countParamIndex}
-      )`
-      countParams.push(`%${search}%`)
-      countParamIndex++
+      )`;
+      countParams.push(`%${search}%`);
+      countParamIndex++;
     }
 
     if (category?.length) {
-      countQuery += ` AND i.category = ANY($${countParamIndex})`
-      countParams.push(category)
-      countParamIndex++
+      countQuery += ` AND i.category = ANY($${countParamIndex})`;
+      countParams.push(category);
+      countParamIndex++;
     }
 
     if (brand?.length) {
-      countQuery += ` AND i.brand = ANY($${countParamIndex})`
-      countParams.push(brand)
-      countParamIndex++
+      countQuery += ` AND i.brand = ANY($${countParamIndex})`;
+      countParams.push(brand);
+      countParamIndex++;
     }
 
     if (supplier?.length) {
       if (supplier.length === 1) {
-        countQuery += ` AND i.supplier_id = $${countParamIndex}::uuid`
-        countParams.push(supplier[0])
+        countQuery += ` AND i.supplier_id = $${countParamIndex}::uuid`;
+        countParams.push(supplier[0]);
       } else {
-        countQuery += ` AND i.supplier_id = ANY($${countParamIndex}::uuid[])`
-        countParams.push(supplier)
+        countQuery += ` AND i.supplier_id = ANY($${countParamIndex}::uuid[])`;
+        countParams.push(supplier);
       }
-      countParamIndex++
+      countParamIndex++;
     }
 
     if (status?.length) {
-      countQuery += ` AND i.status = ANY($${countParamIndex})`
-      countParams.push(status)
-      countParamIndex++
+      countQuery += ` AND i.status = ANY($${countParamIndex})`;
+      countParams.push(status);
+      countParamIndex++;
     }
 
     if (lowStock) {
-      countQuery += ` AND i.stock_qty <= COALESCE(i.reorder_point, 0) AND i.stock_qty > 0`
+      countQuery += ` AND i.stock_qty <= COALESCE(i.reorder_point, 0) AND i.stock_qty > 0`;
     }
 
     if (outOfStock) {
-      countQuery += ` AND i.stock_qty = 0`
+      countQuery += ` AND i.stock_qty = 0`;
     }
 
     if (overStock) {
-      countQuery += ` AND i.max_stock IS NOT NULL AND i.stock_qty >= i.max_stock`
+      countQuery += ` AND i.max_stock IS NOT NULL AND i.stock_qty >= i.max_stock`;
     }
 
     if (minCost) {
-      countQuery += ` AND i.cost_price >= $${countParamIndex}`
-      countParams.push(parseFloat(minCost))
-      countParamIndex++
+      countQuery += ` AND i.cost_price >= $${countParamIndex}`;
+      countParams.push(parseFloat(minCost));
+      countParamIndex++;
     }
 
     if (maxCost) {
-      countQuery += ` AND i.cost_price <= $${countParamIndex}`
-      countParams.push(parseFloat(maxCost))
-      countParamIndex++
+      countQuery += ` AND i.cost_price <= $${countParamIndex}`;
+      countParams.push(parseFloat(maxCost));
+      countParamIndex++;
     }
 
     if (minPrice) {
-      countQuery += ` AND COALESCE(i.rsp, i.sale_price) >= $${countParamIndex}`
-      countParams.push(parseFloat(minPrice))
-      countParamIndex++
+      countQuery += ` AND COALESCE(i.rsp, i.sale_price) >= $${countParamIndex}`;
+      countParams.push(parseFloat(minPrice));
+      countParamIndex++;
     }
 
     if (maxPrice) {
-      countQuery += ` AND COALESCE(i.rsp, i.sale_price) <= $${countParamIndex}`
-      countParams.push(parseFloat(maxPrice))
-      countParamIndex++
+      countQuery += ` AND COALESCE(i.rsp, i.sale_price) <= $${countParamIndex}`;
+      countParams.push(parseFloat(maxPrice));
+      countParamIndex++;
     }
 
     if (location?.length) {
-      countQuery += ` AND i.location = ANY($${countParamIndex})`
-      countParams.push(location)
-      countParamIndex++
+      countQuery += ` AND i.location = ANY($${countParamIndex})`;
+      countParams.push(location);
+      countParamIndex++;
     }
 
     if (tags?.length) {
-      countQuery += ` AND i.tags && $${countParamIndex}`
-      countParams.push(tags)
-      countParamIndex++
+      countQuery += ` AND i.tags && $${countParamIndex}`;
+      countParams.push(tags);
+      countParamIndex++;
     }
 
-    const countResult = await query(countQuery, countParams)
-    const total = parseInt(countResult.rows[0].total)
-    const totalPages = Math.ceil(total / limit)
+    const countResult = await query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].total);
+    const totalPages = Math.ceil(total / limit);
 
-    let analytics = null
-    let movements = null
+    let analytics = null;
+    let movements = null;
 
     // Include analytics if requested
     if (includeAnalytics) {
@@ -387,10 +399,10 @@ export async function getCompleteInventory(request: NextRequest) {
           0::numeric as avg_margin_percentage
         FROM public.inventory_items
         WHERE status = 'active'
-      `
+      `;
 
-      const analyticsResult = await query(analyticsQuery)
-      analytics = analyticsResult.rows[0]
+      const analyticsResult = await query(analyticsQuery);
+      analytics = analyticsResult.rows[0];
     }
 
     // Include recent movements if requested
@@ -405,10 +417,10 @@ export async function getCompleteInventory(request: NextRequest) {
         LEFT JOIN public.inventory_items i ON sm.item_id = i.id
         ORDER BY sm.created_at DESC
         LIMIT 50
-      `
+      `;
 
-      const movementsResult = await query(movementsQuery)
-      movements = movementsResult.rows
+      const movementsResult = await query(movementsQuery);
+      movements = movementsResult.rows;
     }
 
     return NextResponse.json({
@@ -420,7 +432,7 @@ export async function getCompleteInventory(request: NextRequest) {
         total,
         totalPages,
         hasNext: page < totalPages,
-        hasPrev: page > 1
+        hasPrev: page > 1,
       },
       analytics,
       recentMovements: movements,
@@ -434,13 +446,12 @@ export async function getCompleteInventory(request: NextRequest) {
         outOfStock,
         overStock,
         location,
-        tags
-      }
-    })
-
+        tags,
+      },
+    });
   } catch (error) {
-    console.error('Error fetching inventory:', error)
-    
+    console.error('Error fetching inventory:', error);
+
     // Return empty result instead of 500 to prevent frontend crashes
     // This allows the app to continue functioning even if inventory data is unavailable
     return NextResponse.json(
@@ -454,7 +465,7 @@ export async function getCompleteInventory(request: NextRequest) {
           total: 0,
           totalPages: 0,
           hasNext: false,
-          hasPrev: false
+          hasPrev: false,
         },
         analytics: {
           totalItems: 0,
@@ -462,65 +473,71 @@ export async function getCompleteInventory(request: NextRequest) {
           lowStockCount: 0,
           outOfStockCount: 0,
           categories: [],
-          suppliers: []
+          suppliers: [],
         },
         recentMovements: [],
         filters: {},
-        error: process.env.NODE_ENV === 'development' 
-          ? (error instanceof Error ? error.message : 'Unknown error')
-          : undefined
+        error:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.message
+              : 'Unknown error'
+            : undefined,
       },
       { status: 200 }
-    )
+    );
   }
 }
 
 // POST /api/inventory/complete - Create new inventory item
 export async function createInventoryItems(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
     // Handle bulk operations
     if (body.action === 'bulk_create') {
-      return handleBulkCreate(body.items)
+      return handleBulkCreate(body.items);
     }
 
     // Handle single item creation
-    const validatedData = inventoryItemSchema.parse(body)
+    const validatedData = inventoryItemSchema.parse(body);
 
     // Check for duplicate SKU
     const existingItem = await query(
       'SELECT sku FROM public.inventory_items WHERE sku = $1 AND supplier_id::text = COALESCE($2, supplier_id::text)',
       [validatedData.sku, validatedData.supplier_id ?? null]
-    )
+    );
 
     if (existingItem.rows.length > 0) {
-      return NextResponse.json(
-        { success: false, error: 'SKU already exists' },
-        { status: 409 }
-      )
+      return NextResponse.json({ success: false, error: 'SKU already exists' }, { status: 409 });
     }
 
     // Calculate available quantity
-    const availableQty = validatedData.stock_qty - validatedData.reserved_qty
+    const availableQty = validatedData.stock_qty - validatedData.reserved_qty;
 
     // Insert new inventory item
     // SSOT: Ensure supplier product mapping and set initial stock in core tables
     if (!validatedData.supplier_id || !validatedData.supplier_sku) {
-      return NextResponse.json({ success: false, error: 'supplier_id and supplier_sku required for SSOT inventory creation' }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'supplier_id and supplier_sku required for SSOT inventory creation',
+        },
+        { status: 400 }
+      );
     }
     await upsertSupplierProduct({
       supplierId: validatedData.supplier_id,
       sku: validatedData.supplier_sku,
-      name: validatedData.name
-    })
+      name: validatedData.name,
+    });
     await setStock({
       supplierId: validatedData.supplier_id,
       sku: validatedData.supplier_sku,
       quantity: validatedData.stock_qty,
       unitCost: validatedData.cost_price,
-      reason: `Initial stock for ${validatedData.sku}`
-    })
+      reason: `Initial stock for ${validatedData.sku}`,
+    });
 
     return NextResponse.json({
       success: true,
@@ -528,96 +545,92 @@ export async function createInventoryItems(request: NextRequest) {
         sku: validatedData.sku,
         supplier_id: validatedData.supplier_id,
         supplier_sku: validatedData.supplier_sku,
-        stock_qty: validatedData.stock_qty
+        stock_qty: validatedData.stock_qty,
       },
-      message: 'Inventory item created successfully (SSOT)'
-    })
-
+      message: 'Inventory item created successfully (SSOT)',
+    });
   } catch (error) {
-    console.error('Error creating inventory item:', error)
+    console.error('Error creating inventory item:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
           success: false,
           error: 'Validation failed',
-          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
         },
         { status: 400 }
-      )
+      );
     }
 
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to create inventory item',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
 // PUT /api/inventory/complete - Bulk update operations
 export async function updateInventoryItems(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
     if (body.action === 'bulk_update') {
-      return handleBulkUpdate(body)
+      return handleBulkUpdate(body);
     }
 
     if (body.action === 'stock_movement') {
-      return handleStockMovement(body)
+      return handleStockMovement(body);
     }
 
-    return NextResponse.json(
-      { success: false, error: 'Invalid action' },
-      { status: 400 }
-    )
-
+    return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    console.error('Error in inventory update:', error)
-    return NextResponse.json(
-      { success: false, error: 'Update operation failed' },
-      { status: 500 }
-    )
+    console.error('Error in inventory update:', error);
+    return NextResponse.json({ success: false, error: 'Update operation failed' }, { status: 500 });
   }
 }
 
 export async function deleteInventoryItems(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
     const ids = Array.isArray(body?.ids)
       ? body.ids.filter((value: unknown) => typeof value === 'string')
-      : []
+      : [];
 
     if (ids.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Must provide array of inventory item IDs to delete' },
         { status: 400 }
-      )
+      );
     }
 
-    return NextResponse.json({ success: false, error: 'SSOT: deleting inventory items is not allowed. Use deactivation policies in core.', code: 'SSOT_BLOCKED' }, { status: 405 })
-  } catch (error) {
-    console.error('Error deleting inventory items:', error)
     return NextResponse.json(
-      { success: false, error: 'Delete operation failed' },
-      { status: 500 }
-    )
+      {
+        success: false,
+        error: 'SSOT: deleting inventory items is not allowed. Use deactivation policies in core.',
+        code: 'SSOT_BLOCKED',
+      },
+      { status: 405 }
+    );
+  } catch (error) {
+    console.error('Error deleting inventory items:', error);
+    return NextResponse.json({ success: false, error: 'Delete operation failed' }, { status: 500 });
   }
 }
 
 // Helper functions
 async function handleBulkCreate(items: unknown[]) {
   try {
-    const validatedItems = items.map(item => inventoryItemSchema.parse(item))
+    const validatedItems = items.map(item => inventoryItemSchema.parse(item));
 
-    return await TransactionHelper.withTransaction(async (client) => {
-      const created = []
-      const updated = []
-      const errors = []
+    return await TransactionHelper.withTransaction(async client => {
+      const created = [];
+      const updated = [];
+      const errors = [];
 
       for (const item of validatedItems) {
         try {
@@ -625,15 +638,15 @@ async function handleBulkCreate(items: unknown[]) {
           const existing = await client.query(
             'SELECT id, stock_qty FROM public.inventory_items WHERE sku = $1',
             [item.sku]
-          )
+          );
 
-          const spSku = item.supplier_sku || item.sku
+          const spSku = item.supplier_sku || item.sku;
 
           if (existing.rows.length > 0) {
             // Update existing item: add to stock quantity and update cost price
-            const existingId = existing.rows[0].id
-            const existingStock = existing.rows[0].stock_qty || 0
-            const newStock = existingStock + (item.stock_qty || 0)
+            const existingId = existing.rows[0].id;
+            const existingStock = existing.rows[0].stock_qty || 0;
+            const newStock = existingStock + (item.stock_qty || 0);
 
             // SSOT: update supplier_product and add to stock
             // Note: inventory_items is a view, so we update the underlying core tables via setStock
@@ -641,16 +654,16 @@ async function handleBulkCreate(items: unknown[]) {
               await upsertSupplierProduct({
                 supplierId: item.supplier_id,
                 sku: spSku,
-                name: item.name
-              })
+                name: item.name,
+              });
               // setStock replaces quantity, so pass the new total
               await setStock({
                 supplierId: item.supplier_id,
                 sku: spSku,
                 quantity: newStock,
                 unitCost: item.cost_price,
-                reason: 'bulk_update_stock_in'
-              })
+                reason: 'bulk_update_stock_in',
+              });
             }
 
             updated.push({
@@ -658,8 +671,8 @@ async function handleBulkCreate(items: unknown[]) {
               supplier_id: item.supplier_id,
               previous_stock: existingStock,
               new_stock: newStock,
-              added: item.stock_qty
-            })
+              added: item.stock_qty,
+            });
           } else {
             // Create new item
             // SSOT: create supplier_product and set initial stock when supplier context provided
@@ -667,28 +680,28 @@ async function handleBulkCreate(items: unknown[]) {
               await upsertSupplierProduct({
                 supplierId: item.supplier_id,
                 sku: spSku,
-                name: item.name
-              })
+                name: item.name,
+              });
               await setStock({
                 supplierId: item.supplier_id,
                 sku: spSku,
                 quantity: item.stock_qty || 0,
                 unitCost: item.cost_price,
-                reason: 'bulk_create'
-              })
+                reason: 'bulk_create',
+              });
             }
 
             created.push({
               sku: item.sku,
               supplier_id: item.supplier_id,
-              stock: item.stock_qty
-            })
+              stock: item.stock_qty,
+            });
           }
         } catch (error) {
           errors.push({
             sku: item.sku,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          })
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
 
@@ -697,165 +710,193 @@ async function handleBulkCreate(items: unknown[]) {
         data: {
           created,
           updated,
-          errors
+          errors,
         },
-        message: `Created: ${created.length}, Updated: ${updated.length}, Errors: ${errors.length}`
-      })
-    })
+        message: `Created: ${created.length}, Updated: ${updated.length}, Errors: ${errors.length}`,
+      });
+    });
   } catch (error) {
-    console.error('Error in bulk create:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Bulk create failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error in bulk create:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Bulk create failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 async function handleBulkUpdate(body: unknown) {
   try {
-    const validatedData = bulkUpdateSchema.parse(body)
+    const validatedData = bulkUpdateSchema.parse(body);
 
-    return await TransactionHelper.withTransaction(async (client) => {
-      const results = []
+    return await TransactionHelper.withTransaction(async client => {
+      const results = [];
 
       for (const item of validatedData.items) {
-        const updateFields = []
-        const updateValues = []
-        let paramIndex = 1
+        const updateFields = [];
+        const updateValues = [];
+        let paramIndex = 1;
 
         // Build dynamic update query
         for (const [field, value] of Object.entries(item.updates)) {
           if (value !== undefined) {
-            updateFields.push(`${field} = $${paramIndex}`)
-            updateValues.push(value)
-            paramIndex++
+            updateFields.push(`${field} = $${paramIndex}`);
+            updateValues.push(value);
+            paramIndex++;
           }
         }
 
-        if (updateFields.length === 0) continue
+        if (updateFields.length === 0) continue;
 
-        updateFields.push(`updated_at = NOW()`)
+        updateFields.push(`updated_at = NOW()`);
 
-        const resultPayload: Record<string, unknown> = { id: item.id }
+        const resultPayload: Record<string, unknown> = { id: item.id };
 
         // SSOT: only support stock set via SSOT when stock_qty provided
-        if (item.updates.stock_qty !== undefined && item.updates.supplier_id && item.updates.supplier_sku) {
-          await setStock({ supplierId: String(item.updates.supplier_id), sku: String(item.updates.supplier_sku), quantity: Number(item.updates.stock_qty), unitCost: item.updates.cost_price, reason: 'bulk_update' })
-          resultPayload.stock_qty = item.updates.stock_qty
+        if (
+          item.updates.stock_qty !== undefined &&
+          item.updates.supplier_id &&
+          item.updates.supplier_sku
+        ) {
+          await setStock({
+            supplierId: String(item.updates.supplier_id),
+            sku: String(item.updates.supplier_sku),
+            quantity: Number(item.updates.stock_qty),
+            unitCost: item.updates.cost_price,
+            reason: 'bulk_update',
+          });
+          resultPayload.stock_qty = item.updates.stock_qty;
         }
 
-        updateValues.push(item.id)
+        updateValues.push(item.id);
         const updateQuery = `
           UPDATE core.stock_on_hand
           SET ${updateFields.join(', ')}
           WHERE soh_id = $${paramIndex}
           RETURNING soh_id AS id, location_id, qty AS stock_qty, NOW() AS updated_at
-        `
-        const updateResult = await client.query(updateQuery, updateValues)
+        `;
+        const updateResult = await client.query(updateQuery, updateValues);
 
         if (updateResult.rows.length > 0) {
-          const updatedRow = updateResult.rows[0]
-          resultPayload.id = updatedRow.id
-          resultPayload.stock_qty = updatedRow.stock_qty
-          resultPayload.updated_at = updatedRow.updated_at
+          const updatedRow = updateResult.rows[0];
+          resultPayload.id = updatedRow.id;
+          resultPayload.stock_qty = updatedRow.stock_qty;
+          resultPayload.updated_at = updatedRow.updated_at;
 
-        if (item.updates.location_id) {
-          resultPayload.location_id = item.updates.location_id
-        }
+          if (item.updates.location_id) {
+            resultPayload.location_id = item.updates.location_id;
+          }
         }
 
-        results.push(resultPayload)
+        results.push(resultPayload);
       }
 
       return NextResponse.json({
         success: true,
         data: results,
-        message: `${results.length} inventory items updated successfully`
-      })
-    })
+        message: `${results.length} inventory items updated successfully`,
+      });
+    });
   } catch (error) {
-    console.error('Error in bulk update:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Bulk update failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error in bulk update:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Bulk update failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
 async function handleStockMovement(body: unknown) {
   try {
-    const validatedData = stockMovementSchema.parse(body)
+    const validatedData = stockMovementSchema.parse(body);
 
-    return await TransactionHelper.withTransaction(async (client) => {
-    // Get current stock
-    const currentStock = await client.query(
-      'SELECT stock_qty, reserved_qty, supplier_id, supplier_sku FROM public.inventory_items WHERE id = $1',
-      [validatedData.item_id]
-    )
+    return await TransactionHelper.withTransaction(async client => {
+      // Get current stock
+      const currentStock = await client.query(
+        'SELECT stock_qty, reserved_qty, supplier_id, supplier_sku FROM public.inventory_items WHERE id = $1',
+        [validatedData.item_id]
+      );
 
-    if (currentStock.rows.length === 0) {
-      throw new Error('Inventory item not found')
-    }
+      if (currentStock.rows.length === 0) {
+        throw new Error('Inventory item not found');
+      }
 
-    const current = currentStock.rows[0]
-    let newStockQty = current.stock_qty
+      const current = currentStock.rows[0];
+      let newStockQty = current.stock_qty;
 
-    // Calculate new stock quantity based on movement type
-    switch (validatedData.movement_type) {
-      case 'in':
-        newStockQty += validatedData.quantity
-        break
-      case 'out':
-        newStockQty -= validatedData.quantity
-        if (newStockQty < 0) {
-          throw new Error('Insufficient stock')
-        }
-        break
-      case 'adjustment':
-        newStockQty = validatedData.quantity
-        break
-    }
+      // Calculate new stock quantity based on movement type
+      switch (validatedData.movement_type) {
+        case 'in':
+          newStockQty += validatedData.quantity;
+          break;
+        case 'out':
+          newStockQty -= validatedData.quantity;
+          if (newStockQty < 0) {
+            throw new Error('Insufficient stock');
+          }
+          break;
+        case 'adjustment':
+          newStockQty = validatedData.quantity;
+          break;
+      }
 
-    // SSOT stock set
-    await setStock({ supplierId: String(current.supplier_id), sku: String(current.supplier_sku), quantity: newStockQty, unitCost: validatedData.cost, reason: validatedData.reason })
+      // SSOT stock set
+      await setStock({
+        supplierId: String(current.supplier_id),
+        sku: String(current.supplier_sku),
+        quantity: newStockQty,
+        unitCost: validatedData.cost,
+        reason: validatedData.reason,
+      });
 
-    // Record stock movement
-    const movementResult = await client.query(`
+      // Record stock movement
+      const movementResult = await client.query(
+        `
       INSERT INTO stock_movements (
         item_id, type, quantity, unit_cost, reason, reference,
         location_from, location_to, notes, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
       RETURNING *
-    `, [
-      validatedData.item_id,
-      validatedData.movement_type,
-      validatedData.quantity,
-      validatedData.cost,
-      validatedData.reason,
-      validatedData.reference,
-      validatedData.location_from,
-      validatedData.location_to,
-      validatedData.notes
-    ])
+    `,
+        [
+          validatedData.item_id,
+          validatedData.movement_type,
+          validatedData.quantity,
+          validatedData.cost,
+          validatedData.reason,
+          validatedData.reference,
+          validatedData.location_from,
+          validatedData.location_to,
+          validatedData.notes,
+        ]
+      );
 
       return NextResponse.json({
         success: true,
         data: {
           movement: movementResult.rows[0],
           newStockQty,
-          previousStockQty: current.stock_qty
+          previousStockQty: current.stock_qty,
         },
-        message: 'Stock movement recorded successfully'
-      })
-    })
+        message: 'Stock movement recorded successfully',
+      });
+    });
   } catch (error) {
-    console.error('Error recording stock movement:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Stock movement failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error recording stock movement:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Stock movement failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

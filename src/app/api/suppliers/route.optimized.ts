@@ -1,8 +1,8 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server'
-import { query, withTransaction } from '@/lib/database'
-import { z } from 'zod'
-import { CacheInvalidator } from '@/lib/cache/invalidation'
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { query, withTransaction } from '@/lib/database';
+import { z } from 'zod';
+import { CacheInvalidator } from '@/lib/cache/invalidation';
 
 const supplierSchema = z.object({
   name: z.string().min(1, 'Supplier name is required'),
@@ -17,40 +17,40 @@ const supplierSchema = z.object({
   geographic_region: z.string().optional(),
   preferred_supplier: z.boolean().default(false),
   bee_level: z.string().optional(),
-  local_content_percentage: z.number().min(0).max(100).optional()
-})
+  local_content_percentage: z.number().min(0).max(100).optional(),
+});
 
 // ============================================================================
 // OPTIMIZATION 1: Query Result Caching
 // ============================================================================
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
-const queryCache = new Map<string, { data: unknown; timestamp: number }>()
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const queryCache = new Map<string, { data: unknown; timestamp: number }>();
 
 function getCacheKey(params: unknown): string {
-  return JSON.stringify(params)
+  return JSON.stringify(params);
 }
 
 function getCached(key: string): unknown | null {
-  const cached = queryCache.get(key)
-  if (!cached) return null
+  const cached = queryCache.get(key);
+  if (!cached) return null;
 
-  const age = Date.now() - cached.timestamp
+  const age = Date.now() - cached.timestamp;
   if (age > CACHE_TTL) {
-    queryCache.delete(key)
-    return null
+    queryCache.delete(key);
+    return null;
   }
 
-  return cached.data
+  return cached.data;
 }
 
 function setCache(key: string, data: unknown): void {
-  queryCache.set(key, { data, timestamp: Date.now() })
+  queryCache.set(key, { data, timestamp: Date.now() });
 
   // Limit cache size to 1000 entries
   if (queryCache.size > 1000) {
-    const firstKey = queryCache.keys().next().value
+    const firstKey = queryCache.keys().next().value;
     if (firstKey !== undefined) {
-      queryCache.delete(firstKey)
+      queryCache.delete(firstKey);
     }
   }
 }
@@ -60,36 +60,45 @@ function setCache(key: string, data: unknown): void {
 // ============================================================================
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(request.url);
 
     // Extract query parameters
-    const search = searchParams.get('search')
-    const status = searchParams.get('status')?.split(',')
-    const performanceTier = searchParams.get('performance_tier')?.split(',')
-    const category = searchParams.get('category')?.split(',')
-    const region = searchParams.get('region')?.split(',')
-    const beeLevel = searchParams.get('bee_level')?.split(',')
-    const preferredOnly = searchParams.get('preferred_only') === 'true'
-    const minSpend = searchParams.get('min_spend')
-    const maxSpend = searchParams.get('max_spend')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Cap at 100
-    const offset = (page - 1) * limit
+    const search = searchParams.get('search');
+    const status = searchParams.get('status')?.split(',');
+    const performanceTier = searchParams.get('performance_tier')?.split(',');
+    const category = searchParams.get('category')?.split(',');
+    const region = searchParams.get('region')?.split(',');
+    const beeLevel = searchParams.get('bee_level')?.split(',');
+    const preferredOnly = searchParams.get('preferred_only') === 'true';
+    const minSpend = searchParams.get('min_spend');
+    const maxSpend = searchParams.get('max_spend');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100); // Cap at 100
+    const offset = (page - 1) * limit;
 
     // Check cache first
     const cacheKey = getCacheKey({
-      search, status, performanceTier, category, region, beeLevel,
-      preferredOnly, minSpend, maxSpend, page, limit
-    })
-    const cached = getCached(cacheKey)
+      search,
+      status,
+      performanceTier,
+      category,
+      region,
+      beeLevel,
+      preferredOnly,
+      minSpend,
+      maxSpend,
+      page,
+      limit,
+    });
+    const cached = getCached(cacheKey);
     if (cached) {
-      return NextResponse.json(cached)
+      return NextResponse.json(cached);
     }
 
     // ========================================================================
     // OPTIMIZATION 3: Use optimized view with pre-calculated metrics
     // ========================================================================
-    const includeMetrics = searchParams.get('includeMetrics') === 'true'
+    const includeMetrics = searchParams.get('includeMetrics') === 'true';
 
     // Build optimized query using covering indexes
     let sql = `
@@ -116,10 +125,10 @@ export async function GET(request: NextRequest) {
       FROM public.suppliers s
       ${includeMetrics ? `LEFT JOIN inventory_items i ON s.id = i.supplier_id` : ''}
       WHERE 1=1
-    `
+    `;
 
-    const queryParams: unknown[] = []
-    let paramIndex = 1
+    const queryParams: unknown[] = [];
+    let paramIndex = 1;
 
     // ========================================================================
     // OPTIMIZATION 4: Use indexes efficiently - exact matches first
@@ -128,46 +137,46 @@ export async function GET(request: NextRequest) {
     // Status filter - uses idx_suppliers_status
     if (status?.length) {
       if (status.length === 1) {
-        sql += ` AND s.status = $${paramIndex}`
-        queryParams.push(status[0])
+        sql += ` AND s.status = $${paramIndex}`;
+        queryParams.push(status[0]);
       } else {
-        sql += ` AND s.status = ANY($${paramIndex})`
-        queryParams.push(status)
+        sql += ` AND s.status = ANY($${paramIndex})`;
+        queryParams.push(status);
       }
-      paramIndex++
+      paramIndex++;
     }
 
     // Preferred supplier filter - uses idx_suppliers_preferred
     if (preferredOnly) {
-      sql += ` AND s.preferred_supplier = true`
+      sql += ` AND s.preferred_supplier = true`;
     }
 
     // Performance tier filter - uses idx_suppliers_performance_tier
     if (performanceTier?.length) {
-      sql += ` AND s.performance_tier = ANY($${paramIndex})`
-      queryParams.push(performanceTier)
-      paramIndex++
+      sql += ` AND s.performance_tier = ANY($${paramIndex})`;
+      queryParams.push(performanceTier);
+      paramIndex++;
     }
 
     // Category filter - uses idx_suppliers_primary_category
     if (category?.length) {
-      sql += ` AND s.primary_category = ANY($${paramIndex})`
-      queryParams.push(category)
-      paramIndex++
+      sql += ` AND s.primary_category = ANY($${paramIndex})`;
+      queryParams.push(category);
+      paramIndex++;
     }
 
     // Region filter - uses idx_suppliers_geographic_region
     if (region?.length) {
-      sql += ` AND s.geographic_region = ANY($${paramIndex})`
-      queryParams.push(region)
-      paramIndex++
+      sql += ` AND s.geographic_region = ANY($${paramIndex})`;
+      queryParams.push(region);
+      paramIndex++;
     }
 
     // BEE level filter - uses idx_suppliers_bee_level
     if (beeLevel?.length) {
-      sql += ` AND s.bee_level = ANY($${paramIndex})`
-      queryParams.push(beeLevel)
-      paramIndex++
+      sql += ` AND s.bee_level = ANY($${paramIndex})`;
+      queryParams.push(beeLevel);
+      paramIndex++;
     }
 
     // ========================================================================
@@ -180,32 +189,32 @@ export async function GET(request: NextRequest) {
         COALESCE(s.email, '') || ' ' ||
         COALESCE(s.contact_person, '') || ' ' ||
         COALESCE(s.primary_category, '')
-      ) @@ plainto_tsquery('english', $${paramIndex})`
-      queryParams.push(search)
-      paramIndex++
+      ) @@ plainto_tsquery('english', $${paramIndex})`;
+      queryParams.push(search);
+      paramIndex++;
     }
 
     // Spend filters - uses idx_suppliers_spend_range
     if (minSpend) {
-      sql += ` AND s.spend_last_12_months >= $${paramIndex}`
-      queryParams.push(parseFloat(minSpend))
-      paramIndex++
+      sql += ` AND s.spend_last_12_months >= $${paramIndex}`;
+      queryParams.push(parseFloat(minSpend));
+      paramIndex++;
     }
 
     if (maxSpend) {
-      sql += ` AND s.spend_last_12_months <= $${paramIndex}`
-      queryParams.push(parseFloat(maxSpend))
-      paramIndex++
+      sql += ` AND s.spend_last_12_months <= $${paramIndex}`;
+      queryParams.push(parseFloat(maxSpend));
+      paramIndex++;
     }
 
     // Group by if including metrics
     if (includeMetrics) {
-      sql += ` GROUP BY s.id`
+      sql += ` GROUP BY s.id`;
     }
 
     // Add ordering - uses idx_suppliers_status_name covering index
-    const sortBy = searchParams.get('sortBy') || 'updated_at'
-    const sortOrder = searchParams.get('sortOrder') || 'asc'
+    const sortBy = searchParams.get('sortBy') || 'updated_at';
+    const sortOrder = searchParams.get('sortOrder') || 'asc';
     const sortFields: { [key: string]: string } = {
       name: 's.name',
       email: 's.email',
@@ -223,39 +232,36 @@ export async function GET(request: NextRequest) {
       spend_last_12_months: 's.spend_last_12_months',
       payment_terms: 's.payment_terms',
       created_at: 's.created_at',
-      updated_at: 's.updated_at'
-    }
-    const sortColumn = sortFields[sortBy] || 's.updated_at'
-    sql += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`
+      updated_at: 's.updated_at',
+    };
+    const sortColumn = sortFields[sortBy] || 's.updated_at';
+    sql += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`;
 
     // Add pagination
-    sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
-    queryParams.push(limit, offset)
+    sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    queryParams.push(limit, offset);
 
     // ========================================================================
     // OPTIMIZATION 6: Single query for count using window function
     // This eliminates the second COUNT query entirely
     // ========================================================================
-    const countOverQuery = sql.replace(
-      'SELECT',
-      'SELECT COUNT(*) OVER() AS full_count,'
-    )
+    const countOverQuery = sql.replace('SELECT', 'SELECT COUNT(*) OVER() AS full_count,');
 
     // Execute optimized query
-    const startTime = Date.now()
-    const result = await query(countOverQuery, queryParams)
-    const queryTime = Date.now() - startTime
+    const startTime = Date.now();
+    const result = await query(countOverQuery, queryParams);
+    const queryTime = Date.now() - startTime;
 
     // Get total from first row (window function)
-    const total = result.rows.length > 0 ? parseInt(result.rows[0].full_count) : 0
+    const total = result.rows.length > 0 ? parseInt(result.rows[0].full_count) : 0;
 
     // Remove full_count from results
     const cleanedRows = result.rows.map(row => {
-      const { full_count, ...cleanRow } = row
-      return cleanRow
-    })
+      const { full_count, ...cleanRow } = row;
+      return cleanRow;
+    });
 
-    const totalPages = Math.ceil(total / limit)
+    const totalPages = Math.ceil(total / limit);
 
     const response = {
       success: true,
@@ -266,31 +272,30 @@ export async function GET(request: NextRequest) {
         total,
         totalPages,
         hasNext: page < totalPages,
-        hasPrev: page > 1
+        hasPrev: page > 1,
       },
       meta: {
         queryTime: `${queryTime}ms`,
-        cached: false
-      }
-    }
+        cached: false,
+      },
+    };
 
     // Cache the response
-    setCache(cacheKey, response)
+    setCache(cacheKey, response);
 
-    console.log(`✅ Suppliers query completed in ${queryTime}ms (${result.rows.length} rows)`)
+    console.log(`✅ Suppliers query completed in ${queryTime}ms (${result.rows.length} rows)`);
 
-    return NextResponse.json(response)
-
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Error fetching suppliers:', error)
+    console.error('Error fetching suppliers:', error);
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to fetch suppliers',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -299,40 +304,39 @@ export async function GET(request: NextRequest) {
 // ============================================================================
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
     // Support both single and batch inserts
-    const suppliers = Array.isArray(body) ? body : [body]
+    const suppliers = Array.isArray(body) ? body : [body];
 
     if (suppliers.length > 100) {
       return NextResponse.json(
         { success: false, error: 'Maximum 100 suppliers per batch' },
         { status: 400 }
-      )
+      );
     }
 
-    const results: Record<string, unknown>[] = []
-    const errors: Array<{ name: string; error: string }> = []
+    const results: Record<string, unknown>[] = [];
+    const errors: Array<{ name: string; error: string }> = [];
 
     // Use transaction for batch insert
-    await withTransaction(async (client) => {
-
+    await withTransaction(async client => {
       for (const supplierData of suppliers) {
         try {
-          const validatedData = supplierSchema.parse(supplierData)
+          const validatedData = supplierSchema.parse(supplierData);
 
           // Check for duplicate - use index scan
           const existingSupplier = await client.query(
             'SELECT supplier_id::text as id FROM core.supplier WHERE LOWER(name) = LOWER($1)',
             [validatedData.name]
-          )
+          );
 
           if (existingSupplier.rows.length > 0) {
             errors.push({
               name: validatedData.name,
-              error: 'Supplier with this name already exists'
-            })
-            continue
+              error: 'Supplier with this name already exists',
+            });
+            continue;
           }
 
           // Insert supplier
@@ -344,7 +348,7 @@ export async function POST(request: NextRequest) {
             localContentPercentage: validatedData.local_content_percentage ?? null,
             address: validatedData.address ?? null,
             status: 'active',
-          }
+          };
 
           const contactPersonPayload = validatedData.contact_person
             ? {
@@ -352,7 +356,7 @@ export async function POST(request: NextRequest) {
                 email: validatedData.email ?? null,
                 phone: validatedData.phone ?? null,
               }
-            : null
+            : null;
 
           const insertQuery = `
             INSERT INTO core.supplier (
@@ -375,7 +379,7 @@ export async function POST(request: NextRequest) {
               $5, $6, $7, $8, $9,
               $10::jsonb, $11::jsonb, NOW(), NOW()
             ) RETURNING supplier_id::text as id, name
-          `
+          `;
 
           const insertResult = await client.query(insertQuery, [
             validatedData.name,
@@ -389,54 +393,52 @@ export async function POST(request: NextRequest) {
             validatedData.tax_id ?? null,
             JSON.stringify(contactInfo),
             contactPersonPayload ? JSON.stringify(contactPersonPayload) : null,
-          ])
+          ]);
 
-          results.push(insertResult.rows[0])
+          results.push(insertResult.rows[0]);
         } catch (error) {
           errors.push({
             name: supplierData.name,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          })
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
-
-    })
+    });
 
     // Invalidate cache after successful creation
-    queryCache.clear()
+    queryCache.clear();
     if (results.length > 0) {
-      CacheInvalidator.invalidateSupplier(results[0].id, results[0].name)
+      CacheInvalidator.invalidateSupplier(results[0].id, results[0].name);
     }
 
     return NextResponse.json({
       success: true,
       data: results,
       errors: errors.length > 0 ? errors : undefined,
-      message: `${results.length} supplier(s) created successfully${errors.length > 0 ? `, ${errors.length} failed` : ''}`
-    })
-
+      message: `${results.length} supplier(s) created successfully${errors.length > 0 ? `, ${errors.length} failed` : ''}`,
+    });
   } catch (error) {
-    console.error('Error creating supplier:', error)
+    console.error('Error creating supplier:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
           success: false,
           error: 'Validation failed',
-          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
+          details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
         },
         { status: 400 }
-      )
+      );
     }
 
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to create supplier',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -444,19 +446,16 @@ export async function POST(request: NextRequest) {
 // OPTIMIZATION 8: Cache invalidation endpoint
 // ============================================================================
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const action = searchParams.get('action')
+  const { searchParams } = new URL(request.url);
+  const action = searchParams.get('action');
 
   if (action === 'clear-cache') {
-    queryCache.clear()
+    queryCache.clear();
     return NextResponse.json({
       success: true,
-      message: 'Cache cleared successfully'
-    })
+      message: 'Cache cleared successfully',
+    });
   }
 
-  return NextResponse.json(
-    { success: false, error: 'Invalid action' },
-    { status: 400 }
-  )
+  return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
 }

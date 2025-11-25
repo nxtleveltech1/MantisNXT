@@ -149,15 +149,8 @@ export class EnterpriseConnectionManager {
   private readonly queryLogConfig: QueryLogConfig;
 
   constructor(config?: PoolConfig) {
-    this.poolConfig = config ?? this.buildConfigFromEnv();
 
-    const pc: unknown = this.poolConfig;
-    if (pc.min == null) pc.min = this.parseIntEnv('ENTERPRISE_DB_POOL_MIN', 1);
-    if (pc.keepAlive == null) pc.keepAlive = this.parseBoolEnv('ENTERPRISE_DB_KEEPALIVE', true);
-    if (pc.keepAliveInitialDelayMillis == null)
-      pc.keepAliveInitialDelayMillis = this.parseIntEnv('ENTERPRISE_DB_KEEPALIVE_DELAY_MS', 30000);
-    const maxUses = this.parseIntEnv('ENTERPRISE_DB_MAX_USES', 0);
-    if (maxUses > 0 && pc.maxUses == null) pc.maxUses = maxUses;
+    this.poolConfig = config ?? this.buildConfigFromEnv();
 
     this.queryLogConfig = this.buildQueryLogConfig();
 
@@ -184,8 +177,7 @@ export class EnterpriseConnectionManager {
       );
     }
 
-    // Use the connection string as-is from environment variables
-    // No automatic database name replacement - respect the configured database
+
 
     // Determine if SSL is required from connection string or environment
     const requiresSsl =
@@ -262,7 +254,7 @@ export class EnterpriseConnectionManager {
         ssl: !!this.poolConfig.ssl,
       });
 
-      this.pool = new Pool(this.poolConfig);
+    this.pool = new Pool(this.poolConfig);
 
       this.pool.on('error', (error, client) => {
         const errorMessage = error?.message || String(error);
@@ -448,14 +440,19 @@ export class EnterpriseConnectionManager {
   private generateQueryFingerprint(text: string): string {
     // Normalize SQL by replacing parameter placeholders with ?
 
-    const normalized = text.replace(/\$\d+/g, '?').replace(/\s+/g, ' ').trim().toLowerCase();
+    let normalized = text.replace(/\$\d+/g, '?').replace(/\s+/g, ' ').trim().toLowerCase();
+
+
 
     // Return first 100 characters as fingerprint
 
     return normalized.substring(0, 100);
   }
 
-  private sanitizeParameters(params: unknown[]): unknown[] {
+
+
+  private sanitizeParameters(params: any[]): any[] {
+
     if (!params || params.length === 0) return [];
 
     const sensitivePatterns = [/password/i, /token/i, /secret/i, /api[_-]?key/i, /auth/i];
@@ -529,7 +526,10 @@ export class EnterpriseConnectionManager {
     if (isSlow) {
       this.metrics.slowQueries++;
 
-      const logData: unknown = {
+
+
+      const logData: any = {
+
         queryId,
 
         fingerprint,
@@ -538,22 +538,31 @@ export class EnterpriseConnectionManager {
       };
 
       if (this.queryLogConfig.logQueryText) {
-        (logData as unknown).sql = text.substring(0, 500);
+
+        logData.sql = text.substring(0, 500);
+
       }
 
       if (this.queryLogConfig.logParameters && params.length > 0) {
-        (logData as unknown).params = this.sanitizeParameters(params);
+
+        logData.params = this.sanitizeParameters(params);
+
       }
 
       if (error) {
-        (logData as unknown).error = error.message;
+
+        logData.error = error.message;
+
       }
 
       console.warn(`🐌 SLOW QUERY [${queryId}] ${duration.toFixed(2)}ms:`, logData);
     }
   }
 
-  private async explainQuery(text: string, params: unknown[]): Promise<unknown> {
+
+
+  private async explainQuery(text: string, params: any[]): Promise<any> {
+
     if (!this.pool) return null;
 
     try {
@@ -569,16 +578,23 @@ export class EnterpriseConnectionManager {
     }
   }
 
-  private logExecutionPlan(queryId: string, plan: unknown): void {
+
+
+  private logExecutionPlan(queryId: string, plan: any): void {
+
     if (!plan) return;
 
-    const executionTime = (plan as unknown)[0]?.['Execution Time'];
 
-    const planningTime = (plan as unknown)[0]?.['Planning Time'];
 
-    const totalCost = (plan as unknown)[0]?.Plan?.['Total Cost'];
+    const executionTime = plan[0]?.['Execution Time'];
 
-    const actualRows = (plan as unknown)[0]?.Plan?.['Actual Rows'];
+    const planningTime = plan[0]?.['Planning Time'];
+
+    const totalCost = plan[0]?.Plan?.['Total Cost'];
+
+    const actualRows = plan[0]?.Plan?.['Actual Rows'];
+
+
 
     console.log(`📊 EXECUTION PLAN [${queryId}]:`, {
       planningTime: `${planningTime?.toFixed(2)}ms`,
@@ -938,7 +954,10 @@ export class EnterpriseConnectionManager {
     return { status: 'healthy', message: 'Pool operating normally' };
   }
 
-  getQueryMetrics(): unknown {
+
+
+  getQueryMetrics(): any {
+
     const fingerprints = Array.from(this.metrics.queryFingerprints.entries())
 
       .map(([fingerprint, stats]) => ({
