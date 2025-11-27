@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useMemo, memo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -12,10 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Download, Settings2 } from "lucide-react"
+import { Download, Settings2, RefreshCw, Package, CheckCircle2, Clock, AlertTriangle, TrendingUp } from "lucide-react"
 import { ColumnManagementDialog, type ColumnDef } from "@/components/catalog/ColumnManagementDialog"
 import { useColumnManagement } from "@/hooks/useColumnManagement"
-import { StandardFiltersBar } from "@/components/shared/StandardFiltersBar"
 import { StandardPagination } from "@/components/shared/StandardPagination"
 import { cn } from "@/lib/utils"
 import { buildApiUrl } from "@/lib/utils/api-url"
@@ -38,6 +39,21 @@ interface ProductsTableProps {
   refreshTrigger?: number
 }
 
+interface Stats {
+  total_products: number
+  categorized_count: number
+  categorized_percentage: number
+  pending_count: number
+  pending_review_count: number
+  failed_count: number
+  avg_confidence: number | null
+  confidence_distribution: {
+    high: number
+    medium: number
+    low: number
+  }
+}
+
 // Default column configuration
 const DEFAULT_COLUMNS: ColumnDef[] = [
   { key: 'sku', label: 'SKU', visible: true, order: 1, align: 'left', sortable: false },
@@ -58,10 +74,18 @@ export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: Pro
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
   const [search, setSearch] = useState("")
+  const [supplierId, setSupplierId] = useState<string>("all")
+  const [categoryId, setCategoryId] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [confidenceMin, setConfidenceMin] = useState<string>("")
+  const [confidenceMax, setConfidenceMax] = useState<string>("")
   const [sortBy, setSortBy] = useState("categorized_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   const [columnDialogOpen, setColumnDialogOpen] = useState(false)
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+  const [suppliers, setSuppliers] = useState<{ supplier_id: string; name: string }[]>([])
+  const [categories, setCategories] = useState<Array<{ category_id?: string; id?: string; name: string }>>([])
 
   // Column management
   const { columns, setColumns, visibleColumns } = useColumnManagement(
@@ -80,7 +104,17 @@ export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: Pro
       })
 
       if (search) params.set("search", search)
+      if (supplierId && supplierId !== "all") params.set("supplier_id", supplierId)
+      if (categoryId && categoryId !== "all") {
+        if (categoryId.startsWith('raw:')) {
+          // Handle raw categories if needed
+        } else {
+          params.set("category_id", categoryId)
+        }
+      }
       if (statusFilter !== "all") params.set("status", statusFilter)
+      if (confidenceMin) params.set("confidence_min", confidenceMin)
+      if (confidenceMax) params.set("confidence_max", confidenceMax)
 
       const response = await fetch(buildApiUrl(`/api/category/ai-categorization/products?${params}`))
       const data = await response.json()
@@ -94,11 +128,53 @@ export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: Pro
     } finally {
       setLoading(false)
     }
-  }, [limit, page, search, sortBy, sortDir, statusFilter])
+  }, [limit, page, search, supplierId, categoryId, statusFilter, confidenceMin, confidenceMax, sortBy, sortDir])
+
+  // Fetch stats/metrics
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true)
+    try {
+      const response = await fetch(buildApiUrl(`/api/category/ai-categorization/stats`))
+      const data = await response.json()
+      if (data.success && data.stats) {
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error("Failed to fetch stats:", error)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [])
+
+  // Load filter data (suppliers and categories)
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const [sres, cres] = await Promise.all([
+          fetch(buildApiUrl('/api/catalog/suppliers')),
+          fetch(buildApiUrl('/api/catalog/categories')),
+        ])
+        const sjson = await sres.json()
+        const cjson = await cres.json()
+        if (sjson.success) setSuppliers(sjson.data || [])
+        if (Array.isArray(cjson)) {
+          setCategories(cjson)
+        } else if (cjson.success) {
+          setCategories(cjson.data || [])
+        }
+      } catch (e) {
+        console.error("Failed to load filter data:", e)
+      }
+    })()
+  }, [])
 
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts, refreshTrigger])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats, refreshTrigger])
 
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
@@ -137,10 +213,10 @@ export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: Pro
   // Helper to get sort key for a column
   const getSortKey = (columnKey: string): string => {
     const sortMap: Record<string, string> = {
-      name: 'name',
-      supplier: 'supplier',
-      confidence: 'confidence',
-      date: 'categorized_at',
+      name: 'name_from_supplier',
+      supplier: 'supplier_name',
+      confidence: 'ai_confidence',
+      date: 'ai_categorized_at',
     }
     return sortMap[columnKey] || columnKey
   }
@@ -248,54 +324,160 @@ export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: Pro
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Products</CardTitle>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
+        <CardTitle className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          AI Categorized Products
+        </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">TOTAL PRODUCTS</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {statsLoading ? (
+                      <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                    ) : (
+                      stats?.total_products.toLocaleString() || "0"
+                    )}
+                  </p>
+                </div>
+                <Package className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">CATEGORIZED</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {statsLoading ? (
+                      <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                    ) : (
+                      `${stats?.categorized_count.toLocaleString() || "0"} (${stats?.categorized_percentage.toFixed(1) || "0"}%)`
+                    )}
+                  </p>
+                </div>
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">PENDING</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {statsLoading ? (
+                      <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                    ) : (
+                      stats?.pending_count.toLocaleString() || "0"
+                    )}
+                  </p>
+                </div>
+                <Clock className="h-8 w-8 text-amber-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">AVG CONFIDENCE</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {statsLoading ? (
+                      <span className="inline-block h-8 w-20 bg-muted animate-pulse rounded" />
+                    ) : stats?.avg_confidence !== null && stats?.avg_confidence !== undefined ? (
+                      `${(stats.avg_confidence * 100).toFixed(0)}%`
+                    ) : (
+                      "-"
+                    )}
+                  </p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Filters Bar */}
-        <StandardFiltersBar
-          searchValue={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search by name or SKU..."
-          filters={[
-            {
-              key: 'status',
-              label: 'Status',
-              value: statusFilter,
-              options: [
-                { value: 'all', label: 'All Status' },
-                { value: 'completed', label: 'Completed' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'pending_review', label: 'Pending Review' },
-                { value: 'failed', label: 'Failed' },
-                { value: 'skipped', label: 'Skipped' },
-              ],
-              onValueChange: setStatusFilter,
-              className: 'w-[150px]',
-            },
-            {
-              key: 'sort',
-              label: 'Sort By',
-              value: sortBy,
-              options: [
-                { value: 'categorized_at', label: 'Date' },
-                { value: 'name', label: 'Name' },
-                { value: 'confidence', label: 'Confidence' },
-                { value: 'supplier', label: 'Supplier' },
-              ],
-              onValueChange: setSortBy,
-              className: 'w-[150px]',
-            },
-          ]}
-          onRefresh={fetchProducts}
-          loading={loading}
-          totalItems={total}
-        />
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <Input
+            placeholder="Search by name or SKU"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={supplierId} onValueChange={setSupplierId}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All suppliers</SelectItem>
+              {suppliers.filter(s => s && s.supplier_id).map(s => (
+                <SelectItem key={s.supplier_id} value={s.supplier_id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {categories.filter(c => !!c).map((c: unknown) => (
+                <SelectItem key={String(c.category_id ?? c.id)} value={String(c.category_id ?? c.id)}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="pending_review">Pending Review</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="skipped">Skipped</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input 
+            placeholder="Min confidence" 
+            value={confidenceMin} 
+            onChange={(e) => setConfidenceMin(e.target.value)} 
+            className="w-32" 
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+          />
+          <Input 
+            placeholder="Max confidence" 
+            value={confidenceMax} 
+            onChange={(e) => setConfidenceMax(e.target.value)} 
+            className="w-32" 
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+          />
+          <Button variant="outline" onClick={() => fetchProducts()} disabled={loading}>
+            <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
+            Refresh
+          </Button>
+          <div className="ml-auto text-sm text-muted-foreground">
+            {total.toLocaleString()} items
+          </div>
+        </div>
 
         {/* Column Management */}
         <div className="flex items-center justify-between mb-2">
@@ -314,6 +496,10 @@ export const ProductsTable = memo(function ProductsTable({ refreshTrigger }: Pro
             onColumnsChange={setColumns}
             defaultColumns={DEFAULT_COLUMNS}
           />
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
         </div>
 
         {/* Table */}

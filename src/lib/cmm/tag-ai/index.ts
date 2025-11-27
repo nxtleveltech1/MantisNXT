@@ -45,12 +45,15 @@ export async function suggestTagsBatch(
     console.warn('[suggestTagsBatch] No AI config found, returning empty suggestions');
     return new Map();
   }
+  console.log(
+    `[suggestTagsBatch] Found ${cfg.providers.length} providers for ${enrichedProducts.length} products`
+  );
 
   const providers: ProviderConfig[] = cfg.providers;
   const effectiveTimeout = opts?.timeoutMs ?? cfg.defaults.timeoutMs;
   const effectiveBatchDelay = opts?.batchDelayMs ?? cfg.defaults.batchDelayMs;
   const effectiveBatchSize = opts?.batchSize ?? cfg.defaults.batchSize ?? 10;
-  const effectiveOverallTimeout = opts?.overallTimeoutMs ?? cfg.defaults.overallTimeoutMs ?? 120000;
+  const effectiveOverallTimeout = opts?.overallTimeoutMs ?? cfg.defaults.overallTimeoutMs ?? 12000;
   const effectiveMaxBatches = opts?.maxBatches ?? cfg.defaults.maxBatches;
   const effectiveFailFast = cfg.defaults.failFastOnFirstTimeout ?? true;
   const webResearchEnabled = opts?.webResearchEnabled ?? cfg.defaults.webResearchEnabled ?? false;

@@ -1,8 +1,9 @@
 /* Font face declarations - loaded early */
 
-@plugin "tailwindcss-animate";
 @import 'tailwindcss';
 
+@source '../**/*.{ts,tsx}';
+@source '../../components/**/*.{ts,tsx}';
 @source '../../pages/**/*.{ts,tsx}';
 
 @custom-variant dark (&:is(.dark *));

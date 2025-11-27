@@ -433,7 +433,12 @@ Return ONLY valid JSON matching this schema:
   ]
 }`;
 
-  const providerKey = provider.provider?.toLowerCase();
+  let providerKey = provider.provider?.toLowerCase();
+  
+  // Map openai_compatible to openai for engine compatibility
+  if (providerKey === 'openai_compatible') {
+    providerKey = 'openai';
+  }
   
   if (providerKey === 'anthropic') {
     const anthropic = createAnthropic({

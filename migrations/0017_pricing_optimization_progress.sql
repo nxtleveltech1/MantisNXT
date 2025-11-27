@@ -24,3 +24,5 @@ COMMENT ON COLUMN core.optimization_runs.current_step IS
 COMMENT ON COLUMN core.optimization_runs.products_processed IS 
     'Number of products processed so far';
 
+
+

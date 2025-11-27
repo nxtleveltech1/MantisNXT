@@ -1,6 +1,6 @@
 /**
  * Price Elasticity Chart Component
- * 
+ *
  * Displays price elasticity analysis with optimal price range
  */
 
@@ -44,7 +44,7 @@ interface ElasticityChartProps {
 export function ElasticityChart({ data, loading }: ElasticityChartProps) {
   if (loading) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+      <div className="text-muted-foreground flex h-[300px] items-center justify-center">
         Loading elasticity data...
       </div>
     );
@@ -52,7 +52,7 @@ export function ElasticityChart({ data, loading }: ElasticityChartProps) {
 
   if (!data || !data.data_points || data.data_points.length === 0) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+      <div className="text-muted-foreground flex h-[300px] items-center justify-center">
         No elasticity data available
       </div>
     );
@@ -69,21 +69,16 @@ export function ElasticityChart({ data, loading }: ElasticityChartProps) {
     <ResponsiveContainer width="100%" height={300}>
       <ScatterChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis 
+        <XAxis
           type="number"
-          dataKey="price" 
+          dataKey="price"
           name="Price"
           tick={{ fontSize: 12 }}
-          tickFormatter={(value) => `$${value.toFixed(2)}`}
+          tickFormatter={value => `$${value.toFixed(2)}`}
           domain={['dataMin', 'dataMax']}
         />
-        <YAxis 
-          type="number"
-          dataKey="quantity" 
-          name="Quantity"
-          tick={{ fontSize: 12 }}
-        />
-        <Tooltip 
+        <YAxis type="number" dataKey="quantity" name="Quantity" tick={{ fontSize: 12 }} />
+        <Tooltip
           cursor={{ strokeDasharray: '3 3' }}
           formatter={(value: number, name: string) => {
             if (name === 'price') return `$${value.toFixed(2)}`;
@@ -94,28 +89,23 @@ export function ElasticityChart({ data, loading }: ElasticityChartProps) {
         />
         <Legend />
         {data.optimal_price && (
-          <ReferenceLine 
-            x={data.optimal_price} 
-            stroke="#ff7300" 
+          <ReferenceLine
+            x={data.optimal_price}
+            stroke="#ff7300"
             strokeDasharray="5 5"
             label={{ value: 'Optimal Price', position: 'top' }}
           />
         )}
         {data.current_price && (
-          <ReferenceLine 
-            x={data.current_price} 
-            stroke="#8884d8" 
+          <ReferenceLine
+            x={data.current_price}
+            stroke="#8884d8"
             strokeDasharray="3 3"
             label={{ value: 'Current Price', position: 'top' }}
           />
         )}
-        <Scatter 
-          name="Price-Quantity Relationship" 
-          data={chartData} 
-          fill="#8884d8"
-        />
+        <Scatter name="Price-Quantity Relationship" data={chartData} fill="#8884d8" />
       </ScatterChart>
     </ResponsiveContainer>
   );
 }
-

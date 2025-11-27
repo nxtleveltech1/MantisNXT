@@ -58,22 +58,29 @@ export function SectionQuickLinks({
             key={`${link.title}-${link.url}`}
             href={link.url}
             className={cn(
-              "inline-flex min-w-[130px] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-5 py-2.5 text-sm font-medium leading-none transition-all duration-300 ease-out",
-              "backdrop-blur-3xl shadow-sm",
+              "inline-flex min-w-[122px] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-[10px] font-semibold tracking-[0.14em] leading-none uppercase transition-all duration-300 ease-out",
+              "backdrop-blur-3xl hover:-translate-y-0.5 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.45)]",
               isActive
-                ? "border-slate-200 bg-slate-900 text-white shadow-lg ring-1 ring-slate-900/10 dark:border-white/40 dark:bg-white/20 dark:text-white dark:shadow-[0_0_30px_-10px_rgba(255,255,255,0.3)] dark:ring-white/20"
-                : "border-slate-200/60 bg-slate-50/50 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white dark:hover:border-white/20",
+                ? "border-white/42 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.56),rgba(255,255,255,0)_44%),radial-gradient(circle_at_82%_6%,rgba(255,255,255,0.26),rgba(255,255,255,0)_46%),linear-gradient(155deg,rgba(210,218,226,0.82),rgba(165,175,185,0.72),rgba(125,135,145,0.64))] text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),_0_20px_60px_-34px_rgba(0,0,0,0.52)]"
+                : "border-white/30 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.54),rgba(255,255,255,0)_44%),radial-gradient(circle_at_82%_6%,rgba(255,255,255,0.22),rgba(255,255,255,0)_46%),linear-gradient(155deg,rgba(236,240,244,0.72),rgba(205,214,224,0.52),rgba(178,187,197,0.4))] text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.74),_0_16px_52px_-30px_rgba(0,0,0,0.48)] hover:border-white/46 hover:shadow-[0_20px_50px_-26px_rgba(0,0,0,0.52)]",
             )}
             aria-label={`${sectionTitle} - ${link.title}`}
           >
-            <span className="flex items-center gap-1">
-              <ChevronRight
+            <span className="flex items-center gap-2">
+              <span
                 className={cn(
-                  "h-3 w-3 transition-colors",
-                  isActive ? "text-white" : "text-slate-800 group-hover:text-slate-900",
+                  "h-2.5 w-2.5 rounded-full bg-slate-800/72 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.2),_0_0_10px_rgba(255,255,255,0.5)]",
+                  isActive && "bg-slate-900 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.28),_0_0_12px_rgba(255,255,255,0.55)]",
                 )}
               />
-              <span>{link.title}</span>
+              <span
+                className={cn(
+                  "transition-colors drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]",
+                  isActive ? "text-slate-900" : "text-slate-800",
+                )}
+              >
+                {link.title}
+              </span>
             </span>
           </Link>
         )

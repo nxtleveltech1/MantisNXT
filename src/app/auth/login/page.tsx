@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import type { Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 
 import { authProvider } from '@/lib/auth/mock-provider'
 import { loginFormSchema, type LoginFormData } from '@/lib/auth/validation'
@@ -100,7 +100,7 @@ export default function LoginPage() {
 
   if (requiresTwoFactor) {
     return (
-      <div className="min-h-screen relative flex items-center justify-center">
+      <div className="min-h-screen relative">
         {/* Background Image */}
         <div className="absolute inset-0 z-0 bg-gradient-to-br from-red-950 via-black to-red-900">
           <div
@@ -115,9 +115,19 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-black/40" />
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 w-full max-w-md px-4 fixed bottom-8 left-1/2 -translate-x-1/2">
-          <div className="space-y-6">
+        {/* Content - Two Factor Form at bottom center */}
+        <div 
+          className="z-10 max-w-md px-4"
+          style={{
+            position: 'fixed',
+            bottom: '32px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '100%',
+            maxWidth: '28rem'
+          }}
+        >
+          <div className="bg-black/60 backdrop-blur-sm rounded-lg border border-red-900/50 p-6 space-y-6">
             {error && (
               <Alert variant="destructive" className="rounded-lg bg-red-900/90 border-red-700">
                 <AlertCircle className="h-4 w-4" />
@@ -168,7 +178,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center">
+    <div className="min-h-screen relative">
       {/* Background Image */}
       <div className="absolute inset-0 z-0 bg-gradient-to-br from-red-950 via-black to-red-900">
         <div
@@ -183,10 +193,20 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-md px-4 fixed bottom-8 left-1/2 -translate-x-1/2">
-        {/* Login Form */}
-        <div className="space-y-6">
+      {/* Content - Login Form at bottom center */}
+      <div 
+        className="z-10 max-w-md px-4"
+        style={{
+          position: 'fixed',
+          bottom: '32px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '28rem'
+        }}
+      >
+        {/* Login Form - Dark semi-transparent panel */}
+        <div className="bg-black/60 backdrop-blur-sm rounded-lg border border-red-900/50 p-6 space-y-6">
           {error && (
             <Alert variant="destructive" className="rounded-lg bg-red-900/90 border-red-700">
               <AlertCircle className="h-4 w-4" />
@@ -201,6 +221,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-white">Username or Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -220,6 +241,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-white">Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -259,7 +281,7 @@ export default function LoginPage() {
                   'Signing in...'
                 ) : (
                   <>
-                    <LogIn className="mr-2 h-4 w-4" />
+                    <ArrowRight className="mr-2 h-4 w-4" />
                     Login
                   </>
                 )}

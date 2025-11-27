@@ -105,14 +105,16 @@ export default function AppLayout({
             )}
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 md:p-6 lg:p-8">
+        <div className="flex flex-1 flex-col gap-2 p-4 md:p-6 lg:p-8">
           {showQuickLinks && quickLinks.length > 0 ? (
-            <SectionQuickLinks
-              sectionTitle={currentSection?.title ?? title}
-              links={quickLinks}
-              activePath={pathname ?? ""}
-              className="w-full justify-end"
-            />
+            <div className="flex justify-end mb-0">
+              <SectionQuickLinks
+                sectionTitle={currentSection?.title ?? title}
+                links={quickLinks}
+                activePath={pathname ?? ""}
+                className="w-full justify-end gap-3"
+              />
+            </div>
           ) : null}
           {children}
         </div>

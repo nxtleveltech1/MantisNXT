@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const params: ProductsQueryParams = {
       status: searchParams.get('status') as unknown,
       supplier_id: searchParams.get('supplier_id') || undefined,
+      category_id: searchParams.get('category_id') || undefined,
       confidence_min: searchParams.get('confidence_min')
         ? parseFloat(searchParams.get('confidence_min')!)
         : undefined,
@@ -48,6 +49,12 @@ export async function GET(request: NextRequest) {
     if (params.supplier_id) {
       whereClauses.push(`sp.supplier_id = $${paramCounter}`);
       queryParams.push(params.supplier_id);
+      paramCounter++;
+    }
+
+    if (params.category_id) {
+      whereClauses.push(`sp.category_id = $${paramCounter}`);
+      queryParams.push(params.category_id);
       paramCounter++;
     }
 

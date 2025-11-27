@@ -156,9 +156,18 @@ async function generateRecentActivities(limit: number = 20): Promise<ActivityRes
     `;
 
     const [supplierResult, inventoryResult, newInventoryResult] = await Promise.all([
-      pool.query(supplierActivitiesQuery),
-      pool.query(inventoryActivitiesQuery),
-      pool.query(newInventoryQuery),
+      pool.query(supplierActivitiesQuery).catch((err) => {
+        console.error('Error querying supplier activities:', err);
+        return { rows: [] };
+      }),
+      pool.query(inventoryActivitiesQuery).catch((err) => {
+        console.error('Error querying inventory activities:', err);
+        return { rows: [] };
+      }),
+      pool.query(newInventoryQuery).catch((err) => {
+        console.error('Error querying new inventory:', err);
+        return { rows: [] };
+      }),
     ])
 
     const activities: RecentActivity[] = []
@@ -242,20 +251,47 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
-      limit: parseInt(searchParams.get("limit") || "20"),
-      offset: parseInt(searchParams.get("offset") || "0"),
-      type: searchParams.get("type")?.split(",") || undefined,
+      limit: parseInt(searchParams.get("limit") || "20", 10),
+      offset: parseInt(searchParams.get("offset") || "0", 10),
+      type: searchParams.get("type")?.split(",").filter(Boolean) || undefined,
       userId: searchParams.get("userId") || undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
     };
 
-    const validatedParams = GetActivitiesSchema.parse(queryParams);
+    // Validate with better error handling
+    let validatedParams;
+    try {
+      validatedParams = GetActivitiesSchema.parse(queryParams);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid query parameters",
+            details: validationError.issues,
+          },
+          { status: 400 }
+        );
+      }
+      throw validationError;
+    }
 
     // Generate real activities from database
-    const activityResult = await generateRecentActivities(
-      validatedParams.limit + validatedParams.offset
-    )
+    let activityResult;
+    try {
+      activityResult = await generateRecentActivities(
+        validatedParams.limit + validatedParams.offset
+      );
+    } catch (activityError) {
+      console.error('Error generating activities:', activityError);
+      // Return fallback activities on error
+      activityResult = {
+        items: FALLBACK_ACTIVITIES.slice(0, validatedParams.limit),
+        isFallback: true,
+        reason: activityError instanceof Error ? activityError.message : 'Failed to generate activities',
+      };
+    }
 
     // Apply filters
     let filteredActivities = activityResult.items

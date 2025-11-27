@@ -47,7 +47,21 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
 
   const fetchJobStatus = useCallback(async () => {
     try {
-      const response = await fetch(buildApiUrl(`/api/category/ai-categorization/status/${jobId}`))
+      const url = buildApiUrl(`/api/category/ai-categorization/status/${jobId}`)
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error")
+        console.error(`Failed to fetch job status: ${response.status} ${response.statusText}`, errorText)
+        setLoading(false)
+        return
+      }
+
       const data = await response.json()
 
       if (data.success) {
@@ -57,10 +71,15 @@ export const ProgressMonitor = memo(function ProgressMonitor({ jobId, onJobCompl
         if (data.job.job.status === "completed" && onJobComplete) {
           onJobComplete()
         }
+      } else {
+        console.error("API returned unsuccessful response:", data.message || "Unknown error")
       }
       setLoading(false)
     } catch (error) {
       console.error("Failed to fetch job status:", error)
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        console.error("Network error - check if API server is running and accessible")
+      }
       setLoading(false)
     }
   }, [jobId, onJobComplete])

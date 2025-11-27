@@ -7,3 +7,5 @@ ALTER TABLE IF EXISTS public.inventory_items
 
 COMMIT;
 
+
+

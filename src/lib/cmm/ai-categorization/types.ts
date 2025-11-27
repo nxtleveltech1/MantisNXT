@@ -229,6 +229,7 @@ export interface CancelJobResponse {
 export interface ProductsQueryParams {
   status?: CategorizationStatus;
   supplier_id?: string;
+  category_id?: string;
   confidence_min?: number;
   confidence_max?: number;
   search?: string;

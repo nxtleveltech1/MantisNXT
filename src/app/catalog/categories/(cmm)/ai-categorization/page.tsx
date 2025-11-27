@@ -80,7 +80,20 @@ export default function AICategoryManagementPage() {
 
   const fetchJobs = useCallback(async () => {
     try {
-      const response = await fetch(buildApiUrl("/api/category/ai-categorization/jobs?limit=20"))
+      const url = buildApiUrl("/api/category/ai-categorization/jobs?limit=20")
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error")
+        console.error(`Failed to fetch jobs: ${response.status} ${response.statusText}`, errorText)
+        return
+      }
+
       const data = await response.json()
 
       if (data.success) {
@@ -93,9 +106,14 @@ export default function AICategoryManagementPage() {
 
         setActiveJobs(active)
         setRecentJobs(recent.slice(0, 10))
+      } else {
+        console.error("API returned unsuccessful response:", data.message || "Unknown error")
       }
     } catch (error) {
       console.error("Failed to fetch jobs:", error)
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        console.error("Network error - check if API server is running and accessible")
+      }
     }
   }, [])
 

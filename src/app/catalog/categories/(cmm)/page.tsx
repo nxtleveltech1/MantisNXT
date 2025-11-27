@@ -6,8 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart3, Tags, TrendingUp, AlertCircle, CheckCircle } from "lucide-react"
 import { buildApiUrl } from "@/lib/utils/api-url"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
 
 interface CategorizationStats {
   total_products: number
@@ -46,6 +49,18 @@ export default function CmmDashboard() {
   const [loading, setLoading] = useState(true)
   const [hasLiveData, setHasLiveData] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const pathname = usePathname()
+  
+  const getActiveTab = () => {
+    if (!pathname) return "dashboard"
+    if (pathname === "/catalog/categories" || pathname.endsWith("/categories")) return "dashboard"
+    if (pathname.includes("/ai-categorization")) return "ai-categorization"
+    if (pathname.includes("/categories") && !pathname.includes("/ai-categorization")) return "categories"
+    if (pathname.includes("/tags")) return "tags"
+    if (pathname.includes("/analytics")) return "analytics"
+    if (pathname.includes("/exceptions")) return "exceptions"
+    return "dashboard"
+  }
 
   useEffect(() => {
     void loadDashboard()
@@ -124,11 +139,63 @@ export default function CmmDashboard() {
 
   if (loading) {
     return (
-      <AppLayout title="Category Management Dashboard" breadcrumbs={[{ label: "Category Management" }]}>
+      <AppLayout title="Category Management Dashboard" breadcrumbs={[{ label: "Category Management" }]} showQuickLinks={false}>
         <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Category Management Dashboard</h1>
-            <p className="text-muted-foreground">Loading dashboard data...</p>
+          <div className="space-y-3">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl font-bold leading-tight">Category Management Dashboard</h1>
+                <p className="text-muted-foreground mt-1.5 text-sm">
+                  Live view of category hierarchy, AI coverage, and outstanding review workloads.
+                </p>
+              </div>
+            </div>
+            <Tabs value="dashboard" className="w-full">
+              <TabsList className="h-auto p-0 bg-transparent border-b rounded-none gap-0">
+                <TabsTrigger 
+                  value="dashboard" 
+                  asChild 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                >
+                  <Link href="/catalog/categories">DASHBOARD</Link>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="ai-categorization" 
+                  asChild 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                >
+                  <Link href="/catalog/categories/ai-categorization">AI CATEGORIZATION</Link>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="categories" 
+                  asChild 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                >
+                  <Link href="/catalog/categories/categories">CATEGORIES</Link>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="tags" 
+                  asChild 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                >
+                  <Link href="/catalog/tags/ai-tagging">TAGS</Link>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="analytics" 
+                  asChild 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                >
+                  <Link href="/catalog/categories/analytics">ANALYTICS</Link>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="exceptions" 
+                  asChild 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+                >
+                  <Link href="/catalog/categories/exceptions">EXCEPTIONS</Link>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((index) => (
@@ -148,29 +215,77 @@ export default function CmmDashboard() {
   }
 
   return (
-    <AppLayout title="Category Management Dashboard" breadcrumbs={[{ label: "Category Management" }]}>
+    <AppLayout title="Category Management Dashboard" breadcrumbs={[{ label: "Category Management" }]} showQuickLinks={false}>
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Category Management Dashboard</h1>
-            <p className="text-muted-foreground">
-              Live view of category hierarchy, AI coverage, and outstanding review workloads.
-            </p>
-            {error && <p className="text-sm text-yellow-600 mt-2">{error}</p>}
+        <div className="space-y-3">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl font-bold leading-tight">Category Management Dashboard</h1>
+              <p className="text-muted-foreground mt-1.5 text-sm">
+                Live view of category hierarchy, AI coverage, and outstanding review workloads.
+              </p>
+              {error && <p className="text-sm text-yellow-600 mt-2">{error}</p>}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0 md:mt-0 mt-2">
+              {hasLiveData ? (
+                <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Live Data
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-yellow-200 bg-yellow-50 text-yellow-700">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Demo Mode
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {hasLiveData ? (
-              <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Live Data
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="border-yellow-200 bg-yellow-50 text-yellow-700">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Demo Mode
-              </Badge>
-            )}
-          </div>
+          <Tabs value={getActiveTab()} className="w-full">
+            <TabsList className="h-auto p-0 bg-transparent border-b rounded-none gap-0">
+              <TabsTrigger 
+                value="dashboard" 
+                asChild 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              >
+                <Link href="/catalog/categories">DASHBOARD</Link>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="ai-categorization" 
+                asChild 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              >
+                <Link href="/catalog/categories/ai-categorization">AI CATEGORIZATION</Link>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="categories" 
+                asChild 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              >
+                <Link href="/catalog/categories/categories">CATEGORIES</Link>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="tags" 
+                asChild 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              >
+                <Link href="/catalog/tags/ai-tagging">TAGS</Link>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="analytics" 
+                asChild 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              >
+                <Link href="/catalog/categories/analytics">ANALYTICS</Link>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="exceptions" 
+                asChild 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 py-2 text-sm font-medium"
+              >
+                <Link href="/catalog/categories/exceptions">EXCEPTIONS</Link>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

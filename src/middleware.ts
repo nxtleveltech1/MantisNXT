@@ -22,6 +22,8 @@ const ALWAYS_PUBLIC_ENDPOINTS = [
   '/api/catalog/metrics',
   '/api/suppliers',
   '/api/suppliers/v3',
+  '/api/tag/ai-tagging',
+  '/api/category/ai-categorization',
 ]
 
 function parseAllowlist(input: string | undefined): string[] {
@@ -46,6 +48,8 @@ export function middleware(request: Request) {
     return NextResponse.next()
   }
 
+  // Check if pathname matches any public endpoint
+  // Using startsWith to match both exact paths and sub-paths (e.g., /api/suppliers and /api/suppliers/v3)
   if (ALWAYS_PUBLIC_ENDPOINTS.some((endpoint) => pathname.startsWith(endpoint))) {
     return NextResponse.next()
   }

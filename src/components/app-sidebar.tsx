@@ -128,7 +128,7 @@ export const sidebarData = {
         },
         {
           title: "Tags",
-          url: "/catalog/categories/tags",
+          url: "/catalog/tags/ai-tagging",
         },
         {
           title: "Analytics",
