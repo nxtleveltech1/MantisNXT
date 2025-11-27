@@ -267,3 +267,4 @@ Memories are working correctly when:
 
 **Remember**: These memories exist because context was lost and mistakes were repeated. Use them actively, update them frequently, and let them guide development decisions.
 
+

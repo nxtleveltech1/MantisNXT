@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Trash2, Plus, Star, Edit2, CheckCircle2, XCircle } from 'lucide-react';
+import { ModelSelector } from './ModelSelector';
 
-type ProviderKey = 'openai' | 'anthropic' | 'openai_compatible' | 'google' | 'serper' | 'tavily' | 'google_search' | 'firecrawl' | 'brave' | 'exa';
+type ProviderKey = 'openai' | 'anthropic' | 'openai_compatible' | 'google' | 'serper' | 'tavily' | 'google_search' | 'firecrawl' | 'brave' | 'exa' | 'openrouter' | 'kilocode';
 
 interface AIServiceRow {
   id: string;
@@ -215,6 +216,10 @@ export default function CustomServicesPanel() {
         return 'https://api.anthropic.com/v1';
       case 'openai_compatible':
         return '';
+      case 'openrouter':
+        return 'https://openrouter.ai/api/v1';
+      case 'kilocode':
+        return 'https://api.kilocode.com/v1';
       default:
         return '';
     }
@@ -740,6 +745,9 @@ export default function CustomServicesPanel() {
                         <SelectItem value="exa">Exa (Semantic Search)</SelectItem>
                         {/* Web Scraping */}
                         <SelectItem value="firecrawl">Firecrawl (Web Scraping)</SelectItem>
+                        {/* Multi-Provider */}
+                        <SelectItem value="openrouter">OpenRouter</SelectItem>
+                        <SelectItem value="kilocode">KiloCode</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -762,11 +770,13 @@ export default function CustomServicesPanel() {
                   </div>
                   {!isWebSearchProvider(form.provider) && form.provider !== 'google' && (
                     <div className="space-y-2">
-                      <Label>Model *</Label>
-                      <Input
-                        placeholder="gpt-4o-mini"
+                      <ModelSelector
+                        providerId={form.provider}
                         value={form.model}
-                        onChange={(e) => setForm(s.id, { model: e.target.value })}
+                        onChange={(model) => setForm(s.id, { model })}
+                        label="Model *"
+                        required
+                        placeholder="Select or type a model"
                       />
                     </div>
                   )}
@@ -1379,6 +1389,9 @@ export default function CustomServicesPanel() {
                                     <SelectItem value="exa">Exa (Semantic Search)</SelectItem>
                                     {/* Web Scraping */}
                                     <SelectItem value="firecrawl">Firecrawl (Web Scraping)</SelectItem>
+                                    {/* Multi-Provider */}
+                                    <SelectItem value="openrouter">OpenRouter</SelectItem>
+                                    <SelectItem value="kilocode">KiloCode</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1399,10 +1412,13 @@ export default function CustomServicesPanel() {
                               </div>
                               {!isWebSearchProvider(editForm?.provider || 'google') && editForm?.provider !== 'google' && (
                                 <div className="space-y-2">
-                                  <Label>Model *</Label>
-                                  <Input
+                                  <ModelSelector
+                                    providerId={editForm?.provider || 'openai'}
                                     value={editForm?.model || ''}
-                                    onChange={(e) => setEditForm(prev => prev ? { ...prev, model: e.target.value } : null)}
+                                    onChange={(model) => setEditForm(prev => prev ? { ...prev, model } : null)}
+                                    label="Model *"
+                                    required
+                                    placeholder="Select or type a model"
                                   />
                                 </div>
                               )}

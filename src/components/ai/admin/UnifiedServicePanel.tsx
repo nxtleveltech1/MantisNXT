@@ -11,8 +11,9 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Trash2, Plus, Star, Edit2, CheckCircle2, XCircle } from 'lucide-react';
+import { ModelSelector } from './providers/ModelSelector';
 
-type ProviderKey = 'openai' | 'anthropic' | 'openai_compatible' | 'google' | 'serper' | 'tavily' | 'google_search' | 'firecrawl' | 'brave' | 'exa';
+type ProviderKey = 'openai' | 'anthropic' | 'openai_compatible' | 'google' | 'serper' | 'tavily' | 'google_search' | 'firecrawl' | 'brave' | 'exa' | 'openrouter' | 'kilocode';
 type ServiceType = 'demand_forecasting' | 'anomaly_detection' | 'supplier_scoring' | 'chatbot' | 'supplier_discovery';
 
 interface AIServiceConfig {
@@ -234,6 +235,10 @@ export default function UnifiedServicePanel() {
         return 'https://api.anthropic.com/v1';
       case 'openai_compatible':
         return '';
+      case 'openrouter':
+        return 'https://openrouter.ai/api/v1';
+      case 'kilocode':
+        return 'https://api.kilocode.com/v1';
       default:
         return '';
     }
@@ -761,6 +766,8 @@ export default function UnifiedServicePanel() {
                         <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
                         <SelectItem value="google">Google Gemini</SelectItem>
                         <SelectItem value="openai_compatible">OpenAI Compatible</SelectItem>
+                        <SelectItem value="openrouter">OpenRouter</SelectItem>
+                        <SelectItem value="kilocode">KiloCode</SelectItem>
                         {/* Web Search Providers */}
                         <SelectItem value="serper">Serper (Google Search API)</SelectItem>
                         <SelectItem value="tavily">Tavily (AI Search)</SelectItem>
@@ -789,45 +796,25 @@ export default function UnifiedServicePanel() {
                       onChange={(e) => setForm(serviceType, { apiKey: e.target.value })}
                     />
                   </div>
-                  {!isWebSearchProvider(form.provider) && form.provider !== 'google' && (
-                    <div className="space-y-2">
-                      <Label>Model *</Label>
-                      <Input
-                        placeholder="gpt-4o-mini"
-                        value={form.model}
-                        onChange={(e) => setForm(serviceType, { model: e.target.value })}
-                      />
-                    </div>
+                  {!isWebSearchProvider(form.provider) && (
+                    <ModelSelector
+                      providerId={form.provider}
+                      value={form.model}
+                      onChange={(model) => setForm(serviceType, { model })}
+                      label="Model"
+                      required={!isWebSearchProvider(form.provider)}
+                      placeholder="Select or type a model"
+                    />
                   )}
                   {isWebSearchProvider(form.provider) && form.provider !== 'google_search' && (
-                    <div className="space-y-2">
-                      <Label>Model (Optional)</Label>
-                      <Input
-                        placeholder="Not required for web search"
-                        value={form.model}
-                        onChange={(e) => setForm(serviceType, { model: e.target.value })}
-                      />
-                    </div>
-                  )}
-                  {form.provider === 'google' && (
-                    <div className="space-y-2">
-                      <Label>Model *</Label>
-                      <Select
-                        value={form.model || 'gemini-3-pro-preview'}
-                        onValueChange={(v) => setForm(serviceType, { model: v })}
-                      >
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="gemini-3-pro-preview">Gemini 3 Pro Preview (Latest)</SelectItem>
-                          <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</SelectItem>
-                          <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
-                          <SelectItem value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</SelectItem>
-                          <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                          <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                          <SelectItem value="gemini-pro">Gemini Pro (v1)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <ModelSelector
+                      providerId={form.provider}
+                      value={form.model}
+                      onChange={(model) => setForm(serviceType, { model })}
+                      label="Model (Optional)"
+                      required={false}
+                      placeholder="Not required for web search"
+                    />
                   )}
                 </div>
                 {/* Google Gemini Advanced Configuration */}
@@ -1190,14 +1177,14 @@ export default function UnifiedServicePanel() {
                 )}
                 {form.provider === 'google_search' && (
                   <>
-                    <div className="space-y-2">
-                      <Label>Model (Optional)</Label>
-                      <Input
-                        placeholder="Not required for Google Search"
-                        value={form.model}
-                        onChange={(e) => setForm(serviceType, { model: e.target.value })}
-                      />
-                    </div>
+                    <ModelSelector
+                      providerId={form.provider}
+                      value={form.model}
+                      onChange={(model) => setForm(serviceType, { model })}
+                      label="Model (Optional)"
+                      required={false}
+                      placeholder="Not required for Google Search"
+                    />
                     <div className="space-y-2">
                       <Label>Google Search Engine ID *</Label>
                       <Input
@@ -1384,6 +1371,8 @@ export default function UnifiedServicePanel() {
                                     <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
                                     <SelectItem value="google">Google Gemini</SelectItem>
                                     <SelectItem value="openai_compatible">OpenAI Compatible</SelectItem>
+                                    <SelectItem value="openrouter">OpenRouter</SelectItem>
+                                    <SelectItem value="kilocode">KiloCode</SelectItem>
                                     {/* Web Search Providers */}
                                     <SelectItem value="serper">Serper (Google Search API)</SelectItem>
                                     <SelectItem value="tavily">Tavily (AI Search)</SelectItem>
@@ -1410,54 +1399,36 @@ export default function UnifiedServicePanel() {
                                   onChange={(e) => setEditForm(prev => prev ? { ...prev, apiKey: e.target.value } : null)}
                                 />
                               </div>
-                              {!isWebSearchProvider(editForm?.provider || 'google') && editForm?.provider !== 'google' && (
-                                <div className="space-y-2">
-                                  <Label>Model *</Label>
-                                  <Input
-                                    value={editForm?.model || ''}
-                                    onChange={(e) => setEditForm(prev => prev ? { ...prev, model: e.target.value } : null)}
-                                  />
-                                </div>
+                              {!isWebSearchProvider(editForm?.provider || 'openai') && (
+                                <ModelSelector
+                                  providerId={editForm?.provider || 'openai'}
+                                  value={editForm?.model || ''}
+                                  onChange={(model) => setEditForm(prev => prev ? { ...prev, model } : null)}
+                                  label="Model"
+                                  required={!isWebSearchProvider(editForm?.provider || '')}
+                                  placeholder="Select or type a model"
+                                />
                               )}
                               {isWebSearchProvider(editForm?.provider || '') && editForm?.provider !== 'google_search' && (
-                                <div className="space-y-2">
-                                  <Label>Model (Optional)</Label>
-                                  <Input
-                                    placeholder="Not required for web search"
-                                    value={editForm?.model || ''}
-                                    onChange={(e) => setEditForm(prev => prev ? { ...prev, model: e.target.value } : null)}
-                                  />
-                                </div>
-                              )}
-                              {editForm?.provider === 'google' && (
-                                <div className="space-y-2">
-                                  <Label>Model *</Label>
-                                  <Select
-                                    value={editForm?.model || 'gemini-2.0-flash-exp'}
-                                    onValueChange={(v) => setEditForm(prev => prev ? { ...prev, model: v } : null)}
-                                  >
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="gemini-3-pro-preview">Gemini 3 Pro Preview (Latest)</SelectItem>
-                                        <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</SelectItem>
-                                        <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</SelectItem>
-                                        <SelectItem value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</SelectItem>
-                                        <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                                        <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                                        <SelectItem value="gemini-pro">Gemini Pro (v1)</SelectItem>
-                                      </SelectContent>
-                                  </Select>
-                                </div>
+                                <ModelSelector
+                                  providerId={editForm?.provider || ''}
+                                  value={editForm?.model || ''}
+                                  onChange={(model) => setEditForm(prev => prev ? { ...prev, model } : null)}
+                                  label="Model (Optional)"
+                                  required={false}
+                                  placeholder="Not required for web search"
+                                />
                               )}
                               {editForm?.provider === 'google_search' && (
                                 <>
-                                  <div className="space-y-2">
-                                    <Label>Model (Optional)</Label>
-                                    <Input
-                                      value={editForm?.model || ''}
-                                      onChange={(e) => setEditForm(prev => prev ? { ...prev, model: e.target.value } : null)}
-                                    />
-                                  </div>
+                                  <ModelSelector
+                                    providerId={editForm?.provider}
+                                    value={editForm?.model || ''}
+                                    onChange={(model) => setEditForm(prev => prev ? { ...prev, model } : null)}
+                                    label="Model (Optional)"
+                                    required={false}
+                                    placeholder="Not required for Google Search"
+                                  />
                                   <div className="space-y-2">
                                     <Label>Google Search Engine ID *</Label>
                                     <Input
