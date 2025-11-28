@@ -179,3 +179,99 @@ export function useDeleteCompetitor() {
   });
 }
 
+// Organization ID hook
+export function useOrgId() {
+  return useQuery({
+    queryKey: ['organization', 'current'],
+    queryFn: async () => {
+      const stored = localStorage.getItem('orgId');
+      if (stored) {
+        return stored;
+      }
+
+      const response = await fetch('/api/v1/organizations/current');
+      if (!response.ok) {
+        throw new Error('Failed to fetch organization ID');
+      }
+      const data = await response.json();
+      const orgId = data.data?.id || data.data?.org_id;
+      if (orgId) {
+        localStorage.setItem('orgId', orgId);
+        return orgId;
+      }
+      throw new Error('Organization ID not found');
+    },
+    staleTime: Infinity,
+    retry: 1,
+  });
+}
+
+// Scraping Jobs
+interface ScrapingJob {
+  job_id: string;
+  org_id: string;
+  competitor_id?: string;
+  job_name: string;
+  schedule_type: 'manual' | 'cron' | 'interval';
+  schedule_config: Record<string, unknown>;
+  status: 'active' | 'paused' | 'archived';
+  priority: number;
+  max_concurrency: number;
+  rate_limit_per_min: number;
+  metadata: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface CreateScrapingJobInput {
+  orgId: string;
+  job_name: string;
+  competitor_id?: string;
+  schedule_type: 'manual' | 'cron' | 'interval';
+  schedule_config: Record<string, unknown>;
+  status: 'active' | 'paused';
+  priority: number;
+  max_concurrency: number;
+  rate_limit_per_min: number;
+  metadata?: Record<string, unknown>;
+}
+
+async function fetchScrapingJobs(orgId?: string): Promise<ScrapingJob[]> {
+  const params = orgId ? `?orgId=${orgId}` : '';
+  const response = await fetch(`${API_BASE}/jobs${params}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch scraping jobs');
+  }
+  const data = await response.json();
+  return data.data || [];
+}
+
+export function useScrapingJobs(orgId?: string) {
+  return useQuery({
+    queryKey: [...competitiveIntelKeys.jobs(), orgId],
+    queryFn: () => fetchScrapingJobs(orgId),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+}
+
+export function useCreateScrapingJob() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateScrapingJobInput) => {
+      const response = await fetch(`${API_BASE}/jobs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to create scraping job');
+      }
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: competitiveIntelKeys.jobs() });
+    },
+  });
+}
+

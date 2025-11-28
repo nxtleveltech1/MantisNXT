@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const orgId = await getOrgId(request)
     const url = new URL(request.url)
-    const format = (url.searchParams.get('format') ?? 'json') as 'json' | 'csv'
+    const format = (url.searchParams.get('format') ?? 'json') as 'json' | 'csv' | 'excel'
     const competitorId = url.searchParams.get('competitorId') ?? undefined
     const payload = await service.exportSnapshots(orgId, format, { competitorId })
 
@@ -17,12 +17,22 @@ export async function GET(request: NextRequest) {
       return new NextResponse(payload, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': 'attachment; filename="competitive-export.csv"',
+          'Content-Disposition': `attachment; filename="competitive-export-${Date.now()}.csv"`,
         },
       })
     }
 
-    return NextResponse.json(JSON.parse(payload))
+    if (format === 'excel') {
+      return new NextResponse(payload as ArrayBuffer, {
+        headers: {
+          'Content-Type':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="competitive-export-${Date.now()}.xlsx"`,
+        },
+      })
+    }
+
+    return NextResponse.json(JSON.parse(payload as string))
   } catch (error) {
     return NextResponse.json(
       {

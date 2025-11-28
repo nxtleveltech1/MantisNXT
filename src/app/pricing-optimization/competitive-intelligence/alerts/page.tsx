@@ -152,6 +152,11 @@ export default function AlertsPage() {
               Monitor competitive intelligence alerts and market events
             </p>
           </div>
+          <Button asChild>
+            <Link href="/pricing-optimization/competitive-intelligence/alerts/configure">
+              Configure Alerts
+            </Link>
+          </Button>
         </div>
 
         {/* Filters */}

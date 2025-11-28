@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 
 import { FirecrawlService } from '@/services/web-scraping/FirecrawlService'
+import { ProductDataParser } from '../parsers/ProductDataParser'
 import type { ScrapeRequest, ScrapeResult, ProviderHealth } from '../types'
 import type { ScrapingProvider } from './BaseScrapingProvider'
 
@@ -8,9 +9,11 @@ export class FirecrawlProvider implements ScrapingProvider {
   readonly id = 'firecrawl' as const
   readonly displayName = 'Firecrawl'
   private client: FirecrawlService
+  private parser: ProductDataParser
 
   constructor(client?: FirecrawlService) {
     this.client = client ?? new FirecrawlService()
+    this.parser = new ProductDataParser()
   }
 
   async health(): Promise<ProviderHealth> {
@@ -51,6 +54,12 @@ export class FirecrawlProvider implements ScrapingProvider {
           continue
         }
 
+        // Parse structured product data from HTML
+        const html = result.data.html || result.data.rawHtml || ''
+        const parsedData = html
+          ? await this.parser.parseFromHTML(html, match.competitor_url ?? request.dataSource.endpoint_url)
+          : null
+
         snapshots.push({
           snapshot_id: crypto.randomUUID(),
           org_id: request.orgId,
@@ -59,28 +68,31 @@ export class FirecrawlProvider implements ScrapingProvider {
           run_id: undefined,
           observed_at: new Date(),
           identifiers: {
-            sku: match.competitor_sku,
-            upc: match.upc,
-            ean: match.ean,
-            asin: match.asin,
-            mpn: match.mpn,
+            sku: parsedData?.sku || match.competitor_sku,
+            upc: parsedData?.upc || match.upc,
+            ean: parsedData?.ean || match.ean,
+            asin: parsedData?.asin || match.asin,
+            mpn: parsedData?.mpn || match.mpn,
+            url: match.competitor_url ?? request.dataSource.endpoint_url,
           },
           pricing: {
-            regular_price: null,
-            sale_price: null,
-            currency: request.competitor.default_currency ?? 'USD',
+            regular_price: parsedData?.regular_price ?? null,
+            sale_price: parsedData?.sale_price ?? null,
+            currency: parsedData?.currency || request.competitor.default_currency || 'USD',
           },
           availability: {
-            status: 'unknown',
+            status: parsedData?.availability_status || 'unknown',
+            quantity: parsedData?.stock_quantity,
           },
           product_details: {
-            title: match.competitor_title,
+            title: parsedData?.title || match.competitor_title,
+            description: parsedData?.description,
+            images: parsedData?.images,
             url: match.competitor_url ?? request.dataSource.endpoint_url,
-            content: result.data.markdown ?? result.data.html ?? '',
           },
-          promotions: [],
-          shipping: {},
-          reviews: {},
+          promotions: parsedData?.promotions || [],
+          shipping: parsedData?.shipping || {},
+          reviews: parsedData?.reviews || {},
           price_position: {},
           market_share_estimate: null,
           elasticity_signals: {},

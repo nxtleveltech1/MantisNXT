@@ -147,6 +147,22 @@ export const sidebarData = {
           title: "Alerts",
           url: "/pricing-optimization/competitive-intelligence/alerts",
         },
+        {
+          title: "Price Positioning",
+          url: "/pricing-optimization/competitive-intelligence/positioning",
+        },
+        {
+          title: "Price History",
+          url: "/pricing-optimization/competitive-intelligence/history",
+        },
+        {
+          title: "Trend Analysis",
+          url: "/pricing-optimization/competitive-intelligence/trends",
+        },
+        {
+          title: "Settings",
+          url: "/pricing-optimization/competitive-intelligence/settings",
+        },
       ],
     },
     {

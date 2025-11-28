@@ -1321,11 +1321,6 @@ export default function UnifiedServicePanel() {
                           console.error('[TestConnection] JSON parse error:', parseError);
                           responseData = { success: false, error: 'Invalid response from server' };
                         }
-
-                        const responseData = await res.json().catch((err) => {
-                          console.error('[TestConnection] JSON parse error:', err);
-                          return { success: false, error: 'Invalid response from server' };
-                        });
                         console.log('[TestConnection] Response data:', responseData);
                         
                         if (!res.ok || !responseData.success) {

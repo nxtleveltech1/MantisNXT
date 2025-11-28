@@ -232,6 +232,25 @@ export async function loadTagAIConfig(
   };
 }
 
+function sanitizeApiKey(raw: unknown, opts?: { allowEmpty?: boolean }): string | undefined {
+  if (typeof raw !== 'string') {
+    return opts?.allowEmpty ? '' : undefined;
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return opts?.allowEmpty ? '' : undefined;
+  }
+
+  // Some mis-saves persisted console output + the real key. Extract the first secret-looking token.
+  const keyMatch = trimmed.match(/sk-[a-z0-9_-]{8,}/i);
+  if (keyMatch) {
+    return keyMatch[0];
+  }
+
+  // Allow CLI configs to pass through empty string when explicitly permitted.
+  return opts?.allowEmpty ? '' : undefined;
+}
+
 /**
  * Extract enabled providers from the flexible config shape used by ai_service_config.config
  */
@@ -269,10 +288,17 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
         if (webSearchProviders.includes(providerKey)) {
           console.warn(`[tag-ai:resolver] Skipping web search provider ${providerKey} as LLM provider`);
         } else if (activeInst?.enabled && (activeInst?.apiKey || activeInst?.useCLI)) {
+          const sanitizedKey = sanitizeApiKey(activeInst.apiKey, { allowEmpty: !!activeInst?.useCLI });
+          if (!sanitizedKey && !activeInst?.useCLI) {
+            console.warn(
+              `[tag-ai:resolver] Active provider instance ${activeInst.id} is missing a usable API key`
+            );
+            return providers;
+          }
           console.log(`[tag-ai:resolver] Using active provider instance: ${activeInst.id} (${cleanModelName(activeInst.model)})`);
           providers.push({
             provider: providerType,
-            apiKey: activeInst.apiKey || '', // Empty for CLI OAuth mode
+            apiKey: sanitizedKey || '', // Empty for CLI OAuth mode
             baseUrl: activeInst.baseUrl,
             model: cleanModelName(activeInst.model),
             enabled: true,
@@ -309,10 +335,17 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
       
       // For CLI providers with OAuth, apiKey is optional
       if (inst?.enabled && (inst?.apiKey || inst?.useCLI)) {
+        const sanitizedKey = sanitizeApiKey(inst.apiKey, { allowEmpty: !!inst?.useCLI });
+        if (!sanitizedKey && !inst?.useCLI) {
+          console.warn(
+            `[tag-ai:resolver] Skipping provider instance ${inst?.id} due to missing/invalid API key`
+          );
+          continue;
+        }
         console.log(`[tag-ai:resolver] Adding provider instance: ${inst.id} (${cleanModelName(inst.model)})`);
         providers.push({
           provider: providerType,
-          apiKey: inst.apiKey || '', // Empty for CLI OAuth mode
+          apiKey: sanitizedKey || '', // Empty for CLI OAuth mode
           baseUrl: inst.baseUrl,
           model: cleanModelName(inst.model || config.model),
           enabled: true,
@@ -340,10 +373,11 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
   if (providers.length === 0 && config?.providers && typeof config.providers === 'object') {
     console.log(`[tag-ai:resolver] Using providers object`);
     for (const [key, value] of Object.entries<unknown>(config.providers)) {
-      if (value?.enabled && value?.apiKey) {
+      const sanitizedKey = sanitizeApiKey(value?.apiKey);
+      if (value?.enabled && sanitizedKey) {
         providers.push({
           provider: key,
-          apiKey: value.apiKey,
+          apiKey: sanitizedKey,
           baseUrl: value.baseUrl,
           model:
             value.model || config.model ? String(value.model || config.model).trim() : undefined,
@@ -360,12 +394,13 @@ function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
   }
 
   // Priority 3: Fallback - single provider fields
-  if (providers.length === 0 && config?.apiKey) {
+  const sanitizedFallbackKey = sanitizeApiKey(config?.apiKey);
+  if (providers.length === 0 && sanitizedFallbackKey) {
     console.log(`[tag-ai:resolver] Using fallback single provider config`);
     const provider = config.activeProvider || config.provider || 'openai';
     providers.push({
       provider,
-      apiKey: config.apiKey,
+      apiKey: sanitizedFallbackKey,
       baseUrl: config.baseUrl,
       model: config.model ? String(config.model).trim() : undefined,
       enabled: true,

@@ -37,6 +37,10 @@ import {
   ExternalLink,
   Loader2,
   AlertCircle,
+  Upload,
+  Download,
+  FileSpreadsheet,
+  X,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -63,6 +67,9 @@ export default function CompetitorsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompetitor, setEditingCompetitor] = useState<CompetitorProfile | null>(null);
   const [deletingCompetitor, setDeletingCompetitor] = useState<CompetitorProfile | null>(null);
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
   const { toast } = useToast();
 
   const { data: competitors, isLoading } = useCompetitors();
@@ -167,6 +174,86 @@ export default function CompetitorsPage() {
     }
   };
 
+  const handleBulkExport = async () => {
+    try {
+      const response = await fetch('/api/v1/pricing-intel/competitors/bulk-export?format=excel');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `competitors-export-${Date.now()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: 'Success',
+        description: 'Competitors exported successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to export competitors',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (!importFile) return;
+
+    setImporting(true);
+    try {
+      // Parse Excel/CSV file
+      const XLSX = await import('xlsx');
+      const arrayBuffer = await importFile.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet);
+
+      // Map to competitor format
+      const competitors = data.map((row: unknown) => {
+        const r = row as Record<string, unknown>;
+        return {
+          company_name: String(r['Company Name'] || r['company_name'] || ''),
+          website_url: String(r['Website URL'] || r['website_url'] || ''),
+          default_currency: String(r['Currency'] || r['default_currency'] || 'USD'),
+          notes: String(r['Notes'] || r['notes'] || ''),
+        };
+      }).filter(c => c.company_name);
+
+      // Bulk import
+      const response = await fetch('/api/v1/pricing-intel/competitors/bulk-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ competitors }),
+      });
+
+      const result = await response.json();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      toast({
+        title: 'Success',
+        description: `Imported ${result.data.successful} competitors successfully`,
+      });
+
+      setShowBulkImport(false);
+      setImportFile(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to import competitors',
+        variant: 'destructive',
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <AppLayout
       title="Competitor Management"
@@ -184,10 +271,20 @@ export default function CompetitorsPage() {
               Manage competitor profiles and data sources
             </p>
           </div>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Competitor
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleBulkExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => setShowBulkImport(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Competitor
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -410,6 +507,99 @@ export default function CompetitorsPage() {
                   'Delete'
                 )}
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Import Dialog */}
+        <Dialog open={showBulkImport} onOpenChange={setShowBulkImport}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Bulk Import Competitors</DialogTitle>
+              <DialogDescription>
+                Upload a CSV or Excel file to import multiple competitors at once
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div
+                className="border-2 border-dashed rounded-lg p-8 text-center"
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                    setImportFile(file);
+                  }
+                }}
+                onDragOver={(e) => e.preventDefault()}
+              >
+                {importFile ? (
+                  <div className="space-y-2">
+                    <FileSpreadsheet className="h-12 w-12 text-green-600 mx-auto" />
+                    <div className="font-medium">{importFile.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {(importFile.size / 1024).toFixed(2)} KB
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setImportFile(null)}>
+                      <X className="h-4 w-4 mr-2" />
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
+                    <p className="text-sm text-muted-foreground">
+                      Drag and drop a CSV or Excel file here, or click to browse
+                    </p>
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      className="hidden"
+                      id="bulk-import-file"
+                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => document.getElementById('bulk-import-file')?.click()}
+                    >
+                      Select File
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium mb-1">Expected columns:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Company Name (required)</li>
+                  <li>Website URL (optional)</li>
+                  <li>Currency (optional, defaults to USD)</li>
+                  <li>Notes (optional)</li>
+                </ul>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowBulkImport(false);
+                    setImportFile(null);
+                  }}
+                  disabled={importing}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleBulkImport} disabled={!importFile || importing}>
+                  {importing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Import
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
