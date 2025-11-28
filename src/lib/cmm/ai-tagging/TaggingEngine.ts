@@ -262,7 +262,37 @@ export class TaggingEngine {
             orgId: orgId ?? null,
           });
         } catch (error) {
-          console.error('[TaggingEngine] Failed to record tag proposal', error);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown database error';
+
+          // Structured error logging for debugging
+          console.error('[TaggingEngine] Failed to record tag proposal', {
+            jobId: jobId ?? 'unknown',
+            productId: product.supplier_product_id,
+            productName: product.name_from_supplier,
+            provider: suggestion.provider ?? provider ?? 'unknown',
+            model: suggestion.model ?? 'unknown',
+            proposedTag: proposedName,
+            confidence: suggestion.confidence ?? avgConfidence,
+            dbError: errorMessage,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Mark product as failed to prevent silent failures
+          try {
+            await this.updateProductTaggingStatus(
+              product.supplier_product_id,
+              'failed',
+              `Proposal recording failed: ${errorMessage}`
+            );
+          } catch (statusUpdateError) {
+            console.error('[TaggingEngine] Failed to update product status after proposal error', {
+              productId: product.supplier_product_id,
+              originalError: errorMessage,
+              statusUpdateError: statusUpdateError instanceof Error ? statusUpdateError.message : 'Unknown error',
+            });
+          }
+
+          // Continue processing other products - don't crash the entire batch
         }
       }
     }

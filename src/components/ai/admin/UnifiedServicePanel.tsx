@@ -1312,6 +1312,16 @@ export default function UnifiedServicePanel() {
                         });
                         
                         console.log('[TestConnection] Response status:', res.status);
+                        // Robust JSON parsing that handles empty responses
+                        const text = await res.text();
+                        let responseData: any = {};
+                        try {
+                          responseData = text ? JSON.parse(text) : {};
+                        } catch (parseError) {
+                          console.error('[TestConnection] JSON parse error:', parseError);
+                          responseData = { success: false, error: 'Invalid response from server' };
+                        }
+
                         const responseData = await res.json().catch((err) => {
                           console.error('[TestConnection] JSON parse error:', err);
                           return { success: false, error: 'Invalid response from server' };

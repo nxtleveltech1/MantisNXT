@@ -10,6 +10,7 @@ import {
   Gift,
   Layout,
   LayoutDashboard,
+  LineChart,
   MessageSquare,
   Package,
   Plug,
@@ -103,9 +104,48 @@ export const sidebarData = {
           title: "Locations",
           url: "/inventory/locations",
         },
+      ],
+    },
+    {
+      title: "Pricing Optimization",
+      url: "/pricing-optimization",
+      icon: LineChart,
+      items: [
         {
-          title: "Pricing & Optimization",
-          url: "/operations/pricing",
+          title: "Overview",
+          url: "/pricing-optimization",
+        },
+        {
+          title: "Rules",
+          url: "/pricing-optimization/rules",
+        },
+        {
+          title: "Optimization Runs",
+          url: "/pricing-optimization/optimization",
+        },
+        {
+          title: "Analytics",
+          url: "/pricing-optimization/analytics",
+        },
+        {
+          title: "Competitive Intelligence",
+          url: "/pricing-optimization/competitive-intelligence",
+        },
+        {
+          title: "Competitors",
+          url: "/pricing-optimization/competitive-intelligence/competitors",
+        },
+        {
+          title: "Scraping Jobs",
+          url: "/pricing-optimization/competitive-intelligence/jobs",
+        },
+        {
+          title: "Product Matches",
+          url: "/pricing-optimization/competitive-intelligence/matches",
+        },
+        {
+          title: "Alerts",
+          url: "/pricing-optimization/competitive-intelligence/alerts",
         },
       ],
     },

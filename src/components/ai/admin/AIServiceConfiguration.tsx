@@ -407,8 +407,21 @@ export default function AIServiceConfiguration() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config }),
       });
-      if (!response.ok) throw new Error(await response.text());
-      return response.json();
+
+      const text = await response.text();
+
+      if (!response.ok) {
+        throw new Error(text || 'Connection test failed');
+      }
+
+      let data: any = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = {};
+      }
+
+      return data;
     },
     onSuccess: (data: unknown) => {
       setTestResult({ success: true, message: data?.data?.message || 'Connection successful!' });

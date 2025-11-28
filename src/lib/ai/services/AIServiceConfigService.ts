@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { db } from '@/lib/database';
+import { query } from '@/lib/database/unified-connection';
 import {
   AIServiceBase,
   type AIServiceBaseOptions,

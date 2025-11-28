@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 /**
- * Pricing & Optimization Database Schema Definitions
+ * Pricing Optimization Database Schema Definitions
  *
  * Defines types and constants for pricing optimization tables
  * following the schema contract pattern used in the project
@@ -26,6 +26,15 @@ export const PRICING_TABLES = {
   COMPETITOR_PRICES: `${SCHEMA.CORE}.competitor_prices`,
   PRICE_ELASTICITY: `${SCHEMA.CORE}.price_elasticity`,
   PRICING_AUTOMATION_CONFIG: 'pricing_automation_config',
+  COMPETITOR_PROFILE: `${SCHEMA.CORE}.competitor_profile`,
+  COMPETITOR_DATA_SOURCE: `${SCHEMA.CORE}.competitor_data_source`,
+  COMPETITOR_PRODUCT_MATCH: `${SCHEMA.CORE}.competitor_product_match`,
+  MARKET_INTEL_SCRAPE_JOB: `${SCHEMA.CORE}.market_intel_scrape_job`,
+  MARKET_INTEL_SCRAPE_RUN: `${SCHEMA.CORE}.market_intel_scrape_run`,
+  MARKET_INTEL_SNAPSHOT: `${SCHEMA.CORE}.market_intel_snapshot`,
+  MARKET_INTEL_ALERT: `${SCHEMA.CORE}.market_intel_alert`,
+  MARKET_INTEL_WEBHOOK: `${SCHEMA.CORE}.market_intel_webhook_subscription`,
+  MARKET_INTEL_DATA_POLICY: `${SCHEMA.CORE}.market_intel_data_policy`,
 } as const;
 
 export type PricingTableName = typeof PRICING_TABLES[keyof typeof PRICING_TABLES];
@@ -341,6 +350,191 @@ export interface PricePerformanceMetrics {
   margin_percent: number;
   conversion_rate?: number;
   cart_abandonment_rate?: number;
+}
+
+/**
+ * Competitive Intelligence types
+ */
+
+export type RobotsBehavior = 'respect' | 'ignore' | 'custom';
+
+export interface CompetitorProfile {
+  competitor_id: string;
+  org_id: string;
+  company_name: string;
+  website_url?: string;
+  marketplace_listings: Array<Record<string, unknown>>;
+  social_profiles: Array<Record<string, unknown>>;
+  custom_data_sources: Array<Record<string, unknown>>;
+  default_currency: string;
+  proxy_policy: Record<string, unknown>;
+  captcha_policy: Record<string, unknown>;
+  robots_txt_behavior: RobotsBehavior;
+  notes?: string;
+  created_by?: string;
+  updated_by?: string;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date;
+}
+
+export type DataSourceType = 'website' | 'api' | 'marketplace' | 'custom';
+
+export interface CompetitorDataSource {
+  data_source_id: string;
+  competitor_id: string;
+  org_id: string;
+  source_type: DataSourceType;
+  label?: string;
+  endpoint_url: string;
+  auth_config: Record<string, unknown>;
+  rate_limit_config: Record<string, unknown>;
+  robots_txt_cache?: Record<string, unknown>;
+  last_success_at?: Date;
+  last_status?: string;
+  health_status: string;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export type ProductMatchStatus = 'pending' | 'matched' | 'rejected';
+export type ProductMatchMethod = 'manual' | 'upc' | 'fuzzy' | 'ai';
+
+export interface CompetitorProductMatch {
+  match_id: string;
+  org_id: string;
+  competitor_id: string;
+  competitor_product_id: string;
+  competitor_sku?: string;
+  competitor_title?: string;
+  competitor_url?: string;
+  internal_product_id?: string;
+  internal_sku?: string;
+  upc?: string;
+  ean?: string;
+  asin?: string;
+  mpn?: string;
+  match_confidence: number;
+  match_method: ProductMatchMethod;
+  status: ProductMatchStatus;
+  reviewer_id?: string;
+  reviewed_at?: Date;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export type ScrapeScheduleType = 'manual' | 'cron' | 'interval';
+export type ScrapeJobStatus = 'active' | 'paused' | 'archived';
+
+export interface MarketIntelScrapeJob {
+  job_id: string;
+  org_id: string;
+  competitor_id?: string;
+  job_name: string;
+  schedule_type: ScrapeScheduleType;
+  schedule_config: Record<string, unknown>;
+  status: ScrapeJobStatus;
+  priority: number;
+  max_concurrency: number;
+  rate_limit_per_min: number;
+  last_run_at?: Date;
+  next_run_at?: Date;
+  last_status?: string;
+  metadata: Record<string, unknown>;
+  created_by?: string;
+  updated_by?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export type ScrapeRunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+export interface MarketIntelScrapeRun {
+  run_id: string;
+  job_id: string;
+  org_id: string;
+  competitor_id?: string;
+  triggered_by: 'system' | 'user' | 'api';
+  status: ScrapeRunStatus;
+  started_at?: Date;
+  completed_at?: Date;
+  total_sources: number;
+  success_sources: number;
+  failed_sources: number;
+  total_products: number;
+  processed_products: number;
+  error_details?: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+}
+
+export interface MarketIntelSnapshot {
+  snapshot_id: string;
+  org_id: string;
+  competitor_id: string;
+  match_id?: string;
+  run_id?: string;
+  observed_at: Date;
+  identifiers: Record<string, unknown>;
+  pricing: Record<string, unknown>;
+  availability: Record<string, unknown>;
+  product_details: Record<string, unknown>;
+  promotions: Array<Record<string, unknown>>;
+  shipping: Record<string, unknown>;
+  reviews: Record<string, unknown>;
+  price_position: Record<string, unknown>;
+  market_share_estimate?: number;
+  elasticity_signals: Record<string, unknown>;
+  raw_payload?: Record<string, unknown>;
+  hash: string;
+  is_anomaly: boolean;
+  created_at: Date;
+}
+
+export type MarketIntelAlertStatus = 'open' | 'acknowledged' | 'resolved';
+
+export interface MarketIntelAlert {
+  alert_id: string;
+  org_id: string;
+  competitor_id?: string;
+  match_id?: string;
+  alert_type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  threshold_config: Record<string, unknown>;
+  detected_at: Date;
+  acknowledged_at?: Date;
+  acknowledged_by?: string;
+  status: MarketIntelAlertStatus;
+  details: Record<string, unknown>;
+  remediation_status: string;
+  created_at: Date;
+}
+
+export interface MarketIntelWebhookSubscription {
+  webhook_id: string;
+  org_id: string;
+  event_type: string;
+  target_url: string;
+  secret?: string;
+  enabled: boolean;
+  retry_policy: Record<string, unknown>;
+  last_failure_at?: Date;
+  failure_count: number;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface MarketIntelDataPolicy {
+  org_id: string;
+  retention_days_snapshots: number;
+  retention_days_alerts: number;
+  retention_days_jobs: number;
+  archival_strategy: string;
+  last_archive_run_at?: Date;
+  updated_at: Date;
 }
 
 /**
