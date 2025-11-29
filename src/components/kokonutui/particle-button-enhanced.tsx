@@ -6,19 +6,15 @@
 "use client";
 
 import { useState, useRef, type RefObject } from "react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
-import type { VariantProps } from "class-variance-authority";
-import * as React from "react";
+import type { ButtonProps } from "@/components/ui/button";
 
-interface ParticleButtonEnhancedProps
-  extends React.ComponentProps<"button">,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-  onSuccess?: () => void;
-  successDuration?: number;
-  showIcon?: boolean;
+interface ParticleButtonEnhancedProps extends ButtonProps {
+    onSuccess?: () => void;
+    successDuration?: number;
+    showIcon?: boolean;
 }
 
 function SuccessParticles({
@@ -105,5 +101,4 @@ export default function ParticleButtonEnhanced({
         </>
     );
 }
-
 

@@ -141,7 +141,3 @@ import ParticleButton from "@/components/kokonutui/particle-button";
 3. Evaluate MagicUI vs KokonutUI for consolidation
 4. Document component selection guidelines
 
-
-
-
-
