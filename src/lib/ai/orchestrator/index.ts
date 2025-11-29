@@ -3,11 +3,13 @@
  * Main exports for the orchestrator service
  */
 
+import { UnifiedAIOrchestrator } from './UnifiedAIOrchestrator';
+
 // Export all types and schemas
 export * from './types';
 
 // Export main classes
-export { UnifiedAIOrchestrator } from './UnifiedAIOrchestrator';
+export { UnifiedAIOrchestrator };
 export { ContextManager, contextManager } from './context-manager';
 export { Planner, planner } from './planner';
 

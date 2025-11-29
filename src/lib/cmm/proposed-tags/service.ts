@@ -54,6 +54,18 @@ export async function recordProposedTagForProduct(
     orgId: params.orgId ?? null,
   });
 
+  // Defensive check: ensure tag_proposal_id exists before linking
+  if (!proposedTag || !proposedTag.tag_proposal_id) {
+    const error = new Error(
+      `Cannot link tag proposal to product: tag_proposal_id is missing. ` +
+        `ProposedTag: ${JSON.stringify(proposedTag)}, ` +
+        `ProductId: ${params.supplierProductId}, ` +
+        `TagName: ${trimmedName}`
+    );
+    console.error('[recordProposedTagForProduct]', error.message);
+    throw error;
+  }
+
   const productLink = await linkProposedTagToProduct({
     tagProposalId: proposedTag.tag_proposal_id,
     supplierProductId: params.supplierProductId,
@@ -271,6 +283,7 @@ export async function rejectProposedTag(
 
   return { affected_products: resetProducts.rowCount ?? 0 };
 }
+
 
 
 

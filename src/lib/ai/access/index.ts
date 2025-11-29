@@ -42,5 +42,5 @@ export { PermissionResolver, permissionResolver } from './permission-resolver';
 export { ActionQueue, actionQueue } from './action-queue';
 export { ApprovalWorkflow, approvalWorkflow } from './approval-workflow';
 
-// Re-export tool access level for convenience
-export { ToolAccessLevel } from '../tools/types';
+// Re-export tool access level type for convenience
+export type { ToolAccessLevel } from '../tools/types';

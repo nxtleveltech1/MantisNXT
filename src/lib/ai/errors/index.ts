@@ -3,26 +3,26 @@
  * Main exports for the comprehensive error handling system
  */
 
+import { errorHandler } from './handler';
+import { recoveryManager } from './recovery';
+
 // Core types and error classes
 export {
   AIErrorCode,
-  AIErrorSeverity,
   AIError,
   ToolError,
   ProviderError,
   AccessError,
   SessionError,
   ValidationError,
-  ErrorContext,
   ErrorCodeSeverity,
   ErrorCodeRetryable,
 } from './types';
 
+export type { AIErrorSeverity, ErrorContext } from './types';
+
 // Error handler and processing
-export {
-  ErrorHandler,
-  errorHandler,
-} from './handler';
+export { ErrorHandler, errorHandler } from './handler';
 
 // Recovery strategies and circuit breaker
 export {

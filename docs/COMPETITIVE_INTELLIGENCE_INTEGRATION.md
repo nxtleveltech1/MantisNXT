@@ -391,3 +391,7 @@ Common error codes:
 - `RATE_LIMIT_EXCEEDED` - Too many requests
 - `INTERNAL_ERROR` - Unexpected server error
 
+
+
+
+

@@ -73,22 +73,42 @@ export default function CustomServicesPanel() {
     queryKey: ['ai-cli-availability'],
     queryFn: async () => {
       try {
-        const res = await fetch('/api/v1/ai/cli/availability');
-        if (!res.ok) {
-          const errorText = await res.text();
-          // Return empty object on error, but don't throw - let UI show "unknown" state
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        try {
+          const res = await fetch('/api/v1/ai/cli/availability', {
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.warn('[CustomServicesPanel] CLI availability check failed:', res.status, errorText);
+            // Return empty object on error, but don't throw - let UI show "unknown" state
+            return {};
+          }
+          const data = await res.json();
+          return data.data || {};
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+            console.warn('[CustomServicesPanel] CLI availability check timed out after 10s');
+          } else {
+            console.error('[CustomServicesPanel] CLI availability check error:', fetchError);
+          }
           return {};
         }
-        const data = await res.json();
-        return data.data || {};
       } catch (error) {
         console.error('[CustomServicesPanel] CLI availability check error:', error);
         return {};
       }
     },
     refetchInterval: 60000, // Check every minute
-    retry: 2, // Retry failed requests
-    retryDelay: 1000, // Wait 1 second between retries
+    retry: 1, // Only retry once (reduced from 2)
+    retryDelay: 2000, // Wait 2 seconds between retries
+    staleTime: 300000, // Consider data fresh for 5 minutes
     staleTime: 30000, // Consider data fresh for 30 seconds
   });
   

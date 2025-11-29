@@ -242,9 +242,16 @@ function sanitizeApiKey(raw: unknown, opts?: { allowEmpty?: boolean }): string |
   }
 
   // Some mis-saves persisted console output + the real key. Extract the first secret-looking token.
-  const keyMatch = trimmed.match(/sk-[a-z0-9_-]{8,}/i);
-  if (keyMatch) {
-    return keyMatch[0];
+  const start = trimmed.toLowerCase().indexOf('sk-');
+  if (start >= 0) {
+    let end = start + 3; // include "sk-"
+    while (end < trimmed.length && /[a-z0-9_-]/i.test(trimmed[end])) {
+      end += 1;
+    }
+    const candidate = trimmed.slice(start, end);
+    if (/^sk-[a-z0-9_-]{8,}$/i.test(candidate)) {
+      return candidate;
+    }
   }
 
   // Allow CLI configs to pass through empty string when explicitly permitted.
@@ -254,7 +261,7 @@ function sanitizeApiKey(raw: unknown, opts?: { allowEmpty?: boolean }): string |
 /**
  * Extract enabled providers from the flexible config shape used by ai_service_config.config
  */
-function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
+export function extractProviders(config: Record<string, unknown>): ProviderConfig[] {
   const providers: ProviderConfig[] = [];
 
   // Web search providers should NOT be used as LLM providers

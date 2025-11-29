@@ -1,0 +1,80 @@
+  consecutiveSuccesses: 0,
+  threshold: 10,
+  lastFailure: null,
+  openUntil: null
+}
+🔌 Acquiring client for query cd6d72ae-86ed-4a73-889a-9cbabcb2f147...
+✅ Client acquired for query cd6d72ae-86ed-4a73-889a-9cbabcb2f147 in 2ms
+🔍 Query cd6d72ae-86ed-4a73-889a-9cbabcb2f147:
+      SELECT
+        batch_number,
+        error_message,
+        products_in_...
+✅ Query 233dcab2-ded6-424b-a04d-eb8169afddff completed in 305ms, rows: 1
+📈 Consecutive successes: 1/10
+⏳ Circuit breaker reset pending: 1/10 consecutive successes
+🔓 Client released for query 233dcab2-ded6-424b-a04d-eb8169afddff (destroyed: false)
+🔌 [Query cecf5b4e-8466-4ff7-af2a-2c50ca5092e9] Before query execution: {
+  state: 'closed',
+  failures: 48,
+  consecutiveSuccesses: 1,
+  threshold: 10,
+  lastFailure: '2025-11-29T18:02:28.015Z',
+  openUntil: null
+}
+🔌 Acquiring client for query cecf5b4e-8466-4ff7-af2a-2c50ca5092e9...
+✅ Client acquired for query cecf5b4e-8466-4ff7-af2a-2c50ca5092e9 in 1ms
+🔍 Query cecf5b4e-8466-4ff7-af2a-2c50ca5092e9:
+      WITH upsert AS (
+        INSERT INTO core.ai_tag_proposal (
+          org...
+✅ Query cd6d72ae-86ed-4a73-889a-9cbabcb2f147 completed in 154ms, rows: 0
+📈 Consecutive successes: 1/10
+⏳ Circuit breaker reset pending: 1/10 consecutive successes
+🔓 Client released for query cd6d72ae-86ed-4a73-889a-9cbabcb2f147 (destroyed: false)
+🔌 [Query 2f63f73e-e80a-40db-9869-b536552e9eaf] Before query execution: {
+  state: 'closed',
+  failures: 0,
+  consecutiveSuccesses: 1,
+  threshold: 10,
+  lastFailure: null,
+  openUntil: null
+}
+🔌 Acquiring client for query 2f63f73e-e80a-40db-9869-b536552e9eaf...
+✅ Client acquired for query 2f63f73e-e80a-40db-9869-b536552e9eaf in 1ms
+🔍 Query 2f63f73e-e80a-40db-9869-b536552e9eaf:
+      WITH batch_metrics AS (
+        SELECT
+          SUM(successful_count + ...
+❌ Query cecf5b4e-8466-4ff7-af2a-2c50ca5092e9 attempt 1/4 failed after 152ms: column "tag_proposal_id" does not exist
+🚫 Non-retryable error detected for query cecf5b4e-8466-4ff7-af2a-2c50ca5092e9, aborting retries
+🔓 Client released for query cecf5b4e-8466-4ff7-af2a-2c50ca5092e9 (destroyed: true)
+[TaggingEngine] Failed to record tag proposal {
+  jobId: 'd0461adc-541c-4eaa-8e9e-ef6169baa32c',
+  productId: '086d0dfd-1a2c-498a-b091-64043ac5614f',
+  productName: 'Elixir 15425 Electric Bass Nickel Plated Steel with NANOWEB Coating Custom 5th and 6th Strings Super Light B, Long Scale (.125',
+  provider: 'unknown',
+  model: 'unknown',
+  proposedTag: 'String Type: Single B String',
+  confidence: 0.9,
+  dbError: 'Query failed after 4 attempts: column "tag_proposal_id" does not exist',
+  timestamp: '2025-11-29T18:02:29.483Z'
+}
+🔌 [Query a64c836e-7f7e-4339-b1f8-146a2d1e17ee] Before query execution: {
+  state: 'closed',
+  failures: 49,
+  consecutiveSuccesses: 0,
+  threshold: 10,
+  lastFailure: '2025-11-29T18:02:29.483Z',
+  openUntil: null
+}
+🔌 Acquiring client for query a64c836e-7f7e-4339-b1f8-146a2d1e17ee...
+✅ Query 2f63f73e-e80a-40db-9869-b536552e9eaf completed in 153ms, rows: 1
+📈 Consecutive successes: 2/10
+⏳ Circuit breaker reset pending: 2/10 consecutive successes
+🔓 Client released for query 2f63f73e-e80a-40db-9869-b536552e9eaf (destroyed: false)
+ GET /api/tag/ai-tagging/status/d0461adc-541c-4eaa-8e9e-ef6169baa32c 200 in 791ms
+🛡️ Setting up database cleanup handlers...
+✅ Cleanup handlers registered successfully
+🚀 Unified database connection updated with enterprise manager
+✅ New client connected to enterprise pool

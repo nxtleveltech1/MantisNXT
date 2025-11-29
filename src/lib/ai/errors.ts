@@ -1,7 +1,12 @@
 /**
  * AI Service Error Classes
- * Custom error types for AI service operations
+ * Custom error types for AI service operations (legacy exports)
+ *
+ * This file now also re-exports the full error handling system located under
+ * `./errors` so that existing imports from `@/lib/ai/errors` continue to work.
  */
+
+export * from './errors/index';
 
 export class AIServiceError extends Error {
   constructor(

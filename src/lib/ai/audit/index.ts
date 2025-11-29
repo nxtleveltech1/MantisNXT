@@ -1,9 +1,12 @@
 // AI Audit and Explainability System
 // Main exports for the audit logging and explanation functionality
 
+import { auditLogger, AuditLogger } from './logger';
+import { explainer, Explainer } from './explainer';
+
 // Core classes
-export { AuditLogger, auditLogger } from './logger';
-export { Explainer, explainer } from './explainer';
+export { AuditLogger, auditLogger };
+export { Explainer, explainer };
 
 // Types and schemas
 export type {

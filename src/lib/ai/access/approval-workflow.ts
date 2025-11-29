@@ -14,7 +14,7 @@ import {
   ApprovalTimeoutError,
   ApprovalDeniedError,
 } from './types';
-import { ActionQueue } from './action-queue';
+import { ActionQueue, actionQueue } from './action-queue';
 
 export class ApprovalWorkflow extends EventEmitter {
   constructor(

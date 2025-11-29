@@ -3,6 +3,7 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { generateObject, generateText } from 'ai';
+import { OpenRouter } from '@openrouter/sdk';
 import type { EnrichedProduct } from '@/lib/cmm/sip-product-enrichment';
 import {
   BatchTagSuggestionSchema,
@@ -435,8 +436,8 @@ Return ONLY valid JSON matching this schema:
 
   let providerKey = provider.provider?.toLowerCase();
   
-  // Map openai_compatible to openai for engine compatibility
-  if (providerKey === 'openai_compatible') {
+  // Map openai_compatible and openrouter to openai for engine compatibility
+  if (providerKey === 'openai_compatible' || providerKey === 'openrouter') {
     providerKey = 'openai';
   }
   
@@ -511,10 +512,78 @@ Return ONLY valid JSON matching this schema:
     }
   }
 
-  // OpenAI or compatible
+  // OpenAI or compatible (including OpenRouter)
+  // Ensure baseURL is set correctly for OpenRouter
+  const baseUrl = provider.baseUrl 
+    ? provider.baseUrl.replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '')
+    : undefined;
+  
+  // Check if this is OpenRouter - use direct fetch since AI SDK has issues with OpenRouter
+  const isOpenRouter = provider.provider?.toLowerCase() === 'openrouter' || baseUrl?.includes('openrouter.ai');
+  
+  console.log(`[engine] suggestTagsBatch creating client: provider=${provider.provider}, baseUrl=${baseUrl}, hasApiKey=${!!provider.apiKey}, isOpenRouter=${isOpenRouter}`);
+  
+  // For OpenRouter, use direct fetch API (AI SDK has issues with OpenRouter baseURL)
+  if (isOpenRouter) {
+    try {
+      console.log(`[engine] Using direct fetch for OpenRouter: model=${modelName}`);
+      
+      // Calculate maxOutputTokens based on batch size
+      const estimatedTokensPerProduct = 400;
+      const baseOutputTokens = 1000;
+      const calculatedMaxOutput = baseOutputTokens + (products.length * estimatedTokensPerProduct);
+      const maxOutputTokens = Math.min(
+        calculatedMaxOutput,
+        modelName?.includes('gpt-4') || modelName?.includes('o1') ? 16000 : 8000
+      );
+      
+      // Direct fetch to OpenRouter API
+      const response = await withTimeout(
+        fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${provider.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:3000',
+            'X-Title': 'MantisNXT',
+          },
+          body: JSON.stringify({
+            model: modelName || 'openai/gpt-4o',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: maxOutputTokens,
+            temperature: isReasoningModel(modelName) ? undefined : 0.1,
+          }),
+        }),
+        timeoutMs,
+        `openrouter direct fetch (${modelName || 'default'})`
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
+      }
+      
+      const data = await response.json();
+      const responseText = data.choices?.[0]?.message?.content || '';
+      
+      if (responseText) {
+        const parsed = parseStructuredJsonResponse(responseText, BatchTagSuggestionSchema);
+        if (parsed) {
+          console.log(`[engine] suggestTagsBatch success (OpenRouter direct fetch) provider=${provider.provider} model=${modelName} suggestions=${parsed?.suggestions?.length ?? 0}`);
+          return parsed;
+        }
+      }
+      console.warn(`[engine] OpenRouter direct fetch returned empty response`);
+    } catch (openRouterErr: unknown) {
+      const errMsg = openRouterErr instanceof Error ? openRouterErr.message : String(openRouterErr);
+      console.error(`[engine] OpenRouter direct fetch failed: ${errMsg}`);
+      throw openRouterErr; // Don't fall back - if direct fetch fails, something is wrong
+    }
+  }
+  
   const openai = createOpenAI({
     apiKey: provider.apiKey,
-    ...(provider.baseUrl ? { baseURL: provider.baseUrl } : {}),
+    ...(baseUrl ? { baseURL: baseUrl } : {}),
   });
   const model = openai(modelName || 'gpt-4o-mini');
   try {
@@ -593,10 +662,22 @@ Return ONLY valid JSON matching this schema:
     const errorMsg = String(err?.message || '');
     const isTruncationError = errorMsg.includes('truncated') || errorMsg.includes('length');
     
-    console.error(
-      `[engine] suggestTagsBatch primary attempt failed provider=${provider.provider} model=${modelName}:`,
-      err
-    );
+    // Log full error details for OpenRouter debugging
+    if (provider.provider?.toLowerCase() === 'openrouter' || provider.baseUrl?.includes('openrouter')) {
+      console.error(
+        `[engine] suggestTagsBatch OpenRouter error - provider=${provider.provider}, baseUrl=${baseUrl}, model=${modelName}, apiKeyPrefix=${provider.apiKey?.substring(0, 20)}...`,
+        err
+      );
+      // If it's an auth error, log more details
+      if (errorMsg.includes('User not found') || errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
+        console.error(`[engine] OpenRouter auth error - check: 1) API key is valid sk-or-v1-... format, 2) Key exists in OpenRouter account, 3) baseURL is exactly 'https://openrouter.ai/api/v1' (no trailing slash)`);
+      }
+    } else {
+      console.error(
+        `[engine] suggestTagsBatch primary attempt failed provider=${provider.provider} model=${modelName}:`,
+        err
+      );
+    }
     
     // If truncated, try with even higher token limit or return partial results
     if (isTruncationError) {

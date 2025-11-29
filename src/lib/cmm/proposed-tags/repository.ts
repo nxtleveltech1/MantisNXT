@@ -53,9 +53,40 @@ export async function upsertProposedTag(
           status_reason = NULL,
           resolved_at = NULL,
           updated_at = NOW()
-        RETURNING *
+        RETURNING 
+          tag_proposal_id,
+          org_id,
+          normalized_name,
+          display_name,
+          tag_type,
+          status,
+          status_reason,
+          suggestion_count,
+          last_confidence,
+          last_provider,
+          first_seen_job_id,
+          last_seen_job_id,
+          created_at,
+          updated_at,
+          resolved_at
       )
-      SELECT * FROM upsert
+      SELECT 
+        tag_proposal_id,
+        org_id,
+        normalized_name,
+        display_name,
+        tag_type,
+        status,
+        status_reason,
+        suggestion_count,
+        last_confidence,
+        last_provider,
+        first_seen_job_id,
+        last_seen_job_id,
+        created_at,
+        updated_at,
+        resolved_at
+      FROM upsert
     `,
     [
       orgId,
@@ -68,7 +99,24 @@ export async function upsertProposedTag(
     ]
   );
 
-  return result.rows[0];
+  if (!result.rows || result.rows.length === 0) {
+    const error = new Error(
+      `Failed to upsert proposed tag: no rows returned for normalized_name="${normalized}", org_id="${orgId}"`
+    );
+    console.error('[upsertProposedTag]', error.message);
+    throw error;
+  }
+
+  const record = result.rows[0];
+  if (!record.tag_proposal_id) {
+    const error = new Error(
+      `Failed to upsert proposed tag: tag_proposal_id is missing in result. Record: ${JSON.stringify(record)}`
+    );
+    console.error('[upsertProposedTag]', error.message);
+    throw error;
+  }
+
+  return record;
 }
 
 export async function linkProposedTagToProduct(
@@ -111,6 +159,7 @@ export async function linkProposedTagToProduct(
 export function normalizeTagLabel(label: string): string {
   return normalizeName(label);
 }
+
 
 
 
