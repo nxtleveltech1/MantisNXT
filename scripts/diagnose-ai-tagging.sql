@@ -45,3 +45,4 @@ SELECT COUNT(*) as total_products FROM core.supplier_product WHERE is_active = t
 
 
 
+

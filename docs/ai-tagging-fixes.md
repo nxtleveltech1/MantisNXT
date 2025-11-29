@@ -74,6 +74,27 @@ The `testConnection` method (lines 479-535) provides:
 - Provider/model testing with a simple prompt
 - Success/failure response with error details
 
+### Task 6: Legacy Proposals Missing `tag_proposal_id`
+
+**Status**: ✅ Fixed via `database/migrations/0039_fix_schema_migrations_duration_ms.sql`
+
+Older databases only exposed a `proposal_id` column for `core.ai_tag_proposal`, which caused
+the TaggingEngine to fail with errors such as `column "tag_proposal_id" does not exist`.
+ Migration **0039** now:
+ 
+ - Adds `tag_proposal_id` with defaults and a `NOT NULL` constraint
+ - Backfills every record from the legacy `proposal_id` (or generates UUIDs where missing)
+ - Adds a trigger to keep `proposal_id` and `tag_proposal_id` synchronized for legacy callers
+
+Run the verification helper to apply the fix locally:
+
+```bash
+bun tsx scripts/fix-ai-tagging-schema.ts
+```
+
+The script checks both `core.ai_tag_proposal` and `core.ai_tag_proposal_product` and will
+apply the migration automatically when the new columns are missing.
+
 ---
 
 ## Verification Steps
