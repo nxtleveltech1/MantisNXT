@@ -209,3 +209,8 @@ export class CompetitorPriceScrapingService {
     return result.rowCount || 0;
   }
 }
+
+
+
+
+

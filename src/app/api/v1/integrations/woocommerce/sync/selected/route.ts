@@ -5,19 +5,18 @@ import { WooCommerceService } from '@/lib/services/WooCommerceService';
 import { IntegrationMappingService } from '@/lib/services/IntegrationMappingService';
 import { createErrorResponse } from '@/lib/utils/neon-error-handler';
 import { IntegrationSyncService } from '@/lib/services/IntegrationSyncService';
+import { getActiveWooConnector, resolveWooOrgId } from '@/lib/utils/woocommerce-connector';
 
 export async function POST(request: NextRequest) {
   try {
-    const orgIdHeader = request.headers.get('x-org-id') || undefined;
     const body = await request.json().catch(() => ({}));
-    const orgId = (body?.org_id as string) || orgIdHeader;
+    const { orgId } = resolveWooOrgId(request, body);
     const entity = (body?.entity as string) || 'customers';
     const ids: number[] = Array.isArray(body?.ids)
       ? body.ids.map((v: unknown) => Number(v)).filter(n => Number.isInteger(n))
       : [];
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!orgId || !uuidRegex.test(orgId)) {
+    if (!orgId) {
       return NextResponse.json({ success: false, error: 'orgId required' }, { status: 400 });
     }
     const valid = ['customers', 'products', 'orders'];
@@ -28,20 +27,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'ids required' }, { status: 400 });
     }
 
-    const cfg = await query<any>(
-      `SELECT id as connector_id, org_id, config
-       FROM integration_connector
-       WHERE provider = 'woocommerce' AND status::text = 'active' AND org_id = $1
-       ORDER BY created_at DESC LIMIT 1`,
-      [orgId]
-    );
-    if (!cfg.rows.length) {
+    const { connector, orgId: connectorOrgId } = await getActiveWooConnector(orgId);
+    if (!connector) {
       return NextResponse.json({ success: false, error: 'No active connector' }, { status: 404 });
     }
-    const row = cfg.rows[0];
-    const connectorId: string = row.connector_id;
-    const orgIdResolved: string = row.org_id;
-    const raw = row.config || {};
+    const connectorId: string = connector.connector_id;
+    const orgIdResolved: string = connectorOrgId || connector.org_id || orgId;
+    const raw = connector.config || {};
 
     const woo = new WooCommerceService({
       url: raw.url || raw.store_url || raw.storeUrl,

@@ -49,6 +49,12 @@ import {
   ArrowRight,
   ExternalLink,
 } from 'lucide-react';
+import {
+  DynamicTextWrapper,
+  ShimmerText,
+  AITextLoading,
+  AIVoice,
+} from '@/components/kokonutui';
 
 // AI Enhanced Types
 interface AISupplierRecommendation {
@@ -404,8 +410,18 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                 <Brain className="h-8 w-8" />
               </motion.div>
               <div>
-                <h1 className="text-3xl font-bold">AI Supplier Discovery</h1>
-                <p className="text-lg text-purple-100">Intelligent matching with market insights</p>
+                <h1 className="text-3xl font-bold">
+                  <span className="bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent">
+                    <DynamicTextWrapper
+                      texts={['AI Supplier Discovery', 'Intelligent Matching', 'Smart Recommendations']}
+                      interval={3000}
+                    />
+                  </span>
+                </h1>
+                <ShimmerText
+                  text="Intelligent matching with market insights"
+                  className="text-purple-100 text-lg"
+                />
               </div>
             </div>
           </div>
@@ -444,12 +460,17 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                     aria-label="AI supplier search"
                   />
                   {aiProcessing && (
-                    <div className="absolute top-3 right-3">
-                      <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                    <div className="absolute top-3 right-3 z-20">
+                      <AITextLoading
+                        texts={['Analyzing suppliers...', 'Matching requirements...', 'Finding best options...']}
+                        className="text-sm"
+                      />
                     </div>
                   )}
                 </div>
-                <Button
+                <div className="flex gap-2">
+                  <AIVoice />
+                  <Button
                   onClick={executeSearch}
                   disabled={!searchQuery.trim() || aiProcessing}
                   size="lg"
@@ -462,6 +483,7 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
                   )}
                   AI Search
                 </Button>
+                </div>
               </div>
 
               {/* Search Suggestions */}
@@ -590,32 +612,17 @@ const AISupplierDiscovery: React.FC<AISupplierDiscoveryProps> = ({
         {/* Recommendations Tab */}
         <TabsContent value="recommendations">
           {aiProcessing ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="grid grid-cols-1 gap-6 lg:grid-cols-2"
-            >
-              {[1, 2, 3, 4].map(i => (
-                <Card key={i} className="border-0 shadow-lg">
-                  <CardContent className="p-6">
-                    <div className="animate-pulse space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-gray-200"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 w-3/4 rounded bg-gray-200"></div>
-                          <div className="h-3 w-1/2 rounded bg-gray-200"></div>
-                        </div>
-                      </div>
-                      <div className="h-24 rounded bg-gray-200"></div>
-                      <div className="flex gap-2">
-                        <div className="h-6 w-20 rounded bg-gray-200"></div>
-                        <div className="h-6 w-20 rounded bg-gray-200"></div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </motion.div>
+            <div className="flex flex-col items-center justify-center py-16">
+              <AITextLoading
+                texts={[
+                  'Analyzing suppliers...',
+                  'Matching requirements...',
+                  'Finding best options...',
+                  'Almost ready...',
+                ]}
+                className="text-2xl"
+              />
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <AnimatePresence>

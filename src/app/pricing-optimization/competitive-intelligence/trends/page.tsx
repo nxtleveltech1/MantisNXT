@@ -415,3 +415,8 @@ export default function TrendsPage() {
     </AppLayout>
   );
 }
+
+
+
+
+

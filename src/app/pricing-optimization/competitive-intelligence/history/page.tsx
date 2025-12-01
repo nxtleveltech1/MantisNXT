@@ -466,3 +466,8 @@ export default function PriceHistoryPage() {
     </AppLayout>
   );
 }
+
+
+
+
+

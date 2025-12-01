@@ -59,3 +59,8 @@ export interface RecordTagProposalResult {
   productLink: ProposedTagProductRecord;
   nextStatus: TaggingStatus;
 }
+
+
+
+
+

@@ -333,3 +333,8 @@ export default function AITaggingManagementPage() {
     </AppLayout>
   );
 }
+
+
+
+
+

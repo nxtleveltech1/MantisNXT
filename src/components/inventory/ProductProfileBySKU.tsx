@@ -118,3 +118,8 @@ export default function ProductProfileBySKU({
     <ProductProfileDialog productId={supplierProductId} open={open} onOpenChange={onOpenChange} />
   );
 }
+
+
+
+
+

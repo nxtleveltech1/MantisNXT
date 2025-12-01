@@ -3,34 +3,22 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import { WooCommerceService } from '@/lib/services/WooCommerceService';
 import { createErrorResponse } from '@/lib/utils/neon-error-handler';
-
-function isUuid(v: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
-}
+import { getActiveWooConnector, resolveWooOrgId } from '@/lib/utils/woocommerce-connector';
 
 export async function POST(request: NextRequest) {
   try {
-    const orgId = request.headers.get('x-org-id') || '';
-    if (!isUuid(orgId))
-      return NextResponse.json({ success: false, error: 'orgId required' }, { status: 400 });
-
     const body = await request.json().catch(() => ({}));
+    const { orgId } = resolveWooOrgId(request, body);
     const entities: string[] =
       Array.isArray(body?.entities) && body.entities.length
         ? body.entities
         : ['customers', 'products', 'orders', 'categories'];
 
-    const cfg = await query<any>(
-      `SELECT id as connector_id, org_id, config
-       FROM integration_connector
-       WHERE provider = 'woocommerce' AND status::text = 'active' AND org_id = $1
-       ORDER BY created_at DESC LIMIT 1`,
-      [orgId]
-    );
-    if (!cfg.rows.length)
+    const { connector, orgId: connectorOrgId } = await getActiveWooConnector(orgId);
+    if (!connector)
       return NextResponse.json({ success: false, error: 'No active connector' }, { status: 404 });
 
-    const row = cfg.rows[0];
+    const row = connector;
     const raw = row.config || {};
     const woo = new WooCommerceService({
       url: raw.url || raw.store_url || raw.storeUrl,
@@ -110,7 +98,7 @@ export async function POST(request: NextRequest) {
          VALUES ($1, 'woocommerce', $2, $3::jsonb, NOW())
          ON CONFLICT (org_id, sync_type, entity_type)
          DO UPDATE SET delta_data = EXCLUDED.delta_data, updated_at = NOW()`,
-        [orgId, entity, JSON.stringify(delta)]
+        [orgId || connectorOrgId, entity, JSON.stringify(delta)]
       );
       results[entity] = data.length;
     }

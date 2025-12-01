@@ -4,6 +4,7 @@ import { query } from '@/lib/database';
 import { WooCommerceService } from '@/lib/services/WooCommerceService';
 import { IntegrationSyncService } from '@/lib/services/IntegrationSyncService';
 import { createErrorResponse } from '@/lib/utils/neon-error-handler';
+import { getActiveWooConnector, resolveWooOrgId } from '@/lib/utils/woocommerce-connector';
 
 export async function POST(
   request: NextRequest,
@@ -17,37 +18,22 @@ export async function POST(
     }
 
     const body = await request.json().catch(() => ({}));
-    const orgIdFromBody = body?.org_id as string | undefined;
-    const orgIdHeader = request.headers.get('x-org-id') || undefined;
-    const orgId = orgIdFromBody || orgIdHeader;
+    const { orgId } = resolveWooOrgId(request, body);
     if (!orgId) {
       return NextResponse.json({ success: false, error: 'orgId required' }, { status: 400 });
     }
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(orgId)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid organization ID format' },
-        { status: 400 }
-      );
-    }
 
-    const cfg = await query<any>(
-      `SELECT id as connector_id, org_id, config, status::text as status, last_sync_at
-       FROM integration_connector
-       WHERE provider = 'woocommerce' AND status::text = 'active' AND org_id = $1
-       ORDER BY created_at DESC LIMIT 1`,
-      [orgId]
-    );
-    if (!cfg.rows.length) {
+    const { connector, orgId: connectorOrgId } = await getActiveWooConnector(orgId);
+    if (!connector) {
       return NextResponse.json(
         { success: false, error: 'No active WooCommerce connector' },
         { status: 404 }
       );
     }
-    const row = cfg.rows[0];
-    const connectorId: string = row.connector_id;
-    const orgIdResolved: string = row.org_id;
-    const raw = row.config || {};
+
+    const connectorId: string = connector.connector_id;
+    const orgIdResolved: string = connectorOrgId || connector.org_id || orgId;
+    const raw = connector.config || {};
 
     const woo = new WooCommerceService({
       url: raw.url || raw.store_url || raw.storeUrl,
@@ -67,7 +53,7 @@ export async function POST(
       );
     }
 
-    const lastSyncAt = row.last_sync_at ? new Date(row.last_sync_at).getTime() : 0;
+    const lastSyncAt = connector.last_sync_at ? new Date(connector.last_sync_at).getTime() : 0;
     const now = Date.now();
     if (lastSyncAt && now - lastSyncAt < 30_000) {
       const res = NextResponse.json(

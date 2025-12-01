@@ -4,14 +4,13 @@ import { WooCommerceService } from '@/lib/services/WooCommerceService';
 import { CustomerSyncService } from '@/lib/services/CustomerSyncService';
 import { createErrorResponse } from '@/lib/utils/neon-error-handler';
 import { getCircuitBreaker } from '@/lib/utils/rate-limiter';
-import { query } from '@/lib/database';
 import jwt from 'jsonwebtoken';
+import { getActiveWooConnector, resolveWooOrgId } from '@/lib/utils/woocommerce-connector';
 
 export async function POST(request: NextRequest) {
   try {
-    const orgId = request.headers.get('x-org-id') || '';
-    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRe.test(orgId))
+    const { orgId } = resolveWooOrgId(request);
+    if (!orgId)
       return NextResponse.json({ success: false, error: 'orgId required' }, { status: 400 });
 
     const isAdminHeader = request.headers.get('x-admin') === 'true';
@@ -30,17 +29,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Admin required' }, { status: 403 });
     }
 
-    // Resolve connector config from DB (no secrets exposure client-side)
-    const cfg = await query<any>(
-      `SELECT id as connector_id, org_id, config
-       FROM integration_connector
-       WHERE provider = 'woocommerce' AND status::text = 'active' AND org_id = $1
-       ORDER BY created_at DESC LIMIT 1`,
-      [orgId]
-    );
-    if (!cfg.rows.length)
+    const { connector, orgId: connectorOrgId } = await getActiveWooConnector(orgId);
+    if (!connector)
       return NextResponse.json({ success: false, error: 'No active connector' }, { status: 404 });
-    const raw = cfg.rows[0].config || {};
+    const raw = connector.config || {};
     const config = {
       url: raw.url || raw.store_url || raw.storeUrl,
       consumerKey: raw.consumerKey || raw.consumer_key,
@@ -50,24 +42,25 @@ export async function POST(request: NextRequest) {
       verifySsl: raw.verifySsl ?? raw.verify_ssl,
     };
 
-    const breaker = getCircuitBreaker(`woo:customers:${orgId}`, 5, 60000);
+    const resolvedOrgId = connectorOrgId || connector.org_id || orgId;
+    const breaker = getCircuitBreaker(`woo:customers:${resolvedOrgId}`, 5, 60000);
     const queue = await breaker.execute(async () => {
       const woo = new WooCommerceService(config);
       const ok = await woo.testConnection();
       if (!ok) throw new Error('Connection failed');
-      const qid = await CustomerSyncService.startSync(woo, orgId, orgId, {
+      const qid = await CustomerSyncService.startSync(woo, resolvedOrgId, resolvedOrgId, {
         batchSize: 50,
         batchDelayMs: 2000,
         maxRetries: 3,
       });
       setImmediate(async () => {
-        await CustomerSyncService.processQueue(woo, qid, orgId, {
+        await CustomerSyncService.processQueue(woo, qid, resolvedOrgId, {
           batchSize: 50,
           batchDelayMs: 2000,
           maxRetries: 3,
         });
       });
-      const status = await CustomerSyncService.getStatus(qid, orgId);
+      const status = await CustomerSyncService.getStatus(qid, resolvedOrgId);
       return status;
     });
 
